@@ -1,0 +1,18 @@
+# Reemplazar placeholders por usernames reales.
+
+* @TEAM-PLACEHOLDER
+
+# Web:
+# /frontend/pms-hotel-web/ @WEB1 @WEB2 @WEB3 @WEB4
+
+# Android:
+# /frontend/pms-hotel-android/ @ANDROID1
+
+# Backend:
+# /backend/ @BACKEND1 @BACKEND2
+
+# Global docs:
+# /docs/ @WEB1 @WEB2 @WEB3 @WEB4 @ANDROID1
+
+# Web shared:
+# /frontend/pms-hotel-web/src/shared/ @WEB1 @WEB2 @WEB3 @WEB4

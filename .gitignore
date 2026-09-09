@@ -1,0 +1,28 @@
+# Node / Next
+**/node_modules/
+**/.next/
+**/out/
+**/dist/
+**/coverage/
+
+# Android / Gradle
+**/.gradle/
+**/build/
+**/local.properties
+**/*.iml
+
+# Environments
+**/.env
+**/.env.local
+**/.env.*.local
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
