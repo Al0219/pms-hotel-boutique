@@ -12,4 +12,6 @@ Antes de una tarea:
 9. DoD;
 10. QA/reviewer.
 
-El stack Android se confirma en `IMP-AND-0001`; no asumir tecnología no exigida por el docente antes de esa decisión.
+`IMP-AND-0001` confirmó el stack oficial: React Native, Expo, TypeScript, Expo Router, TanStack Query, `fetch` nativo, Jest, React Native Testing Library y `StyleSheet` con design tokens. Consultar `../../../docs/11_ARCHITECTURAL_DECISIONS.md` antes de proponer una dependencia estructural.
+
+La siguiente tarea de infraestructura es `IMP-AND-0002` una vez que `IMP-AND-0001` figure como `COMPLETADA` en el backlog canónico.

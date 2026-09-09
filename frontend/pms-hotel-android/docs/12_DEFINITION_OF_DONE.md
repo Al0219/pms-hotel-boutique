@@ -9,3 +9,5 @@
 - no DTO in UI;
 - no secrets;
 - cross-app semantics PASS.
+
+Para tareas documentales, el equivalente es documentación, ADR y backlog sincronizados, con revisión documental PASS.

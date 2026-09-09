@@ -85,5 +85,31 @@ Node IDs son solo trazabilidad. Solo registrar IDs verificados; celda vacía sig
 ### DEC-W-015 — Sprint 0 baseline
 La infraestructura aprobada se materializa con tokens CSS, fonts mediante `next/font`, transporte fetch técnico, `DomainMappingError`, TanStack Query, MSW, Vitest/Testing Library, ESLint flat boundaries y CI Web. No implementa endpoints ni features de negocio. Los module shells del Structure Freeze permanecen sin capas internas hasta una tarea READY.
 
+## Android — Sprint 0 aprobada
+
+### DEC-A-001 — Stack técnico Android
+
+**Fecha:** 2026-09-09
+**Status:** APPROVED
+**Responsable:** Equipo PMS Hotel Boutique / ANDROID-1
+
+**Contexto:** La aplicación Android inicia su Sprint 0 sin proyecto ejecutable y requiere una base coherente con los contratos, el modelo de dominio y el Figma canónico.
+
+**Decisión:** Android se implementará con React Native, Expo, TypeScript y Expo Router. Usará TanStack Query para server state, `fetch` nativo como transporte HTTP, Jest con React Native Testing Library para pruebas y `StyleSheet` con design tokens para estilos. Android Studio se limita a emulación y depuración.
+
+**Seguridad y conectividad:** Expo SecureStore se incorporará solamente junto con autenticación real. NetInfo se incorporará solamente al implementar offline/recovery. Guest y Staff continúan siendo contextos separados.
+
+**Decisiones negativas:** No se incorporan Redux, Zustand, framework de DI, Compose, XML ni una arquitectura UI Android nativa paralela en Sprint 0.
+
+**Consecuencias:** Los datos siguen `Remote/API -> DTO -> Mapper -> Domain -> State Holder/ViewModel -> UI`; la UI no hace red directa ni consume DTOs. La versión de Expo elegida en `IMP-AND-0002` determinará las versiones compatibles de Gradle y mínimo SDK.
+
+### DEC-A-002 — Fuente Figma Android
+
+**Fecha:** 2026-09-09
+**Status:** APPROVED
+**Responsable:** Equipo PMS Hotel Boutique / ANDROID-1
+
+La fuente visual y funcional canónica para Android es `238:132 — Implementation Ready — Android V2 + V3`. `31:132 — Reference — Android Early Journey` es referencia histórica y no autoriza pantallas ni rutas nuevas. Los Node IDs se usan solo para trazabilidad, nunca como IDs runtime.
+
 ## Nueva decisión futura
 Registrar ID, fecha, status, contexto, problema, decisión, alternativas, consecuencias y responsables. No borrar historia; usar `SUPERSEDED`.
