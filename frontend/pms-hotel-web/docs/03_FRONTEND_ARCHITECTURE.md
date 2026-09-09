@@ -50,3 +50,7 @@ modules/<domain>/
 `app -> modules -> shared/lib`.
 
 Reglas exactas: `04_MODULE_BOUNDARIES.md`.
+
+## Structure Freeze
+
+El Structure Freeze autorizado crea los módulos oficiales como shells no vacíos con solo `README.md` e `index.ts`. Esta excepción organizativa no implementa una feature ni autoriza las carpetas `dtos`, `mappers`, `model`, `service`, `hooks` o `components`; cada una nace únicamente con una tarea READY.

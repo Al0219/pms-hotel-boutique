@@ -1,2 +1,0 @@
-MANIFEST.json
-frontend/pms-hotel-web/docs/Backlog_Implementacion_PMS_V1.xlsx
