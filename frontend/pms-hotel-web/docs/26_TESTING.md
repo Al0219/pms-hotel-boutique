@@ -1,28 +1,29 @@
 # 26 — Testing
 
+## Sprint 0 aprobado
+- Vitest
+- Testing Library
+- jsdom
+- MSW en tests cuando corresponda
+
 ## Mappers
-Prioridad alta.
+Prioridad alta: happy path, null permitido, campo obligatorio inválido, enum desconocido y nested data cuando aplique.
 
 ## Services
-Request/status/error/DTO.
+Request, status/error técnico y DTO.
 
 ## Hooks
-loading/service/mapper/data/error/retry.
+Service + Mapper + states + retry/refetch.
 
 ## Components
-Domain Models, no DTO.
-
-## Integration
-Feature flow.
+Reciben Domain Models, nunca DTO.
 
 ## E2E
-Basarse en Figma V3 — 12 QA/E2E.
+Playwright NO se instala en Sprint 0. Se incorpora en `IMP-WEB-1001`, cuando existan journeys estables.
 
-## Regresión
-Antes de release:
-- Public;
-- Private;
-- sidebars/roles;
-- routes;
-- a11y;
-- mocks/contracts.
+## Implementación Sprint 0
+
+`vitest.config.ts` usa jsdom y `src/test/setup.ts` configura Testing Library y el servidor MSW. Los tests técnicos cubren `DomainMappingError`, el cliente HTTP y el provider de TanStack Query.
+
+## Regresión final
+Public, Private, roles/sidebar, routes, accessibility, mocks/contracts y arquitectura.

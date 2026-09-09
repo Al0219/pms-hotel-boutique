@@ -1,18 +1,27 @@
-# Reemplazar placeholders por usernames reales.
+# CODEOWNERS — plantilla desactivada hasta contar con los usernames reales.
+#
+# IMPORTANTE:
+# No dejar handles ficticios activos porque GitHub intentará resolverlos como owners reales.
+# Cuando el equipo proporcione los usernames, descomentar y sustituir las líneas necesarias.
 
-* @TEAM-PLACEHOLDER
+# * @OWNER_GLOBAL_REAL
 
-# Web:
-# /frontend/pms-hotel-web/ @WEB1 @WEB2 @WEB3 @WEB4
+# Web — ejemplos de patrones; sustituir por usernames reales:
+# /frontend/pms-hotel-web/src/modules/booking/ @WEB1_REAL
+# /frontend/pms-hotel-web/src/modules/checkout/ @WEB1_REAL
+# /frontend/pms-hotel-web/src/modules/auth/ @WEB2_REAL
+# /frontend/pms-hotel-web/src/modules/account/ @WEB2_REAL
+# /frontend/pms-hotel-web/src/modules/reservations/ @WEB3_REAL
+# /frontend/pms-hotel-web/src/modules/housekeeping/ @WEB3_REAL
+# /frontend/pms-hotel-web/src/modules/folio/ @WEB4_REAL
+# /frontend/pms-hotel-web/src/modules/payments/ @WEB4_REAL
+# /frontend/pms-hotel-web/src/modules/availability/ @WEB4_REAL
+
+# Shared Web requiere revisión colectiva:
+# /frontend/pms-hotel-web/src/shared/ @WEB1_REAL @WEB2_REAL @WEB3_REAL @WEB4_REAL
 
 # Android:
-# /frontend/pms-hotel-android/ @ANDROID1
+# /frontend/pms-hotel-android/ @ANDROID1_REAL
 
-# Backend:
-# /backend/ @BACKEND1 @BACKEND2
-
-# Global docs:
-# /docs/ @WEB1 @WEB2 @WEB3 @WEB4 @ANDROID1
-
-# Web shared:
-# /frontend/pms-hotel-web/src/shared/ @WEB1 @WEB2 @WEB3 @WEB4
+# Documentación global / contratos cross-app:
+# /docs/ @WEB1_REAL @WEB2_REAL @WEB3_REAL @WEB4_REAL @ANDROID1_REAL

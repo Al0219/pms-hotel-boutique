@@ -1,18 +1,22 @@
 # 00 — Start Here
 
 ## Antes de cualquier tarea Web
+
 1. leer AGENTS global;
 2. leer AGENTS Web;
-3. identificar owner;
-4. identificar Figma;
-5. identificar route;
-6. identificar module;
-7. identificar datos;
-8. confirmar DoR;
-9. implementar;
-10. DoD;
-11. PR.
+3. abrir `../../../docs/Backlog_Implementacion_PMS_V1.xlsx`;
+4. localizar la tarea exacta;
+5. verificar que está READY o autorizada explícitamente;
+6. verificar dependencias;
+7. identificar owner/reviewer;
+8. identificar Figma/fuente y ruta;
+9. leer docs específicos del dominio;
+10. verificar DoR;
+11. implementar solo esa tarea;
+12. ejecutar Acceptance Criteria + DoD;
+13. pasar a QA.
 
-## Primer prompt Codex recomendado
+## Sprint 0
+La fase de análisis de Sprint 0 ya fue cerrada. Las decisiones aprobadas están en `docs/11_ARCHITECTURAL_DECISIONS.md` global y en el backlog.
 
-> Lee AGENTS global y Web, más toda la documentación relevante. No escribas código. Analiza Sprint 0 y propón el árbol final de `frontend/pms-hotel-web`, respetando `(public)` y `(private)` y Service/DTO/Mapper/Domain/UI. Indica dependencias mínimas, estrategia mock y decisiones pendientes.
+No volver a rediseñar Sprint 0 salvo contradicción real o cambio aprobado.

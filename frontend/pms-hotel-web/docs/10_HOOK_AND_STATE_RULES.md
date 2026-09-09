@@ -1,30 +1,30 @@
 # 10 — Hook and State Rules
 
-## Hook
-Orquesta:
-Service -> DTO -> Mapper -> state.
+## Decisión aprobada
+TanStack Query es la estrategia de server state Web.
 
-## Debe exponer
-según caso:
+## Hook de feature
+Orquesta Service -> DTO -> Mapper -> Domain y configura query/mutation state.
+
+Puede exponer:
 - data Domain;
-- loading;
+- loading/pending;
 - error;
-- retry;
+- retry/refetch;
 - mutation status.
 
 ## No debe
 - contener JSX;
-- duplicar reglas de negocio backend;
-- importar internals de otro módulo.
+- duplicar reglas backend;
+- importar internals de otro módulo;
+- exponer DTO a UI.
 
-## State
-Elegir en Sprint 0:
-- local state;
-- server state/query library;
-- context global solo cuando aplique.
+## Local state
+Usar React local state para estado puramente de UI/formulario cuando corresponda. No agregar Redux/Zustand por defecto.
 
-No elegir librería por costumbre individual.
+## Mutaciones sensibles
+Evitar doble submit. No hacer optimistic success para Payments, Inventory commit, Night Audit o rebooking sensible sin decisión específica.
 
-## Mutation sensible
-Evitar doble submit.
-No optimistic commit de pago/inventario/night audit sin decisión.
+## Implementación Sprint 0
+
+`src/app/providers.tsx` configura el único `QueryClientProvider` de la aplicación. En esta fase técnica, las consultas y mutaciones no reintentan automáticamente; cada módulo definirá su política cuando su contrato API y sus reglas de dominio estén READY. El provider no contiene queries ni estado de negocio.

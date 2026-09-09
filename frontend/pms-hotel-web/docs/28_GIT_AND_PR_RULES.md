@@ -1,26 +1,21 @@
 # 28 — Git and PR Rules Web
 
-## Branch
-Una tarea cohesiva.
+## Regla general
+Una rama/PR debe representar un cambio cohesivo del backlog.
 
-## PR
-Debe indicar:
-- owner;
-- modules;
-- Figma;
-- API changes;
-- shared changes;
-- tests;
-- DoD.
+## Excepción aprobada Sprint 0
+`IMP-WEB-0001` a `IMP-WEB-0017` pueden implementarse en la rama única `chore/web-sprint-0` y un PR de foundation, porque forman un solo baseline técnico indivisible.
+
+Después de Sprint 0, preferir una tarea o slice cohesivo por rama/PR.
+
+## PR debe indicar
+owner, reviewer, tarea(s), módulos, Figma/fuente, cambios API/shared, tests y DoD.
 
 ## Cross-owner
-Añadir reviewer del dominio.
+Reviewer del dominio afectado obligatorio.
 
 ## Shared
-Reviewer adicional.
+Reviewer adicional obligatorio.
 
 ## No hacer
-- PR gigante;
-- change architecture + feature;
-- dependency upgrade + feature;
-- rename masivo innecesario.
+PR gigante con features no relacionadas, architecture change oculto, dependency upgrade no relacionado o rename masivo innecesario.

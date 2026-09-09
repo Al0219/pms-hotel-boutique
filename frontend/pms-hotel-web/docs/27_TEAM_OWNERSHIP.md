@@ -84,3 +84,7 @@ No owner exclusivo.
 
 ## Reemplazar
 WEB-1..4 por nombres y usernames reales antes del primer Sprint.
+
+## Structure Freeze
+
+Los shells oficiales en `src/modules` sirven como puntos de entrada de ownership. Cada shell contiene solo un README de alcance y un `index.ts` vacío como futura API pública. Crear un shell no transfiere internals ni implica una feature implementada.

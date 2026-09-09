@@ -5,10 +5,16 @@
 Primero:
 - `../../AGENTS.md`
 - `../../docs/*`
+- `../../docs/Backlog_Implementacion_PMS_V1.xlsx`
 
-Luego leer según tarea:
+Luego según tarea:
+- inicio -> `docs/00_START_HERE.md`
+- Figma -> `docs/01_FIGMA_SCREEN_CATALOG.md`
 - rutas -> `docs/02_ROUTE_ARCHITECTURE.md`
 - arquitectura -> `docs/03_FRONTEND_ARCHITECTURE.md`
+- flujo de datos -> `docs/04_LAYERED_DATA_FLOW.md`
+- boundaries/imports -> `docs/04_MODULE_BOUNDARIES.md`
+- módulos -> `docs/05_MODULE_CATALOG.md`
 - DTO -> `docs/06_DTO_RULES.md`
 - mapper -> `docs/07_MAPPER_RULES.md`
 - model -> `docs/08_DOMAIN_MODEL_RULES.md`
@@ -34,52 +40,47 @@ Luego leer según tarea:
 - git -> `docs/28_GIT_AND_PR_RULES.md`
 - ready -> `docs/29_DEFINITION_OF_READY.md`
 - done -> `docs/30_DEFINITION_OF_DONE.md`
+- tokens -> `docs/31_DESIGN_TOKEN_FOUNDATION.md`
 
-## Requisito del docente
+## Route Groups obligatorios
+`src/app/(public)` y `src/app/(private)`.
 
-Dentro de `src/app` DEBEN existir:
-
-```text
-(public)
-(private)
-```
-
-No eliminarlos.
-
-## Arquitectura por capas obligatoria
-
-`Service -> DTO -> Mapper -> Domain Model -> UI`
+## Arquitectura obligatoria
+`Service -> DTO -> Mapper -> Domain Model -> Hook/State -> UI`.
 
 ### UI MUST NOT
-- fetch directo;
+- hacer fetch directo;
 - consumir DTO;
 - normalizar API;
-- importar archivos internos de otro módulo.
+- importar internals de otro módulo.
 
 ### Service MUST
-- disparar request;
+- disparar request mediante la infraestructura aprobada;
 - retornar DTO;
-- manejar transporte.
+- manejar transporte, no presentación.
 
 ### Mapper MUST
 - ser puro;
-- DTO -> Domain.
-
-### Domain Model MUST
-- ser limpio para UI.
+- convertir DTO -> Domain;
+- producir `DomainMappingError` ante dato obligatorio inválido.
 
 ## Dependencias
-`app -> modules -> shared/lib`
+`app -> modules -> shared/lib`.
 
-No:
-`shared -> modules`
-`lib -> modules`
+Prohibido:
+- `shared -> modules`
+- `lib -> modules`
+- deep imports cross-module.
 
-## Codex
-Antes de modificar Web:
-- revisar DoR;
-- indicar owner;
-- indicar Figma;
-- indicar módulos;
-- indicar archivos;
-- no instalar dependencias sin decisión.
+## Backlog
+Codex trabaja únicamente la siguiente tarea `READY` autorizada. No modifica el XLSX salvo instrucción explícita.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

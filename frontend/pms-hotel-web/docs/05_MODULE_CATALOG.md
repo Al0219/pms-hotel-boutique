@@ -51,3 +51,7 @@ Owner principal se define por tarea:
 - inventory math: WEB-4
 
 No duplicar `Room` model en tres módulos sin decisión.
+
+## Structure Freeze autorizado
+
+Para repartir trabajo, los módulos oficiales se scaffoldan con `README.md` e `index.ts` exclusivamente. Los shells no cambian el estado de ninguna tarea funcional del backlog. El mapa completo, incluidos módulos de soporte operativo, está en `src/modules/README.md`.

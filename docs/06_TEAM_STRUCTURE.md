@@ -200,3 +200,9 @@ Cambio significativo:
 Antes de iniciar se definirá nuevo reparto.
 
 No asumir automáticamente que ownership Frontend = ownership Backend.
+
+---
+
+## Structure Freeze Web
+
+Se autoriza crear los módulos oficiales de Web como shells de coordinación (`README.md` e `index.ts`) para los cuatro integrantes. No contienen lógica funcional ni capas internas y no modifican estados del backlog. Las capas de cada módulo nacen solamente con la tarea READY correspondiente.
