@@ -10,5 +10,7 @@
 
 Base aprobada: Jest + React Native Testing Library. Las pruebas de transporte usan una frontera de `fetch` controlable y fixtures DTO. El framework E2E se decide cuando exista el primer journey Android estable.
 
+La navegación Foundation usa `expo-router/testing-library` y `renderRouter` con filesystem de rutas in-memory. No ubicar tests dentro de `app/`.
+
 Prioridad:
 mappers + offline/recovery + auth/account journeys.

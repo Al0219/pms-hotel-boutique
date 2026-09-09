@@ -111,5 +111,17 @@ La infraestructura aprobada se materializa con tokens CSS, fonts mediante `next/
 
 La fuente visual y funcional canónica para Android es `238:132 — Implementation Ready — Android V2 + V3`. `31:132 — Reference — Android Early Journey` es referencia histórica y no autoriza pantallas ni rutas nuevas. Los Node IDs se usan solo para trazabilidad, nunca como IDs runtime.
 
+### DEC-A-003 — Expo Continuous Native Generation
+
+**Fecha:** 2026-09-09
+**Status:** APPROVED
+**Responsable:** Equipo PMS Hotel Boutique / ANDROID-1
+
+**Decisión:** Android utiliza Expo con Continuous Native Generation (CNG), equivalente al workflow gestionado de Expo. Los directorios generados `android/` e `ios/` no se versionan ni son fuente de verdad.
+
+**Validación de Foundation:** `npm ci`, `npx expo-doctor`, `npx tsc --noEmit`, `npx expo export` y un smoke de navegación/app técnica. La exigencia anterior de `Gradle build/assemble` queda sustituida.
+
+**Uso nativo local:** Android Studio se puede usar para emulador, debugging y compilación local. Cuando sea necesario, `npx expo prebuild` o `npx expo run:android` generan el proyecto nativo efímero sin autorizar su versionado.
+
 ## Nueva decisión futura
 Registrar ID, fecha, status, contexto, problema, decisión, alternativas, consecuencias y responsables. No borrar historia; usar `SUPERSEDED`.
