@@ -2,7 +2,9 @@
 
 Seguir journeys Figma.
 
-Expo Router es el mecanismo de navegación aprobado. La estructura concreta de rutas se define en `IMP-AND-0007`; no debe crear rutas funcionales antes de esa tarea.
+Expo Router es el mecanismo de navegación aprobado. Sprint 0 contiene solamente `app/_layout.tsx`, `app/index.tsx`, `app/(guest)/_layout.tsx` y `app/(guest)/index.tsx`. La ruta Guest es una pantalla técnica Foundation, no una pantalla funcional ni una reproducción de Figma.
+
+La navegación y back stack de Foundation se prueban con `expo-router/testing-library`, `renderRouter` y un filesystem de rutas in-memory. Las rutas funcionales nacen únicamente con sus tareas READY.
 
 ## MUST
 - back stack coherente;

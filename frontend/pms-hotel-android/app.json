@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "PMS Hotel Boutique",
+    "slug": "pms-hotel-boutique",
+    "version": "1.0.0",
+    "platforms": [
+      "android"
+    ],
+    "plugins": [
+      "expo-router",
+      "expo-status-bar"
+    ]
+  }
+}
