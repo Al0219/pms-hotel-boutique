@@ -82,5 +82,8 @@ Fuente canónica: `docs/Backlog_Implementacion_PMS_V1.xlsx`.
 ### DEC-W-014 — Figma Node IDs
 Node IDs son solo trazabilidad. Solo registrar IDs verificados; celda vacía significa usar nombre de sección/pantalla, no inventar un ID.
 
+### DEC-W-015 — Sprint 0 baseline
+La infraestructura aprobada se materializa con tokens CSS, fonts mediante `next/font`, transporte fetch técnico, `DomainMappingError`, TanStack Query, MSW, Vitest/Testing Library, ESLint flat boundaries y CI Web. No implementa endpoints ni features de negocio. Los module shells del Structure Freeze permanecen sin capas internas hasta una tarea READY.
+
 ## Nueva decisión futura
 Registrar ID, fecha, status, contexto, problema, decisión, alternativas, consecuencias y responsables. No borrar historia; usar `SUPERSEDED`.

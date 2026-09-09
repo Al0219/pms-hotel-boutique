@@ -552,14 +552,16 @@ PASS solo si:
 
 # 19. Regla de Sprint 0
 
-Durante Sprint 0 todavía no deben existir módulos de negocio reales.
+Durante Sprint 0 no deben existir módulos de negocio con capas o lógica funcional.
+
+El Structure Freeze autorizado permite module shells con solo `README.md` e `index.ts` para ownership. No son módulos funcionales, no exponen APIs todavía y no autorizan carpetas internas.
 
 Por tanto, `IMP-WEB-0011` debe:
 
 1. dejar preparada la configuración de boundaries;
 2. validar al menos una violación temporal;
 3. eliminar esa violación antes de terminar;
-4. no crear módulos de negocio vacíos únicamente para probar ESLint.
+4. no crear módulos de negocio adicionales únicamente para probar ESLint.
 
 ---
 

@@ -4,6 +4,7 @@
 **/out/
 **/dist/
 **/coverage/
+**/*.tsbuildinfo
 
 # Android / Gradle
 **/.gradle/

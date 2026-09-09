@@ -24,3 +24,7 @@ Usar React local state para estado puramente de UI/formulario cuando corresponda
 
 ## Mutaciones sensibles
 Evitar doble submit. No hacer optimistic success para Payments, Inventory commit, Night Audit o rebooking sensible sin decisión específica.
+
+## Implementación Sprint 0
+
+`src/app/providers.tsx` configura el único `QueryClientProvider` de la aplicación. En esta fase técnica, las consultas y mutaciones no reintentan automáticamente; cada módulo definirá su política cuando su contrato API y sus reglas de dominio estén READY. El provider no contiene queries ni estado de negocio.

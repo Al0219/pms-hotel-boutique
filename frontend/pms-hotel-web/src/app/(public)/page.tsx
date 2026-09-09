@@ -1,3 +1,3 @@
 export default function PublicShellPage() {
-  return <p>PMS Hotel Boutique — Public shell</p>;
+  return <p className="technical-shell">PMS Hotel Boutique — Public shell</p>;
 }

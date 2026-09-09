@@ -24,3 +24,7 @@ Web usa `fetch` nativo detrás de infraestructura común en `src/lib/http`.
 Autenticación real e inyección de tokens se difieren. No usar `localStorage` como solución predeterminada.
 
 No centralizar todos los endpoints en un archivo gigante y no inventar endpoints durante Sprint 0.
+
+## Implementación Sprint 0
+
+`src/lib/http/client.ts` expone una request genérica que resuelve base URL, headers, body y `AbortSignal`. Sus errores técnicos son `HttpStatusError` y `HttpNetworkError`. No contiene endpoints ni semántica de dominio.

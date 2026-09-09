@@ -27,3 +27,7 @@ success, null, empty, error, offline/detección equivalente, delayed y conflict 
 Todo mock DTO de negocio debe referenciar un `PROVISIONAL API CONTRACT` hasta confirmación Backend.
 
 Sprint 0 prepara infraestructura; no crea fixtures de dominio fuera de una tarea posterior.
+
+## Implementación Sprint 0
+
+La infraestructura está en `src/data/mocks`. `enableMocking` solo inicia el worker en navegador cuando `NEXT_PUBLIC_USE_MOCK_API=true`. El handler técnico de health valida MSW sin representar un endpoint de negocio ni una fixture de dominio.
