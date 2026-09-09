@@ -1,27 +1,29 @@
 # 23 — Mock API
 
-## Objetivo
-Probar pipeline real.
+## Decisión aprobada
+MSW es la estrategia oficial de mock HTTP Web.
 
-## Preferido
-Mock a nivel de red:
+## Pipeline
 
-UI -> Hook -> Service(fetch) -> DTO -> Mapper -> Domain.
+```text
+UI -> Hook -> Service -> fetch -> MSW -> DTO -> Mapper -> Domain -> UI
+```
 
-## No preferido
-Component -> imported perfect mock Domain.
+## Prohibido
+Un componente no puede importar fixtures/mocks directamente.
 
 ## Fixtures
-Usar IDs coherentes del Figma.
+Usar IDs de negocio ficticios y coherentes dentro del mismo escenario, por ejemplo:
+- `GT-HB-01`
+- `RES-2026-0001`
+- `STAY-2026-0001-A`
+
+Los Figma Node IDs NUNCA son runtime IDs ni fixture IDs.
 
 ## Casos
-- success
-- null
-- empty
-- error
-- offline
-- delayed
-- conflict cuando aplica
+success, null, empty, error, offline/detección equivalente, delayed y conflict cuando aplique.
 
-## Provisional contract
-Todo mock DTO debe referenciar contrato provisional documentado.
+## Contrato
+Todo mock DTO de negocio debe referenciar un `PROVISIONAL API CONTRACT` hasta confirmación Backend.
+
+Sprint 0 prepara infraestructura; no crea fixtures de dominio fuera de una tarea posterior.

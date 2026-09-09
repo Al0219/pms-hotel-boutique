@@ -1,10 +1,18 @@
 # 03 — Frontend Architecture
 
-## Stack base
+## Stack aprobado
 - Next.js
 - React
 - App Router
 - TypeScript strict
+- npm
+- fetch nativo
+- TanStack Query
+- MSW
+- Vitest + Testing Library
+- ESLint flat config
+
+Playwright queda diferido hasta `IMP-WEB-1001`.
 
 ## Estructura objetivo
 
@@ -13,6 +21,7 @@ src/
 ├── app/
 │   ├── (public)/
 │   ├── (private)/
+│   ├── providers.tsx
 │   └── globals.css
 ├── modules/
 ├── shared/
@@ -20,7 +29,9 @@ src/
 └── lib/
 ```
 
-## Módulo
+No crear módulos de negocio vacíos por estética.
+
+## Módulo cuando exista uso real
 
 ```text
 modules/<domain>/
@@ -33,51 +44,9 @@ modules/<domain>/
 └── index.ts
 ```
 
-No crear carpetas vacías solo por estética.
-
-## Dominios
-- auth
-- account
-- profile
-- booking
-- checkout
-- reservations
-- stays
-- guests
-- rooms
-- availability
-- rates
-- inventory
-- folio
-- payments
-- receivables
-- housekeeping
-- maintenance
-- companies
-- agencies
-- groups
-- rewards
-- promotions
-- revenue
-- channels
-- integrations
-- reports
-- privacy
-- permissions
-- security
-- properties
-
-## shared
-Solo código genérico y reutilizable.
-
-## lib
-Infraestructura técnica.
-Ejemplo: http client, env config.
-
-## data
-Mock network/fixtures.
+`index.ts` es la API pública cross-module.
 
 ## Dependency direction
-app -> modules -> shared/lib
+`app -> modules -> shared/lib`.
 
-No cross-module internals.
+Reglas exactas: `04_MODULE_BOUNDARIES.md`.

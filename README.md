@@ -12,28 +12,14 @@ frontend/
 backend/
 ```
 
-## Web
-Una sola aplicación Next.js contiene:
-- Web Pública;
-- Web Privada.
-
-## Android
-Aplicación móvil independiente dentro del monorepo.
-
-## Backend
-API/servicios del PMS.
-
 ## Estado
 - Figma V3 finalizado.
 - Backlog de diseño cerrado hasta V3-0201.
-- Siguiente etapa: Sprint 0 de implementación.
+- Backlog de implementación activo: `docs/Backlog_Implementacion_PMS_V1.xlsx`.
+- Siguiente etapa: Sprint 0 técnico Web y Sprint 0 Android según backlog.
 
 ## Antes de desarrollar
+Leer `AGENTS.md`, `docs/`, el backlog y el `AGENTS.md` del subproyecto.
 
-Leer:
-1. `AGENTS.md`
-2. `docs/`
-3. el `AGENTS.md` del subproyecto.
-
-## Importante
-No inicializar Git dentro de subcarpetas.
+## Git
+Un único `.git` en la raíz. No inicializar repositorios dentro de subcarpetas.

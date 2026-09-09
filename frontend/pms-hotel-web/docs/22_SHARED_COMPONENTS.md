@@ -1,19 +1,19 @@
 # 22 — Shared Components
 
 ## Ownership
-Colectivo.
+Colectivo; cambio significativo requiere reviewer adicional.
 
-## Candidatos
-Button, IconButton, Input, Select, Modal, ConfirmDialog, DataTable, StatusBadge, KpiCard, EntityRow, EmptyState, LoadingState, ErrorState, OfflineState, PageHeader, PageContainer.
+## Catálogo potencial
+Button, Input, Modal, ConfirmDialog, DataTable, StatusBadge, EntityRow, EmptyState, LoadingState, ErrorState, OfflineState y PageContainer.
+
+## Regla crítica
+Este catálogo NO autoriza crear componentes anticipadamente.
+Un componente shared nace solo cuando una tarea `READY` del backlog lo solicita y existe reutilización real.
 
 ## Mover a shared solo si
 - semántica genérica;
 - uso real múltiple;
-- API estable;
+- API mínima y estable;
 - reviewer adicional.
 
-## No mover
-Componente de negocio específico solo porque se parece a otro.
-
-## Design system
-Figma V3 es referencia.
+No mover reglas específicas de Reservation, Payment, Availability, Housekeeping, Groups u otro dominio.

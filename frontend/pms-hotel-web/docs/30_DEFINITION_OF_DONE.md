@@ -1,47 +1,34 @@
 # 30 — Definition of Done Web
 
 ## Code
-- TypeScript PASS;
+- TypeScript strict PASS;
 - lint PASS;
-- imports PASS;
-- no unjustified any;
-- no direct fetch UI;
+- typecheck PASS;
+- tests PASS;
+- build PASS;
+- no `any` injustificado;
+- no fetch directo UI;
 - no DTO UI;
-- mappers pure;
+- mappers puros;
 - boundaries PASS.
 
+## Sprint 0
+`npm run check` debe ejecutar lint + typecheck + test + build y terminar PASS.
+
 ## UI
-- Figma PASS;
-- 0 clipping;
-- 0 unintentional overlaps;
-- 0 dead visible controls;
-- responsive where applicable.
+Figma PASS, 0 clipping, 0 overlap no intencional, 0 control visible muerto, responsive cuando aplique.
 
 ## Navigation
-- routes valid;
-- back/continue/confirm correct;
-- no accidental container navigation.
+Rutas válidas; back/continue/confirm correctos; no navegación accidental.
 
 ## States
-- Loading/Error/Empty/Offline/Submitting as applicable.
+Loading/Error/Empty/Offline/Submitting cuando aplique.
 
-## A11y
-- keyboard;
-- focus;
-- labels;
-- contrast;
-- target size;
-- auth.
+## Accessibility
+Keyboard, focus, labels, contraste, target size, auth accessibility.
 
-## Data
-- coherent fixture;
-- calculations;
-- status;
-- property scope.
+## Data/Security
+Fixtures coherentes, cálculos/status/property scope correctos, no secrets/PII innecesaria, no PAN/CVV.
 
-## Tests
-Required layer tests PASS.
-
-## Rule
-Any failed required check:
-PENDING -> fix -> re-QA -> only then COMPLETE.
+## Gate
+Si falla un requisito: vuelve a EN_PROGRESO, corrige y re-QA. Solo después `COMPLETADA`.

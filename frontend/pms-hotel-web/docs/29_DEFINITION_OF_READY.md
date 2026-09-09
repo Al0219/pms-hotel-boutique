@@ -1,25 +1,30 @@
 # 29 — Definition of Ready
 
-Una tarea Web está READY si tiene:
-
+Una tarea Web está READY si tiene, cuando aplique:
 - ID;
 - descripción;
-- owner;
+- owner/reviewer;
 - módulo;
-- Figma;
+- Figma/fuente;
 - route;
-- acceptance criteria;
+- Acceptance Criteria;
 - data needs;
 - DTO real/provisional;
-- permissions;
-- property scope;
+- permissions/property scope;
 - remote states;
 - dependencies;
 - shared components;
-- tests;
-- reviewer cross-domain si aplica.
+- tests.
 
-Si falta información crítica:
-`BLOCKED / NEEDS CLARIFICATION`.
+## Excepción de infraestructura
+Para tareas puramente técnicas de Sprint 0 es válido:
 
+`Route: N/A — infraestructura`
+
+También puede no existir DTO/permission/property scope si la tarea no toca esos conceptos; debe quedar explícito como `N/A`, no asumido.
+
+## Gate
+Todas las dependencias deben estar `COMPLETADA` antes de pasar a READY, salvo cambio explícito aprobado en backlog.
+
+Si falta información crítica: `BLOQUEADA / NEEDS CLARIFICATION`.
 No implementar suponiendo.

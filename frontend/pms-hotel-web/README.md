@@ -1,18 +1,25 @@
 # PMS Hotel Boutique — Web
 
-Aplicación Next.js que contiene:
-- Web Pública;
-- Web Privada.
+Aplicación Next.js única para Web Pública y Web Privada.
 
-## Arquitectura
-- App Router
-- `(public)` y `(private)`
+## Sprint 0 aprobado
+- Next.js App Router
 - TypeScript strict
-- módulos por dominio
-- Service -> DTO -> Mapper -> Domain -> UI
+- npm
+- `(public)` / `(private)`
+- fetch nativo
+- TanStack Query
+- MSW
+- Vitest + Testing Library
+- ESLint flat + boundaries
+- CSS Custom Properties desde Figma
+- Playwright diferido hasta `IMP-WEB-1001`
 
-## Estado
-Aún no implementar pantallas hasta aprobar Sprint 0.
+## Backlog canónico
+`../../docs/Backlog_Implementacion_PMS_V1.xlsx`
 
 ## Antes de trabajar
-Leer `AGENTS.md`.
+Leer `AGENTS.md`, el backlog y los documentos indicados por la tarea.
+
+## Regla
+No crear features, módulos o componentes shared fuera de una tarea `READY`.

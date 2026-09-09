@@ -1,29 +1,26 @@
 # 09 — Service Rules
 
-## Service
-Única capa de dominio que dispara request.
+## Decisión aprobada
+Web usa `fetch` nativo detrás de infraestructura común en `src/lib/http`.
 
-## MUST
+## Service MUST
+- disparar request mediante el cliente común;
 - retornar DTO;
 - tipar request/response;
-- manejar HTTP status técnico;
-- usar cliente común aprobado;
-- propagar error técnico tipado.
+- manejar status/errores técnicos;
+- mantener detalles de transporte fuera de UI.
 
-## MUST NOT
+## Service MUST NOT
 - mapear Domain;
 - mostrar toast;
 - navegar;
-- JSX;
+- devolver JSX;
 - decidir copy;
-- formatear.
+- formatear para UI.
 
-## lib/http
-Puede centralizar:
-- base URL;
-- headers;
-- timeout;
-- auth token injection;
-- correlation headers si aplica.
+## Sprint 0
+`lib/http` puede centralizar base URL, headers, AbortSignal y errores HTTP técnicos.
 
-No centralizar todos los endpoints en un archivo gigante.
+Autenticación real e inyección de tokens se difieren. No usar `localStorage` como solución predeterminada.
+
+No centralizar todos los endpoints en un archivo gigante y no inventar endpoints durante Sprint 0.
