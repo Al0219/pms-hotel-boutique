@@ -1,8 +1,9 @@
 # 01 — Figma Screen Catalog Android
 
-Section final:
-`Implementation Ready — Android V2 + V3`
-Node ID conocido: `238:132`.
+Fuente canónica:
+`238:132 — Implementation Ready — Android V2 + V3`.
+
+`31:132 — Reference — Android Early Journey` es únicamente una referencia histórica. No autoriza rutas, pantallas ni alcance funcional del backlog actual.
 
 ## 01 Estancia y servicios
 - estancia;
@@ -25,3 +26,5 @@ Estados universales.
 
 ## Regla
 No inventar pantalla que contradiga Figma.
+
+Los Node IDs son solo trazabilidad documental; nunca son identificadores runtime.
