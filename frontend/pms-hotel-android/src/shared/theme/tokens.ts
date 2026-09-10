@@ -8,13 +8,20 @@ export const tokens = {
     surface: '#F8F7F3',
     surfaceMuted: '#F1F0EC',
     surfaceAccent: '#EDF1EA',
+    border: '#E2E1DC',
+    pendingSurface: '#F7ECD8',
+    pendingText: '#A8732A',
     white: '#FFFFFF',
     black: '#000000',
   },
   typography: {
     family: 'Inter',
     size: {
+      caption: 11,
       body: 12,
+      bodyMedium: 13,
+      label: 15,
+      sectionTitle: 18,
       title: 26,
     },
   },
@@ -28,7 +35,8 @@ export const tokens = {
   },
   radius: {
     control: 10,
-    card: 14,
+    chip: 12,
+    card: 16,
   },
   layout: {
     screenInset: 24,
