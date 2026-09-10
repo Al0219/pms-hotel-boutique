@@ -1,12 +1,5 @@
-import { Text, View } from 'react-native';
+import { StayHomeScreen } from '@/modules/stay/presentation/StayHomeScreen';
 
-import { foundationStyles } from '@/shared/theme/styles';
-
-export default function GuestFoundationRoute() {
-  return (
-    <View style={foundationStyles.screen} testID="guest-foundation-route">
-      <Text style={foundationStyles.title}>Android Foundation</Text>
-      <Text style={foundationStyles.body}>Technical routing validation</Text>
-    </View>
-  );
+export default function GuestStayHomeRoute() {
+  return <StayHomeScreen />;
 }
