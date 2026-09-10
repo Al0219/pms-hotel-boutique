@@ -38,6 +38,26 @@ Append-only/compensatory.
 ### DEC-G-012 — Integrations
 Idempotentes y trazables.
 
+### DEC-G-013 — Contratos frontend-first para features sin Backend
+
+**Fecha:** 2026-09-10
+**Status:** PROPOSED — pendiente de aprobación mediante Change Control.
+**Responsable de aprobación:** pendiente de designación.
+
+**Contexto:** Web y Android se implementarán antes de diseñar e implementar Backend. Algunas features frontend necesitan datos estables para construir UI, dominio frontend, mapper, estados y pruebas durante esa fase.
+
+**Problema:** Exigir una API Backend inexistente bloquea el trabajo frontend; tratar mocks como API obligaría prematuramente decisiones de transporte, seguridad, persistencia y negocio que corresponden a Backend.
+
+**Decisión propuesta:** Durante la fase frontend-first, una feature Web o Android podrá basarse en un contrato explícito de datos/mocks frontend, aprobado para su tarea. El contrato fija solo los datos, escenarios y boundaries necesarios para la UI, el dominio frontend, mapper y pruebas. No constituye contrato API Backend ni define endpoints, HTTP, auth, permisos, persistencia, tablas o reglas Backend.
+
+**Consecuencias propuestas:**
+- Backend será la autoridad de la API real cuando inicie su fase.
+- DTO/Mapper absorberán la futura API sin permitir DTOs en UI.
+- El contrato frontend no puede inventar reglas de negocio no confirmadas por producto, Figma, reglas de dominio o backlog.
+- El DoR de una tarea afectada solo puede cambiarse mediante el workflow de Change Control y aprobación correspondiente.
+
+**Alternativas consideradas:** Mantener el bloqueo hasta diseñar Backend completo; o declarar los mocks como API anticipada. Ambas alternativas se rechazan provisionalmente porque contradicen la estrategia frontend-first o congelan decisiones Backend sin su fase de diseño.
+
 ## Web — Sprint 0 aprobadas
 
 ### DEC-W-001 — Framework
