@@ -4,6 +4,7 @@ All future Android modules are owned by ANDROID-1.
 
 | Module | Cross-app Web domain to review |
 | --- | --- |
+| navigation | Shell Guest V3 transversal; WEB-3 es reviewer principal. Consultar WEB-2 cuando afecte semántica o navegación futura de Cuenta. |
 | auth | auth, account, profile |
 | stay | stays, reservations, rooms |
 | services | concierge, housekeeping |

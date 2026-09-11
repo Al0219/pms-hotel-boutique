@@ -143,5 +143,22 @@ La fuente visual y funcional canónica para Android es `238:132 — Implementati
 
 **Uso nativo local:** Android Studio se puede usar para emulador, debugging y compilación local. Cuando sea necesario, `npx expo prebuild` o `npx expo run:android` generan el proyecto nativo efímero sin autorizar su versionado.
 
+### DEC-A-004 — Android Guest Navigation Shell V3
+
+**Fecha:** 2026-09-10
+**Status:** APPROVED
+**Owner:** ANDROID-1
+**Reviewer principal:** WEB-3. WEB-2 participa como consulta adicional cuando la navegación futura de Cuenta requiera validar su semántica.
+
+**Decisión:** `IMP-AND-0100` implementará un único shell Guest V3 reutilizable para `Servicios · Chat · Valet · Cuenta`, conforme a `238:132 — Implementation Ready — Android V2 + V3`. Sus rutas objetivo conceptuales son `/services`, `/chat`, `/valet` y `/account`. Una ruta objetivo no autoriza crear su archivo ni su feature.
+
+**Destinos no implementados:** Las cuatro tabs permanecen visibles, pero están disabled hasta que su feature real esté autorizada e implementada. No navegan a rutas ficticias ni a placeholders. El handoff técnico `/services` de `IMP-AND-0102` no convierte Servicios en una feature V3 disponible.
+
+**Selección, accesibilidad y navegación:** `usePathname()` es la única fuente de verdad para la tab activa. Una tab está activa en su `basePath` y sus hijas. No existe store global para selección. El shell usa la semántica accesible soportada por React Native; cada tab declara su label visible, `accessibilityRole="tab"`, estado `selected` cuando aplica y estado `disabled` sin handler ejecutable cuando no está disponible. El objetivo táctil mínimo es 44 × 44 dp. Un cambio entre tabs disponibles usa `router.replace(basePath)`; las rutas hijas usan `router.push(childPath)` y Android Back conserva el stack estándar, sin ciclos artificiales ni stacks independientes por tab. Tocar la tab activa es un no-op.
+
+**Montaje y límites:** Se autoriza crear `frontend/pms-hotel-android/src/modules/navigation` como módulo transversal durante `IMP-AND-0100`. Aloja configuración declarativa, shell/footbar compartido, resolución pura de tab activa, integración Expo Router, estados enabled/disabled y accesibilidad. No contiene lógica de Stay, Services, Chat, Valet ni Account. El shell no envuelve globalmente `(guest)`, no monta sobre Home V2 y no modifica `IMP-AND-0102` ni el handoff `/services`. Su primer consumidor productivo será una feature V3 autorizada.
+
+**Coexistencia V2/V3:** Home V2 conserva temporalmente `Inicio · Solicitudes · Explorar · Hotel`. No se agrega Inicio al shell V3. Su futura migración exige una tarea y Change Control independientes.
+
 ## Nueva decisión futura
 Registrar ID, fecha, status, contexto, problema, decisión, alternativas, consecuencias y responsables. No borrar historia; usar `SUPERSEDED`.
