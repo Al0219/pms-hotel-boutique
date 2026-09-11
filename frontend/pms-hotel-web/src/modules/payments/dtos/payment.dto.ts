@@ -99,3 +99,10 @@ export interface AuthorizePaymentRequestDto {
   card_brand?: string;
 }
 
+export interface CapturePaymentRequestDto {
+  amount: string;
+  currency?: string;
+  reason?: string;
+}
+
+

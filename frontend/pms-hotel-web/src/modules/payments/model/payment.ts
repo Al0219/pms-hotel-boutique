@@ -104,3 +104,10 @@ export interface AuthorizePaymentRequest {
   cardBrand?: string;
 }
 
+export interface CapturePaymentRequest {
+  amount: number;
+  currency?: string;
+  reason?: string;
+}
+
+

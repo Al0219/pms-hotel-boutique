@@ -2,6 +2,7 @@ import { DomainMappingError } from "@/lib/errors";
 
 import type {
   AuthorizePaymentRequestDto,
+  CapturePaymentRequestDto,
   PaymentAuditEntryDto,
   PaymentDto,
   PaymentGuaranteeRequestDto,
@@ -13,6 +14,7 @@ import type {
 } from "../dtos/payment.dto";
 import type {
   AuthorizePaymentRequest,
+  CapturePaymentRequest,
   Payment,
   PaymentAuditEntry,
   PaymentGuaranteeRequest,
@@ -271,4 +273,17 @@ export function mapAuthorizePaymentRequestToDto(request: AuthorizePaymentRequest
     card_brand: request.cardBrand?.trim(),
   };
 }
+
+export function mapCapturePaymentRequestToDto(request: CapturePaymentRequest): CapturePaymentRequestDto {
+  if (!request || !Number.isFinite(request.amount) || request.amount <= 0) {
+    throw new DomainMappingError("INVALID_CAPTURE_AMOUNT");
+  }
+
+  return {
+    amount: request.amount.toFixed(2),
+    currency: request.currency?.trim().toUpperCase(),
+    reason: request.reason?.trim(),
+  };
+}
+
 

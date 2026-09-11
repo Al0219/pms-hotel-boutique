@@ -5,6 +5,7 @@
 
 export type {
   AuthorizePaymentRequestDto,
+  CapturePaymentRequestDto,
   PaymentAuditEntryDto,
   PaymentDto,
   PaymentGuaranteeRequestDto,
@@ -17,6 +18,7 @@ export type {
 
 export type {
   AuthorizePaymentRequest,
+  CapturePaymentRequest,
   Payment,
   PaymentAuditEntry,
   PaymentGuaranteeRequest,
@@ -29,6 +31,7 @@ export type {
 
 export {
   mapAuthorizePaymentRequestToDto,
+  mapCapturePaymentRequestToDto,
   mapPaymentAuditEntryDtoToDomain,
   mapPaymentDtoToDomain,
   mapPaymentGuaranteeDtoToDomain,
@@ -39,6 +42,7 @@ export {
 
 export {
   authorizePaymentDto,
+  capturePaymentDto,
   createPaymentGuaranteeDto,
   fetchPaymentByIdDto,
   fetchPaymentsDto,
@@ -53,3 +57,8 @@ export {
   PaymentAuthorizeModal,
   type PaymentAuthorizeModalProps,
 } from "./components/payment-authorize-modal";
+
+export {
+  PaymentCaptureModal,
+  type PaymentCaptureModalProps,
+} from "./components/payment-capture-modal";

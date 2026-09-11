@@ -72,3 +72,20 @@ export async function authorizePaymentDto(
   });
 }
 
+export async function capturePaymentDto(
+  paymentId: string,
+  payload: import("../dtos/payment.dto").CapturePaymentRequestDto,
+  signal?: AbortSignal,
+): Promise<PaymentDto> {
+  return httpRequest<PaymentDto>({
+    path: `/api/v1/private/payments/${encodeURIComponent(paymentId)}/capture`,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+    signal,
+  });
+}
+
+
