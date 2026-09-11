@@ -1,6 +1,6 @@
 /**
- * PROVISIONAL API CONTRACT - Folio & Charges
- * Corresponde a la tarea IMP-WEB-0401 (WEB-4).
+ * PROVISIONAL API CONTRACT - Folio, Charges, Routing & Split
+ * Corresponde a las tareas IMP-WEB-0401 e IMP-WEB-0402 (WEB-4).
  * Debe validarse contra Backend antes de marcar CONFIRMED.
  */
 
@@ -27,6 +27,7 @@ export interface FolioChargeDto {
   posted_at: string;
   posted_by: string;
   is_voided?: boolean;
+  original_split_charge_id?: string | null;
 }
 
 export interface FolioPaymentEntryDto {
@@ -37,6 +38,39 @@ export interface FolioPaymentEntryDto {
   method: string;
   paid_at: string;
   reference: string | null;
+}
+
+export interface ChargeRoutingRuleDto {
+  rule_id: string;
+  source_folio_id: string;
+  target_folio_id: string;
+  category: FolioChargeCategoryDto;
+  percentage: number;
+  created_at: string;
+}
+
+export interface CreateRoutingRuleRequestDto {
+  target_folio_id: string;
+  category: FolioChargeCategoryDto;
+  percentage?: number;
+}
+
+export interface SplitChargePortionDto {
+  target_folio_id: string;
+  amount: string;
+  description?: string;
+}
+
+export interface SplitChargeRequestDto {
+  charge_id: string;
+  portions: SplitChargePortionDto[];
+}
+
+export interface SplitChargeResultDto {
+  original_charge_id: string;
+  source_folio_id: string;
+  created_charges: FolioChargeDto[];
+  updated_source_folio: FolioDto;
 }
 
 export interface FolioDto {
@@ -54,5 +88,6 @@ export interface FolioDto {
   balance: string;
   charges: FolioChargeDto[];
   payments: FolioPaymentEntryDto[];
+  routing_rules?: ChargeRoutingRuleDto[];
   created_at: string;
 }

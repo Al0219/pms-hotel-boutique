@@ -10,8 +10,14 @@ import {
 import {
   fetchFolioByIdDto,
   FolioDetailCard,
+  FolioSplitModal,
   mapFolioDtoToDomain,
+  mapSplitChargeRequestToDto,
+  mapSplitChargeResultDtoToDomain,
+  splitFolioChargeDto,
   type Folio,
+  type FolioCharge,
+  type SplitChargePortion,
 } from "@/modules/folio";
 import {
   createPaymentGuaranteeDto,
@@ -24,6 +30,7 @@ export default function PublicShellPage() {
   const [availabilityResult, setAvailabilityResult] = useState<AvailabilitySearchResult | null>(null);
   const [paymentResult, setPaymentResult] = useState<PaymentGuaranteeResult | null>(null);
   const [folioResult, setFolioResult] = useState<Folio | null>(null);
+  const [chargeToSplit, setChargeToSplit] = useState<FolioCharge | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -88,6 +95,26 @@ export default function PublicShellPage() {
     }
   }
 
+  async function handleConfirmSplit(portions: SplitChargePortion[]) {
+    if (!folioResult || !chargeToSplit) return;
+    setLoading("split");
+    setErrorMsg(null);
+    try {
+      const splitRequestDto = mapSplitChargeRequestToDto({
+        chargeId: chargeToSplit.chargeId,
+        portions,
+      });
+      const resultDto = await splitFolioChargeDto(folioResult.folioId, splitRequestDto);
+      const domainResult = mapSplitChargeResultDtoToDomain(resultDto);
+      setFolioResult(domainResult.updatedSourceFolio);
+      setChargeToSplit(null);
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : "Error al dividir el cargo");
+    } finally {
+      setLoading(null);
+    }
+  }
+
   return (
     <main style={{ maxWidth: "800px", margin: "0 auto", padding: "2rem 1rem", fontFamily: "system-ui, sans-serif" }}>
       <header style={{ marginBottom: "2rem", borderBottom: "1px solid #e5e7eb", paddingBottom: "1rem" }}>
@@ -95,7 +122,7 @@ export default function PublicShellPage() {
           PMS Hotel Boutique — Consola de Pruebas WEB-4
         </h1>
         <p style={{ color: "#6b7280", fontSize: "0.95rem" }}>
-          Prueba interactiva de los servicios y componentes implementados para <strong>Disponibilidad (IMP-WEB-0102)</strong>, <strong>Garantías de Pago (IMP-WEB-0109)</strong>, <strong>StatusBadge (IMP-WEB-S401)</strong> y <strong>Folio Avanzado (IMP-WEB-0401)</strong>.
+          Prueba interactiva de los servicios y componentes implementados para <strong>Disponibilidad (IMP-WEB-0102)</strong>, <strong>Garantías de Pago (IMP-WEB-0109)</strong>, <strong>StatusBadge (IMP-WEB-S401)</strong>, <strong>Folio Avanzado (IMP-WEB-0401)</strong> y <strong>Routing & Split (IMP-WEB-0402)</strong>.
         </p>
       </header>
 
@@ -220,13 +247,13 @@ export default function PublicShellPage() {
         )}
       </section>
 
-      {/* Sección 3: Folio Avanzado */}
+      {/* Sección 3: Folio Avanzado y Split */}
       <section style={{ backgroundColor: "#f9fafb", padding: "1.5rem", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
         <h2 style={{ fontSize: "1.25rem", fontWeight: "600", color: "#1f2937", marginBottom: "0.75rem" }}>
-          3. Folio Avanzado y StatusBadge (`IMP-WEB-S401` e `IMP-WEB-0401`)
+          3. Folio Avanzado, StatusBadge y Split (`IMP-WEB-S401`, `0401` y `0402`)
         </h2>
         <p style={{ color: "#4b5563", fontSize: "0.9rem", marginBottom: "1rem" }}>
-          Consulta el estado de cuenta y cargos de habitación con el componente `FolioDetailCard` y badges de estado semánticos.
+          Consulta el estado de cuenta y haz clic en el botón <strong>&quot;Dividir&quot;</strong> de cualquier cargo para simular un Split entre folios.
         </p>
 
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1rem" }}>
@@ -243,6 +270,15 @@ export default function PublicShellPage() {
           <FolioDetailCard
             folio={folioResult}
             onApplyPayment={() => alert("Modal para registrar cobro en caja o terminal POS")}
+            onSplitCharge={(charge) => setChargeToSplit(charge)}
+          />
+        )}
+
+        {chargeToSplit && (
+          <FolioSplitModal
+            charge={chargeToSplit}
+            onSplit={handleConfirmSplit}
+            onClose={() => setChargeToSplit(null)}
           />
         )}
       </section>

@@ -1,6 +1,10 @@
 import { http, HttpResponse } from "msw";
 
-import type { FolioDto } from "@/modules/folio/dtos/folio.dto";
+import type {
+  FolioDto,
+  SplitChargeRequestDto,
+  SplitChargeResultDto,
+} from "@/modules/folio/dtos/folio.dto";
 import type {
   PaymentGuaranteeRequestDto,
   PaymentGuaranteeResponseDto,
@@ -146,6 +150,16 @@ export const mockGuestFolioDto: FolioDto = {
       reference: "ref_stripe_8871",
     },
   ],
+  routing_rules: [
+    {
+      rule_id: "rule_01",
+      source_folio_id: "fol_guest_101",
+      target_folio_id: "fol_company_202",
+      category: "ROOM_NIGHT",
+      percentage: 100,
+      created_at: "2026-10-01T14:00:00.000Z",
+    },
+  ],
   created_at: "2026-10-01T14:00:00.000Z",
 };
 
@@ -215,6 +229,49 @@ function handleGetFolioById({ params }: { params: Record<string, string | readon
   });
 }
 
+async function handleSplitChargeRequest({ params, request }: { params: Record<string, string | readonly string[] | undefined>; request: Request }) {
+  const folioId = typeof params.id === "string" ? params.id : "fol_guest_101";
+  const body = (await request.json()) as SplitChargeRequestDto;
+
+  if (body.charge_id === "error_charge") {
+    return HttpResponse.json({ error: "Split Failed" }, { status: 500 });
+  }
+
+  const createdCharges = body.portions.map((p, idx) => ({
+    charge_id: `chg_split_${Date.now()}_${idx + 1}`,
+    category: "RESTAURANT" as const,
+    description: p.description || `Porción dividida ${idx + 1}`,
+    amount: p.amount,
+    currency: "USD",
+    posted_at: new Date().toISOString(),
+    posted_by: "staff_frontdesk",
+    original_split_charge_id: body.charge_id,
+  }));
+
+  const remainingCharges = mockGuestFolioDto.charges.filter((c) => c.charge_id !== body.charge_id);
+  const updatedCharges = [...remainingCharges, createdCharges[0]];
+
+  const totalChargesNum = updatedCharges.reduce((sum, c) => sum + Number(c.amount), 0);
+  const totalPaymentsNum = mockGuestFolioDto.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+
+  const updatedSourceFolio: FolioDto = {
+    ...mockGuestFolioDto,
+    folio_id: folioId,
+    charges: updatedCharges,
+    total_charges: totalChargesNum.toFixed(2),
+    balance: (totalChargesNum - totalPaymentsNum).toFixed(2),
+  };
+
+  const response: SplitChargeResultDto = {
+    original_charge_id: body.charge_id,
+    source_folio_id: folioId,
+    created_charges: createdCharges,
+    updated_source_folio: updatedSourceFolio,
+  };
+
+  return HttpResponse.json(response);
+}
+
 export const handlers = [
   http.get("http://pms.test/__msw/health", () => HttpResponse.json({ status: "ok" })),
   http.get("http://pms.test/__msw/missing", () => HttpResponse.text(null, { status: 404 })),
@@ -231,4 +288,6 @@ export const handlers = [
   http.post("/api/v1/public/payments/guarantee", handlePaymentGuaranteeRequest),
   http.get("http://pms.test/api/v1/private/folios/:id", handleGetFolioById),
   http.get("/api/v1/private/folios/:id", handleGetFolioById),
+  http.post("http://pms.test/api/v1/private/folios/:id/split-charge", handleSplitChargeRequest),
+  http.post("/api/v1/private/folios/:id/split-charge", handleSplitChargeRequest),
 ];

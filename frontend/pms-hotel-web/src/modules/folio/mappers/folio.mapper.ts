@@ -1,20 +1,28 @@
 import { DomainMappingError } from "@/lib/errors";
 
 import type {
+  ChargeRoutingRuleDto,
   FolioChargeCategoryDto,
   FolioChargeDto,
   FolioDto,
   FolioPaymentEntryDto,
   FolioStatusDto,
   FolioTypeDto,
+  SplitChargePortionDto,
+  SplitChargeRequestDto,
+  SplitChargeResultDto,
 } from "../dtos/folio.dto";
 import type {
+  ChargeRoutingRule,
   Folio,
   FolioCharge,
   FolioChargeCategory,
   FolioPaymentEntry,
   FolioStatus,
   FolioType,
+  SplitChargePortion,
+  SplitChargeRequest,
+  SplitChargeResult,
 } from "../model/folio";
 
 const VALID_FOLIO_TYPES: ReadonlySet<string> = new Set<FolioTypeDto>([
@@ -79,6 +87,7 @@ export function mapFolioChargeDtoToDomain(dto: FolioChargeDto): FolioCharge {
     postedAt,
     postedBy: (dto.posted_by || "system").trim(),
     isVoided: Boolean(dto.is_voided),
+    originalSplitChargeId: dto.original_split_charge_id ?? null,
   };
 }
 
@@ -108,6 +117,78 @@ export function mapFolioPaymentEntryDtoToDomain(dto: FolioPaymentEntryDto): Foli
   };
 }
 
+export function mapChargeRoutingRuleDtoToDomain(dto: ChargeRoutingRuleDto): ChargeRoutingRule {
+  if (!dto || typeof dto.rule_id !== "string" || !dto.rule_id.trim()) {
+    throw new DomainMappingError("MISSING_ROUTING_RULE_ID");
+  }
+  if (!dto.category || !VALID_CHARGE_CATEGORIES.has(dto.category)) {
+    throw new DomainMappingError("INVALID_ROUTING_CATEGORY");
+  }
+  const percentage = Number(dto.percentage);
+  if (!Number.isFinite(percentage) || percentage <= 0 || percentage > 100) {
+    throw new DomainMappingError("INVALID_ROUTING_PERCENTAGE");
+  }
+  const createdAt = new Date(dto.created_at);
+  if (Number.isNaN(createdAt.getTime())) {
+    throw new DomainMappingError("INVALID_ROUTING_CREATED_AT");
+  }
+
+  return {
+    ruleId: dto.rule_id.trim(),
+    sourceFolioId: (dto.source_folio_id || "").trim(),
+    targetFolioId: (dto.target_folio_id || "").trim(),
+    category: dto.category as FolioChargeCategory,
+    percentage,
+    createdAt,
+  };
+}
+
+export function mapSplitChargePortionToDto(portion: SplitChargePortion): SplitChargePortionDto {
+  if (!portion || typeof portion.targetFolioId !== "string" || !portion.targetFolioId.trim()) {
+    throw new DomainMappingError("MISSING_SPLIT_TARGET_FOLIO");
+  }
+  if (!Number.isFinite(portion.amount) || portion.amount <= 0) {
+    throw new DomainMappingError("INVALID_SPLIT_PORTION_AMOUNT");
+  }
+  return {
+    target_folio_id: portion.targetFolioId.trim(),
+    amount: portion.amount.toFixed(2),
+    description: portion.description?.trim(),
+  };
+}
+
+export function mapSplitChargeRequestToDto(request: SplitChargeRequest): SplitChargeRequestDto {
+  if (!request || typeof request.chargeId !== "string" || !request.chargeId.trim()) {
+    throw new DomainMappingError("MISSING_SPLIT_CHARGE_ID");
+  }
+  if (!Array.isArray(request.portions) || request.portions.length < 2) {
+    throw new DomainMappingError("MINIMUM_TWO_PORTIONS_REQUIRED");
+  }
+  return {
+    charge_id: request.chargeId.trim(),
+    portions: request.portions.map(mapSplitChargePortionToDto),
+  };
+}
+
+export function mapSplitChargeResultDtoToDomain(dto: SplitChargeResultDto): SplitChargeResult {
+  if (!dto || typeof dto.original_charge_id !== "string" || !dto.original_charge_id.trim()) {
+    throw new DomainMappingError("MISSING_ORIGINAL_CHARGE_ID");
+  }
+
+  const createdCharges = Array.isArray(dto.created_charges)
+    ? dto.created_charges.map(mapFolioChargeDtoToDomain)
+    : [];
+
+  const updatedSourceFolio = mapFolioDtoToDomain(dto.updated_source_folio);
+
+  return {
+    originalChargeId: dto.original_charge_id.trim(),
+    sourceFolioId: (dto.source_folio_id || "").trim(),
+    createdCharges,
+    updatedSourceFolio,
+  };
+}
+
 export function mapFolioDtoToDomain(dto: FolioDto): Folio {
   if (!dto || typeof dto.folio_id !== "string" || !dto.folio_id.trim()) {
     throw new DomainMappingError("MISSING_FOLIO_ID");
@@ -123,6 +204,7 @@ export function mapFolioDtoToDomain(dto: FolioDto): Folio {
 
   const charges = Array.isArray(dto.charges) ? dto.charges.map(mapFolioChargeDtoToDomain) : [];
   const payments = Array.isArray(dto.payments) ? dto.payments.map(mapFolioPaymentEntryDtoToDomain) : [];
+  const routingRules = Array.isArray(dto.routing_rules) ? dto.routing_rules.map(mapChargeRoutingRuleDtoToDomain) : undefined;
 
   const createdAt = new Date(dto.created_at);
   if (Number.isNaN(createdAt.getTime())) {
@@ -151,6 +233,7 @@ export function mapFolioDtoToDomain(dto: FolioDto): Folio {
     balance: calculatedBalance,
     charges,
     payments,
+    routingRules,
     createdAt,
   };
 }

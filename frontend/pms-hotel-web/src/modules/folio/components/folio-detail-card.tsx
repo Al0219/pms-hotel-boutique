@@ -4,11 +4,12 @@ import React from "react";
 
 import { StatusBadge, type StatusBadgeVariant } from "@/shared/components";
 
-import type { Folio, FolioStatus } from "../model/folio";
+import type { Folio, FolioCharge, FolioStatus } from "../model/folio";
 
 export interface FolioDetailCardProps {
   folio: Folio;
   onApplyPayment?: () => void;
+  onSplitCharge?: (charge: FolioCharge) => void;
 }
 
 const FOLIO_STATUS_VARIANT_MAP: Record<FolioStatus, StatusBadgeVariant> = {
@@ -17,7 +18,11 @@ const FOLIO_STATUS_VARIANT_MAP: Record<FolioStatus, StatusBadgeVariant> = {
   CLOSED: "neutral",
 };
 
-export function FolioDetailCard({ folio, onApplyPayment }: FolioDetailCardProps) {
+export function FolioDetailCard({
+  folio,
+  onApplyPayment,
+  onSplitCharge,
+}: FolioDetailCardProps) {
   const statusVariant = FOLIO_STATUS_VARIANT_MAP[folio.status] || "neutral";
 
   return (
@@ -93,6 +98,14 @@ export function FolioDetailCard({ folio, onApplyPayment }: FolioDetailCardProps)
         </div>
       </div>
 
+      {/* Reglas de Routing activas */}
+      {folio.routingRules && folio.routingRules.length > 0 && (
+        <div style={{ marginBottom: "1.25rem", padding: "0.6rem 0.85rem", backgroundColor: "#eff6ff", borderRadius: "6px", border: "1px solid #bfdbfe", fontSize: "0.8rem", color: "#1e40af" }}>
+          <strong>Reglas de Enrutamiento activas: </strong>
+          {folio.routingRules.map((r) => `${r.category} (${r.percentage}% hacia ${r.targetFolioId})`).join(", ")}
+        </div>
+      )}
+
       {/* Desglose de cargos */}
       <section style={{ marginBottom: "1.5rem" }}>
         <h4 style={{ fontSize: "0.95rem", fontWeight: "600", color: "#1f2937", marginBottom: "0.5rem" }}>
@@ -123,15 +136,40 @@ export function FolioDetailCard({ folio, onApplyPayment }: FolioDetailCardProps)
                   <span style={{ marginLeft: "0.5rem", fontSize: "0.75rem", color: "#6b7280" }}>
                     ({charge.category})
                   </span>
+                  {charge.originalSplitChargeId && (
+                    <span style={{ marginLeft: "0.5rem", fontSize: "0.75rem", color: "#7c3aed", fontWeight: "500" }}>
+                      [Split de {charge.originalSplitChargeId}]
+                    </span>
+                  )}
                   {charge.isVoided && (
                     <StatusBadge variant="error" size="sm" style={{ marginLeft: "0.5rem" }}>
                       Anulado
                     </StatusBadge>
                   )}
                 </div>
-                <span style={{ fontWeight: "600", fontSize: "0.875rem", color: charge.isVoided ? "#9ca3af" : "#111827" }}>
-                  ${charge.amount.toFixed(2)} {charge.currency}
-                </span>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                  <span style={{ fontWeight: "600", fontSize: "0.875rem", color: charge.isVoided ? "#9ca3af" : "#111827" }}>
+                    ${charge.amount.toFixed(2)} {charge.currency}
+                  </span>
+                  {onSplitCharge && !charge.isVoided && folio.status === "OPEN" && (
+                    <button
+                      onClick={() => onSplitCharge(charge)}
+                      style={{
+                        padding: "0.2rem 0.5rem",
+                        backgroundColor: "#f3f4f6",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "4px",
+                        fontSize: "0.75rem",
+                        cursor: "pointer",
+                        color: "#374151",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Dividir
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
