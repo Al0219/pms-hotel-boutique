@@ -1,32 +1,32 @@
-# 16 — Propuesta de contrato frontend de datos/mocks para Servicios
+# 16 — Contrato frontend de datos/mocks aprobado para Servicios
 
-**Estado:** PROPUESTA PENDIENTE DE REVISIÓN Y APROBACIÓN. No es contrato API Backend, DEC aprobada ni autorización para iniciar `IMP-AND-0103`.
+**Estado:** **APPROVED FRONTEND DATA/MOCK CONTRACT — IMP-AND-0103**.
 
-**Tarea relacionada:** `IMP-AND-0103` permanece `PENDIENTE`. Su DoR vigente fue aprobado mediante Change Control como contrato frontend de datos/mocks, pero sigue incumplido hasta completar y aprobar el contrato mock y los estados visuales requeridos.
+**Tarea relacionada:** `IMP-AND-0103` puede pasar a `READY` una vez que el backlog registre esta aprobación. El DoD no está iniciado: este documento no autoriza código, una rama feature, tests de la feature ni el cambio de la tarea a `EN_PROGRESO`.
 
 ## Propósito y límite
 
-Web y Android se implementan antes que Backend. Esta propuesta define únicamente el contrato de datos/mocks que Android necesitaría para construir y probar la UI de Servicios sin convertir fixtures en una API anticipada.
+Web y Android se implementan antes que Backend. De acuerdo con `DEC-G-013`, este contrato fija únicamente los datos de fixture/mock, escenarios de UI y boundaries que Android necesita para implementar y probar Servicios durante la fase frontend-first.
 
-El contrato futuro de Backend se diseñará e implementará después. Cuando exista, Backend será autoridad de su API y Android adaptará esa forma mediante DTO/Mapper sin exponer DTOs a UI.
+No es un contrato API Backend. No define endpoints, métodos HTTP, payloads Backend, auth, permisos, idempotencia, persistencia, entidades, migraciones, tablas, auditoría, status codes ni reglas Backend. Cuando exista Backend, será autoridad de su API y Android adaptará esa forma con DTO/Mapper sin exponer DTOs a UI.
 
-Este documento no fija endpoints, métodos HTTP, payloads Backend, auth, permisos, idempotencia Backend, persistencia, entidades, migraciones, tablas, auditoría, status codes, reglas Backend ni contratos cross-app nuevos.
+`app/(guest)/services.tsx` permanece como handoff técnico de `IMP-AND-0102` hasta que `IMP-AND-0103` sea iniciada de forma autorizada.
 
-`app/(guest)/services.tsx` permanece como handoff técnico de `IMP-AND-0102`; este documento no autoriza modificarlo ni implementar la feature.
+## Evidencia visual aprobada
 
-## Fuentes y límites confirmados
+- Fuente base de Servicios: `239:132 — MOB-10 — Servicios / Upselling`, dentro de `238:132 — Implementation Ready — Android V2 + V3`.
+- Estados de Servicios aprobados para implementación: sección `1818:410 — APPROVED FOR IMPLEMENTATION — IMP-AND-0103 — Services states`.
+- Frames: Base `1821:410`, Selected `1818:411`, Loading `1819:410`, Submitting `1820:410`, Success `1820:13372`, Error `1820:13290` y Offline `1820:13331`.
+- El flujo autorizado de producto es Base → Selected → Submitting → Success → Base. Error y Offline son variantes **QA ONLY**, accesibles desde `1827:411 — QA ONLY — Services failure variants`; no son acciones normales del huésped.
+- Los cuatro servicios visibles confirmados por Figma son: `Late checkout` / `Hasta 14:00` / `Q180`; `Desayuno en habitación` / `Para 2 personas` / `Q145`; `Traslado al aeropuerto` / `Vehículo privado` / `Q220`; `Decoración especial` / `Cumpleaños o aniversario` / `Q320`.
+- `priceText` es texto de presentación visual. No representa monto, moneda, impuesto, cargo ni semántica financiera Backend.
+- Los estados visuales no agregan pagos, cargos, promesas de procesamiento ni status Backend. No se añade estado Empty.
 
-- La fila `IMP-AND-0103` del backlog pide catálogo, detalle/selección y solicitud de servicios de la estadía/property actual; exige loading, submitting, success, error y offline, sin éxito falso ni doble submit. Su DoD indica Mapper + UI y pruebas unitarias/UI.
-- Figma directo confirma `239:132 — MOB-10 — Servicios / Upselling`, dentro de `238:132 — Implementation Ready — Android V2 + V3`. Sus cards son `239:171`, `239:176`, `239:181` y `239:186`; `239:191` es `Tu selección` y `239:195` es `Confirmar servicio`. Cada card muestra nombre, texto secundario y precio como texto de presentación.
-- La footbar visible de `239:132` es `Servicios · Chat · Valet · Cuenta`. Es la referencia visual para esta feature; no existe todavía un shell V3 compartido implementado.
-- `frontend/pms-hotel-android/docs/05_DOMAIN_AND_CONTRACT_RULES.md` confirma `ReservationStay`, su distinción de `Reservation` y `room` nullable. El DTO de estadía existente es una forma de fixture/mock, no API.
-- `frontend/pms-hotel-android/docs/07_MOCK_AND_DATA_POLICY.md` permite mocks en la frontera Remote/API y exige el flujo DTO -> Mapper -> Domain -> UI.
-- `frontend/pms-hotel-android/docs/08_STATE_OFFLINE_POLICY.md` establece TanStack Query como fuente de server state. `NetworkError` representa offline simulado; no se usan NetInfo, cola offline, persistencia local ni éxito optimista.
-- `docs/07_CROSS_APP_CONTRACTS.md` prohíbe inventar semántica compartida. El estado de solicitud de servicio no está confirmado como estado cross-app.
+Los Node IDs anteriores son exclusivamente trazabilidad Figma; no son IDs runtime ni valores de fixture.
 
-## Forma exacta propuesta del contrato frontend/mock
+## Forma exacta del contrato frontend/mock
 
-Los nombres siguientes son solo formas de fixture frontend. No son DTOs API productivos ni modelos Backend.
+Los siguientes nombres son exclusivamente DTOs de fixture frontend. No son DTOs API productivos ni modelos Backend. No se agregan campos fuera de esta forma.
 
 ```ts
 interface ServicesFixtureContext {
@@ -55,109 +55,124 @@ interface SubmitServiceRequestFixtureResult {
 }
 ```
 
-`currentStayFixtureKey` y `currentPropertyFixtureKey` solo permiten que tests y mocks asocien determinísticamente el catálogo con la estadía/property actual. No amplían `ReservationStay`, no son IDs Backend y no describen cómo Backend resolverá scope. Cuando la UI presente datos de habitación, los obtiene de `ReservationStay`; por ello `room` conserva su nulabilidad existente y no se inventa habitación desde Servicios.
+`fixtureKey`, `currentStayFixtureKey` y `currentPropertyFixtureKey` son claves técnicas opacas para fixtures y tests. No son IDs Backend, no se muestran como información de negocio y no fijan cómo Backend resolverá el scope futuro.
 
-La selección y detalle se resuelven localmente buscando `fixtureKey` dentro del catálogo mock ya obtenido y reutilizando `label`, `detailText` y `priceText` del fixture. No se propone endpoint ni fuente remota independiente para detalle.
+La relación visual con la estadía/property actual se representa con `ServicesFixtureContext`. Cuando Servicios necesite presentar habitación, debe obtenerla de `ReservationStay`; `room` conserva su nulabilidad confirmada y Servicios nunca inventa una habitación asignada.
 
-`IMP-AND-0103` debe consumir el futuro shell Guest compartido o una autoridad de navegación aprobada. No debe implementar una copia privada de la footbar dentro de `services`.
+El detalle es inline: la selección busca localmente `fixtureKey` dentro del catálogo ya recibido y reutiliza `label`, `detailText` y `priceText` en `Tu selección`. No hay ruta, fuente remota ni contrato independiente de detalle.
 
-## Campos incluidos y justificación
+## Campos acordados y exclusiones
 
-| Campo | Necesidad demostrable | Regla propuesta |
+| Campo | Uso frontend demostrado | Límite |
 | --- | --- | --- |
-| `currentStayFixtureKey` | El Acceptance Criterion limita los servicios a la estadía actual. | Solo fixture/test; debe coincidir con el contexto de estadía seleccionado por el mock. |
-| `currentPropertyFixtureKey` | El Acceptance Criterion limita los servicios a la property actual y las reglas globales exigen scope explícito cuando aplica. | Solo fixture/test; no es un filtro Backend ni un ID futuro. |
-| `fixtureKey` | Catálogo, selección, detalle y mutation requieren identificar de forma estable el ítem mock elegido. | Identidad técnica local, opaca para UI de negocio y no reutilizable como API. |
-| `label` | Las cards verificadas presentan el nombre del servicio. | Texto de presentación de fixture, no nombre Backend. |
-| `detailText` | Las cards verificadas presentan un texto secundario. | Texto de presentación de fixture, sin inferir disponibilidad, horario o regla de negocio. |
-| `priceText` | Las cards y `Tu selección` presentan un precio como texto. | Texto de presentación de fixture; no representa monto, currency, impuesto ni semántica financiera Backend. |
-| `serviceFixtureKey` | La acción de usuario necesita comunicar cuál fixture seleccionó a la mutation mock. | Único input de solicitud simulada. |
+| `currentStayFixtureKey` | Asocia determinísticamente el catálogo fixture con la estadía actual. | Solo fixture/test; no amplía `ReservationStay`. |
+| `currentPropertyFixtureKey` | Mantiene el scope fixture de property actual requerido por la tarea. | No es filtro ni ID Backend. |
+| `fixtureKey` | Identifica localmente la card seleccionada y el input de mutation. | Opaco; no se reutiliza como API. |
+| `label` | Nombre visible en card, selección y basket. | Texto de presentación. |
+| `detailText` | Texto secundario visible en la card y selección. | No infiere disponibilidad, horario ni regla de negocio. |
+| `priceText` | Precio visible en la card y selección. | Texto de presentación, sin significado financiero. |
+| `serviceFixtureKey` | Comunica a la mutation mock cuál fixture seleccionó el huésped. | Único input de solicitud simulada. |
 
-## Campos excluidos deliberadamente
+Quedan excluidos: precio numérico, currency, impuestos, categorías de negocio, disponibilidad, horarios, cantidades, habitación copiada, IDs Backend de Reservation/ReservationStay/ServiceRequest, datos de huésped, notas, cancelación, modificación, timestamps, persistencia y estados de solicitud de negocio.
 
-No se agregan precio numérico, currency, impuestos, categoría de negocio, disponibilidad de negocio, horarios, cantidades, habitación copiada, Reservation/ReservationStay IDs Backend, ServiceRequest IDs Backend, Guest data, notas/instrucciones, cancelación, modificación, estado de solicitud, timestamps, persistencia ni reglas de backend.
+## Comportamiento mock y estados UI
 
-No se añade un estado visual empty como requisito. La infraestructura de mocks puede representar `items: []`, pero `empty` no figura entre los Acceptance Criteria confirmados de `IMP-AND-0103`; una pantalla empty necesitaría fuente Figma o criterio aprobado.
-
-Los diseños específicos de Selected, Submitting, Success, Error, Offline y Loading de Servicios continúan pendientes de diseño Figma. Los frames V2 genéricos no se consideran una fuente semánticamente válida para esos estados de Servicios.
-
-## Solicitud simulada y estados UI
-
-La acción del huésped entrega `SubmitServiceRequestFixtureInput` a una mutation mock. La mutation devuelve `SubmitServiceRequestFixtureResult` solo para confirmar que la simulación concluyó. Ese resultado no representa una entidad `ServiceRequest`, persistencia Backend ni éxito remoto real.
+El mock se conecta en la frontera Remote/API y conserva `Remote/API → DTO fixture → Mapper puro → Domain → TanStack Query/RemoteState derivado → UI`. La UI no hace `fetch`, no consume DTOs ni importa fixtures directamente.
 
 ### Lectura de catálogo
 
-| Estado | Representación propuesta |
+| Estado | Contrato de comportamiento |
 | --- | --- |
-| loading | TanStack Query pendiente antes de resolver el catálogo fixture. |
-| success/data | Catálogo fixture asociado al contexto actual y mapeado a Domain. |
-| error | Error técnico genérico de la lectura mock. |
-| offline | `NetworkError` simulado en la frontera remota. |
+| `loading` | La query está pendiente antes de resolver el catálogo fixture; se muestra `Cargando servicios`. |
+| `success/data` | El catálogo fixture del contexto actual se mapea a Domain y permite selección inline. |
+| `error` | La lectura mock falla con un error técnico; no implica estado Backend. |
+| `offline` | La lectura mock falla con la infraestructura existente `NetworkError`; `deriveRemoteState` lo representa como offline. |
 
-### Mutación de solicitud simulada
+`empty` no está incluido: no es Acceptance Criterion actual ni tiene fuente visual aprobada.
 
-| Estado | Representación propuesta |
+### Mutation de solicitud simulada
+
+| Estado | Contrato de comportamiento |
 | --- | --- |
-| idle | No hay solicitud en curso o el estado se reinició tras una interacción aprobada. |
-| submitting | La mutation mock está pendiente. |
-| success | Solo después de que la mutation mock devuelve `SubmitServiceRequestFixtureResult`. |
-| error | La mutation mock devuelve un error técnico genérico. |
-| offline | La mutation mock falla con `NetworkError`. |
+| `idle` | No existe solicitud en curso. |
+| `submitting` | La mutation mock está pendiente; se conserva la selección, se muestra `Confirmando...` y el CTA queda disabled. |
+| `success` | Solo ocurre tras recibir `SubmitServiceRequestFixtureResult`; se muestra `Servicio solicitado` y `Recibimos tu solicitud.` |
+| `error` | La mutation mock falla técnicamente; se muestra `No pudimos enviar tu solicitud`, `Intenta nuevamente.` y `Reintentar`. |
+| `offline` | La mutation mock falla con `NetworkError`; se muestra `Sin conexión`, `Conéctate a internet para solicitar este servicio.` y `Reintentar`. |
 
-No se introduce NetInfo, cola offline, almacenamiento local, reintento automático, estado Backend ni éxito optimista.
+Mientras la mutation esté pendiente, el handler debe bloquear una segunda mutation concurrente. No hay éxito optimista. Reintentar inicia una mutation mock nueva y controlada; no hay retry automático, cola offline, sync en background, almacenamiento offline ni NetInfo.
 
-## Prevención de doble envío
+El resultado mock no representa una entidad `ServiceRequest`, persistencia, status Backend ni una promesa de procesamiento posterior.
 
-Mientras la mutation mock esté pendiente, la acción de solicitar debe quedar bloqueada o deshabilitada. El handler no puede iniciar una segunda mutation concurrente. La UI no anuncia success hasta recibir el resultado simulado de la primera mutation. Esta es una regla de interacción frontend para cumplir el Acceptance Criterion; no es idempotencia Backend.
+## Navegación y presentación
 
-## Arquitectura propuesta
+`IMP-AND-0103` debe reutilizar el `GuestNavigationShell` V3 de `IMP-AND-0100`, sin copiar una footbar privada. En `/services`, la navegación visible es `Servicios · Chat · Valet · Cuenta`, con Servicios activo según `usePathname()`. Las rutas no implementadas conservan su semántica disabled aprobada por `DEC-A-004`.
+
+La UI debe usar los tokens y patrones Android V3 existentes. La excepción visual previa de `IMP-AND-0102` no se modifica ni se reutiliza como navegación de Servicios.
+
+## Boundaries obligatorios
 
 ```text
 Mock Remote/Fixture
   ↓
-DTO de fixture frontend-only
+Fixture DTO frontend-only
   ↓
 Mapper puro
   ↓
 Domain
   ↓
-TanStack Query
+TanStack Query (autoridad de server state)
+  ↓
+RemoteState derivado
   ↓
 UI
 ```
 
-El DTO de fixture puede reemplazarse o adaptarse cuando exista Backend real. UI no consume DTO, no hace `fetch` y no conoce la futura estructura Backend. TanStack Query sigue siendo la única autoridad de server state; `RemoteState` solo deriva la representación técnica de sus resultados.
+TanStack Query es la única autoridad del server state. `RemoteState` es una representación técnica derivada de los resultados de Query; no es store paralelo. La infraestructura existente de `NetworkError` y `deriveRemoteState` es suficiente para los escenarios offline simulados de Sprint 1.
 
-## Pruebas que este contrato habilitaría en `IMP-AND-0103`
+## Pruebas obligatorias cuando inicie `IMP-AND-0103`
 
-- catálogo mock visible para la estadía/property fixture actual;
-- selección por `fixtureKey` y detalle resuelto con `label`, `detailText` y `priceText`, sin inventar contenido adicional;
-- mutation en `submitting`;
-- success solo después del resultado mock;
-- error técnico genérico;
-- `NetworkError` derivado a offline;
-- acción bloqueada y una sola mutation mientras existe submit pendiente;
-- mapper puro para fixture DTO -> Domain;
-- UI sin DTO ni red directa.
+1. catálogo mock visible para el contexto fixture de estadía/property actual;
+2. los cuatro servicios visibles de Figma;
+3. mapper puro de fixture DTO a Domain;
+4. `label`, `detailText` y `priceText` visibles sin campos inventados;
+5. selección inline y basket `Tu selección`;
+6. submitting con CTA disabled y sin segundo submit;
+7. success solo después del resultado de mutation mock;
+8. error técnico;
+9. `NetworkError` derivado a offline;
+10. retry como mutation mock nueva y controlada;
+11. reutilización del shell V3 con Servicios activo;
+12. UI sin DTO;
+13. UI sin `fetch` directo;
+14. sin success optimista, estado Backend ni persistencia implícita.
 
-No se implementan estas pruebas con esta propuesta.
+No se implementan estos tests ni código de Servicios con la aprobación de este documento.
 
-## DoR vigente para `IMP-AND-0103`
+## Matriz formal del DoR
 
-> **Frontend service data/mock contract approved:** fuente Figma y ruta confirmadas; formas de mock para catálogo, selección y solicitud simulada; asociación con estadía/property actual sin alterar semántica de dominio; escenarios loading, submitting, success, error y offline; boundaries Mapper/UI y pruebas unitarias/UI definidos. No constituye contrato API Backend ni define endpoints, HTTP, auth, permisos, persistencia, entidades o estados de negocio Backend.
+| # | Criterio DoR | Estado | Evidencia |
+| --- | --- | --- | --- |
+| 1 | `IMP-AND-0100` completada | PASS | Shell Guest V3 completado. |
+| 2 | `IMP-AND-0102` completada | PASS | Home V2 permanece intacta; entrega el handoff técnico. |
+| 3 | Ruta y fuente Figma confirmadas | PASS | `/services`; base `239:132` y sección de estados `1818:410`. |
+| 4 | Fixture de catálogo | PASS | `ServicesCatalogFixtureDto` exacto. |
+| 5 | Selección y detalle inline | PASS | `fixtureKey` + `label`/`detailText`/`priceText`; no detail route. |
+| 6 | Mutation mock | PASS | Input/result exactos de solicitud simulada. |
+| 7 | Loading de lectura | PASS | Frame `1819:410` y Query pendiente. |
+| 8 | Submitting | PASS | Frame `1820:410`, CTA disabled y bloqueo concurrente. |
+| 9 | Success | PASS | Frame `1820:13372`, únicamente tras resultado mock. |
+| 10 | Error | PASS | Frame `1820:13290`, error técnico y retry controlado. |
+| 11 | Offline | PASS | Frame `1820:13331`, `NetworkError` sin NetInfo ni cola. |
+| 12 | Prevención de doble envío | PASS | Una mutation concurrente como máximo. |
+| 13 | Boundary Mapper/UI | PASS | DTO fixture → Mapper puro → Domain; UI sin DTO/red. |
+| 14 | Pruebas unitarias/UI definidas | PASS | Lista de 14 pruebas obligatorias anterior. |
+| 15 | Contrato solo frontend | PASS | `DEC-G-013`; sin API/semántica Backend anticipada. |
 
-El Change Control aprobó este reemplazo de `Service contract ready`. No convierte `IMP-AND-0103` a `READY` ni declara el DoR vigente como cumplido: todavía faltan completar y aprobar el contrato mock, los diseños Figma específicos de loading, submitting, success, error y offline, y `IMP-AND-0100`.
-
-## Decisiones todavía pendientes
-
-1. Diseñar y aprobar en Figma Selected, Submitting, Success, Error, Offline y Loading específicos de Servicios.
-2. Completar `IMP-AND-0100` para disponer del shell Guest V3 compartido.
-3. Completar y aprobar este contrato de fixtures para `IMP-AND-0103`.
-4. Definir el contrato Backend real solo cuando inicie la fase Backend; sus decisiones no se anticipan aquí.
+No existe en el backlog ni en la documentación vigente un gate adicional de reviewer para aprobar este contrato frontend/mock. El reviewer asignado de la tarea es `WEB-3`; esta aprobación no modifica ownerships ni crea una autoridad cross-app nueva.
 
 ## Fuera de alcance
 
-- Modificar `services.tsx` o iniciar `IMP-AND-0103`.
-- Crear DTOs, mappers, Domain, hooks, queries, mutations, fixtures funcionales o tests de Servicios.
-- Crear endpoints, auth, permisos, entidades, tablas, migraciones, persistencia, audit, reglas de negocio o arquitectura Backend.
-- Declarar estados de negocio/cross-app para una solicitud de servicio.
+- Implementar `IMP-AND-0103`, modificar `services.tsx`, crear feature branch, DTOs productivos, mappers, Domain, hooks, queries, mutations, fixtures funcionales o tests de Servicios.
+- Endpoints, auth, permisos, entidades, tablas, migraciones, persistencia, audit, reglas Backend o estados de negocio/cross-app de una solicitud.
+- Cambiar Figma, `IMP-AND-0100` o `IMP-AND-0102`.
