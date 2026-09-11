@@ -32,15 +32,19 @@ export const tokens = {
     lg: 20,
     xl: 24,
     xxl: 32,
+    guestNavigationInset: 18,
   },
   radius: {
     control: 10,
     chip: 12,
     card: 16,
+    guestNavigationTab: 14,
   },
   layout: {
     screenInset: 24,
     controlHeight: 48,
     buttonHeight: 44,
+    guestNavigationHeight: 76,
+    guestNavigationTabHeight: 52,
   },
 } as const;
