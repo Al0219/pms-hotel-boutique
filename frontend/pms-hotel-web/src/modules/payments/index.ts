@@ -1,7 +1,14 @@
 /**
  * Public API for the payments module (WEB-4).
- * Export only intentionally public Domain Models, mappers and service functions.
+ * Export only intentionally public Domain Models, DTO types, mappers and service functions.
  */
+
+export type {
+  PaymentGuaranteeRequestDto,
+  PaymentGuaranteeResponseDto,
+  PaymentMethodDto,
+  PaymentStatusDto,
+} from "./dtos/payment.dto";
 
 export type {
   PaymentGuaranteeRequest,

@@ -74,6 +74,58 @@ export const mockAvailabilityEmptyDto = {
   available_room_types: [],
 };
 
+function handleAvailabilityRequest({ request }: { request: Request }) {
+  const url = new URL(request.url);
+  const propertyId = url.searchParams.get("property_id");
+
+  if (propertyId === "error_property") {
+    return HttpResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+
+  if (propertyId === "empty_property") {
+    return HttpResponse.json(mockAvailabilityEmptyDto);
+  }
+
+  return HttpResponse.json(mockAvailabilitySuccessDto);
+}
+
+async function handlePaymentGuaranteeRequest({ request }: { request: Request }) {
+  const body = (await request.json()) as PaymentGuaranteeRequestDto;
+
+  if (body.card_token === "tok_error") {
+    return HttpResponse.json({ error: "Gateway Timeout" }, { status: 500 });
+  }
+
+  if (body.card_token === "tok_declined") {
+    const declinedResponse: PaymentGuaranteeResponseDto = {
+      payment_id: "pay_declined_999",
+      status: "DECLINED",
+      amount: body.amount,
+      currency: body.currency,
+      provider_reference: null,
+      last4: body.last4 ?? "0002",
+      card_brand: body.card_brand ?? "Visa",
+      created_at: new Date().toISOString(),
+      failure_reason: "Fondos insuficientes o tarjeta rechazada por el emisor.",
+    };
+    return HttpResponse.json(declinedResponse);
+  }
+
+  const successResponse: PaymentGuaranteeResponseDto = {
+    payment_id: `pay_${Date.now()}`,
+    status: body.payment_method === "PAY_AT_HOTEL" ? "PENDING_GUARANTEE" : "AUTHORIZED",
+    amount: body.amount,
+    currency: body.currency,
+    provider_reference: `ref_stripe_${Date.now()}`,
+    last4: body.last4 ?? "4242",
+    card_brand: body.card_brand ?? "Visa",
+    created_at: new Date().toISOString(),
+    failure_reason: null,
+  };
+
+  return HttpResponse.json(successResponse);
+}
+
 export const handlers = [
   http.get("http://pms.test/__msw/health", () => HttpResponse.json({ status: "ok" })),
   http.get("http://pms.test/__msw/missing", () => HttpResponse.text(null, { status: 404 })),
@@ -84,54 +136,8 @@ export const handlers = [
       external_identities: [],
     }),
   ),
-  http.get("*/api/v1/public/availability", ({ request }) => {
-    const url = new URL(request.url);
-    const propertyId = url.searchParams.get("property_id");
-
-    if (propertyId === "error_property") {
-      return HttpResponse.json({ error: "Internal Server Error" }, { status: 500 });
-    }
-
-    if (propertyId === "empty_property") {
-      return HttpResponse.json(mockAvailabilityEmptyDto);
-    }
-
-    return HttpResponse.json(mockAvailabilitySuccessDto);
-  }),
-  http.post("*/api/v1/public/payments/guarantee", async ({ request }) => {
-    const body = (await request.json()) as PaymentGuaranteeRequestDto;
-
-    if (body.card_token === "tok_error") {
-      return HttpResponse.json({ error: "Gateway Timeout" }, { status: 500 });
-    }
-
-    if (body.card_token === "tok_declined") {
-      const declinedResponse: PaymentGuaranteeResponseDto = {
-        payment_id: "pay_declined_999",
-        status: "DECLINED",
-        amount: body.amount,
-        currency: body.currency,
-        provider_reference: null,
-        last4: body.last4 ?? "0002",
-        card_brand: body.card_brand ?? "Visa",
-        created_at: new Date().toISOString(),
-        failure_reason: "Fondos insuficientes o tarjeta rechazada por el emisor.",
-      };
-      return HttpResponse.json(declinedResponse);
-    }
-
-    const successResponse: PaymentGuaranteeResponseDto = {
-      payment_id: `pay_${Date.now()}`,
-      status: body.payment_method === "PAY_AT_HOTEL" ? "PENDING_GUARANTEE" : "AUTHORIZED",
-      amount: body.amount,
-      currency: body.currency,
-      provider_reference: `ref_stripe_${Date.now()}`,
-      last4: body.last4 ?? "4242",
-      card_brand: body.card_brand ?? "Visa",
-      created_at: new Date().toISOString(),
-      failure_reason: null,
-    };
-
-    return HttpResponse.json(successResponse);
-  }),
+  http.get("http://pms.test/api/v1/public/availability", handleAvailabilityRequest),
+  http.get("/api/v1/public/availability", handleAvailabilityRequest),
+  http.post("http://pms.test/api/v1/public/payments/guarantee", handlePaymentGuaranteeRequest),
+  http.post("/api/v1/public/payments/guarantee", handlePaymentGuaranteeRequest),
 ];
