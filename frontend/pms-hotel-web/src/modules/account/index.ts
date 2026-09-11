@@ -1,5 +1,8 @@
-/**
- * Public API for the account module.
- * Export only intentionally public Domain Models, hooks and components.
- * Do not expose DTOs, mappers or service internals without an approved reason.
- */
+export { AccountDashboardPage } from "./components/account-dashboard-page";
+export { HistoryPage } from "./components/history-page";
+export { InvoicesPage } from "./components/invoices-page";
+export { MessagesPage } from "./components/messages-page";
+export * from "./dtos/account.dto";
+export * from "./model/account";
+export * from "./mappers/account.mapper";
+export * from "./service/account.service";
