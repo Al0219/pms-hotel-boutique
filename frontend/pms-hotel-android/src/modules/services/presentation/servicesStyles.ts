@@ -17,6 +17,7 @@ export const servicesStyles = StyleSheet.create({
   },
   successContent: {
     flexGrow: 1,
+    justifyContent: 'center',
   },
   scroll: {
     flex: 1,

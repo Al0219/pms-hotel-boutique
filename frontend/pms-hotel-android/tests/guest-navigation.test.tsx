@@ -14,7 +14,7 @@ describe('Guest Navigation Shell V3', () => {
     expect(guestNavigationTabs).toEqual([
       { id: 'services', label: 'Servicios', basePath: '/services', disabled: false },
       { id: 'chat', label: 'Chat', basePath: '/chat', disabled: false },
-      { id: 'valet', label: 'Valet', basePath: '/valet', disabled: true },
+      { id: 'valet', label: 'Valet', basePath: '/valet', disabled: false },
       { id: 'account', label: 'Cuenta', basePath: '/account', disabled: true },
     ]);
   });
@@ -27,7 +27,7 @@ describe('Guest Navigation Shell V3', () => {
     expect(resolveActiveGuestNavigationTab('/unknown')).toBeNull();
   });
 
-  it('renders Services and Chat enabled, with unfinished destinations disabled', async () => {
+  it('renders Services, Chat and Valet enabled, with only Cuenta unfinished', async () => {
     const onReplace = jest.fn();
     const rendered = await render(<GuestNavigationTabs onReplace={onReplace} pathname="/services" />);
     const tabs = rendered.getAllByRole('tab');
@@ -36,7 +36,7 @@ describe('Guest Navigation Shell V3', () => {
     expect(tabs.map((tab) => tab.props.accessibilityLabel)).toEqual(['Servicios', 'Chat', 'Valet', 'Cuenta']);
     expect(rendered.getByLabelText('Servicios').props.accessibilityState).toEqual({ disabled: false, selected: true });
     expect(rendered.getByLabelText('Chat').props.accessibilityState).toEqual({ disabled: false, selected: false });
-    expect(rendered.getByLabelText('Valet').props.accessibilityState).toEqual({ disabled: true, selected: false });
+    expect(rendered.getByLabelText('Valet').props.accessibilityState).toEqual({ disabled: false, selected: false });
     expect(rendered.getByLabelText('Cuenta').props.accessibilityState).toEqual({ disabled: true, selected: false });
 
     for (const tab of guestNavigationTabs.filter((tab) => tab.disabled)) {

@@ -14,6 +14,8 @@ import { currentStayFixture } from '@/modules/stay/data/mocks/currentStayFixture
 import { MockStayService } from '@/modules/stay/data/mocks/MockStayService';
 import { StayHomeScreen } from '@/modules/stay/presentation/StayHomeScreen';
 
+declare const require: (moduleName: string) => { readFileSync(path: string, encoding: string): string };
+
 function createDeferred<T>() {
   let resolve: (value: T) => void;
   const promise = new Promise<T>((resolvePromise) => {
@@ -76,7 +78,7 @@ describe('Services', () => {
       disabled: false,
       selected: false,
     }));
-    expect(rendered.getByLabelText('Valet').props.accessibilityState.disabled).toBe(true);
+    expect(rendered.getByLabelText('Valet').props.accessibilityState.disabled).toBe(false);
     expect(rendered.getByLabelText('Cuenta').props.accessibilityState.disabled).toBe(true);
     expect(rendered.getByTestId('services-submit-button').props.accessibilityState.disabled).toBe(true);
   });
@@ -225,5 +227,16 @@ describe('Services', () => {
     );
     await waitFor(() => expect(offline.getByTestId('services-catalog-offline')).toBeTruthy());
     expect(offline.getByText('Sin conexión')).toBeTruthy();
+  });
+
+  it('centers only the Services success content while preserving the shared footbar composition', () => {
+    const fs = require('fs');
+    const stylesSource = fs.readFileSync('src/modules/services/presentation/servicesStyles.ts', 'utf8');
+    const screenSource = fs.readFileSync('src/modules/services/presentation/ServicesScreen.tsx', 'utf8');
+
+    expect(stylesSource).toMatch(/successContent:[\s\S]*flexGrow: 1,[\s\S]*justifyContent: 'center'/);
+    expect(screenSource).toContain('servicesStyles.successContent');
+    expect(screenSource).toContain('<GuestNavigationShell />');
+    expect(screenSource).toContain('servicesStyles.screen');
   });
 });
