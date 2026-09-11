@@ -12,7 +12,7 @@ import {
 describe('Guest Navigation Shell V3', () => {
   it('declares only the four approved V3 destinations in Figma order', () => {
     expect(guestNavigationTabs).toEqual([
-      { id: 'services', label: 'Servicios', basePath: '/services', disabled: true },
+      { id: 'services', label: 'Servicios', basePath: '/services', disabled: false },
       { id: 'chat', label: 'Chat', basePath: '/chat', disabled: true },
       { id: 'valet', label: 'Valet', basePath: '/valet', disabled: true },
       { id: 'account', label: 'Cuenta', basePath: '/account', disabled: true },
@@ -27,19 +27,19 @@ describe('Guest Navigation Shell V3', () => {
     expect(resolveActiveGuestNavigationTab('/unknown')).toBeNull();
   });
 
-  it('renders disabled tabs with accessible state and does not navigate from the current configuration', async () => {
+  it('renders Services enabled and the unfinished destinations disabled with accessible state', async () => {
     const onReplace = jest.fn();
     const rendered = await render(<GuestNavigationTabs onReplace={onReplace} pathname="/services" />);
     const tabs = rendered.getAllByRole('tab');
 
     expect(rendered.getByLabelText('Navegación principal de huésped').props.accessibilityRole).toBe('tablist');
     expect(tabs.map((tab) => tab.props.accessibilityLabel)).toEqual(['Servicios', 'Chat', 'Valet', 'Cuenta']);
-    expect(rendered.getByLabelText('Servicios').props.accessibilityState).toEqual({ disabled: true, selected: true });
+    expect(rendered.getByLabelText('Servicios').props.accessibilityState).toEqual({ disabled: false, selected: true });
     expect(rendered.getByLabelText('Chat').props.accessibilityState).toEqual({ disabled: true, selected: false });
     expect(rendered.getByLabelText('Valet').props.accessibilityState).toEqual({ disabled: true, selected: false });
     expect(rendered.getByLabelText('Cuenta').props.accessibilityState).toEqual({ disabled: true, selected: false });
 
-    for (const tab of guestNavigationTabs) {
+    for (const tab of guestNavigationTabs.slice(1)) {
       const tabControl = rendered.getByTestId(`guest-navigation-tab-${tab.id}`);
 
       expect(tabControl.props.onPress).toBeUndefined();
@@ -78,7 +78,7 @@ describe('Guest Navigation Shell V3', () => {
       { initialUrl: '/technical-shell' },
     );
 
-    expect(rendered.getByLabelText('Servicios').props.accessibilityState).toEqual({ disabled: true, selected: false });
+    expect(rendered.getByLabelText('Servicios').props.accessibilityState).toEqual({ disabled: false, selected: false });
     expect(rendered.getByLabelText('Chat').props.accessibilityState).toEqual({ disabled: true, selected: false });
   });
 });
