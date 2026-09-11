@@ -1,6 +1,7 @@
 import { DomainMappingError } from "@/lib/errors";
 
 import type {
+  AuthorizePaymentRequestDto,
   PaymentAuditEntryDto,
   PaymentDto,
   PaymentGuaranteeRequestDto,
@@ -11,6 +12,7 @@ import type {
   PaymentStatusDto,
 } from "../dtos/payment.dto";
 import type {
+  AuthorizePaymentRequest,
   Payment,
   PaymentAuditEntry,
   PaymentGuaranteeRequest,
@@ -238,3 +240,35 @@ export function mapPaymentGuaranteeRequestToDto(request: PaymentGuaranteeRequest
     reservation_reference: request.reservationReference?.trim(),
   };
 }
+
+export function mapAuthorizePaymentRequestToDto(request: AuthorizePaymentRequest): AuthorizePaymentRequestDto {
+  if (!request || !request.folioId || !request.folioId.trim()) {
+    throw new DomainMappingError("MISSING_FOLIO_ID");
+  }
+
+  if (!request.method || !VALID_METHODS.has(request.method)) {
+    throw new DomainMappingError("INVALID_PAYMENT_METHOD");
+  }
+
+  if (!Number.isFinite(request.amount) || request.amount <= 0) {
+    throw new DomainMappingError("INVALID_AUTHORIZATION_AMOUNT");
+  }
+
+  if (!request.currency || !request.currency.trim()) {
+    throw new DomainMappingError("MISSING_PAYMENT_CURRENCY");
+  }
+
+  return {
+    folio_id: request.folioId.trim(),
+    reservation_id: request.reservationId?.trim() ?? null,
+    stay_id: request.stayId?.trim() ?? null,
+    method: request.method as PaymentMethodDto,
+    amount: request.amount.toFixed(2),
+    currency: request.currency.trim().toUpperCase(),
+    card_token: request.cardToken?.trim(),
+    card_holder_name: request.cardHolderName?.trim(),
+    last4: request.last4?.trim(),
+    card_brand: request.cardBrand?.trim(),
+  };
+}
+

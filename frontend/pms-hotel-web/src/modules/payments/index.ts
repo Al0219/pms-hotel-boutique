@@ -4,6 +4,7 @@
  */
 
 export type {
+  AuthorizePaymentRequestDto,
   PaymentAuditEntryDto,
   PaymentDto,
   PaymentGuaranteeRequestDto,
@@ -15,6 +16,7 @@ export type {
 } from "./dtos/payment.dto";
 
 export type {
+  AuthorizePaymentRequest,
   Payment,
   PaymentAuditEntry,
   PaymentGuaranteeRequest,
@@ -26,6 +28,7 @@ export type {
 } from "./model/payment";
 
 export {
+  mapAuthorizePaymentRequestToDto,
   mapPaymentAuditEntryDtoToDomain,
   mapPaymentDtoToDomain,
   mapPaymentGuaranteeDtoToDomain,
@@ -35,6 +38,7 @@ export {
 } from "./mappers/payment.mapper";
 
 export {
+  authorizePaymentDto,
   createPaymentGuaranteeDto,
   fetchPaymentByIdDto,
   fetchPaymentsDto,
@@ -44,3 +48,8 @@ export {
   PaymentListCard,
   type PaymentListCardProps,
 } from "./components/payment-list-card";
+
+export {
+  PaymentAuthorizeModal,
+  type PaymentAuthorizeModalProps,
+} from "./components/payment-authorize-modal";

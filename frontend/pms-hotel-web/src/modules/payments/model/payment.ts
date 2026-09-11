@@ -90,3 +90,17 @@ export interface PaymentListResult {
   payments: Payment[];
   totalCount: number;
 }
+
+export interface AuthorizePaymentRequest {
+  folioId: string;
+  reservationId?: string | null;
+  stayId?: string | null;
+  method: PaymentMethod;
+  amount: number;
+  currency: string;
+  cardToken?: string;
+  cardHolderName?: string;
+  last4?: string;
+  cardBrand?: string;
+}
+

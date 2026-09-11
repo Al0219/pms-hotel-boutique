@@ -56,3 +56,19 @@ export async function fetchPaymentByIdDto(
     signal,
   });
 }
+
+export async function authorizePaymentDto(
+  payload: import("../dtos/payment.dto").AuthorizePaymentRequestDto,
+  signal?: AbortSignal,
+): Promise<PaymentDto> {
+  return httpRequest<PaymentDto>({
+    path: "/api/v1/private/payments/authorize",
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+    signal,
+  });
+}
+

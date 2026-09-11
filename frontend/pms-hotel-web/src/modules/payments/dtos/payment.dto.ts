@@ -85,3 +85,17 @@ export interface PaymentListResponseDto {
   payments: PaymentDto[];
   total_count: number;
 }
+
+export interface AuthorizePaymentRequestDto {
+  folio_id: string;
+  reservation_id?: string | null;
+  stay_id?: string | null;
+  method: PaymentMethodDto;
+  amount: string;
+  currency: string;
+  card_token?: string;
+  card_holder_name?: string;
+  last4?: string;
+  card_brand?: string;
+}
+
