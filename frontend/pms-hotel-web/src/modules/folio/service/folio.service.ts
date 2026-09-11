@@ -6,6 +6,8 @@ import type {
   FolioDto,
   SplitChargeRequestDto,
   SplitChargeResultDto,
+  TransferChargeRequestDto,
+  TransferChargeResultDto,
 } from "../dtos/folio.dto";
 
 export async function fetchFolioByIdDto(
@@ -26,6 +28,22 @@ export async function splitFolioChargeDto(
 ): Promise<SplitChargeResultDto> {
   return httpRequest<SplitChargeResultDto>({
     path: `/api/v1/private/folios/${encodeURIComponent(folioId)}/split-charge`,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+    signal,
+  });
+}
+
+export async function transferFolioChargeDto(
+  folioId: string,
+  payload: TransferChargeRequestDto,
+  signal?: AbortSignal,
+): Promise<TransferChargeResultDto> {
+  return httpRequest<TransferChargeResultDto>({
+    path: `/api/v1/private/folios/${encodeURIComponent(folioId)}/transfer-charge`,
     method: "POST",
     headers: {
       "Content-Type": "application/json",

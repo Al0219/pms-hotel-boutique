@@ -10,6 +10,7 @@ export interface FolioDetailCardProps {
   folio: Folio;
   onApplyPayment?: () => void;
   onSplitCharge?: (charge: FolioCharge) => void;
+  onTransferCharge?: (charge: FolioCharge) => void;
 }
 
 const FOLIO_STATUS_VARIANT_MAP: Record<FolioStatus, StatusBadgeVariant> = {
@@ -22,6 +23,7 @@ export function FolioDetailCard({
   folio,
   onApplyPayment,
   onSplitCharge,
+  onTransferCharge,
 }: FolioDetailCardProps) {
   const statusVariant = FOLIO_STATUS_VARIANT_MAP[folio.status] || "neutral";
 
@@ -125,12 +127,12 @@ export function FolioDetailCard({
                   padding: "0.5rem 0.75rem",
                   borderRadius: "6px",
                   border: "1px solid #f3f4f6",
-                  backgroundColor: charge.isVoided ? "#fef2f2" : "#ffffff",
-                  textDecoration: charge.isVoided ? "line-through" : "none",
+                  backgroundColor: charge.isVoided || charge.isTransferred ? "#fef2f2" : "#ffffff",
+                  textDecoration: charge.isVoided || charge.isTransferred ? "line-through" : "none",
                 }}
               >
                 <div>
-                  <span style={{ fontWeight: "600", fontSize: "0.875rem", color: charge.isVoided ? "#9ca3af" : "#111827" }}>
+                  <span style={{ fontWeight: "600", fontSize: "0.875rem", color: charge.isVoided || charge.isTransferred ? "#9ca3af" : "#111827" }}>
                     {charge.description}
                   </span>
                   <span style={{ marginLeft: "0.5rem", fontSize: "0.75rem", color: "#6b7280" }}>
@@ -141,6 +143,11 @@ export function FolioDetailCard({
                       [Split de {charge.originalSplitChargeId}]
                     </span>
                   )}
+                  {charge.isTransferred && (
+                    <StatusBadge variant="info" size="sm" style={{ marginLeft: "0.5rem" }}>
+                      Transferido a {charge.transferredToFolioId}
+                    </StatusBadge>
+                  )}
                   {charge.isVoided && (
                     <StatusBadge variant="error" size="sm" style={{ marginLeft: "0.5rem" }}>
                       Anulado
@@ -148,26 +155,47 @@ export function FolioDetailCard({
                   )}
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                  <span style={{ fontWeight: "600", fontSize: "0.875rem", color: charge.isVoided ? "#9ca3af" : "#111827" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <span style={{ fontWeight: "600", fontSize: "0.875rem", color: charge.isVoided || charge.isTransferred ? "#9ca3af" : "#111827" }}>
                     ${charge.amount.toFixed(2)} {charge.currency}
                   </span>
-                  {onSplitCharge && !charge.isVoided && folio.status === "OPEN" && (
-                    <button
-                      onClick={() => onSplitCharge(charge)}
-                      style={{
-                        padding: "0.2rem 0.5rem",
-                        backgroundColor: "#f3f4f6",
-                        border: "1px solid #d1d5db",
-                        borderRadius: "4px",
-                        fontSize: "0.75rem",
-                        cursor: "pointer",
-                        color: "#374151",
-                        fontWeight: "500",
-                      }}
-                    >
-                      Dividir
-                    </button>
+                  {!charge.isVoided && !charge.isTransferred && folio.status === "OPEN" && (
+                    <>
+                      {onSplitCharge && (
+                        <button
+                          onClick={() => onSplitCharge(charge)}
+                          style={{
+                            padding: "0.2rem 0.45rem",
+                            backgroundColor: "#f3f4f6",
+                            border: "1px solid #d1d5db",
+                            borderRadius: "4px",
+                            fontSize: "0.75rem",
+                            cursor: "pointer",
+                            color: "#374151",
+                            fontWeight: "500",
+                          }}
+                        >
+                          Dividir
+                        </button>
+                      )}
+                      {onTransferCharge && (
+                        <button
+                          onClick={() => onTransferCharge(charge)}
+                          style={{
+                            padding: "0.2rem 0.45rem",
+                            backgroundColor: "#e0f2fe",
+                            border: "1px solid #bae6fd",
+                            borderRadius: "4px",
+                            fontSize: "0.75rem",
+                            cursor: "pointer",
+                            color: "#0369a1",
+                            fontWeight: "500",
+                          }}
+                        >
+                          Transferir
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

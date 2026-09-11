@@ -11,6 +11,8 @@ import type {
   SplitChargePortionDto,
   SplitChargeRequestDto,
   SplitChargeResultDto,
+  TransferChargeRequestDto,
+  TransferChargeResultDto,
 } from "../dtos/folio.dto";
 import type {
   ChargeRoutingRule,
@@ -23,6 +25,8 @@ import type {
   SplitChargePortion,
   SplitChargeRequest,
   SplitChargeResult,
+  TransferChargeRequest,
+  TransferChargeResult,
 } from "../model/folio";
 
 const VALID_FOLIO_TYPES: ReadonlySet<string> = new Set<FolioTypeDto>([
@@ -88,6 +92,10 @@ export function mapFolioChargeDtoToDomain(dto: FolioChargeDto): FolioCharge {
     postedBy: (dto.posted_by || "system").trim(),
     isVoided: Boolean(dto.is_voided),
     originalSplitChargeId: dto.original_split_charge_id ?? null,
+    isTransferred: Boolean(dto.is_transferred),
+    transferredToFolioId: dto.transferred_to_folio_id ?? null,
+    transferredFromFolioId: dto.transferred_from_folio_id ?? null,
+    transferReason: dto.transfer_reason ?? null,
   };
 }
 
@@ -189,6 +197,46 @@ export function mapSplitChargeResultDtoToDomain(dto: SplitChargeResultDto): Spli
   };
 }
 
+export function mapTransferChargeRequestToDto(request: TransferChargeRequest): TransferChargeRequestDto {
+  if (!request || typeof request.chargeId !== "string" || !request.chargeId.trim()) {
+    throw new DomainMappingError("MISSING_TRANSFER_CHARGE_ID");
+  }
+  if (typeof request.targetFolioId !== "string" || !request.targetFolioId.trim()) {
+    throw new DomainMappingError("MISSING_TRANSFER_TARGET_FOLIO");
+  }
+  if (typeof request.reason !== "string" || !request.reason.trim()) {
+    throw new DomainMappingError("MISSING_TRANSFER_REASON");
+  }
+
+  return {
+    charge_id: request.chargeId.trim(),
+    target_folio_id: request.targetFolioId.trim(),
+    reason: request.reason.trim(),
+  };
+}
+
+export function mapTransferChargeResultDtoToDomain(dto: TransferChargeResultDto): TransferChargeResult {
+  if (!dto || typeof dto.transferred_charge_id !== "string" || !dto.transferred_charge_id.trim()) {
+    throw new DomainMappingError("MISSING_TRANSFERRED_CHARGE_ID");
+  }
+
+  const transferredAt = new Date(dto.transferred_at);
+  if (Number.isNaN(transferredAt.getTime())) {
+    throw new DomainMappingError("INVALID_TRANSFERRED_AT");
+  }
+
+  const updatedSourceFolio = mapFolioDtoToDomain(dto.updated_source_folio);
+
+  return {
+    transferredChargeId: dto.transferred_charge_id.trim(),
+    sourceFolioId: (dto.source_folio_id || "").trim(),
+    targetFolioId: (dto.target_folio_id || "").trim(),
+    reason: (dto.reason || "").trim(),
+    transferredAt,
+    updatedSourceFolio,
+  };
+}
+
 export function mapFolioDtoToDomain(dto: FolioDto): Folio {
   if (!dto || typeof dto.folio_id !== "string" || !dto.folio_id.trim()) {
     throw new DomainMappingError("MISSING_FOLIO_ID");
@@ -212,7 +260,7 @@ export function mapFolioDtoToDomain(dto: FolioDto): Folio {
   }
 
   const calculatedCharges = charges
-    .filter((c) => !c.isVoided)
+    .filter((c) => !c.isVoided && !c.isTransferred)
     .reduce((acc, c) => acc + c.amount, 0);
 
   const calculatedPayments = payments.reduce((acc, p) => acc + p.amount, 0);

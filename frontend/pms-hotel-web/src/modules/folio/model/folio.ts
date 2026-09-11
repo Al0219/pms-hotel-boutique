@@ -1,9 +1,9 @@
 /**
- * Domain Models for Folio, Transactions, Routing & Split
+ * Domain Models for Folio, Transactions, Routing, Split & Transfer
  * Reglas de dominio:
  * - Separación de amount (number) y currency (string).
  * - Fechas como Date.
- * - Balance calculado (charges - payments).
+ * - Balance calculado (charges activos - payments).
  */
 
 export type FolioType = "GUEST" | "COMPANY" | "MASTER";
@@ -30,6 +30,10 @@ export interface FolioCharge {
   postedBy: string;
   isVoided: boolean;
   originalSplitChargeId?: string | null;
+  isTransferred?: boolean;
+  transferredToFolioId?: string | null;
+  transferredFromFolioId?: string | null;
+  transferReason?: string | null;
 }
 
 export interface FolioPaymentEntry {
@@ -66,6 +70,21 @@ export interface SplitChargeResult {
   originalChargeId: string;
   sourceFolioId: string;
   createdCharges: FolioCharge[];
+  updatedSourceFolio: Folio;
+}
+
+export interface TransferChargeRequest {
+  chargeId: string;
+  targetFolioId: string;
+  reason: string;
+}
+
+export interface TransferChargeResult {
+  transferredChargeId: string;
+  sourceFolioId: string;
+  targetFolioId: string;
+  reason: string;
+  transferredAt: Date;
   updatedSourceFolio: Folio;
 }
 

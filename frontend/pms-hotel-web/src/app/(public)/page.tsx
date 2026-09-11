@@ -11,10 +11,14 @@ import {
   fetchFolioByIdDto,
   FolioDetailCard,
   FolioSplitModal,
+  FolioTransferModal,
   mapFolioDtoToDomain,
   mapSplitChargeRequestToDto,
   mapSplitChargeResultDtoToDomain,
+  mapTransferChargeRequestToDto,
+  mapTransferChargeResultDtoToDomain,
   splitFolioChargeDto,
+  transferFolioChargeDto,
   type Folio,
   type FolioCharge,
   type SplitChargePortion,
@@ -31,6 +35,7 @@ export default function PublicShellPage() {
   const [paymentResult, setPaymentResult] = useState<PaymentGuaranteeResult | null>(null);
   const [folioResult, setFolioResult] = useState<Folio | null>(null);
   const [chargeToSplit, setChargeToSplit] = useState<FolioCharge | null>(null);
+  const [chargeToTransfer, setChargeToTransfer] = useState<FolioCharge | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -115,6 +120,27 @@ export default function PublicShellPage() {
     }
   }
 
+  async function handleConfirmTransfer(targetFolioId: string, reason: string) {
+    if (!folioResult || !chargeToTransfer) return;
+    setLoading("transfer");
+    setErrorMsg(null);
+    try {
+      const transferRequestDto = mapTransferChargeRequestToDto({
+        chargeId: chargeToTransfer.chargeId,
+        targetFolioId,
+        reason,
+      });
+      const resultDto = await transferFolioChargeDto(folioResult.folioId, transferRequestDto);
+      const domainResult = mapTransferChargeResultDtoToDomain(resultDto);
+      setFolioResult(domainResult.updatedSourceFolio);
+      setChargeToTransfer(null);
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : "Error al transferir el cargo");
+    } finally {
+      setLoading(null);
+    }
+  }
+
   return (
     <main style={{ maxWidth: "800px", margin: "0 auto", padding: "2rem 1rem", fontFamily: "system-ui, sans-serif" }}>
       <header style={{ marginBottom: "2rem", borderBottom: "1px solid #e5e7eb", paddingBottom: "1rem" }}>
@@ -122,7 +148,7 @@ export default function PublicShellPage() {
           PMS Hotel Boutique — Consola de Pruebas WEB-4
         </h1>
         <p style={{ color: "#6b7280", fontSize: "0.95rem" }}>
-          Prueba interactiva de los servicios y componentes implementados para <strong>Disponibilidad (IMP-WEB-0102)</strong>, <strong>Garantías de Pago (IMP-WEB-0109)</strong>, <strong>StatusBadge (IMP-WEB-S401)</strong>, <strong>Folio Avanzado (IMP-WEB-0401)</strong> y <strong>Routing & Split (IMP-WEB-0402)</strong>.
+          Prueba interactiva de los servicios y componentes implementados para <strong>Disponibilidad (IMP-WEB-0102)</strong>, <strong>Garantías de Pago (IMP-WEB-0109)</strong>, <strong>StatusBadge (IMP-WEB-S401)</strong>, <strong>Folio Avanzado (IMP-WEB-0401)</strong>, <strong>Routing & Split (IMP-WEB-0402)</strong> y <strong>Transferencia de Cargos (IMP-WEB-0403)</strong>.
         </p>
       </header>
 
@@ -247,13 +273,13 @@ export default function PublicShellPage() {
         )}
       </section>
 
-      {/* Sección 3: Folio Avanzado y Split */}
+      {/* Sección 3: Folio Avanzado, Split y Transfer */}
       <section style={{ backgroundColor: "#f9fafb", padding: "1.5rem", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
         <h2 style={{ fontSize: "1.25rem", fontWeight: "600", color: "#1f2937", marginBottom: "0.75rem" }}>
-          3. Folio Avanzado, StatusBadge y Split (`IMP-WEB-S401`, `0401` y `0402`)
+          3. Folio Avanzado, StatusBadge, Split y Transferencia (`IMP-WEB-S401`, `0401`, `0402`, `0403`)
         </h2>
         <p style={{ color: "#4b5563", fontSize: "0.9rem", marginBottom: "1rem" }}>
-          Consulta el estado de cuenta y haz clic en el botón <strong>&quot;Dividir&quot;</strong> de cualquier cargo para simular un Split entre folios.
+          Consulta el estado de cuenta y usa <strong>&quot;Dividir&quot;</strong> para fraccionar cargos o <strong>&quot;Transferir&quot;</strong> para reasignar cargos a otro folio.
         </p>
 
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1rem" }}>
@@ -271,6 +297,7 @@ export default function PublicShellPage() {
             folio={folioResult}
             onApplyPayment={() => alert("Modal para registrar cobro en caja o terminal POS")}
             onSplitCharge={(charge) => setChargeToSplit(charge)}
+            onTransferCharge={(charge) => setChargeToTransfer(charge)}
           />
         )}
 
@@ -279,6 +306,14 @@ export default function PublicShellPage() {
             charge={chargeToSplit}
             onSplit={handleConfirmSplit}
             onClose={() => setChargeToSplit(null)}
+          />
+        )}
+
+        {chargeToTransfer && (
+          <FolioTransferModal
+            charge={chargeToTransfer}
+            onTransfer={handleConfirmTransfer}
+            onClose={() => setChargeToTransfer(null)}
           />
         )}
       </section>

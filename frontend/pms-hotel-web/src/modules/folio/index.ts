@@ -14,6 +14,8 @@ export type {
   SplitChargePortion,
   SplitChargeRequest,
   SplitChargeResult,
+  TransferChargeRequest,
+  TransferChargeResult,
 } from "./model/folio";
 
 export type {
@@ -28,6 +30,8 @@ export type {
   SplitChargePortionDto,
   SplitChargeRequestDto,
   SplitChargeResultDto,
+  TransferChargeRequestDto,
+  TransferChargeResultDto,
 } from "./dtos/folio.dto";
 
 export {
@@ -38,12 +42,15 @@ export {
   mapSplitChargePortionToDto,
   mapSplitChargeRequestToDto,
   mapSplitChargeResultDtoToDomain,
+  mapTransferChargeRequestToDto,
+  mapTransferChargeResultDtoToDomain,
 } from "./mappers/folio.mapper";
 
 export {
   createChargeRoutingRuleDto,
   fetchFolioByIdDto,
   splitFolioChargeDto,
+  transferFolioChargeDto,
 } from "./service/folio.service";
 
 export {
@@ -59,3 +66,10 @@ export {
 export type {
   FolioSplitModalProps,
 } from "./components/folio-split-modal";
+
+export {
+  FolioTransferModal,
+} from "./components/folio-transfer-modal";
+export type {
+  FolioTransferModalProps,
+} from "./components/folio-transfer-modal";

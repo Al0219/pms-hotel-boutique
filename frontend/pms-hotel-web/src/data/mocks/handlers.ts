@@ -4,6 +4,8 @@ import type {
   FolioDto,
   SplitChargeRequestDto,
   SplitChargeResultDto,
+  TransferChargeRequestDto,
+  TransferChargeResultDto,
 } from "@/modules/folio/dtos/folio.dto";
 import type {
   PaymentGuaranteeRequestDto,
@@ -272,6 +274,50 @@ async function handleSplitChargeRequest({ params, request }: { params: Record<st
   return HttpResponse.json(response);
 }
 
+async function handleTransferChargeRequest({ params, request }: { params: Record<string, string | readonly string[] | undefined>; request: Request }) {
+  const folioId = typeof params.id === "string" ? params.id : "fol_guest_101";
+  const body = (await request.json()) as TransferChargeRequestDto;
+
+  if (body.charge_id === "error_charge") {
+    return HttpResponse.json({ error: "Transfer Failed" }, { status: 500 });
+  }
+
+  const updatedCharges = mockGuestFolioDto.charges.map((c) => {
+    if (c.charge_id === body.charge_id) {
+      return {
+        ...c,
+        is_transferred: true,
+        transferred_to_folio_id: body.target_folio_id,
+        transfer_reason: body.reason,
+      };
+    }
+    return c;
+  });
+
+  const activeCharges = updatedCharges.filter((c) => !c.is_voided && !c.is_transferred);
+  const totalChargesNum = activeCharges.reduce((sum, c) => sum + Number(c.amount), 0);
+  const totalPaymentsNum = mockGuestFolioDto.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+
+  const updatedSourceFolio: FolioDto = {
+    ...mockGuestFolioDto,
+    folio_id: folioId,
+    charges: updatedCharges,
+    total_charges: totalChargesNum.toFixed(2),
+    balance: (totalChargesNum - totalPaymentsNum).toFixed(2),
+  };
+
+  const response: TransferChargeResultDto = {
+    transferred_charge_id: body.charge_id,
+    source_folio_id: folioId,
+    target_folio_id: body.target_folio_id,
+    reason: body.reason,
+    transferred_at: new Date().toISOString(),
+    updated_source_folio: updatedSourceFolio,
+  };
+
+  return HttpResponse.json(response);
+}
+
 export const handlers = [
   http.get("http://pms.test/__msw/health", () => HttpResponse.json({ status: "ok" })),
   http.get("http://pms.test/__msw/missing", () => HttpResponse.text(null, { status: 404 })),
@@ -290,4 +336,6 @@ export const handlers = [
   http.get("/api/v1/private/folios/:id", handleGetFolioById),
   http.post("http://pms.test/api/v1/private/folios/:id/split-charge", handleSplitChargeRequest),
   http.post("/api/v1/private/folios/:id/split-charge", handleSplitChargeRequest),
+  http.post("http://pms.test/api/v1/private/folios/:id/transfer-charge", handleTransferChargeRequest),
+  http.post("/api/v1/private/folios/:id/transfer-charge", handleTransferChargeRequest),
 ];

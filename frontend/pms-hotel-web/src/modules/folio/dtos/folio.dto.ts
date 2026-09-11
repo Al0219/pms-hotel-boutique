@@ -1,6 +1,6 @@
 /**
- * PROVISIONAL API CONTRACT - Folio, Charges, Routing & Split
- * Corresponde a las tareas IMP-WEB-0401 e IMP-WEB-0402 (WEB-4).
+ * PROVISIONAL API CONTRACT - Folio, Charges, Routing, Split & Transfer
+ * Corresponde a las tareas IMP-WEB-0401, IMP-WEB-0402 e IMP-WEB-0403 (WEB-4).
  * Debe validarse contra Backend antes de marcar CONFIRMED.
  */
 
@@ -28,6 +28,10 @@ export interface FolioChargeDto {
   posted_by: string;
   is_voided?: boolean;
   original_split_charge_id?: string | null;
+  is_transferred?: boolean;
+  transferred_to_folio_id?: string | null;
+  transferred_from_folio_id?: string | null;
+  transfer_reason?: string | null;
 }
 
 export interface FolioPaymentEntryDto {
@@ -70,6 +74,21 @@ export interface SplitChargeResultDto {
   original_charge_id: string;
   source_folio_id: string;
   created_charges: FolioChargeDto[];
+  updated_source_folio: FolioDto;
+}
+
+export interface TransferChargeRequestDto {
+  charge_id: string;
+  target_folio_id: string;
+  reason: string;
+}
+
+export interface TransferChargeResultDto {
+  transferred_charge_id: string;
+  source_folio_id: string;
+  target_folio_id: string;
+  reason: string;
+  transferred_at: string;
   updated_source_folio: FolioDto;
 }
 
