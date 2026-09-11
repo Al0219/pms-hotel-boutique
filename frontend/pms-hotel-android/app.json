@@ -8,7 +8,8 @@
     ],
     "plugins": [
       "expo-router",
-      "expo-status-bar"
+      "expo-status-bar",
+      "@react-native-community/datetimepicker"
     ]
   }
 }

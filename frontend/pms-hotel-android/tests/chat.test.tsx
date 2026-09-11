@@ -118,7 +118,7 @@ describe('Chat con Recepción', () => {
     expect(composerRow.props.children[1].props.testID).toBe('chat-composer-input');
     expect(rendered.getByLabelText('Chat').props.accessibilityState).toEqual({ disabled: false, selected: true });
     expect(rendered.getByLabelText('Servicios').props.accessibilityState).toEqual({ disabled: false, selected: false });
-    expect(rendered.getByLabelText('Valet').props.accessibilityState.disabled).toBe(true);
+    expect(rendered.getByLabelText('Valet').props.accessibilityState.disabled).toBe(false);
     expect(rendered.getByLabelText('Cuenta').props.accessibilityState.disabled).toBe(true);
   });
 
