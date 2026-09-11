@@ -10,7 +10,7 @@ La navegación y back stack de Foundation se prueban con `expo-router/testing-li
 
 La fuente visual canónica `238:132 — Implementation Ready — Android V2 + V3` confirma la footbar `Servicios · Chat · Valet · Cuenta` en Chat (`238:192`), Servicios (`239:132`), Valet (`239:197`) y Cuenta (`240:132`). Las nuevas features derivadas de esa sección deben usar esa referencia visual.
 
-No existe todavía un shell V3 compartido implementado. `IMP-AND-0100 — Android Guest Navigation Shell V3` está `READY` para implementarlo bajo `DEC-A-004`; hasta que se complete, ningún módulo debe copiar una footbar privada.
+`IMP-AND-0100 — Android Guest Navigation Shell V3` implementa el shell V3 compartido bajo `DEC-A-004`. Permanece sin montar hasta que una feature V3 autorizada sea su primer consumidor productivo; ningún módulo feature puede copiar una footbar privada.
 
 ## Política aprobada del shell Guest V3
 
