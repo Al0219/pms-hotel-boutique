@@ -110,4 +110,9 @@ export interface CapturePaymentRequest {
   reason?: string;
 }
 
+export interface VoidPaymentRequest {
+  reason: string;
+}
+
+
 

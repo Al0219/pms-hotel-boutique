@@ -34,13 +34,17 @@ import {
   mapPaymentGuaranteeDtoToDomain,
   mapPaymentGuaranteeRequestToDto,
   mapPaymentListResponseDtoToDomain,
+  mapVoidPaymentRequestToDto,
   PaymentAuthorizeModal,
   PaymentCaptureModal,
   PaymentListCard,
+  PaymentVoidModal,
+  voidPaymentDto,
   type AuthorizePaymentRequest,
   type CapturePaymentRequest,
   type Payment,
   type PaymentGuaranteeResult,
+  type VoidPaymentRequest,
 } from "@/modules/payments";
 
 export default function PublicShellPage() {
@@ -52,6 +56,7 @@ export default function PublicShellPage() {
   const [paymentsList, setPaymentsList] = useState<Payment[] | null>(null);
   const [isAuthorizeModalOpen, setIsAuthorizeModalOpen] = useState(false);
   const [paymentToCapture, setPaymentToCapture] = useState<Payment | null>(null);
+  const [paymentToVoid, setPaymentToVoid] = useState<Payment | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -209,6 +214,27 @@ export default function PublicShellPage() {
     }
   }
 
+  async function handleConfirmVoid(paymentId: string, request: VoidPaymentRequest) {
+    setLoading("void");
+    setErrorMsg(null);
+    try {
+      const dto = mapVoidPaymentRequestToDto(request);
+      const responseDto = await voidPaymentDto(paymentId, dto);
+      const domainResult = mapPaymentDtoToDomain(responseDto);
+      setPaymentsList((prev) =>
+        prev
+          ? prev.map((p) => (p.paymentId === paymentId ? domainResult : p))
+          : [domainResult],
+      );
+      setPaymentToVoid(null);
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : "Error durante la anulación del pago");
+      throw err;
+    } finally {
+      setLoading(null);
+    }
+  }
+
   return (
     <main style={{ maxWidth: "800px", margin: "0 auto", padding: "2rem 1rem", fontFamily: "system-ui, sans-serif" }}>
       <header style={{ marginBottom: "2rem", borderBottom: "1px solid #e5e7eb", paddingBottom: "1rem" }}>
@@ -216,7 +242,7 @@ export default function PublicShellPage() {
           PMS Hotel Boutique — Consola de Pruebas WEB-4
         </h1>
         <p style={{ color: "#6b7280", fontSize: "0.95rem" }}>
-          Prueba interactiva de los servicios y componentes implementados para <strong>Disponibilidad (IMP-WEB-0102)</strong>, <strong>Garantías de Pago (IMP-WEB-0109)</strong>, <strong>StatusBadge (IMP-WEB-S401)</strong>, <strong>Folio Avanzado (IMP-WEB-0401)</strong>, <strong>Routing & Split (IMP-WEB-0402)</strong>, <strong>Transferencia de Cargos (IMP-WEB-0403)</strong>, <strong>Listado de Pagos (IMP-WEB-0404)</strong>, <strong>Autorización (IMP-WEB-0405)</strong> y <strong>Captura Total/Parcial (IMP-WEB-0406)</strong>.
+          Prueba interactiva de los servicios y componentes implementados para <strong>Disponibilidad (IMP-WEB-0102)</strong>, <strong>Garantías de Pago (IMP-WEB-0109)</strong>, <strong>StatusBadge (IMP-WEB-S401)</strong>, <strong>Folio Avanzado (IMP-WEB-0401)</strong>, <strong>Routing & Split (IMP-WEB-0402)</strong>, <strong>Transferencia de Cargos (IMP-WEB-0403)</strong>, <strong>Listado de Pagos (IMP-WEB-0404)</strong>, <strong>Autorización (IMP-WEB-0405)</strong>, <strong>Captura (IMP-WEB-0406)</strong> y <strong>Anulación/Void (IMP-WEB-0407)</strong>.
         </p>
       </header>
 
@@ -389,10 +415,10 @@ export default function PublicShellPage() {
       {/* Sección 4: Listado de Pagos y Domain Model */}
       <section style={{ backgroundColor: "#f9fafb", padding: "1.5rem", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
         <h2 style={{ fontSize: "1.25rem", fontWeight: "600", color: "#1f2937", marginBottom: "0.75rem" }}>
-          4. Listado, Auditoría, Autorización y Captura (`IMP-WEB-0404`, `0405`, `0406`)
+          4. Listado, Auditoría, Autorización, Captura y Anulación (`IMP-WEB-0404`, `0405`, `0406`, `0407`)
         </h2>
         <p style={{ color: "#4b5563", fontSize: "0.9rem", marginBottom: "1rem" }}>
-          Listado de transacciones financieras con auditoría append-only, modal de nueva autorización y liquidación (captura total o parcial).
+          Listado de transacciones financieras con auditoría append-only, modal de nueva autorización, liquidación (captura total o parcial) y anulación/void de autorizaciones sin captura.
         </p>
 
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1rem" }}>
@@ -417,7 +443,7 @@ export default function PublicShellPage() {
             payments={paymentsList}
             onAuthorizeNew={() => setIsAuthorizeModalOpen(true)}
             onCapturePayment={(payment) => setPaymentToCapture(payment)}
-            onVoidPayment={(payment) => alert(`Anular/Void pago ${payment.paymentId}`)}
+            onVoidPayment={(payment) => setPaymentToVoid(payment)}
             onRefundPayment={(payment) => alert(`Reembolsar pago ${payment.paymentId}`)}
           />
         )}
@@ -435,6 +461,14 @@ export default function PublicShellPage() {
             payment={paymentToCapture}
             onCapture={handleConfirmCapture}
             onClose={() => setPaymentToCapture(null)}
+          />
+        )}
+
+        {paymentToVoid && (
+          <PaymentVoidModal
+            payment={paymentToVoid}
+            onVoid={handleConfirmVoid}
+            onClose={() => setPaymentToVoid(null)}
           />
         )}
       </section>

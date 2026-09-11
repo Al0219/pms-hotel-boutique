@@ -14,6 +14,7 @@ import type {
   PaymentGuaranteeRequestDto,
   PaymentGuaranteeResponseDto,
   PaymentListResponseDto,
+  VoidPaymentRequestDto,
 } from "@/modules/payments/dtos/payment.dto";
 
 export const mockAvailabilitySuccessDto = {
@@ -618,6 +619,76 @@ function handleCapturePayment({ params, request }: { params: Record<string, stri
   });
 }
 
+function handleVoidPayment({ params, request }: { params: Record<string, string | readonly string[] | undefined>; request: Request }) {
+  const paymentId = typeof params.id === "string" ? params.id : "";
+  if (paymentId === "error_payment") {
+    return HttpResponse.json({ error: "Void failed by server" }, { status: 500 });
+  }
+
+  const existingIndex = mockPaymentsListDto.findIndex((p) => p.payment_id === paymentId);
+  const existing = existingIndex !== -1 ? mockPaymentsListDto[existingIndex] : {
+    payment_id: paymentId,
+    folio_id: "fol_guest_101",
+    reservation_id: "res_01",
+    stay_id: "stay_01",
+    method: "CREDIT_CARD" as const,
+    status: "AUTHORIZED" as const,
+    currency: "USD",
+    authorized_amount: "500.00",
+    captured_amount: "0.00",
+    refunded_amount: "0.00",
+    provider_reference: "tx_mock_auth",
+    last4: "4242",
+    card_brand: "Visa",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    failure_reason: null,
+    audit_trail: [],
+  };
+
+  return request.json().then((bodyRaw) => {
+    const body = bodyRaw as VoidPaymentRequestDto;
+
+    if (body.reason === "error_trigger") {
+      return HttpResponse.json({ error: "Void failed by gateway" }, { status: 500 });
+    }
+
+    if (existing.status !== "AUTHORIZED" || Number(existing.captured_amount) > 0) {
+      return HttpResponse.json(
+        { error: `Payment with status ${existing.status} and captured amount $${existing.captured_amount} is not eligible for void.` },
+        { status: 400 },
+      );
+    }
+
+    const updatedPayment: PaymentDto = {
+      ...existing,
+      status: "VOIDED",
+      updated_at: new Date().toISOString(),
+      audit_trail: [
+        ...(existing.audit_trail || []),
+        {
+          audit_id: `aud_void_${Date.now()}`,
+          action: "VOID",
+          amount: existing.authorized_amount,
+          currency: existing.currency,
+          performed_by: "staff_frontdesk",
+          performed_at: new Date().toISOString(),
+          reason: body.reason,
+          provider_reference: `tx_void_${Date.now()}`,
+        },
+      ],
+    };
+
+    if (existingIndex !== -1) {
+      mockPaymentsListDto[existingIndex] = updatedPayment;
+    } else {
+      mockPaymentsListDto.unshift(updatedPayment);
+    }
+
+    return HttpResponse.json(updatedPayment);
+  });
+}
+
 export const handlers = [
   http.get("http://pms.test/__msw/health", () => HttpResponse.json({ status: "ok" })),
   http.get("http://pms.test/__msw/missing", () => HttpResponse.text(null, { status: 404 })),
@@ -646,4 +717,6 @@ export const handlers = [
   http.post("/api/v1/private/payments/authorize", handleAuthorizePayment),
   http.post("http://pms.test/api/v1/private/payments/:id/capture", handleCapturePayment),
   http.post("/api/v1/private/payments/:id/capture", handleCapturePayment),
+  http.post("http://pms.test/api/v1/private/payments/:id/void", handleVoidPayment),
+  http.post("/api/v1/private/payments/:id/void", handleVoidPayment),
 ];

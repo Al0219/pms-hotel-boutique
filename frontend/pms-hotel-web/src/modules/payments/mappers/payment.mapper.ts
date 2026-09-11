@@ -11,6 +11,7 @@ import type {
   PaymentListResponseDto,
   PaymentMethodDto,
   PaymentStatusDto,
+  VoidPaymentRequestDto,
 } from "../dtos/payment.dto";
 import type {
   AuthorizePaymentRequest,
@@ -23,6 +24,7 @@ import type {
   PaymentListResult,
   PaymentMethod,
   PaymentStatus,
+  VoidPaymentRequest,
 } from "../model/payment";
 
 const VALID_METHODS: ReadonlySet<string> = new Set<PaymentMethodDto>([
@@ -285,5 +287,16 @@ export function mapCapturePaymentRequestToDto(request: CapturePaymentRequest): C
     reason: request.reason?.trim(),
   };
 }
+
+export function mapVoidPaymentRequestToDto(request: VoidPaymentRequest): VoidPaymentRequestDto {
+  if (!request || !request.reason || !request.reason.trim()) {
+    throw new DomainMappingError("MISSING_VOID_REASON");
+  }
+
+  return {
+    reason: request.reason.trim(),
+  };
+}
+
 
 

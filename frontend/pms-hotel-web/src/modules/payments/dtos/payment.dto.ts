@@ -105,4 +105,9 @@ export interface CapturePaymentRequestDto {
   reason?: string;
 }
 
+export interface VoidPaymentRequestDto {
+  reason: string;
+}
+
+
 
