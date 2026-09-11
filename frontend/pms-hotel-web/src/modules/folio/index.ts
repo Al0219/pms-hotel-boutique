@@ -1,5 +1,39 @@
 /**
- * Public API for the folio module.
- * Export only intentionally public Domain Models, hooks and components.
- * Do not expose DTOs, mappers or service internals without an approved reason.
+ * Public API for the folio module (WEB-4).
+ * Export only intentionally public Domain Models, mappers, services and components.
  */
+
+export type {
+  Folio,
+  FolioCharge,
+  FolioChargeCategory,
+  FolioPaymentEntry,
+  FolioStatus,
+  FolioType,
+} from "./model/folio";
+
+export type {
+  FolioChargeCategoryDto,
+  FolioChargeDto,
+  FolioDto,
+  FolioPaymentEntryDto,
+  FolioStatusDto,
+  FolioTypeDto,
+} from "./dtos/folio.dto";
+
+export {
+  mapFolioChargeDtoToDomain,
+  mapFolioDtoToDomain,
+  mapFolioPaymentEntryDtoToDomain,
+} from "./mappers/folio.mapper";
+
+export {
+  fetchFolioByIdDto,
+} from "./service/folio.service";
+
+export {
+  FolioDetailCard,
+} from "./components/folio-detail-card";
+export type {
+  FolioDetailCardProps,
+} from "./components/folio-detail-card";

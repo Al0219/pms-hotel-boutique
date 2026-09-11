@@ -8,6 +8,12 @@ import {
   type AvailabilitySearchResult,
 } from "@/modules/availability";
 import {
+  fetchFolioByIdDto,
+  FolioDetailCard,
+  mapFolioDtoToDomain,
+  type Folio,
+} from "@/modules/folio";
+import {
   createPaymentGuaranteeDto,
   mapPaymentGuaranteeDtoToDomain,
   mapPaymentGuaranteeRequestToDto,
@@ -17,6 +23,7 @@ import {
 export default function PublicShellPage() {
   const [availabilityResult, setAvailabilityResult] = useState<AvailabilitySearchResult | null>(null);
   const [paymentResult, setPaymentResult] = useState<PaymentGuaranteeResult | null>(null);
+  const [folioResult, setFolioResult] = useState<Folio | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -67,6 +74,20 @@ export default function PublicShellPage() {
     }
   }
 
+  async function handleTestFolio(folioId: string) {
+    setLoading("folio");
+    setErrorMsg(null);
+    try {
+      const dto = await fetchFolioByIdDto(folioId);
+      const domainResult = mapFolioDtoToDomain(dto);
+      setFolioResult(domainResult);
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : "Error desconocido");
+    } finally {
+      setLoading(null);
+    }
+  }
+
   return (
     <main style={{ maxWidth: "800px", margin: "0 auto", padding: "2rem 1rem", fontFamily: "system-ui, sans-serif" }}>
       <header style={{ marginBottom: "2rem", borderBottom: "1px solid #e5e7eb", paddingBottom: "1rem" }}>
@@ -74,7 +95,7 @@ export default function PublicShellPage() {
           PMS Hotel Boutique — Consola de Pruebas WEB-4
         </h1>
         <p style={{ color: "#6b7280", fontSize: "0.95rem" }}>
-          Prueba interactiva de los servicios y contratos implementados para <strong>Disponibilidad (IMP-WEB-0102)</strong> y <strong>Garantías de Pago (IMP-WEB-0109)</strong>.
+          Prueba interactiva de los servicios y componentes implementados para <strong>Disponibilidad (IMP-WEB-0102)</strong>, <strong>Garantías de Pago (IMP-WEB-0109)</strong>, <strong>StatusBadge (IMP-WEB-S401)</strong> y <strong>Folio Avanzado (IMP-WEB-0401)</strong>.
         </p>
       </header>
 
@@ -90,7 +111,7 @@ export default function PublicShellPage() {
           1. Servicio de Disponibilidad Pública (`IMP-WEB-0102`)
         </h2>
         <p style={{ color: "#4b5563", fontSize: "0.9rem", marginBottom: "1rem" }}>
-          Consulta el servicio mock `/api/v1/public/availability` y mapea a modelos de dominio con cálculo ATS.
+          Consulta el servicio `/api/v1/public/availability` y mapea a modelos de dominio con cálculo ATS.
         </p>
 
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1rem" }}>
@@ -145,7 +166,7 @@ export default function PublicShellPage() {
       </section>
 
       {/* Sección 2: Garantías de Pago */}
-      <section style={{ backgroundColor: "#f9fafb", padding: "1.5rem", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
+      <section style={{ backgroundColor: "#f9fafb", padding: "1.5rem", borderRadius: "10px", marginBottom: "2rem", border: "1px solid #e5e7eb" }}>
         <h2 style={{ fontSize: "1.25rem", fontWeight: "600", color: "#1f2937", marginBottom: "0.75rem" }}>
           2. Servicio de Garantía y Pago Provisional (`IMP-WEB-0109`)
         </h2>
@@ -196,6 +217,33 @@ export default function PublicShellPage() {
               )}
             </div>
           </div>
+        )}
+      </section>
+
+      {/* Sección 3: Folio Avanzado */}
+      <section style={{ backgroundColor: "#f9fafb", padding: "1.5rem", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
+        <h2 style={{ fontSize: "1.25rem", fontWeight: "600", color: "#1f2937", marginBottom: "0.75rem" }}>
+          3. Folio Avanzado y StatusBadge (`IMP-WEB-S401` e `IMP-WEB-0401`)
+        </h2>
+        <p style={{ color: "#4b5563", fontSize: "0.9rem", marginBottom: "1rem" }}>
+          Consulta el estado de cuenta y cargos de habitación con el componente `FolioDetailCard` y badges de estado semánticos.
+        </p>
+
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1rem" }}>
+          <button
+            onClick={() => handleTestFolio("fol_guest_101")}
+            disabled={loading === "folio"}
+            style={{ padding: "0.6rem 1.2rem", backgroundColor: "#7c3aed", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "500" }}
+          >
+            {loading === "folio" ? "Cargando Folio..." : "Cargar Detalle de Folio (Huésped)"}
+          </button>
+        </div>
+
+        {folioResult && (
+          <FolioDetailCard
+            folio={folioResult}
+            onApplyPayment={() => alert("Modal para registrar cobro en caja o terminal POS")}
+          />
         )}
       </section>
     </main>

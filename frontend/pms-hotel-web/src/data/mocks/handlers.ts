@@ -1,5 +1,6 @@
 import { http, HttpResponse } from "msw";
 
+import type { FolioDto } from "@/modules/folio/dtos/folio.dto";
 import type {
   PaymentGuaranteeRequestDto,
   PaymentGuaranteeResponseDto,
@@ -74,6 +75,80 @@ export const mockAvailabilityEmptyDto = {
   available_room_types: [],
 };
 
+export const mockGuestFolioDto: FolioDto = {
+  folio_id: "fol_guest_101",
+  folio_number: "FOL-2026-0089",
+  reservation_id: "res_demo_101",
+  stay_id: "stay_demo_101_a",
+  type: "GUEST",
+  status: "OPEN",
+  holder_name: "Carlos Morales",
+  room_number: "Suite 204",
+  currency: "USD",
+  total_charges: "980.00",
+  total_payments: "500.00",
+  balance: "480.00",
+  charges: [
+    {
+      charge_id: "chg_01",
+      category: "ROOM_NIGHT",
+      description: "Noche 1 - Suite King (01/10/2026)",
+      amount: "250.00",
+      currency: "USD",
+      posted_at: "2026-10-01T15:00:00.000Z",
+      posted_by: "system_night_audit",
+    },
+    {
+      charge_id: "chg_02",
+      category: "ROOM_NIGHT",
+      description: "Noche 2 - Suite King (02/10/2026)",
+      amount: "250.00",
+      currency: "USD",
+      posted_at: "2026-10-02T15:00:00.000Z",
+      posted_by: "system_night_audit",
+    },
+    {
+      charge_id: "chg_03",
+      category: "ROOM_NIGHT",
+      description: "Noche 3 - Suite King (03/10/2026)",
+      amount: "250.00",
+      currency: "USD",
+      posted_at: "2026-10-03T15:00:00.000Z",
+      posted_by: "system_night_audit",
+    },
+    {
+      charge_id: "chg_04",
+      category: "RESTAURANT",
+      description: "Cena Restaurante La Terraza",
+      amount: "130.00",
+      currency: "USD",
+      posted_at: "2026-10-02T21:30:00.000Z",
+      posted_by: "pos_restaurant",
+    },
+    {
+      charge_id: "chg_05",
+      category: "SPA",
+      description: "Masaje Relajante Spa Boutique",
+      amount: "100.00",
+      currency: "USD",
+      posted_at: "2026-10-03T11:00:00.000Z",
+      posted_by: "staff_spa",
+    },
+  ],
+  payments: [
+    {
+      payment_entry_id: "pay_entry_01",
+      payment_id: "pay_online_guarantee_101",
+      amount: "500.00",
+      currency: "USD",
+      method: "CREDIT_CARD",
+      paid_at: "2026-10-01T14:30:00.000Z",
+      reference: "ref_stripe_8871",
+    },
+  ],
+  created_at: "2026-10-01T14:00:00.000Z",
+};
+
 function handleAvailabilityRequest({ request }: { request: Request }) {
   const url = new URL(request.url);
   const propertyId = url.searchParams.get("property_id");
@@ -126,6 +201,20 @@ async function handlePaymentGuaranteeRequest({ request }: { request: Request }) 
   return HttpResponse.json(successResponse);
 }
 
+function handleGetFolioById({ params }: { params: Record<string, string | readonly string[] | undefined> }) {
+  const folioId = params.id;
+  if (folioId === "error_folio") {
+    return HttpResponse.json({ error: "Folio Internal Error" }, { status: 500 });
+  }
+  if (folioId === "missing_folio") {
+    return HttpResponse.json({ error: "Folio Not Found" }, { status: 404 });
+  }
+  return HttpResponse.json({
+    ...mockGuestFolioDto,
+    folio_id: typeof folioId === "string" ? folioId : mockGuestFolioDto.folio_id,
+  });
+}
+
 export const handlers = [
   http.get("http://pms.test/__msw/health", () => HttpResponse.json({ status: "ok" })),
   http.get("http://pms.test/__msw/missing", () => HttpResponse.text(null, { status: 404 })),
@@ -140,4 +229,6 @@ export const handlers = [
   http.get("/api/v1/public/availability", handleAvailabilityRequest),
   http.post("http://pms.test/api/v1/public/payments/guarantee", handlePaymentGuaranteeRequest),
   http.post("/api/v1/public/payments/guarantee", handlePaymentGuaranteeRequest),
+  http.get("http://pms.test/api/v1/private/folios/:id", handleGetFolioById),
+  http.get("/api/v1/private/folios/:id", handleGetFolioById),
 ];
