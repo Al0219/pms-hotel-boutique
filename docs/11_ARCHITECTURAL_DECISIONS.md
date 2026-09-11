@@ -58,6 +58,14 @@ Idempotentes y trazables.
 
 **Alternativas consideradas:** Mantener el bloqueo hasta diseñar Backend completo; o declarar los mocks como API anticipada. Ambas alternativas se rechazan provisionalmente porque contradicen la estrategia frontend-first o congelan decisiones Backend sin su fase de diseño.
 
+#### Clarificación aprobada — Android con datos dummy/locales
+
+Durante la fase frontend-first, la ausencia de Backend no bloquea por sí sola una feature Android. Android puede ejecutarse completamente con datos dummy/locales cuando la tarea cuenta con autoridad visual/funcional suficiente y un contrato frontend/mock aprobado para su módulo.
+
+Ese contrato determina solo los campos, escenarios de UI y boundaries que necesita Android. Los datos se sirven desde fixtures locales detrás de una implementación mock sustituible; la UI no importa fixtures ni DTOs. Cuando corresponde server-like state, TanStack Query/Mutation conserva esa autoridad. La integración futura reemplazará la implementación mock por una API real mediante DTO/Mapper, manteniendo Domain, UI, hooks públicos y query keys cuando sea razonable.
+
+Los contratos frontend/mock no son API Backend: no definen endpoints, HTTP, persistencia, entidades, IDs Backend, base de datos, auth ni permisos. Backend será autoridad únicamente al iniciar su integración. Cada feature continúa bloqueada si faltan Figma, campos, comportamiento, semántica de dominio, navegación, pruebas o la aprobación de su propio contrato frontend/mock.
+
 ## Web — Sprint 0 aprobadas
 
 ### DEC-W-001 — Framework
