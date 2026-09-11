@@ -114,5 +114,11 @@ export interface VoidPaymentRequest {
   reason: string;
 }
 
+export interface RefundPaymentRequest {
+  amount: number;
+  reason: string;
+  currency?: string;
+}
+
 
 

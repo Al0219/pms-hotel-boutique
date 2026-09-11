@@ -41,6 +41,13 @@ export async function POST(
     return NextResponse.json({ error: "Capture failed by gateway" }, { status: 500 });
   }
 
+  if (existing.status !== "AUTHORIZED" && existing.status !== "PARTIALLY_CAPTURED") {
+    return NextResponse.json(
+      { error: `Payment with status ${existing.status} cannot be captured.` },
+      { status: 400 },
+    );
+  }
+
   const authorizedNum = Number(existing.authorized_amount);
   const currentlyCapturedNum = Number(existing.captured_amount);
   const remainingCapturable = Math.max(0, authorizedNum - currentlyCapturedNum);

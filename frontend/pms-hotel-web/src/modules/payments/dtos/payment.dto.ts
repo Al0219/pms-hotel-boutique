@@ -109,5 +109,11 @@ export interface VoidPaymentRequestDto {
   reason: string;
 }
 
+export interface RefundPaymentRequestDto {
+  amount: string;
+  reason: string;
+  currency?: string;
+}
+
 
 

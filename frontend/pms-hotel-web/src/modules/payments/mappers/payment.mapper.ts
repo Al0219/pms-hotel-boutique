@@ -11,6 +11,7 @@ import type {
   PaymentListResponseDto,
   PaymentMethodDto,
   PaymentStatusDto,
+  RefundPaymentRequestDto,
   VoidPaymentRequestDto,
 } from "../dtos/payment.dto";
 import type {
@@ -24,6 +25,7 @@ import type {
   PaymentListResult,
   PaymentMethod,
   PaymentStatus,
+  RefundPaymentRequest,
   VoidPaymentRequest,
 } from "../model/payment";
 
@@ -295,6 +297,22 @@ export function mapVoidPaymentRequestToDto(request: VoidPaymentRequest): VoidPay
 
   return {
     reason: request.reason.trim(),
+  };
+}
+
+export function mapRefundPaymentRequestToDto(request: RefundPaymentRequest): RefundPaymentRequestDto {
+  if (!request || !Number.isFinite(request.amount) || request.amount <= 0) {
+    throw new DomainMappingError("INVALID_REFUND_AMOUNT");
+  }
+
+  if (!request.reason || !request.reason.trim()) {
+    throw new DomainMappingError("MISSING_REFUND_REASON");
+  }
+
+  return {
+    amount: request.amount.toFixed(2),
+    reason: request.reason.trim(),
+    currency: request.currency?.trim().toUpperCase(),
   };
 }
 

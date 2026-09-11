@@ -104,5 +104,21 @@ export async function voidPaymentDto(
   });
 }
 
+export async function refundPaymentDto(
+  paymentId: string,
+  payload: import("../dtos/payment.dto").RefundPaymentRequestDto,
+  signal?: AbortSignal,
+): Promise<PaymentDto> {
+  return httpRequest<PaymentDto>({
+    path: `/api/v1/private/payments/${encodeURIComponent(paymentId)}/refund`,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+    signal,
+  });
+}
+
 
 

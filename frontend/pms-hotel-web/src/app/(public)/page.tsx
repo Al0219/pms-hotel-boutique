@@ -3,8 +3,14 @@
 import { useState } from "react";
 
 import {
+  AvailabilityMatrixGrid,
   fetchAvailabilityDto,
+  fetchAvailabilityMatrixDto,
+  mapAvailabilityMatrixQueryToDto,
+  mapAvailabilityMatrixResponseToDomain,
   mapAvailabilityResponseToDomain,
+  type AvailabilityMatrixQuery,
+  type AvailabilityMatrixResult,
   type AvailabilitySearchResult,
 } from "@/modules/availability";
 import {
@@ -34,18 +40,31 @@ import {
   mapPaymentGuaranteeDtoToDomain,
   mapPaymentGuaranteeRequestToDto,
   mapPaymentListResponseDtoToDomain,
+  mapRefundPaymentRequestToDto,
   mapVoidPaymentRequestToDto,
   PaymentAuthorizeModal,
   PaymentCaptureModal,
   PaymentListCard,
+  PaymentRefundModal,
   PaymentVoidModal,
+  refundPaymentDto,
   voidPaymentDto,
   type AuthorizePaymentRequest,
   type CapturePaymentRequest,
   type Payment,
   type PaymentGuaranteeResult,
+  type RefundPaymentRequest,
   type VoidPaymentRequest,
 } from "@/modules/payments";
+import {
+  fetchRatePlansDto,
+  mapRatePlanListFiltersToDto,
+  mapRatePlanListResponseDtoToDomain,
+  RatePlanDetailModal,
+  RatePlanListCard,
+  type RatePlan,
+  type RatePlanStatus,
+} from "@/modules/rates";
 
 export default function PublicShellPage() {
   const [availabilityResult, setAvailabilityResult] = useState<AvailabilitySearchResult | null>(null);
@@ -57,8 +76,47 @@ export default function PublicShellPage() {
   const [isAuthorizeModalOpen, setIsAuthorizeModalOpen] = useState(false);
   const [paymentToCapture, setPaymentToCapture] = useState<Payment | null>(null);
   const [paymentToVoid, setPaymentToVoid] = useState<Payment | null>(null);
+  const [paymentToRefund, setPaymentToRefund] = useState<Payment | null>(null);
+  const [matrixResult, setMatrixResult] = useState<AvailabilityMatrixResult | null>(null);
+  const [ratePlansList, setRatePlansList] = useState<RatePlan[] | null>(null);
+  const [selectedRatePlan, setSelectedRatePlan] = useState<RatePlan | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  async function handleFetchRatePlans(propertyId?: string, status?: RatePlanStatus, search?: string) {
+    setLoading("rates");
+    setErrorMsg(null);
+    try {
+      const filterDto = mapRatePlanListFiltersToDto({ propertyId, status, search });
+      const resDto = await fetchRatePlansDto(filterDto);
+      const domain = mapRatePlanListResponseDtoToDomain(resDto);
+      setRatePlansList(domain.ratePlans);
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : "Error al consultar planes tarifarios");
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  async function handleFetchMatrix(query?: AvailabilityMatrixQuery) {
+    setLoading("matrix");
+    setErrorMsg(null);
+    try {
+      const q: AvailabilityMatrixQuery = query || {
+        propertyId: "prop_boutique_01",
+        startDate: "2026-10-01",
+        endDate: "2026-10-07",
+      };
+      const dtoQuery = mapAvailabilityMatrixQueryToDto(q);
+      const resDto = await fetchAvailabilityMatrixDto(dtoQuery);
+      const domain = mapAvailabilityMatrixResponseToDomain(resDto);
+      setMatrixResult(domain);
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : "Error al consultar matriz ATS");
+    } finally {
+      setLoading(null);
+    }
+  }
 
   async function handleTestAvailability(propertyId: string) {
     setLoading("availability");
@@ -235,6 +293,27 @@ export default function PublicShellPage() {
     }
   }
 
+  async function handleConfirmRefund(paymentId: string, request: RefundPaymentRequest) {
+    setLoading("refund");
+    setErrorMsg(null);
+    try {
+      const dto = mapRefundPaymentRequestToDto(request);
+      const responseDto = await refundPaymentDto(paymentId, dto);
+      const domainResult = mapPaymentDtoToDomain(responseDto);
+      setPaymentsList((prev) =>
+        prev
+          ? prev.map((p) => (p.paymentId === paymentId ? domainResult : p))
+          : [domainResult],
+      );
+      setPaymentToRefund(null);
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : "Error durante el reembolso del pago");
+      throw err;
+    } finally {
+      setLoading(null);
+    }
+  }
+
   return (
     <main style={{ maxWidth: "800px", margin: "0 auto", padding: "2rem 1rem", fontFamily: "system-ui, sans-serif" }}>
       <header style={{ marginBottom: "2rem", borderBottom: "1px solid #e5e7eb", paddingBottom: "1rem" }}>
@@ -242,7 +321,7 @@ export default function PublicShellPage() {
           PMS Hotel Boutique — Consola de Pruebas WEB-4
         </h1>
         <p style={{ color: "#6b7280", fontSize: "0.95rem" }}>
-          Prueba interactiva de los servicios y componentes implementados para <strong>Disponibilidad (IMP-WEB-0102)</strong>, <strong>Garantías de Pago (IMP-WEB-0109)</strong>, <strong>StatusBadge (IMP-WEB-S401)</strong>, <strong>Folio Avanzado (IMP-WEB-0401)</strong>, <strong>Routing & Split (IMP-WEB-0402)</strong>, <strong>Transferencia de Cargos (IMP-WEB-0403)</strong>, <strong>Listado de Pagos (IMP-WEB-0404)</strong>, <strong>Autorización (IMP-WEB-0405)</strong>, <strong>Captura (IMP-WEB-0406)</strong> y <strong>Anulación/Void (IMP-WEB-0407)</strong>.
+          Prueba interactiva de los servicios y componentes implementados para <strong>Disponibilidad (IMP-WEB-0102)</strong>, <strong>Garantías de Pago (IMP-WEB-0109)</strong>, <strong>StatusBadge (IMP-WEB-S401)</strong>, <strong>Folio Avanzado (IMP-WEB-0401)</strong>, <strong>Routing & Split (IMP-WEB-0402)</strong>, <strong>Transferencia de Cargos (IMP-WEB-0403)</strong>, <strong>Listado de Pagos (IMP-WEB-0404)</strong>, <strong>Autorización (IMP-WEB-0405)</strong>, <strong>Captura (IMP-WEB-0406)</strong>, <strong>Anulación (IMP-WEB-0407)</strong> y <strong>Reembolsos (IMP-WEB-0408)</strong>.
         </p>
       </header>
 
@@ -415,10 +494,10 @@ export default function PublicShellPage() {
       {/* Sección 4: Listado de Pagos y Domain Model */}
       <section style={{ backgroundColor: "#f9fafb", padding: "1.5rem", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
         <h2 style={{ fontSize: "1.25rem", fontWeight: "600", color: "#1f2937", marginBottom: "0.75rem" }}>
-          4. Listado, Auditoría, Autorización, Captura y Anulación (`IMP-WEB-0404`, `0405`, `0406`, `0407`)
+          4. Listado, Auditoría, Autorización, Captura, Anulación y Reembolso (`IMP-WEB-0404`, `0405`, `0406`, `0407`, `0408`)
         </h2>
         <p style={{ color: "#4b5563", fontSize: "0.9rem", marginBottom: "1rem" }}>
-          Listado de transacciones financieras con auditoría append-only, modal de nueva autorización, liquidación (captura total o parcial) y anulación/void de autorizaciones sin captura.
+          Listado de transacciones financieras con auditoría append-only, modal de nueva autorización, liquidación (captura total o parcial), anulación/void y reembolso total o parcial.
         </p>
 
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1rem" }}>
@@ -444,7 +523,7 @@ export default function PublicShellPage() {
             onAuthorizeNew={() => setIsAuthorizeModalOpen(true)}
             onCapturePayment={(payment) => setPaymentToCapture(payment)}
             onVoidPayment={(payment) => setPaymentToVoid(payment)}
-            onRefundPayment={(payment) => alert(`Reembolsar pago ${payment.paymentId}`)}
+            onRefundPayment={(payment) => setPaymentToRefund(payment)}
           />
         )}
 
@@ -469,6 +548,77 @@ export default function PublicShellPage() {
             payment={paymentToVoid}
             onVoid={handleConfirmVoid}
             onClose={() => setPaymentToVoid(null)}
+          />
+        )}
+
+        {paymentToRefund && (
+          <PaymentRefundModal
+            payment={paymentToRefund}
+            onRefund={handleConfirmRefund}
+            onClose={() => setPaymentToRefund(null)}
+          />
+        )}
+      </section>
+
+      {/* Sección 5: Matriz ATS */}
+      <section style={{ backgroundColor: "#f9fafb", padding: "1.5rem", borderRadius: "10px", marginTop: "2rem", border: "1px solid #e5e7eb" }}>
+        <h2 style={{ fontSize: "1.25rem", fontWeight: "600", color: "#1f2937", marginBottom: "0.75rem" }}>
+          5. Matriz ATS y Disponibilidad Privada (`IMP-WEB-0601`)
+        </h2>
+        <p style={{ color: "#4b5563", fontSize: "0.9rem", marginBottom: "1rem" }}>
+          Consulta la cuadrícula multidía de inventario vendible (ATS), desglose de habitaciones vendidas, fuera de orden (OOO), fuera de servicio (OOS) y porcentaje de ocupación hotelera.
+        </p>
+
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
+          <button
+            onClick={() => handleFetchMatrix()}
+            disabled={loading === "matrix"}
+            style={{ padding: "0.6rem 1.2rem", backgroundColor: "#0f172a", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "500" }}
+          >
+            {loading === "matrix" ? "Consultando Matriz..." : "Cargar Matriz ATS (Semana Actual)"}
+          </button>
+        </div>
+
+        {matrixResult && (
+          <AvailabilityMatrixGrid
+            matrixResult={matrixResult}
+            isLoading={loading === "matrix"}
+            onRefresh={(query) => handleFetchMatrix(query)}
+          />
+        )}
+      </section>
+
+      {/* Sección 6: Planes Tarifarios (Rate Plans) */}
+      <section style={{ backgroundColor: "#f9fafb", padding: "1.5rem", borderRadius: "10px", marginTop: "2rem", border: "1px solid #e5e7eb" }}>
+        <h2 style={{ fontSize: "1.25rem", fontWeight: "600", color: "#1f2937", marginBottom: "0.75rem" }}>
+          6. Planes Tarifarios / Rate Plans (`IMP-WEB-0602`)
+        </h2>
+        <p style={{ color: "#4b5563", fontSize: "0.9rem", marginBottom: "1rem" }}>
+          Consulta el catálogo de condiciones tarifarias, políticas de cancelación, comidas incluidas y multiplicadores de precio sobre la tarifa base.
+        </p>
+
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
+          <button
+            onClick={() => handleFetchRatePlans()}
+            disabled={loading === "rates"}
+            style={{ padding: "0.6rem 1.2rem", backgroundColor: "#334155", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "500" }}
+          >
+            {loading === "rates" ? "Consultando Tarifas..." : "Cargar Todos los Planes Tarifarios"}
+          </button>
+        </div>
+
+        {ratePlansList && (
+          <RatePlanListCard
+            ratePlans={ratePlansList}
+            onSelectRatePlan={(rp) => setSelectedRatePlan(rp)}
+            onFilterChange={(propId, status, search) => handleFetchRatePlans(propId, status, search)}
+          />
+        )}
+
+        {selectedRatePlan && (
+          <RatePlanDetailModal
+            ratePlan={selectedRatePlan}
+            onClose={() => setSelectedRatePlan(null)}
           />
         )}
       </section>

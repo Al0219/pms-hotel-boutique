@@ -14,6 +14,7 @@ export type {
   PaymentListResponseDto,
   PaymentMethodDto,
   PaymentStatusDto,
+  RefundPaymentRequestDto,
   VoidPaymentRequestDto,
 } from "./dtos/payment.dto";
 
@@ -28,6 +29,7 @@ export type {
   PaymentListResult,
   PaymentMethod,
   PaymentStatus,
+  RefundPaymentRequest,
   VoidPaymentRequest,
 } from "./model/payment";
 
@@ -40,6 +42,7 @@ export {
   mapPaymentGuaranteeRequestToDto,
   mapPaymentListFiltersToDto,
   mapPaymentListResponseDtoToDomain,
+  mapRefundPaymentRequestToDto,
   mapVoidPaymentRequestToDto,
 } from "./mappers/payment.mapper";
 
@@ -49,6 +52,7 @@ export {
   createPaymentGuaranteeDto,
   fetchPaymentByIdDto,
   fetchPaymentsDto,
+  refundPaymentDto,
   voidPaymentDto,
 } from "./service/payment.service";
 
@@ -71,3 +75,8 @@ export {
   PaymentVoidModal,
   type PaymentVoidModalProps,
 } from "./components/payment-void-modal";
+
+export {
+  PaymentRefundModal,
+  type PaymentRefundModalProps,
+} from "./components/payment-refund-modal";

@@ -1,5 +1,6 @@
 import { http, HttpResponse } from "msw";
 
+import type { AvailabilityMatrixResponseDto } from "@/modules/availability/dtos/availability.dto";
 import type {
   FolioDto,
   SplitChargeRequestDto,
@@ -14,8 +15,13 @@ import type {
   PaymentGuaranteeRequestDto,
   PaymentGuaranteeResponseDto,
   PaymentListResponseDto,
+  RefundPaymentRequestDto,
   VoidPaymentRequestDto,
 } from "@/modules/payments/dtos/payment.dto";
+import type {
+  RatePlanDto,
+  RatePlanListResponseDto,
+} from "@/modules/rates/dtos/rate-plan.dto";
 
 export const mockAvailabilitySuccessDto = {
   property_id: "prop_boutique_01",
@@ -575,6 +581,13 @@ function handleCapturePayment({ params, request }: { params: Record<string, stri
       return HttpResponse.json({ error: "Capture failed by gateway" }, { status: 500 });
     }
 
+    if (existing.status !== "AUTHORIZED" && existing.status !== "PARTIALLY_CAPTURED") {
+      return HttpResponse.json(
+        { error: `Payment with status ${existing.status} cannot be captured.` },
+        { status: 400 },
+      );
+    }
+
     const authorizedNum = Number(existing.authorized_amount);
     const currentlyCapturedNum = Number(existing.captured_amount);
     const remainingCapturable = Math.max(0, authorizedNum - currentlyCapturedNum);
@@ -689,6 +702,335 @@ function handleVoidPayment({ params, request }: { params: Record<string, string 
   });
 }
 
+function handleRefundPayment({ params, request }: { params: Record<string, string | readonly string[] | undefined>; request: Request }) {
+  const paymentId = typeof params.id === "string" ? params.id : "";
+  if (paymentId === "error_payment") {
+    return HttpResponse.json({ error: "Refund failed by server" }, { status: 500 });
+  }
+
+  const existingIndex = mockPaymentsListDto.findIndex((p) => p.payment_id === paymentId);
+  const existing = existingIndex !== -1 ? mockPaymentsListDto[existingIndex] : {
+    payment_id: paymentId,
+    folio_id: "fol_guest_101",
+    reservation_id: "res_01",
+    stay_id: "stay_01",
+    method: "CREDIT_CARD" as const,
+    status: "CAPTURED" as const,
+    currency: "USD",
+    authorized_amount: "500.00",
+    captured_amount: "500.00",
+    refunded_amount: "0.00",
+    provider_reference: "tx_mock_cap",
+    last4: "4242",
+    card_brand: "Visa",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    failure_reason: null,
+    audit_trail: [],
+  };
+
+  return request.json().then((bodyRaw) => {
+    const body = bodyRaw as RefundPaymentRequestDto;
+    const refundAmountNum = Number(body.amount);
+
+    if (body.reason === "error_trigger" || refundAmountNum === 9999) {
+      return HttpResponse.json({ error: "Refund failed by gateway" }, { status: 500 });
+    }
+
+    const capturedNum = Number(existing.captured_amount);
+    const currentlyRefundedNum = Number(existing.refunded_amount);
+    const remainingRefundable = Math.max(0, capturedNum - currentlyRefundedNum);
+
+    if (refundAmountNum <= 0 || refundAmountNum > remainingRefundable) {
+      return HttpResponse.json(
+        { error: `Cannot refund $${refundAmountNum}. Maximum refundable amount is $${remainingRefundable.toFixed(2)}.` },
+        { status: 400 },
+      );
+    }
+
+    const newRefundedTotal = currentlyRefundedNum + refundAmountNum;
+    const newStatus = newRefundedTotal >= capturedNum ? ("REFUNDED" as const) : ("PARTIALLY_REFUNDED" as const);
+
+    const updatedPayment: PaymentDto = {
+      ...existing,
+      status: newStatus,
+      refunded_amount: newRefundedTotal.toFixed(2),
+      updated_at: new Date().toISOString(),
+      audit_trail: [
+        ...(existing.audit_trail || []),
+        {
+          audit_id: `aud_ref_${Date.now()}`,
+          action: "REFUND",
+          amount: body.amount,
+          currency: existing.currency,
+          performed_by: "staff_frontdesk",
+          performed_at: new Date().toISOString(),
+          reason: body.reason,
+          provider_reference: `tx_ref_${Date.now()}`,
+        },
+      ],
+    };
+
+    if (existingIndex !== -1) {
+      mockPaymentsListDto[existingIndex] = updatedPayment;
+    } else {
+      mockPaymentsListDto.unshift(updatedPayment);
+    }
+
+    return HttpResponse.json(updatedPayment);
+  });
+}
+
+function handleGetAvailabilityMatrix({ request }: { request: Request }) {
+  const url = new URL(request.url);
+  const propertyId = url.searchParams.get("property_id") || "prop_boutique_01";
+  const startDate = url.searchParams.get("start_date") || "2026-10-01";
+  const endDate = url.searchParams.get("end_date") || "2026-10-07";
+  const filterRoomTypeId = url.searchParams.get("room_type_id");
+
+  if (propertyId === "error_property") {
+    return HttpResponse.json({ error: "Property matrix internal error" }, { status: 500 });
+  }
+
+  const dates: string[] = [];
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) {
+    return HttpResponse.json({ error: "Invalid date range" }, { status: 400 });
+  }
+
+  const current = new Date(start);
+  while (current <= end) {
+    dates.push(current.toISOString().slice(0, 10));
+    current.setDate(current.getDate() + 1);
+  }
+
+  const roomTypes = [
+    {
+      id: "rt_deluxe_king",
+      name: "Deluxe King Suite",
+      code: "DLX-KNG",
+      physical: 10,
+      baseSold: 4,
+      ooo: 1,
+      oos: 0,
+      overbooking: 0,
+    },
+    {
+      id: "rt_exec_double",
+      name: "Executive Double Queen",
+      code: "EXE-DBL",
+      physical: 8,
+      baseSold: 3,
+      ooo: 0,
+      oos: 1,
+      overbooking: 0,
+    },
+    {
+      id: "rt_master_suite",
+      name: "Master Suite Presidencial",
+      code: "MST-STE",
+      physical: 4,
+      baseSold: 2,
+      ooo: 0,
+      oos: 0,
+      overbooking: 0,
+    },
+  ];
+
+  const filteredTypes = filterRoomTypeId
+    ? roomTypes.filter((rt) => rt.id === filterRoomTypeId)
+    : roomTypes;
+
+  const matrix = filteredTypes.map((rt) => {
+    const daily = dates.map((d, index) => {
+      const sold = Math.min(rt.physical - rt.ooo - rt.oos, rt.baseSold + (index % 3));
+      const ats = rt.physical - sold - rt.ooo - rt.oos + rt.overbooking;
+      const effectiveCap = Math.max(1, rt.physical - rt.ooo);
+      const occupancyRate = Math.round((sold / effectiveCap) * 100);
+
+      return {
+        date: d,
+        physical_rooms: rt.physical,
+        sold_rooms: sold,
+        ooo_rooms: rt.ooo,
+        oos_rooms: rt.oos,
+        overbooking_adjustment: rt.overbooking,
+        ats,
+        occupancy_rate: occupancyRate,
+        stop_sell: ats <= 0,
+        min_los: index === 5 ? 2 : 1,
+      };
+    });
+
+    return {
+      room_type_id: rt.id,
+      room_type_name: rt.name,
+      room_type_code: rt.code,
+      total_physical_capacity: rt.physical,
+      daily_availability: daily,
+    };
+  });
+
+  const totalPhysicalRooms = filteredTypes.reduce((sum, rt) => sum + rt.physical, 0);
+
+  const dailySummaries = dates.map((d, index) => {
+    let totalPhysical = 0;
+    let totalSold = 0;
+    let totalOoo = 0;
+    let totalOos = 0;
+    let totalAts = 0;
+
+    for (const rtMatrix of matrix) {
+      const dayData = rtMatrix.daily_availability[index];
+      if (dayData) {
+        totalPhysical += dayData.physical_rooms;
+        totalSold += dayData.sold_rooms;
+        totalOoo += dayData.ooo_rooms;
+        totalOos += dayData.oos_rooms;
+        totalAts += dayData.ats;
+      }
+    }
+
+    const effCap = Math.max(1, totalPhysical - totalOoo);
+    const avgOcc = Math.round((totalSold / effCap) * 100);
+
+    return {
+      date: d,
+      total_physical: totalPhysical,
+      total_sold: totalSold,
+      total_ooo: totalOoo,
+      total_oos: totalOos,
+      total_ats: totalAts,
+      average_occupancy_rate: avgOcc,
+    };
+  });
+
+  const response: AvailabilityMatrixResponseDto = {
+    property_id: propertyId,
+    start_date: startDate,
+    end_date: endDate,
+    dates,
+    matrix,
+    total_property_physical_rooms: totalPhysicalRooms,
+    daily_summaries: dailySummaries,
+  };
+
+  return HttpResponse.json(response);
+}
+
+export const mockRatePlansListDto: RatePlanDto[] = [
+  {
+    rate_plan_id: "rp_bar_flex",
+    property_id: "prop_boutique_01",
+    code: "BAR-FLEX",
+    name: "Tarifa Flexible (BAR)",
+    description: "Tarifa estándar con cancelación gratuita hasta 48h antes del check-in.",
+    status: "ACTIVE",
+    pricing_model: "PER_NIGHT",
+    currency: "USD",
+    base_price_multiplier: 1.0,
+    cancellation_policy: "Cancelación gratuita hasta 48 horas previas a la llegada.",
+    meals_included: "Desayuno a la carta incluido",
+    applicable_room_type_ids: ["rt_deluxe_king", "rt_exec_double", "rt_master_suite"],
+    created_at: "2026-01-10T10:00:00.000Z",
+    updated_at: "2026-09-01T12:00:00.000Z",
+  },
+  {
+    rate_plan_id: "rp_non_refundable",
+    property_id: "prop_boutique_01",
+    code: "NON-REF",
+    name: "Tarifa No Reembolsable",
+    description: "Descuento del 15% por pago inmediato por adelantado.",
+    status: "ACTIVE",
+    pricing_model: "PER_NIGHT",
+    currency: "USD",
+    base_price_multiplier: 0.85,
+    cancellation_policy: "No reembolsable en caso de cancelación o no-show.",
+    meals_included: null,
+    applicable_room_type_ids: ["rt_deluxe_king", "rt_exec_double"],
+    created_at: "2026-01-10T10:00:00.000Z",
+    updated_at: "2026-09-01T12:00:00.000Z",
+  },
+  {
+    rate_plan_id: "rp_romantic_escape",
+    property_id: "prop_boutique_01",
+    code: "ROM-ESC",
+    name: "Paquete Escapada Romántica & Spa",
+    description: "Incluye cena gourmet de 4 tiempos, botella de vino de bienvenida y circuito hidrotermal.",
+    status: "ACTIVE",
+    pricing_model: "PACKAGE",
+    currency: "USD",
+    base_price_multiplier: 1.35,
+    cancellation_policy: "Cancelación gratuita hasta 7 días antes.",
+    meals_included: "Desayuno gourmet y cena de 4 tiempos",
+    applicable_room_type_ids: ["rt_deluxe_king", "rt_master_suite"],
+    created_at: "2026-02-14T08:00:00.000Z",
+    updated_at: "2026-09-01T12:00:00.000Z",
+  },
+  {
+    rate_plan_id: "rp_corp_convenio",
+    property_id: "prop_boutique_01",
+    code: "CORP-CONV",
+    name: "Tarifa Corporativa Preferencial",
+    description: "Tarifa especial para empresas con convenio anual.",
+    status: "INACTIVE",
+    pricing_model: "DERIVED",
+    currency: "USD",
+    base_price_multiplier: 0.8,
+    cancellation_policy: "Cancelación sin penalidad hasta 24h previas.",
+    meals_included: "Desayuno buffet ejecutivo",
+    applicable_room_type_ids: ["rt_exec_double"],
+    created_at: "2026-03-01T09:00:00.000Z",
+    updated_at: "2026-08-15T10:00:00.000Z",
+  },
+];
+
+function handleGetRatePlans({ request }: { request: Request }) {
+  const url = new URL(request.url);
+  const propertyId = url.searchParams.get("property_id");
+  const status = url.searchParams.get("status");
+  const search = url.searchParams.get("search")?.toLowerCase();
+
+  let filtered = mockRatePlansListDto;
+  if (propertyId) {
+    filtered = filtered.filter((rp) => rp.property_id === propertyId);
+  }
+  if (status) {
+    filtered = filtered.filter((rp) => rp.status === status);
+  }
+  if (search) {
+    filtered = filtered.filter(
+      (rp) =>
+        rp.name.toLowerCase().includes(search) ||
+        rp.code.toLowerCase().includes(search) ||
+        (rp.description && rp.description.toLowerCase().includes(search)),
+    );
+  }
+
+  const response: RatePlanListResponseDto = {
+    rate_plans: filtered,
+    total_count: filtered.length,
+  };
+
+  return HttpResponse.json(response);
+}
+
+function handleGetRatePlanById({ params }: { params: Record<string, string | readonly string[] | undefined> }) {
+  const id = typeof params.id === "string" ? params.id : "";
+  if (id === "error_rate_plan") {
+    return HttpResponse.json({ error: "RatePlan Internal Error" }, { status: 500 });
+  }
+
+  const found = mockRatePlansListDto.find((rp) => rp.rate_plan_id === id);
+  if (!found) {
+    return HttpResponse.json({ error: "RatePlan Not Found" }, { status: 404 });
+  }
+
+  return HttpResponse.json(found);
+}
+
 export const handlers = [
   http.get("http://pms.test/__msw/health", () => HttpResponse.json({ status: "ok" })),
   http.get("http://pms.test/__msw/missing", () => HttpResponse.text(null, { status: 404 })),
@@ -701,6 +1043,12 @@ export const handlers = [
   ),
   http.get("http://pms.test/api/v1/public/availability", handleAvailabilityRequest),
   http.get("/api/v1/public/availability", handleAvailabilityRequest),
+  http.get("http://pms.test/api/v1/private/availability/matrix", handleGetAvailabilityMatrix),
+  http.get("/api/v1/private/availability/matrix", handleGetAvailabilityMatrix),
+  http.get("http://pms.test/api/v1/private/rates", handleGetRatePlans),
+  http.get("/api/v1/private/rates", handleGetRatePlans),
+  http.get("http://pms.test/api/v1/private/rates/:id", handleGetRatePlanById),
+  http.get("/api/v1/private/rates/:id", handleGetRatePlanById),
   http.post("http://pms.test/api/v1/public/payments/guarantee", handlePaymentGuaranteeRequest),
   http.post("/api/v1/public/payments/guarantee", handlePaymentGuaranteeRequest),
   http.get("http://pms.test/api/v1/private/folios/:id", handleGetFolioById),
@@ -719,4 +1067,9 @@ export const handlers = [
   http.post("/api/v1/private/payments/:id/capture", handleCapturePayment),
   http.post("http://pms.test/api/v1/private/payments/:id/void", handleVoidPayment),
   http.post("/api/v1/private/payments/:id/void", handleVoidPayment),
+  http.post("http://pms.test/api/v1/private/payments/:id/refund", handleRefundPayment),
+  http.post("/api/v1/private/payments/:id/refund", handleRefundPayment),
 ];
+
+
+

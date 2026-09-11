@@ -42,3 +42,52 @@ export interface AvailabilityResponseDto {
   total_nights: number;
   available_room_types: AvailableRoomTypeDto[];
 }
+
+export interface AvailabilityMatrixQueryDto {
+  property_id: string;
+  start_date: string;
+  end_date: string;
+  room_type_id?: string;
+}
+
+export interface DailyRoomTypeAvailabilityDto {
+  date: string;
+  physical_rooms: number;
+  sold_rooms: number;
+  ooo_rooms: number;
+  oos_rooms: number;
+  overbooking_adjustment: number;
+  ats: number;
+  occupancy_rate: number;
+  stop_sell?: boolean;
+  min_los?: number;
+}
+
+export interface RoomTypeMatrixDto {
+  room_type_id: string;
+  room_type_name: string;
+  room_type_code: string;
+  total_physical_capacity: number;
+  daily_availability: DailyRoomTypeAvailabilityDto[];
+}
+
+export interface PropertyDailySummaryDto {
+  date: string;
+  total_physical: number;
+  total_sold: number;
+  total_ooo: number;
+  total_oos: number;
+  total_ats: number;
+  average_occupancy_rate: number;
+}
+
+export interface AvailabilityMatrixResponseDto {
+  property_id: string;
+  start_date: string;
+  end_date: string;
+  dates: string[];
+  matrix: RoomTypeMatrixDto[];
+  total_property_physical_rooms: number;
+  daily_summaries: PropertyDailySummaryDto[];
+}
+

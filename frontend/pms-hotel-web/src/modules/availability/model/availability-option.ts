@@ -44,3 +44,52 @@ export interface AvailabilitySearchResult {
   totalNights: number;
   roomTypes: AvailableRoomType[];
 }
+
+export interface AvailabilityMatrixQuery {
+  propertyId: string;
+  startDate: string;
+  endDate: string;
+  roomTypeId?: string;
+}
+
+export interface DailyRoomTypeAvailability {
+  date: string;
+  physicalRooms: number;
+  soldRooms: number;
+  oooRooms: number;
+  oosRooms: number;
+  overbookingAdjustment: number;
+  ats: number;
+  occupancyRate: number;
+  stopSell: boolean;
+  minLos?: number;
+}
+
+export interface RoomTypeMatrix {
+  roomTypeId: string;
+  roomTypeName: string;
+  roomTypeCode: string;
+  totalPhysicalCapacity: number;
+  dailyAvailability: DailyRoomTypeAvailability[];
+}
+
+export interface PropertyDailySummary {
+  date: string;
+  totalPhysical: number;
+  totalSold: number;
+  totalOoo: number;
+  totalOos: number;
+  totalAts: number;
+  averageOccupancyRate: number;
+}
+
+export interface AvailabilityMatrixResult {
+  propertyId: string;
+  startDate: string;
+  endDate: string;
+  dates: string[];
+  matrix: RoomTypeMatrix[];
+  totalPropertyPhysicalRooms: number;
+  dailySummaries: PropertyDailySummary[];
+}
+
