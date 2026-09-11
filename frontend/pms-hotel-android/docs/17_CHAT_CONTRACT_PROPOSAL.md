@@ -10,6 +10,8 @@
 **Dependencia funcional:** `IMP-AND-0102` completada  
 **DoR objetivo:** `Messaging frontend/mock contract approved`
 
+**Actualización QA (2026-09-11):** La composición y flujo posterior al envío sustituyen el estado separado mostrado en el frame histórico `334:132`. La decisión de QA tiene prioridad para `IMP-AND-0104`.
+
 ---
 
 ## 1. Propósito
@@ -46,12 +48,11 @@ Elementos confirmados:
 - Historial de conversación entre:
   - `Recepción`
   - `Tú`
-- Composer inicial: `Escribe un mensaje…`
-- CTA inicial: `Enviar`
+- Composer inicial: `Escribe un mensaje…`, con flecha accesible de envío a la izquierda.
 - Estado posterior al envío:
   - nuevo mensaje del huésped agregado al thread;
-  - composer: `Mensaje enviado ✓`;
-  - CTA: `Nuevo mensaje`.
+  - draft limpiado;
+  - composer editable disponible inmediatamente.
 - Guest Navigation V3:
   - Servicios
   - Chat
@@ -104,8 +105,8 @@ El texto `Solicitud #4832...` es **contenido de presentación del fixture**, no 
    - el CTA no debe disparar un segundo envío concurrente;
    - no debe añadirse un mensaje exitoso antes de resolver la mutation.
 7. Después de success, el mensaje enviado se incorpora a la conversación.
-8. El estado visual de success sigue `334:132`: `Mensaje enviado ✓` y CTA `Nuevo mensaje`.
-9. `Nuevo mensaje` devuelve el composer al estado editable sin borrar el historial.
+8. Después de success, se limpia el draft y el composer permanece editable sin acción intermedia.
+9. No existe CTA `Nuevo mensaje`, pantalla separada ni modo de success bloqueante.
 10. Error y offline no deben mostrar detalles técnicos.
 11. Offline se modela con `NetworkError`.
 12. No existe cola offline, persistencia local, background sync ni envío automático posterior.
@@ -376,15 +377,13 @@ Mientras `isPending`:
 
 La mutation devuelve un mensaje `GUEST` nuevo con una `fixtureKey` local determinista.
 
-La UI reproduce el estado aprobado `334:132`:
+La actualización QA de `IMP-AND-0104` sustituye el estado separado de `334:132`:
 
 ```text
 mensaje agregado al thread
-composer → "Mensaje enviado ✓"
-CTA → "Nuevo mensaje"
+draft → vacío
+composer → editable inmediatamente
 ```
-
-`Nuevo mensaje` restablece el composer editable y conserva el historial.
 
 No genera automáticamente un mensaje de Recepción.
 
@@ -459,7 +458,7 @@ No crear footbar privada dentro del módulo Chat.
 
 ## 13. Estados visuales
 
-Figma `238:192` confirma el estado principal/data y `334:132` confirma el estado posterior a un envío exitoso.
+Figma `238:192` confirma el estado principal/data. `334:132` permanece como referencia visual histórica del envío, pero su CTA `Nuevo mensaje` queda sustituido por la actualización QA aprobada.
 
 Para implementación se requieren técnicamente:
 
@@ -562,8 +561,8 @@ La feature deberá cubrir como mínimo:
 15. Pending bloquea double submit.
 16. No existe optimistic success.
 17. Success incorpora mensaje del huésped.
-18. Success muestra `Mensaje enviado ✓`.
-19. `Nuevo mensaje` restablece el composer editable y conserva el thread.
+18. Success agrega el mensaje, limpia el draft y conserva el composer editable.
+19. Se puede enviar un segundo mensaje sin acción intermedia y sin perder el thread.
 20. Generic mutation error conserva draft.
 21. Retry después de error.
 22. `NetworkError` mutation → offline.
@@ -636,10 +635,10 @@ La aprobación cubre expresamente estas decisiones:
 1. `guestDisplayName` y `stayReferenceText` son presentación frontend.
 2. Solo existen autores `GUEST` y `RECEPTION`.
 3. No hay timestamps porque Figma no los muestra.
-4. `334:132` es la autoridad para el estado de envío exitoso.
+4. `334:132` es referencia visual histórica del envío; la actualización QA aprobada sustituye su CTA y flujo posterior.
 5. No hay respuesta automática de Recepción después de cada envío.
 6. El mensaje enviado se incorpora únicamente tras success.
-7. `Nuevo mensaje` restablece el composer editable conservando el thread.
+7. Success limpia el draft y conserva el composer editable, sin CTA `Nuevo mensaje`.
 8. Error/offline conservan el draft para retry.
 9. No se agregan features de mensajería avanzada.
 10. `/chat` habilita únicamente la tab Chat adicionalmente a Services.

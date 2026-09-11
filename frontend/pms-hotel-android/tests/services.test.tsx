@@ -73,7 +73,7 @@ describe('Services', () => {
       selected: true,
     }));
     expect(rendered.getByLabelText('Chat').props.accessibilityState).toEqual(expect.objectContaining({
-      disabled: true,
+      disabled: false,
       selected: false,
     }));
     expect(rendered.getByLabelText('Valet').props.accessibilityState.disabled).toBe(true);

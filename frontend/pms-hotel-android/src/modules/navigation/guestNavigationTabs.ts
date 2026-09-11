@@ -9,11 +9,12 @@ export interface GuestNavigationTab {
 
 /**
  * V3 Guest destinations remain disabled until their respective authorized
- * feature exists. Services is enabled by IMP-AND-0103.
+ * feature exists. Services and Chat are enabled by IMP-AND-0103 and
+ * IMP-AND-0104 respectively.
  */
 export const guestNavigationTabs: readonly GuestNavigationTab[] = [
   { id: 'services', label: 'Servicios', basePath: '/services', disabled: false },
-  { id: 'chat', label: 'Chat', basePath: '/chat', disabled: true },
+  { id: 'chat', label: 'Chat', basePath: '/chat', disabled: false },
   { id: 'valet', label: 'Valet', basePath: '/valet', disabled: true },
   { id: 'account', label: 'Cuenta', basePath: '/account', disabled: true },
 ];
