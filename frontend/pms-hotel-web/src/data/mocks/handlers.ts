@@ -8,8 +8,10 @@ import type {
   TransferChargeResultDto,
 } from "@/modules/folio/dtos/folio.dto";
 import type {
+  PaymentDto,
   PaymentGuaranteeRequestDto,
   PaymentGuaranteeResponseDto,
+  PaymentListResponseDto,
 } from "@/modules/payments/dtos/payment.dto";
 
 export const mockAvailabilitySuccessDto = {
@@ -318,6 +320,147 @@ async function handleTransferChargeRequest({ params, request }: { params: Record
   return HttpResponse.json(response);
 }
 
+export const mockPaymentsListDto: PaymentDto[] = [
+  {
+    payment_id: "pay_101",
+    folio_id: "fol_guest_101",
+    reservation_id: "res_01",
+    stay_id: "stay_01",
+    method: "CREDIT_CARD",
+    status: "AUTHORIZED",
+    currency: "USD",
+    authorized_amount: "750.00",
+    captured_amount: "0.00",
+    refunded_amount: "0.00",
+    provider_reference: "tx_mock_auth_101",
+    last4: "4242",
+    card_brand: "Visa",
+    created_at: "2026-10-01T10:00:00.000Z",
+    updated_at: "2026-10-01T10:00:00.000Z",
+    failure_reason: null,
+    audit_trail: [
+      {
+        audit_id: "aud_01",
+        action: "AUTHORIZE",
+        amount: "750.00",
+        currency: "USD",
+        performed_by: "system_gateway",
+        performed_at: "2026-10-01T10:00:00.000Z",
+        provider_reference: "tx_mock_auth_101",
+      },
+    ],
+  },
+  {
+    payment_id: "pay_102",
+    folio_id: "fol_guest_101",
+    reservation_id: "res_01",
+    stay_id: "stay_01",
+    method: "CREDIT_CARD",
+    status: "CAPTURED",
+    currency: "USD",
+    authorized_amount: "200.00",
+    captured_amount: "200.00",
+    refunded_amount: "0.00",
+    provider_reference: "tx_mock_cap_102",
+    last4: "5555",
+    card_brand: "MasterCard",
+    created_at: "2026-10-01T12:00:00.000Z",
+    updated_at: "2026-10-01T12:05:00.000Z",
+    failure_reason: null,
+    audit_trail: [
+      {
+        audit_id: "aud_02",
+        action: "AUTHORIZE",
+        amount: "200.00",
+        currency: "USD",
+        performed_by: "system_gateway",
+        performed_at: "2026-10-01T12:00:00.000Z",
+      },
+      {
+        audit_id: "aud_03",
+        action: "CAPTURE",
+        amount: "200.00",
+        currency: "USD",
+        performed_by: "staff_frontdesk",
+        performed_at: "2026-10-01T12:05:00.000Z",
+        provider_reference: "tx_mock_cap_102",
+      },
+    ],
+  },
+  {
+    payment_id: "pay_103",
+    folio_id: "fol_guest_101",
+    reservation_id: "res_01",
+    stay_id: "stay_01",
+    method: "CREDIT_CARD",
+    status: "PARTIALLY_REFUNDED",
+    currency: "USD",
+    authorized_amount: "300.00",
+    captured_amount: "300.00",
+    refunded_amount: "100.00",
+    provider_reference: "tx_mock_ref_103",
+    last4: "3000",
+    card_brand: "American Express",
+    created_at: "2026-10-01T14:00:00.000Z",
+    updated_at: "2026-10-01T15:00:00.000Z",
+    failure_reason: null,
+    audit_trail: [
+      {
+        audit_id: "aud_04",
+        action: "CAPTURE",
+        amount: "300.00",
+        currency: "USD",
+        performed_by: "staff_frontdesk",
+        performed_at: "2026-10-01T14:00:00.000Z",
+      },
+      {
+        audit_id: "aud_05",
+        action: "REFUND",
+        amount: "100.00",
+        currency: "USD",
+        performed_by: "manager_finance",
+        performed_at: "2026-10-01T15:00:00.000Z",
+        reason: "Cortesía por retraso en check-in",
+      },
+    ],
+  },
+];
+
+function handleGetPayments({ request }: { request: Request }) {
+  const url = new URL(request.url);
+  const folioId = url.searchParams.get("folio_id");
+  const status = url.searchParams.get("status");
+
+  let filtered = mockPaymentsListDto;
+  if (folioId) {
+    filtered = filtered.filter((p) => p.folio_id === folioId);
+  }
+  if (status) {
+    filtered = filtered.filter((p) => p.status === status);
+  }
+
+  const response: PaymentListResponseDto = {
+    payments: filtered,
+    total_count: filtered.length,
+  };
+
+  return HttpResponse.json(response);
+}
+
+function handleGetPaymentById({ params }: { params: Record<string, string | readonly string[] | undefined> }) {
+  const paymentId = typeof params.id === "string" ? params.id : "";
+  if (paymentId === "error_payment") {
+    return HttpResponse.json({ error: "Payment lookup failed" }, { status: 500 });
+  }
+
+  const found = mockPaymentsListDto.find((p) => p.payment_id === paymentId);
+  if (!found) {
+    return HttpResponse.json({ error: "Payment not found" }, { status: 404 });
+  }
+
+  return HttpResponse.json(found);
+}
+
 export const handlers = [
   http.get("http://pms.test/__msw/health", () => HttpResponse.json({ status: "ok" })),
   http.get("http://pms.test/__msw/missing", () => HttpResponse.text(null, { status: 404 })),
@@ -338,4 +481,8 @@ export const handlers = [
   http.post("/api/v1/private/folios/:id/split-charge", handleSplitChargeRequest),
   http.post("http://pms.test/api/v1/private/folios/:id/transfer-charge", handleTransferChargeRequest),
   http.post("/api/v1/private/folios/:id/transfer-charge", handleTransferChargeRequest),
+  http.get("http://pms.test/api/v1/private/payments", handleGetPayments),
+  http.get("/api/v1/private/payments", handleGetPayments),
+  http.get("http://pms.test/api/v1/private/payments/:id", handleGetPaymentById),
+  http.get("/api/v1/private/payments/:id", handleGetPaymentById),
 ];

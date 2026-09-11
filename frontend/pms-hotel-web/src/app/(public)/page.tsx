@@ -25,8 +25,12 @@ import {
 } from "@/modules/folio";
 import {
   createPaymentGuaranteeDto,
+  fetchPaymentsDto,
   mapPaymentGuaranteeDtoToDomain,
   mapPaymentGuaranteeRequestToDto,
+  mapPaymentListResponseDtoToDomain,
+  PaymentListCard,
+  type Payment,
   type PaymentGuaranteeResult,
 } from "@/modules/payments";
 
@@ -36,6 +40,7 @@ export default function PublicShellPage() {
   const [folioResult, setFolioResult] = useState<Folio | null>(null);
   const [chargeToSplit, setChargeToSplit] = useState<FolioCharge | null>(null);
   const [chargeToTransfer, setChargeToTransfer] = useState<FolioCharge | null>(null);
+  const [paymentsList, setPaymentsList] = useState<Payment[] | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -141,6 +146,20 @@ export default function PublicShellPage() {
     }
   }
 
+  async function handleFetchPayments(folioId?: string) {
+    setLoading("payments-list");
+    setErrorMsg(null);
+    try {
+      const dto = await fetchPaymentsDto(folioId ? { folio_id: folioId } : undefined);
+      const domainResult = mapPaymentListResponseDtoToDomain(dto);
+      setPaymentsList(domainResult.payments);
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : "Error al consultar listado de pagos");
+    } finally {
+      setLoading(null);
+    }
+  }
+
   return (
     <main style={{ maxWidth: "800px", margin: "0 auto", padding: "2rem 1rem", fontFamily: "system-ui, sans-serif" }}>
       <header style={{ marginBottom: "2rem", borderBottom: "1px solid #e5e7eb", paddingBottom: "1rem" }}>
@@ -148,7 +167,7 @@ export default function PublicShellPage() {
           PMS Hotel Boutique — Consola de Pruebas WEB-4
         </h1>
         <p style={{ color: "#6b7280", fontSize: "0.95rem" }}>
-          Prueba interactiva de los servicios y componentes implementados para <strong>Disponibilidad (IMP-WEB-0102)</strong>, <strong>Garantías de Pago (IMP-WEB-0109)</strong>, <strong>StatusBadge (IMP-WEB-S401)</strong>, <strong>Folio Avanzado (IMP-WEB-0401)</strong>, <strong>Routing & Split (IMP-WEB-0402)</strong> y <strong>Transferencia de Cargos (IMP-WEB-0403)</strong>.
+          Prueba interactiva de los servicios y componentes implementados para <strong>Disponibilidad (IMP-WEB-0102)</strong>, <strong>Garantías de Pago (IMP-WEB-0109)</strong>, <strong>StatusBadge (IMP-WEB-S401)</strong>, <strong>Folio Avanzado (IMP-WEB-0401)</strong>, <strong>Routing & Split (IMP-WEB-0402)</strong>, <strong>Transferencia de Cargos (IMP-WEB-0403)</strong> y <strong>Listado de Pagos (IMP-WEB-0404)</strong>.
         </p>
       </header>
 
@@ -274,7 +293,7 @@ export default function PublicShellPage() {
       </section>
 
       {/* Sección 3: Folio Avanzado, Split y Transfer */}
-      <section style={{ backgroundColor: "#f9fafb", padding: "1.5rem", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
+      <section style={{ backgroundColor: "#f9fafb", padding: "1.5rem", borderRadius: "10px", marginBottom: "2rem", border: "1px solid #e5e7eb" }}>
         <h2 style={{ fontSize: "1.25rem", fontWeight: "600", color: "#1f2937", marginBottom: "0.75rem" }}>
           3. Folio Avanzado, StatusBadge, Split y Transferencia (`IMP-WEB-S401`, `0401`, `0402`, `0403`)
         </h2>
@@ -314,6 +333,43 @@ export default function PublicShellPage() {
             charge={chargeToTransfer}
             onTransfer={handleConfirmTransfer}
             onClose={() => setChargeToTransfer(null)}
+          />
+        )}
+      </section>
+
+      {/* Sección 4: Listado de Pagos y Domain Model */}
+      <section style={{ backgroundColor: "#f9fafb", padding: "1.5rem", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
+        <h2 style={{ fontSize: "1.25rem", fontWeight: "600", color: "#1f2937", marginBottom: "0.75rem" }}>
+          4. Listado y Ciclo de Vida de Pagos (`IMP-WEB-0404`)
+        </h2>
+        <p style={{ color: "#4b5563", fontSize: "0.9rem", marginBottom: "1rem" }}>
+          Listado de transacciones financieras con auditoría append-only, estados normalizados y sin almacenamiento de PAN/CVV.
+        </p>
+
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1rem" }}>
+          <button
+            onClick={() => handleFetchPayments()}
+            disabled={loading === "payments-list"}
+            style={{ padding: "0.6rem 1.2rem", backgroundColor: "#0284c7", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "500" }}
+          >
+            {loading === "payments-list" ? "Consultando..." : "Consultar Todos los Pagos"}
+          </button>
+          <button
+            onClick={() => handleFetchPayments("fol_guest_101")}
+            disabled={loading === "payments-list"}
+            style={{ padding: "0.6rem 1.2rem", backgroundColor: "#0f766e", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "500" }}
+          >
+            Filtrar por Folio fol_guest_101
+          </button>
+        </div>
+
+        {paymentsList && (
+          <PaymentListCard
+            payments={paymentsList}
+            onAuthorizeNew={() => alert("Formulario de autorización de pago (IMP-WEB-0405)")}
+            onCapturePayment={(payment) => alert(`Capturar pago ${payment.paymentId} por monto capturable: $${payment.remainingCapturableAmount}`)}
+            onVoidPayment={(payment) => alert(`Anular/Void pago ${payment.paymentId}`)}
+            onRefundPayment={(payment) => alert(`Reembolsar pago ${payment.paymentId}`)}
           />
         )}
       </section>
