@@ -1,5 +1,20 @@
 /**
- * Public API for the payments module.
- * Export only intentionally public Domain Models, hooks and components.
- * Do not expose DTOs, mappers or service internals without an approved reason.
+ * Public API for the payments module (WEB-4).
+ * Export only intentionally public Domain Models, mappers and service functions.
  */
+
+export type {
+  PaymentGuaranteeRequest,
+  PaymentGuaranteeResult,
+  PaymentMethod,
+  PaymentStatus,
+} from "./model/payment";
+
+export {
+  mapPaymentGuaranteeDtoToDomain,
+  mapPaymentGuaranteeRequestToDto,
+} from "./mappers/payment.mapper";
+
+export {
+  createPaymentGuaranteeDto,
+} from "./service/payment.service";
