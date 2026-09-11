@@ -41,8 +41,8 @@ Idempotentes y trazables.
 ### DEC-G-013 — Contratos frontend-first para features sin Backend
 
 **Fecha:** 2026-09-10
-**Status:** PROPOSED — pendiente de aprobación mediante Change Control.
-**Responsable de aprobación:** pendiente de designación.
+**Status:** APPROVED — aceptada mediante Change Control.
+**Responsable de aprobación:** Equipo PMS Hotel Boutique.
 
 **Contexto:** Web y Android se implementarán antes de diseñar e implementar Backend. Algunas features frontend necesitan datos estables para construir UI, dominio frontend, mapper, estados y pruebas durante esa fase.
 
