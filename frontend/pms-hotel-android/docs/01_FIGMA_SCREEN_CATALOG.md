@@ -20,6 +20,19 @@ Esta autoridad visual de navegación queda aprobada mediante Change Control para
 
 Estado actual del shell: Servicios, Chat, Valet y Cuenta están disponibles. Cuenta fue habilitada por `IMP-AND-0109`.
 
+## Autoridad visual — IMP-AND-0108 Access / Vincular reserva
+
+La autoridad visual de `IMP-AND-0108` es `1841:410 — APPROVED FOR IMPLEMENTATION — IMP-AND-0108 — Access states`:
+
+- Base: `1841:411 — MOB-19 — Access / Base`;
+- validación local: `1841:431 — MOB-19 — Access / Validación local`;
+- submitting: `1841:453 — MOB-19 — Access / Submitting`;
+- reserva no encontrada: `1841:476 — MOB-19 — Access / Reserva no encontrada`;
+- error: `1841:496 — MOB-19 — Access / Error`;
+- offline: `1841:516 — MOB-19 — Access / Offline`.
+
+`31:133 — MOB-01 — Access reservation` permanece únicamente como referencia histórica. `MOB-19` es la fuente de implementación para `/access`.
+
 ## Autoridad visual — IMP-AND-0109 Account / Stay Hub V3
 
 La autoridad visual de `IMP-AND-0109` es `1839:410 — APPROVED FOR IMPLEMENTATION — IMP-AND-0109 — Account / Stay Hub states`:
