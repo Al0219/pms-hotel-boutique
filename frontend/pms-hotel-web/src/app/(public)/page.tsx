@@ -57,14 +57,27 @@ import {
   type VoidPaymentRequest,
 } from "@/modules/payments";
 import {
+  batchUpdateRateRestrictions,
   fetchRatePlansDto,
+  fetchRateRestrictions,
   mapRatePlanListFiltersToDto,
   mapRatePlanListResponseDtoToDomain,
   RatePlanDetailModal,
   RatePlanListCard,
+  RateRestrictionsGrid,
   type RatePlan,
   type RatePlanStatus,
+  type RateRestriction,
+  type RateRestrictionUpdateItem,
 } from "@/modules/rates";
+import {
+  fetchSellLimits,
+  SellLimitsManager,
+  updateSellLimit,
+  type SellLimit,
+  type UpdateSellLimitParams,
+} from "@/modules/inventory";
+import { RevenueDashboard } from "@/modules/revenue";
 
 export default function PublicShellPage() {
   const [availabilityResult, setAvailabilityResult] = useState<AvailabilitySearchResult | null>(null);
@@ -80,6 +93,10 @@ export default function PublicShellPage() {
   const [matrixResult, setMatrixResult] = useState<AvailabilityMatrixResult | null>(null);
   const [ratePlansList, setRatePlansList] = useState<RatePlan[] | null>(null);
   const [selectedRatePlan, setSelectedRatePlan] = useState<RatePlan | null>(null);
+  const [restrictionsList, setRestrictionsList] = useState<RateRestriction[] | null>(null);
+  const [sellLimitsList, setSellLimitsList] = useState<SellLimit[] | null>(null);
+  const [canEditSellLimits, setCanEditSellLimits] = useState<boolean>(true);
+  const [showRevenue, setShowRevenue] = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -95,6 +112,58 @@ export default function PublicShellPage() {
       setErrorMsg(err instanceof Error ? err.message : "Error al consultar planes tarifarios");
     } finally {
       setLoading(null);
+    }
+  }
+
+  async function handleFetchRestrictions(propertyId = "prop_boutique_01", startDate = "2026-10-01", endDate = "2026-10-07") {
+    setLoading("restrictions");
+    setErrorMsg(null);
+    try {
+      const list = await fetchRateRestrictions({ propertyId, startDate, endDate });
+      setRestrictionsList(list);
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : "Error al consultar restricciones tarifarias");
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  async function handleApplyRestrictions(changes: RateRestrictionUpdateItem[]): Promise<boolean> {
+    try {
+      const res = await batchUpdateRateRestrictions({
+        propertyId: "prop_boutique_01",
+        restrictions: changes,
+      });
+      if (res.success) {
+        await handleFetchRestrictions();
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  async function handleFetchSellLimits(propertyId = "prop_boutique_01", startDate = "2026-10-01", endDate = "2026-10-07") {
+    setLoading("sell-limits");
+    setErrorMsg(null);
+    try {
+      const list = await fetchSellLimits(propertyId, startDate, endDate);
+      setSellLimitsList(list);
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : "Error al consultar límites de venta");
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  async function handleUpdateSellLimitItem(params: UpdateSellLimitParams): Promise<boolean> {
+    try {
+      await updateSellLimit(params);
+      await handleFetchSellLimits();
+      return true;
+    } catch {
+      return false;
     }
   }
 
@@ -620,6 +689,99 @@ export default function PublicShellPage() {
             ratePlan={selectedRatePlan}
             onClose={() => setSelectedRatePlan(null)}
           />
+        )}
+      </section>
+
+      {/* Sección 7: Restricciones Tarifarias (CTA / CTD / MinLOS / Stop Sell) */}
+      <section style={{ backgroundColor: "#f9fafb", padding: "1.5rem", borderRadius: "10px", marginTop: "2rem", border: "1px solid #e5e7eb" }}>
+        <h2 style={{ fontSize: "1.25rem", fontWeight: "600", color: "#1f2937", marginBottom: "0.75rem" }}>
+          7. Restricciones Tarifarias: CTA / CTD / MinLOS / Stop Sell (`IMP-WEB-0603`)
+        </h2>
+        <p style={{ color: "#4b5563", fontSize: "0.9rem", marginBottom: "1rem" }}>
+          Regula el control comercial de llegadas (CTA), salidas (CTD), estadías mínimas (MinLOS) y paro de ventas (Stop Sell) con previsualización y aplicación en lote sin mutaciones no autorizadas.
+        </p>
+
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
+          <button
+            onClick={() => handleFetchRestrictions()}
+            disabled={loading === "restrictions"}
+            style={{ padding: "0.6rem 1.2rem", backgroundColor: "#1e3a8a", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "500" }}
+          >
+            {loading === "restrictions" ? "Consultando Restricciones..." : "Cargar Restricciones Tarifarias (Semana Actual)"}
+          </button>
+        </div>
+
+        {restrictionsList && (
+          <RateRestrictionsGrid
+            restrictions={restrictionsList}
+            propertyId="prop_boutique_01"
+            isLoading={loading === "restrictions"}
+            onRefresh={() => handleFetchRestrictions()}
+            onApplyChanges={handleApplyRestrictions}
+          />
+        )}
+      </section>
+
+      {/* Sección 8: Sell Limits y Ajustes de Overbooking */}
+      <section style={{ backgroundColor: "#f9fafb", padding: "1.5rem", borderRadius: "10px", marginTop: "2rem", border: "1px solid #e5e7eb" }}>
+        <h2 style={{ fontSize: "1.25rem", fontWeight: "600", color: "#1f2937", marginBottom: "0.75rem" }}>
+          8. Sell Limits y Ajustes de Overbooking (`IMP-WEB-0604`)
+        </h2>
+        <p style={{ color: "#4b5563", fontSize: "0.9rem", marginBottom: "1rem" }}>
+          Configura márgenes de sobreventa comercial (+) o límites de venta máximos por tipo de habitación sin alterar la capacidad física del hotel, recalculando dinámicamente el ATS disponible.
+        </p>
+
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1.5rem", alignItems: "center" }}>
+          <button
+            onClick={() => handleFetchSellLimits()}
+            disabled={loading === "sell-limits"}
+            style={{ padding: "0.6rem 1.2rem", backgroundColor: "#047857", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "500" }}
+          >
+            {loading === "sell-limits" ? "Consultando Capacidad..." : "Cargar Sell Limits y Overbooking (Semana Actual)"}
+          </button>
+
+          <label style={{ fontSize: "13px", color: "#374151", display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              checked={canEditSellLimits}
+              onChange={(e) => setCanEditSellLimits(e.target.checked)}
+            />
+            Simular permiso de edición (<code>inventory:overbooking:manage</code>)
+          </label>
+        </div>
+
+        {sellLimitsList && (
+          <SellLimitsManager
+            items={sellLimitsList}
+            propertyId="prop_boutique_01"
+            canEdit={canEditSellLimits}
+            isLoading={loading === "sell-limits"}
+            onRefresh={() => handleFetchSellLimits()}
+            onUpdateLimit={handleUpdateSellLimitItem}
+          />
+        )}
+      </section>
+
+      {/* Sección 9: Revenue Dashboard */}
+      <section style={{ backgroundColor: "#f9fafb", padding: "1.5rem", borderRadius: "10px", marginTop: "2rem", border: "1px solid #e5e7eb" }}>
+        <h2 style={{ fontSize: "1.25rem", fontWeight: "600", color: "#1f2937", marginBottom: "0.75rem" }}>
+          9. Revenue Dashboard (`IMP-WEB-0605`)
+        </h2>
+        <p style={{ color: "#4b5563", fontSize: "0.9rem", marginBottom: "1rem" }}>
+          Panel de Indicadores Clave de Rendimiento (KPIs) con Occupancy, ADR, RevPAR, Pickup y Pace.
+        </p>
+
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
+          <button
+            onClick={() => setShowRevenue(prev => !prev)}
+            style={{ padding: "0.6rem 1.2rem", backgroundColor: "#b91c1c", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "500" }}
+          >
+            {showRevenue ? "Ocultar Revenue Dashboard" : "Cargar Revenue Dashboard"}
+          </button>
+        </div>
+
+        {showRevenue && (
+          <RevenueDashboard propertyId="prop_boutique_01" />
         )}
       </section>
     </main>

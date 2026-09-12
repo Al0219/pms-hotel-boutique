@@ -22,6 +22,16 @@ import type {
   RatePlanDto,
   RatePlanListResponseDto,
 } from "@/modules/rates/dtos/rate-plan.dto";
+import type {
+  RateRestrictionDto,
+  BatchUpdateRateRestrictionsPayloadDto,
+  RateRestrictionBatchResultDto,
+} from "@/modules/rates/dtos/rate-restriction.dto";
+import type {
+  SellLimitDto,
+  UpdateSellLimitRequestDto,
+  SellLimitListResponseDto,
+} from "@/modules/inventory/dtos/sell-limit.dto";
 
 export const mockAvailabilitySuccessDto = {
   property_id: "prop_boutique_01",
@@ -1031,6 +1041,399 @@ function handleGetRatePlanById({ params }: { params: Record<string, string | rea
   return HttpResponse.json(found);
 }
 
+export const mockRateRestrictionsListDto: RateRestrictionDto[] = [
+  {
+    restriction_id: "res_001",
+    property_id: "prop_boutique_01",
+    rate_plan_id: "rp_flexible",
+    room_type_id: "rt_deluxe_king",
+    date: "2026-10-01",
+    closed_to_arrival: false,
+    closed_to_departure: false,
+    min_length_of_stay: 1,
+    stop_sell: false,
+    created_at: "2026-09-01T08:00:00.000Z",
+    updated_at: "2026-09-01T08:00:00.000Z",
+  },
+  {
+    restriction_id: "res_002",
+    property_id: "prop_boutique_01",
+    rate_plan_id: "rp_flexible",
+    room_type_id: "rt_deluxe_king",
+    date: "2026-10-02",
+    closed_to_arrival: true,
+    closed_to_departure: false,
+    min_length_of_stay: 2,
+    stop_sell: false,
+    created_at: "2026-09-01T08:00:00.000Z",
+    updated_at: "2026-09-01T08:00:00.000Z",
+  },
+  {
+    restriction_id: "res_003",
+    property_id: "prop_boutique_01",
+    rate_plan_id: "rp_flexible",
+    room_type_id: "rt_deluxe_king",
+    date: "2026-10-03",
+    closed_to_arrival: false,
+    closed_to_departure: true,
+    min_length_of_stay: 2,
+    stop_sell: false,
+    created_at: "2026-09-01T08:00:00.000Z",
+    updated_at: "2026-09-01T08:00:00.000Z",
+  },
+  {
+    restriction_id: "res_004",
+    property_id: "prop_boutique_01",
+    rate_plan_id: "rp_non_refundable",
+    room_type_id: "rt_deluxe_king",
+    date: "2026-10-01",
+    closed_to_arrival: false,
+    closed_to_departure: false,
+    min_length_of_stay: 3,
+    stop_sell: false,
+    created_at: "2026-09-01T08:00:00.000Z",
+    updated_at: "2026-09-01T08:00:00.000Z",
+  },
+  {
+    restriction_id: "res_005",
+    property_id: "prop_boutique_01",
+    rate_plan_id: "rp_non_refundable",
+    room_type_id: "rt_deluxe_king",
+    date: "2026-10-02",
+    closed_to_arrival: false,
+    closed_to_departure: false,
+    min_length_of_stay: 3,
+    stop_sell: true,
+    created_at: "2026-09-01T08:00:00.000Z",
+    updated_at: "2026-09-01T08:00:00.000Z",
+  },
+  {
+    restriction_id: "res_006",
+    property_id: "prop_boutique_01",
+    rate_plan_id: "rp_flexible",
+    room_type_id: "rt_master_suite",
+    date: "2026-10-01",
+    closed_to_arrival: false,
+    closed_to_departure: false,
+    min_length_of_stay: 2,
+    stop_sell: false,
+    created_at: "2026-09-01T08:00:00.000Z",
+    updated_at: "2026-09-01T08:00:00.000Z",
+  },
+  {
+    restriction_id: "res_007",
+    property_id: "prop_boutique_01",
+    rate_plan_id: "rp_flexible",
+    room_type_id: "rt_master_suite",
+    date: "2026-10-02",
+    closed_to_arrival: true,
+    closed_to_departure: false,
+    min_length_of_stay: 2,
+    stop_sell: false,
+    created_at: "2026-09-01T08:00:00.000Z",
+    updated_at: "2026-09-01T08:00:00.000Z",
+  },
+];
+
+function handleGetRateRestrictions({ request }: { request: Request }) {
+  const url = new URL(request.url);
+  const propertyId = url.searchParams.get("property_id");
+  const startDate = url.searchParams.get("start_date");
+  const endDate = url.searchParams.get("end_date");
+  const ratePlanId = url.searchParams.get("rate_plan_id");
+  const roomTypeId = url.searchParams.get("room_type_id");
+
+  let filtered = [...mockRateRestrictionsListDto];
+  if (propertyId) {
+    filtered = filtered.filter((r) => r.property_id === propertyId);
+  }
+  if (ratePlanId) {
+    filtered = filtered.filter((r) => r.rate_plan_id === ratePlanId);
+  }
+  if (roomTypeId) {
+    filtered = filtered.filter((r) => r.room_type_id === roomTypeId);
+  }
+  if (startDate) {
+    filtered = filtered.filter((r) => r.date >= startDate);
+  }
+  if (endDate) {
+    filtered = filtered.filter((r) => r.date <= endDate);
+  }
+
+  return HttpResponse.json({ restrictions: filtered });
+}
+
+async function handleBatchUpdateRateRestrictions({ request }: { request: Request }) {
+  const body = (await request.json()) as BatchUpdateRateRestrictionsPayloadDto;
+  if (!body || !body.property_id || !Array.isArray(body.restrictions)) {
+    return HttpResponse.json({ error: "Invalid payload" }, { status: 400 });
+  }
+
+  const updated: RateRestrictionDto[] = [];
+  for (const item of body.restrictions) {
+    const existingIndex = mockRateRestrictionsListDto.findIndex(
+      (r) =>
+        r.property_id === body.property_id &&
+        r.rate_plan_id === item.rate_plan_id &&
+        r.room_type_id === item.room_type_id &&
+        r.date === item.date,
+    );
+
+    if (existingIndex >= 0) {
+      const existing = mockRateRestrictionsListDto[existingIndex];
+      const updatedItem: RateRestrictionDto = {
+        ...existing,
+        closed_to_arrival:
+          item.closed_to_arrival !== undefined ? item.closed_to_arrival : existing.closed_to_arrival,
+        closed_to_departure:
+          item.closed_to_departure !== undefined ? item.closed_to_departure : existing.closed_to_departure,
+        min_length_of_stay:
+          item.min_length_of_stay !== undefined ? item.min_length_of_stay : existing.min_length_of_stay,
+        stop_sell: item.stop_sell !== undefined ? item.stop_sell : existing.stop_sell,
+        updated_at: new Date().toISOString(),
+      };
+      mockRateRestrictionsListDto[existingIndex] = updatedItem;
+      updated.push(updatedItem);
+    } else {
+      const newItem: RateRestrictionDto = {
+        restriction_id: `res_gen_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        property_id: body.property_id,
+        rate_plan_id: item.rate_plan_id,
+        room_type_id: item.room_type_id,
+        date: item.date,
+        closed_to_arrival: item.closed_to_arrival ?? false,
+        closed_to_departure: item.closed_to_departure ?? false,
+        min_length_of_stay: item.min_length_of_stay ?? 1,
+        stop_sell: item.stop_sell ?? false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      mockRateRestrictionsListDto.push(newItem);
+      updated.push(newItem);
+    }
+  }
+
+  const result: RateRestrictionBatchResultDto = {
+    success: true,
+    updated_count: updated.length,
+    restrictions: updated,
+  };
+
+  return HttpResponse.json(result);
+}
+
+export const mockSellLimitsListDto: SellLimitDto[] = [
+  {
+    limit_id: "lim_001",
+    property_id: "prop_boutique_01",
+    room_type_id: "rt_deluxe_king",
+    room_type_name: "Deluxe King Suite",
+    date: "2026-10-01",
+    physical_rooms_count: 10,
+    ooo_rooms_count: 1,
+    oos_rooms_count: 0,
+    sold_rooms_count: 4,
+    overbooking_limit: 2,
+    sell_limit: null,
+    calculated_ats: 7, // 10 - 1 - 0 - 4 + 2 = 7
+    updated_at: "2026-09-01T08:00:00.000Z",
+  },
+  {
+    limit_id: "lim_002",
+    property_id: "prop_boutique_01",
+    room_type_id: "rt_deluxe_king",
+    room_type_name: "Deluxe King Suite",
+    date: "2026-10-02",
+    physical_rooms_count: 10,
+    ooo_rooms_count: 0,
+    oos_rooms_count: 1,
+    sold_rooms_count: 7,
+    overbooking_limit: 1,
+    sell_limit: 3,
+    calculated_ats: 3,
+    updated_at: "2026-09-01T08:00:00.000Z",
+  },
+  {
+    limit_id: "lim_003",
+    property_id: "prop_boutique_01",
+    room_type_id: "rt_master_suite",
+    room_type_name: "Master Suite Presidencial",
+    date: "2026-10-01",
+    physical_rooms_count: 4,
+    ooo_rooms_count: 0,
+    oos_rooms_count: 0,
+    sold_rooms_count: 2,
+    overbooking_limit: 0,
+    sell_limit: null,
+    calculated_ats: 2,
+    updated_at: "2026-09-01T08:00:00.000Z",
+  },
+  {
+    limit_id: "lim_004",
+    property_id: "prop_boutique_01",
+    room_type_id: "rt_master_suite",
+    room_type_name: "Master Suite Presidencial",
+    date: "2026-10-02",
+    physical_rooms_count: 4,
+    ooo_rooms_count: 0,
+    oos_rooms_count: 0,
+    sold_rooms_count: 3,
+    overbooking_limit: 1,
+    sell_limit: null,
+    calculated_ats: 2,
+    updated_at: "2026-09-01T08:00:00.000Z",
+  },
+];
+
+function handleGetSellLimits({ request }: { request: Request }) {
+  const url = new URL(request.url);
+  const propertyId = url.searchParams.get("property_id");
+  const startDate = url.searchParams.get("start_date");
+  const endDate = url.searchParams.get("end_date");
+  const roomTypeId = url.searchParams.get("room_type_id");
+
+  let filtered = [...mockSellLimitsListDto];
+  if (propertyId) {
+    filtered = filtered.filter((i) => i.property_id === propertyId);
+  }
+  if (roomTypeId) {
+    filtered = filtered.filter((i) => i.room_type_id === roomTypeId);
+  }
+  if (startDate) {
+    filtered = filtered.filter((i) => i.date >= startDate);
+  }
+  if (endDate) {
+    filtered = filtered.filter((i) => i.date <= endDate);
+  }
+
+  const response: SellLimitListResponseDto = {
+    items: filtered,
+    total_count: filtered.length,
+  };
+
+  return HttpResponse.json(response);
+}
+
+async function handleUpdateSellLimit({ request }: { request: Request }) {
+  const body = (await request.json()) as UpdateSellLimitRequestDto;
+  if (!body || !body.property_id || !body.room_type_id || !body.date) {
+    return HttpResponse.json({ error: "Invalid payload" }, { status: 400 });
+  }
+
+  const existingIndex = mockSellLimitsListDto.findIndex(
+    (i) =>
+      i.property_id === body.property_id &&
+      i.room_type_id === body.room_type_id &&
+      i.date === body.date,
+  );
+
+  let updatedItem: SellLimitDto;
+  if (existingIndex >= 0) {
+    const existing = mockSellLimitsListDto[existingIndex];
+    const base = Math.max(0, existing.physical_rooms_count - existing.ooo_rooms_count - existing.oos_rooms_count - existing.sold_rooms_count);
+    const withOverbooking = Math.max(0, base + body.overbooking_limit);
+    const finalAts = body.sell_limit !== null && body.sell_limit >= 0
+      ? Math.min(body.sell_limit, withOverbooking)
+      : withOverbooking;
+
+    updatedItem = {
+      ...existing,
+      overbooking_limit: body.overbooking_limit,
+      sell_limit: body.sell_limit,
+      calculated_ats: finalAts,
+      updated_at: new Date().toISOString(),
+    };
+    mockSellLimitsListDto[existingIndex] = updatedItem;
+  } else {
+    const base = 5;
+    const withOverbooking = Math.max(0, base + body.overbooking_limit);
+    const finalAts = body.sell_limit !== null && body.sell_limit >= 0
+      ? Math.min(body.sell_limit, withOverbooking)
+      : withOverbooking;
+
+    updatedItem = {
+      limit_id: `lim_gen_${Date.now()}`,
+      property_id: body.property_id,
+      room_type_id: body.room_type_id,
+      room_type_name: body.room_type_id,
+      date: body.date,
+      physical_rooms_count: 5,
+      ooo_rooms_count: 0,
+      oos_rooms_count: 0,
+      sold_rooms_count: 0,
+      overbooking_limit: body.overbooking_limit,
+      sell_limit: body.sell_limit,
+      calculated_ats: finalAts,
+      updated_at: new Date().toISOString(),
+    };
+    mockSellLimitsListDto.push(updatedItem);
+  }
+
+  return HttpResponse.json(updatedItem);
+}
+
+function handleGetRevenueKpis({ request }: { request: Request }) {
+  const url = new URL(request.url);
+  const propertyId = url.searchParams.get("propertyId") || "prop_boutique_01";
+  const startDate = url.searchParams.get("startDate") || "2023-10-01";
+  
+  if (propertyId === "error_property") {
+    return HttpResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+
+  const mockResponse = {
+    propertyId: propertyId,
+    currency: "USD",
+    summary: {
+      occupancyPercent: 82.5,
+      adr: 215.5,
+      revPar: 177.78,
+      pickup: 12,
+      pace: 5.4,
+      totalRoomsSold: 240,
+      totalRoomsAvailable: 290,
+      totalRevenue: 51720,
+    },
+    daily: [
+      {
+        date: startDate,
+        occupancyPercent: 80,
+        adr: 200,
+        revPar: 160,
+        pickup: 2,
+        pace: 1.5,
+        roomsSold: 40,
+        roomsAvailable: 50,
+        revenue: 8000,
+      },
+      {
+        date: "2023-10-02",
+        occupancyPercent: 85,
+        adr: 220,
+        revPar: 187,
+        pickup: 5,
+        pace: 2.1,
+        roomsSold: 42,
+        roomsAvailable: 50,
+        revenue: 9240,
+      },
+      {
+        date: "2023-10-03",
+        occupancyPercent: 90,
+        adr: 250,
+        revPar: 225,
+        pickup: 8,
+        pace: 3.5,
+        roomsSold: 45,
+        roomsAvailable: 50,
+        revenue: 11250,
+      },
+    ],
+  };
+
+  return HttpResponse.json(mockResponse);
+}
+
 export const handlers = [
   http.get("http://pms.test/__msw/health", () => HttpResponse.json({ status: "ok" })),
   http.get("http://pms.test/__msw/missing", () => HttpResponse.text(null, { status: 404 })),
@@ -1045,6 +1448,14 @@ export const handlers = [
   http.get("/api/v1/public/availability", handleAvailabilityRequest),
   http.get("http://pms.test/api/v1/private/availability/matrix", handleGetAvailabilityMatrix),
   http.get("/api/v1/private/availability/matrix", handleGetAvailabilityMatrix),
+  http.get("http://pms.test/api/v1/private/inventory/sell-limits", handleGetSellLimits),
+  http.get("/api/v1/private/inventory/sell-limits", handleGetSellLimits),
+  http.post("http://pms.test/api/v1/private/inventory/sell-limits", handleUpdateSellLimit),
+  http.post("/api/v1/private/inventory/sell-limits", handleUpdateSellLimit),
+  http.get("http://pms.test/api/v1/private/rates/restrictions", handleGetRateRestrictions),
+  http.get("/api/v1/private/rates/restrictions", handleGetRateRestrictions),
+  http.post("http://pms.test/api/v1/private/rates/restrictions", handleBatchUpdateRateRestrictions),
+  http.post("/api/v1/private/rates/restrictions", handleBatchUpdateRateRestrictions),
   http.get("http://pms.test/api/v1/private/rates", handleGetRatePlans),
   http.get("/api/v1/private/rates", handleGetRatePlans),
   http.get("http://pms.test/api/v1/private/rates/:id", handleGetRatePlanById),
@@ -1069,6 +1480,8 @@ export const handlers = [
   http.post("/api/v1/private/payments/:id/void", handleVoidPayment),
   http.post("http://pms.test/api/v1/private/payments/:id/refund", handleRefundPayment),
   http.post("/api/v1/private/payments/:id/refund", handleRefundPayment),
+  http.get("/api/v1/private/revenue/kpis", handleGetRevenueKpis),
+  http.get("http://pms.test/api/v1/private/revenue/kpis", handleGetRevenueKpis),
 ];
 
 
