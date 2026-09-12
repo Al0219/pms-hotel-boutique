@@ -30,6 +30,7 @@ El freeze Early Journey → V3 queda aprobado. La evidencia final está registra
 - La navegación Guest V3 sigue siendo exclusivamente `Servicios · Chat · Valet · Cuenta`.
 - No se crea una quinta tab `Estadía` y no se restituye la navegación V1.
 - `MOB-19 — Acceso / Vincular reserva` vive en `/access`, fuera de `GuestNavigationShell`. Tras una vinculación exitosa, el flujo es `/access` → `/account` → **Account / Stay Hub V3**. El shell comienza cuando el huésped entra al contexto Guest vinculado.
+- `IMP-AND-0108` usa exclusivamente código de reserva y correo electrónico. El target de raíz aprobado es `/` → `/access`; la vinculación mock exitosa redirige inmediatamente con `router.replace('/account')`, sin pantalla de success ni persistencia.
 - `MOB-20 — Cuenta / Mi estadía` vive en `/account`. Cuenta permanece activa para `/account` y todas sus rutas hijas. El contenido actual de Stay será la base del **Account / Stay Hub**.
 - Las rutas `/services/*` mantienen Servicios activa y Back desde una ruta hija vuelve a `/services`. Las rutas `/account/*` mantienen Cuenta activa y Back desde una ruta hija vuelve a `/account`.
 - `IMP-AND-0201` extenderá el Account / Stay Hub creado por `IMP-AND-0109`; no crea otro hub ni duplica `/account`.
@@ -85,7 +86,7 @@ UI
 - No se implementan pantallas, rutas, DTOs, mappers, Domain, hooks, mocks funcionales ni tests en este Change Control.
 - No se definen endpoints, HTTP real, autenticación real, Backend, persistencia, secretos, NetInfo, cola offline ni sincronización en segundo plano.
 - No se modifica Figma ni se convierten los frames `31:*` en fuente vigente.
-- No se inicia `IMP-AND-0108..0114`, Sprint 2 ni una feature de Cuenta.
+- No se inicia `IMP-AND-0110..0114`, Sprint 2 ni una feature de Cuenta fuera del alcance ya aprobado.
 
 ## Gates cerrados de `IMP-AND-0107`
 

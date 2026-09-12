@@ -16,7 +16,7 @@ La fuente visual canónica `238:132 — Implementation Ready — Android V2 + V3
 
 ### Rutas objetivo y destinos no implementados
 
-Las rutas objetivo son `/services`, `/chat`, `/valet` y `/account`. Las cuatro existen como features autorizadas; `/access` permanece reservada para `IMP-AND-0108`.
+Las rutas objetivo son `/services`, `/chat`, `/valet` y `/account`. Las cuatro existen como features autorizadas. `IMP-AND-0108` implementa además `/access` fuera del shell y la raíz `/` redirige a ese punto de entrada.
 
 Servicios, Chat, Valet y Cuenta están habilitadas. Una tab disabled no ejecuta navegación, no abre placeholders ni representa una feature disponible.
 
@@ -29,7 +29,7 @@ Servicios, Chat, Valet y Cuenta están habilitadas. Una tab disabled no ejecuta 
 - `/valet` y `/valet/*` → Valet activa;
 - `/account` y `/account/*` → Cuenta activa.
 
-Las rutas fuera del shell no tienen tab V3 seleccionada. `/access` está fuera de `GuestNavigationShell`; tras una vinculación exitosa futura, navega a `/account`.
+Las rutas fuera del shell no tienen tab V3 seleccionada. `/access` queda fuera de `GuestNavigationShell`, no muestra footbar ni tabs y, tras una vinculación mock exitosa, usa `router.replace('/account')`. `/account` inicia el contexto Guest vinculado con shell V3.
 
 ### Accesibilidad
 

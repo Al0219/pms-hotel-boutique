@@ -2,7 +2,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, waitFor } from '@testing-library/react-native';
 import { renderRouter } from 'expo-router/testing-library';
 
-import IndexRoute from '../app/index';
 import { NetworkError } from '@/data/remote/http/HttpError';
 import { AccountStayHubScreen } from '@/modules/account';
 import { type ReservationStayDto } from '@/modules/stay/data/dtos/ReservationStayDto';
@@ -80,14 +79,4 @@ describe('Account / Stay Hub V3', () => {
     expect(getCurrentStay).toHaveBeenCalledTimes(2);
   });
 
-  it('redirects the old root entry to the single /account hub without a loop', async () => {
-    const AccountRoute = createAccountRoute(new MockStayService({ kind: 'success', dto: currentStayFixture }));
-    const rendered = await renderRouter(
-      { index: IndexRoute, account: AccountRoute },
-      { initialUrl: '/' },
-    );
-
-    await waitFor(() => expect(rendered.getByTestId('account-stay-hub-screen')).toBeTruthy());
-    expect(rendered.queryByText('Inicio')).toBeNull();
-  });
 });
