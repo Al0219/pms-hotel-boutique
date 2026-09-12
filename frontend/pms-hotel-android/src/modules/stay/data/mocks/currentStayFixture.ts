@@ -1,8 +1,8 @@
 import { type ReservationStayDto } from '@/modules/stay/data/dtos/ReservationStayDto';
 
 /**
- * Remote-shaped fixture used only by the IMP-AND-0102 visual mock. It is not
- * an API contract and it intentionally passes through the stay mapper.
+ * Remote-shaped fixture reused by approved Stay UI mocks. It is not an API
+ * contract and it intentionally passes through the stay mapper.
  */
 export const currentStayFixture: ReservationStayDto = {
   id: 'stay-2026-004281',
