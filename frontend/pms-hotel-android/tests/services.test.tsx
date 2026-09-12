@@ -1,6 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
-import { router } from 'expo-router';
 import { act, renderRouter } from 'expo-router/testing-library';
 
 import { NetworkError } from '@/data/remote/http/HttpError';
@@ -10,9 +9,6 @@ import {
   ServicesScreen,
 } from '@/modules/services';
 import { servicesCatalogFixture } from '@/modules/services/data/mocks/servicesCatalogFixture';
-import { currentStayFixture } from '@/modules/stay/data/mocks/currentStayFixture';
-import { MockStayService } from '@/modules/stay/data/mocks/MockStayService';
-import { StayHomeScreen } from '@/modules/stay/presentation/StayHomeScreen';
 
 declare const require: (moduleName: string) => { readFileSync(path: string, encoding: string): string };
 
@@ -79,37 +75,8 @@ describe('Services', () => {
       selected: false,
     }));
     expect(rendered.getByLabelText('Valet').props.accessibilityState.disabled).toBe(false);
-    expect(rendered.getByLabelText('Cuenta').props.accessibilityState.disabled).toBe(true);
+    expect(rendered.getByLabelText('Cuenta').props.accessibilityState.disabled).toBe(false);
     expect(rendered.getByTestId('services-submit-button').props.accessibilityState.disabled).toBe(true);
-  });
-
-  it('keeps the approved Home → Services → Back journey without changing Stay Home', async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { gcTime: 0, retry: false }, mutations: { retry: false } },
-    });
-    const StayRoute = () => (
-      <QueryClientProvider client={queryClient}>
-        <StayHomeScreen service={new MockStayService({ kind: 'success', dto: currentStayFixture })} />
-      </QueryClientProvider>
-    );
-    const ServicesRoute = () => (
-      <QueryClientProvider client={queryClient}>
-        <ServicesScreen service={new MockServicesService()} />
-      </QueryClientProvider>
-    );
-    const rendered = await renderRouter(
-      { index: StayRoute, services: ServicesRoute },
-      { initialUrl: '/' },
-    );
-
-    await waitFor(() => expect(rendered.getByLabelText('Limpieza')).toBeTruthy());
-    await fireEvent.press(rendered.getByLabelText('Limpieza'));
-    await waitFor(() => expect(rendered.getByTestId('services-screen')).toBeTruthy());
-
-    await act(async () => {
-      router.back();
-    });
-    await waitFor(() => expect(rendered.getByTestId('stay-home-screen')).toBeTruthy());
   });
 
   it('keeps exactly one inline selection and enables submit only after selection', async () => {

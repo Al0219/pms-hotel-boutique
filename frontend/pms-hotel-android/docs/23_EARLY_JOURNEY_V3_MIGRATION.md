@@ -1,7 +1,7 @@
 # 23 — Change Control: Android Early Journey → V3
 
 **Tarea:** `IMP-AND-0107`
-**Estado:** `EN_QA`
+**Estado:** `COMPLETADA`
 **Owner:** `ANDROID-1`
 **Reviewer:** `WEB-3`; consultar `WEB-2` para la semántica futura de Cuenta.
 **Fuentes:** `31:132 — Reference — Android Early Journey` (histórica) y `238:132 — Implementation Ready — Android V2 + V3` (vigente).
@@ -14,6 +14,16 @@ Durante `IMP-AND-0106` se detectaron dos bloqueos:
 2. `QA-AND-0106-02`: las capacidades históricas `MOB-01` y `MOB-03..07` no tenían una migración explícita a la arquitectura V3.
 
 Los frames `31:*` se preservan como referencia histórica. No se modifican ni se reutilizan como autoridad visual global.
+
+## Cierre documental aprobado
+
+Los gates de cierre de `IMP-AND-0107` obtuvieron:
+
+- `ANDROID-1 PASS`;
+- `WEB-3 PASS`;
+- `WEB-2 CONSULT PASS`.
+
+El freeze Early Journey → V3 queda aprobado. La evidencia final está registrada en el backlog canónico.
 
 ## Decisiones congeladas
 
@@ -77,12 +87,12 @@ UI
 - No se modifica Figma ni se convierten los frames `31:*` en fuente vigente.
 - No se inicia `IMP-AND-0108..0114`, Sprint 2 ni una feature de Cuenta.
 
-## Gates para cerrar `IMP-AND-0107`
+## Gates cerrados de `IMP-AND-0107`
 
-1. Revisión documental de ANDROID-1 y WEB-3 PASS; WEB-2 confirma la extensión de Cuenta cuando corresponda.
-2. Backlog sincronizado: `IMP-AND-0106` vuelve a `EN_PROGRESO`, `IMP-AND-0107` queda `EN_QA`, `IMP-AND-0108..0114` quedan `PENDIENTE` y `IMP-AND-0201` depende de `IMP-AND-0109`.
+1. Revisión documental ANDROID-1 PASS, WEB-3 PASS y consulta WEB-2 PASS.
+2. Backlog sincronizado: `IMP-AND-0106` permanece `EN_PROGRESO`, `IMP-AND-0108..0114` permanecen `PENDIENTE` y `IMP-AND-0201` depende de `IMP-AND-0109`.
 3. `IMP-AND-0109` precede a `IMP-AND-0108`: Access necesita `/account` como destino post-success real y validable.
 4. Las rutas, parent-tab semantics, ownership, dependencias y exclusiones de la matriz permanecen sin ambigüedad.
-5. No existen cambios productivos de Android ni diseño Backend anticipado.
+5. No se introdujeron cambios productivos de Android ni diseño Backend anticipado en este Change Control.
 
 `IMP-AND-0106` solo puede volver a `EN_QA` cuando la migración deje de tener estos hallazgos bloqueantes y su QA transversal se ejecute de nuevo.

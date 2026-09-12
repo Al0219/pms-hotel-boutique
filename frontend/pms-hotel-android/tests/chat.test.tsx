@@ -119,7 +119,7 @@ describe('Chat con Recepción', () => {
     expect(rendered.getByLabelText('Chat').props.accessibilityState).toEqual({ disabled: false, selected: true });
     expect(rendered.getByLabelText('Servicios').props.accessibilityState).toEqual({ disabled: false, selected: false });
     expect(rendered.getByLabelText('Valet').props.accessibilityState.disabled).toBe(false);
-    expect(rendered.getByLabelText('Cuenta').props.accessibilityState.disabled).toBe(true);
+    expect(rendered.getByLabelText('Cuenta').props.accessibilityState.disabled).toBe(false);
   });
 
   it('does not send empty or whitespace drafts and trims a valid message before mutation', async () => {

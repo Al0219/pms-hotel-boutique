@@ -16,13 +16,20 @@ La fuente visual canónica `238:132 — Implementation Ready — Android V2 + V3
 
 ### Rutas objetivo y destinos no implementados
 
-Las rutas objetivo conceptuales son `/services`, `/chat`, `/valet` y `/account`. Una ruta definida no implica que su archivo ni su feature existan. Actualmente `/services` es solo el handoff técnico de `IMP-AND-0102`; `/chat`, `/valet` y `/account` no existen.
+Las rutas objetivo son `/services`, `/chat`, `/valet` y `/account`. Las cuatro existen como features autorizadas; `/access` permanece reservada para `IMP-AND-0108`.
 
-Las cuatro tabs permanecen visibles y disabled hasta que su feature real esté autorizada e implementada. Una tab disabled no ejecuta navegación, no abre placeholders ni representa una feature disponible. Esto también aplica a Servicios mientras `/services` siga siendo únicamente un handoff técnico.
+Servicios, Chat, Valet y Cuenta están habilitadas. Una tab disabled no ejecuta navegación, no abre placeholders ni representa una feature disponible.
 
 ### Selección
 
-`usePathname()` es la única fuente de verdad. Una tab está activa cuando pathname coincide con su `basePath` o inicia con `basePath + "/"`. No se crea un store global. Las rutas fuera del shell no tienen tab V3 seleccionada; un destino inexistente o disabled no simula selección.
+`usePathname()` es la única fuente de verdad. Una tab está activa cuando pathname coincide con su `basePath` o inicia con `basePath + "/"`. No se crea un store global.
+
+- `/services` y `/services/*` → Servicios activa;
+- `/chat` y `/chat/*` → Chat activa;
+- `/valet` y `/valet/*` → Valet activa;
+- `/account` y `/account/*` → Cuenta activa.
+
+Las rutas fuera del shell no tienen tab V3 seleccionada. `/access` está fuera de `GuestNavigationShell`; tras una vinculación exitosa futura, navega a `/account`.
 
 ### Accesibilidad
 
@@ -30,19 +37,19 @@ El shell usa la semántica de navegación/tablist que soporte React Native. Cada
 
 ### Back stack
 
-Cambiar entre tabs disponibles usa `router.replace(basePath)`: no acumula tabs principales mediante `push` ni conserva stacks independientes. Una ruta hija usa `router.push(childPath)` y Back usa el stack normal para regresar a la ruta anterior o raíz correspondiente. Desde una ruta raíz, Android Back conserva el comportamiento estándar de Expo Router/sistema. Tocar la tab activa es un no-op; una tab disabled no navega. Una pantalla fuera del shell no selecciona ninguna tab V3.
+Cambiar entre tabs disponibles usa `router.replace(basePath)`: no acumula tabs principales mediante `push` ni conserva stacks independientes. Una ruta hija usa `router.push(childPath)` y Back usa el stack normal para regresar a la raíz correspondiente. En particular, `/services/*` vuelve a `/services` y `/account/*` vuelve a `/account`. Desde una ruta raíz, Android Back conserva el comportamiento estándar de Expo Router/sistema. Tocar la tab activa es un no-op; una tab disabled no navega. Una pantalla fuera del shell no selecciona ninguna tab V3.
 
 ### Montaje
 
-`IMP-AND-0100` crea infraestructura reutilizable, pero no envuelve globalmente `(guest)`, no monta el shell sobre Home V2 y no convierte `/services` en Servicios funcional. El primer consumidor productivo será una feature V3 autorizada; su validación inicial puede usar `expo-router/testing-library`.
+`IMP-AND-0100` crea infraestructura reutilizable, pero no envuelve globalmente `(guest)`. Servicios, Chat, Valet y Cuenta son consumidores productivos autorizados; Cuenta se incorporó con `IMP-AND-0109`. Su validación puede usar `expo-router/testing-library`.
 
 ## Excepción de navegación — IMP-AND-0102
 
-La Home Guest (`/(guest)`) implementa `31:154 — MOB-02 — Inicio / Mi estadía`. Sus cuatro acciones navegan a `/services` únicamente como destino técnico para validar el back stack exigido por `IMP-AND-0102`. Esa ruta no contiene catálogo, solicitud, estados de negocio, DTO, endpoint ni funcionalidad de `IMP-AND-0103`.
+La Home Guest histórica implementó `31:154 — MOB-02 — Inicio / Mi estadía` como excepción de `IMP-AND-0102`. En aquella tarea sus acciones usaban `/services` como handoff técnico; Servicios pasó posteriormente a ser una feature funcional autorizada por `IMP-AND-0103`.
 
-La footbar V2 `Inicio · Solicitudes · Explorar · Hotel` de esa pantalla es parte de la excepción aprobada. No convierte V2 en navegación global ni reabre `IMP-AND-0102`; una migración eventual de Home corresponde al futuro trabajo transversal de shell.
+La footbar V2 `Inicio · Solicitudes · Explorar · Hotel` de esa pantalla fue parte de la excepción aprobada. No convierte V2 en navegación global ni reabre `IMP-AND-0102`; `IMP-AND-0109` migró su capacidad de estadía al Account / Stay Hub V3.
 
-La coexistencia V2/V3 es temporal: `IMP-AND-0100` no modifica Home, no agrega Inicio al shell V3 y no altera `StayHomeScreen`. Una futura migración requiere tarea y Change Control propios.
+No existe una entrada productiva V1 equivalente: la raíz redirige a `/account`, no agrega Inicio al shell V3 y no conserva un segundo hub de estadía.
 
 ## MUST
 - back stack coherente;
