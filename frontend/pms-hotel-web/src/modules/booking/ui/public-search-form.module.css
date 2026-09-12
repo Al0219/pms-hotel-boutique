@@ -1,0 +1,59 @@
+.card {
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  box-shadow: var(--shadow-card);
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: var(--space-6);
+  text-align: center;
+}
+
+.title {
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-h2);
+  line-height: var(--line-height-h2);
+  color: var(--color-brand-dark);
+  margin: 0 0 var(--space-2) 0;
+  font-weight: var(--font-weight-medium);
+}
+
+.subtitle {
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-body-md);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: var(--space-4);
+  align-items: end;
+}
+
+@media (min-width: 640px) {
+  .formGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .formGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.actions {
+  margin-top: var(--space-6);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.submitButton {
+  min-width: 220px;
+}
