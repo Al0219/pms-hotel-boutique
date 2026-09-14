@@ -24,3 +24,7 @@ These conceptual modules do not authorize Android project code, contracts, or sc
 ## Services / Housekeeping — IMP-AND-0110
 
 Submódulo aislado `src/modules/services/housekeeping`, ruta `/services/housekeeping`. Boundary/mock propio y TanStack Mutation; reutiliza la query pública existente de Stay y el shell V3. IMP-AND-0110 COMPLETADA con QA manual y revisión WEB-3 PASS. Ver `26_HOUSEKEEPING_CONTRACT.md` para el contrato mínimo confirmado y los valores frontend/mock provisionales.
+
+## Services / Room Service — IMP-AND-0111
+
+Submódulo aislado `src/modules/services/room-service`, ruta `/services/room-service`. Query/mock de menú, Mutation de pedido, carrito local con reducer puro y hora de entrega frontend/mock mediante `TimeWheelPicker` compartido en modo libre; reutiliza Stay solo para habitación visual y el shell V3. IMP-AND-0111 COMPLETADA; ver `27_ROOM_SERVICE_CONTRACT_PROPOSAL.md` para el contrato frontend/mock aprobado y sus límites Backend.

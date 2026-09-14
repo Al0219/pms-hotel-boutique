@@ -86,7 +86,7 @@ UI
 - No se implementan pantallas, rutas, DTOs, mappers, Domain, hooks, mocks funcionales ni tests en este Change Control.
 - No se definen endpoints, HTTP real, autenticación real, Backend, persistencia, secretos, NetInfo, cola offline ni sincronización en segundo plano.
 - No se modifica Figma ni se convierten los frames `31:*` en fuente vigente.
-- `IMP-AND-0110` está COMPLETADA. No se inicia `IMP-AND-0111..0114`, Sprint 2 ni una feature de Cuenta fuera del alcance ya aprobado.
+- `IMP-AND-0110` e `IMP-AND-0111` están COMPLETADAS. No se inicia `IMP-AND-0112..0114`, Sprint 2 ni una feature de Cuenta fuera del alcance ya aprobado.
 
 ## Gates cerrados de `IMP-AND-0107`
 
