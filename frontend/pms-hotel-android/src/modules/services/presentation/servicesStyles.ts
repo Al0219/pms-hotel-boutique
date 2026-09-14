@@ -39,6 +39,22 @@ export const servicesStyles = StyleSheet.create({
     gap: tokens.space.xs,
     padding: tokens.space.md,
   },
+  serviceNavigationCard: {
+    alignItems: 'center',
+    backgroundColor: tokens.color.white,
+    borderColor: tokens.color.border,
+    borderRadius: tokens.radius.card,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    minHeight: tokens.layout.buttonHeight,
+    padding: tokens.space.md,
+  },
+  navigationChevron: {
+    color: tokens.color.muted,
+    fontFamily: tokens.typography.family,
+    fontSize: tokens.typography.size.title,
+  },
   serviceCardSelected: {
     backgroundColor: tokens.color.surfaceAccent,
     borderColor: tokens.color.brand,

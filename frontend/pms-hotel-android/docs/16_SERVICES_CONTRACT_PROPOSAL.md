@@ -18,7 +18,7 @@ No es un contrato API Backend. No define endpoints, métodos HTTP, payloads Back
 - Estados de Servicios aprobados para implementación: sección `1818:410 — APPROVED FOR IMPLEMENTATION — IMP-AND-0103 — Services states`.
 - Frames: Base `1821:410`, Selected `1818:411`, Loading `1819:410`, Submitting `1820:410`, Success `1820:13372`, Error `1820:13290` y Offline `1820:13331`.
 - El flujo autorizado de producto es Base → Selected → Submitting → Success → Base. Error y Offline son variantes **QA ONLY**, accesibles desde `1827:411 — QA ONLY — Services failure variants`; no son acciones normales del huésped.
-- Los cuatro servicios visibles confirmados por Figma son: `Late checkout` / `Hasta 14:00` / `Q180`; `Desayuno en habitación` / `Para 2 personas` / `Q145`; `Traslado al aeropuerto` / `Vehículo privado` / `Q220`; `Decoración especial` / `Cumpleaños o aniversario` / `Q320`.
+- La fixture original contenía cuatro upsells. La decisión de producto aprobada durante QA de `IMP-AND-0111` retira `Desayuno en habitación` porque su flujo pertenece a Room Service y `Traslado aeropuerto` porque pertenece a Valet/Transfer. El catálogo inline final conserva `Late check-out` / `Hasta 14:00` / `Q180` y `Decoración especial` / `Cumpleaños o aniversario` / `Q320`; `Limpieza incluida` y `Room Service` son launchers a flujos dedicados, no upsells inline.
 - `priceText` es texto de presentación visual. No representa monto, moneda, impuesto, cargo ni semántica financiera Backend.
 - Los estados visuales no agregan pagos, cargos, promesas de procesamiento ni status Backend. No se añade estado Empty.
 
@@ -133,7 +133,7 @@ TanStack Query es la única autoridad del server state. `RemoteState` es una rep
 ## Pruebas obligatorias cuando inicie `IMP-AND-0103`
 
 1. catálogo mock visible para el contexto fixture de estadía/property actual;
-2. los cuatro servicios visibles de Figma;
+2. los dos servicios inline y los dos launchers dedicados visibles;
 3. mapper puro de fixture DTO a Domain;
 4. `label`, `detailText` y `priceText` visibles sin campos inventados;
 5. selección inline y basket `Tu selección`;

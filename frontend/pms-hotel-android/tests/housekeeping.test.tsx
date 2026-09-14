@@ -213,7 +213,7 @@ describe('Housekeeping — IMP-AND-0110', () => {
       'services/housekeeping': HousekeepingRoute,
     }, { initialUrl: '/services' });
     await waitFor(() => expect(ui.getByTestId('services-housekeeping-launcher')).toBeTruthy());
-    for (const label of ['Late check-out', 'Desayuno en habitación', 'Traslado aeropuerto', 'Decoración especial']) {
+    for (const label of ['Late check-out', 'Decoración especial', 'Limpieza incluida', 'Room Service']) {
       expect(ui.getByText(label)).toBeTruthy();
     }
     await fireEvent.press(ui.getByRole('button', { name: 'Limpieza incluida' }));

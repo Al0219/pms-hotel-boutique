@@ -33,9 +33,9 @@ async function renderServices(service: MockServicesService) {
   );
 }
 
-async function selectBreakfast(rendered: Awaited<ReturnType<typeof render>>) {
+async function selectLateCheckOut(rendered: Awaited<ReturnType<typeof render>>) {
   await waitFor(() => expect(rendered.getByTestId('services-screen')).toBeTruthy());
-  await fireEvent.press(rendered.getByTestId('service-card-breakfast-in-room'));
+  await fireEvent.press(rendered.getByTestId('service-card-late-check-out'));
   await waitFor(() => expect(rendered.getByTestId('services-selection')).toBeTruthy());
 }
 
@@ -47,7 +47,7 @@ describe('Services', () => {
     });
   });
 
-  it('renders the four approved services and the V3 shell with Services active', async () => {
+  it('renders the two inline services, dedicated-flow launchers, and V3 shell with Services active', async () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { gcTime: 0, retry: false }, mutations: { retry: false } },
     });
@@ -63,9 +63,13 @@ describe('Services', () => {
     expect(rendered.getByText('Late check-out')).toBeTruthy();
     expect(rendered.getByText('Hasta las 14:00')).toBeTruthy();
     expect(rendered.getByText('Q 180')).toBeTruthy();
-    expect(rendered.getByText('Desayuno en habitación')).toBeTruthy();
-    expect(rendered.getByText('Traslado aeropuerto')).toBeTruthy();
     expect(rendered.getByText('Decoración especial')).toBeTruthy();
+    expect(rendered.queryByText('Desayuno en habitación')).toBeNull();
+    expect(rendered.queryByText('Traslado aeropuerto')).toBeNull();
+    expect(rendered.getByRole('button', { name: 'Limpieza incluida' })).toBeTruthy();
+    expect(rendered.getByRole('button', { name: 'Room Service' })).toBeTruthy();
+    expect(rendered.getByTestId('services-housekeeping-launcher-chevron')).toBeTruthy();
+    expect(rendered.getByTestId('services-room-service-launcher-chevron')).toBeTruthy();
     expect(rendered.getByLabelText('Servicios').props.accessibilityState).toEqual(expect.objectContaining({
       disabled: false,
       selected: true,
@@ -82,17 +86,17 @@ describe('Services', () => {
   it('keeps exactly one inline selection and enables submit only after selection', async () => {
     const rendered = await renderServices(new MockServicesService());
 
-    await selectBreakfast(rendered);
+    await selectLateCheckOut(rendered);
 
     expect(rendered.getByTestId('services-selection').props.children).toBeTruthy();
-    expect(rendered.getAllByText('Desayuno en habitación').length).toBe(2);
-    expect(rendered.getAllByText('Para 2 personas').length).toBe(2);
-    expect(rendered.getAllByText('Q 145').length).toBe(2);
+    expect(rendered.getAllByText('Late check-out').length).toBe(2);
+    expect(rendered.getAllByText('Hasta las 14:00').length).toBe(2);
+    expect(rendered.getAllByText('Q 180').length).toBe(2);
     expect(rendered.getByTestId('services-submit-button').props.accessibilityState.disabled).toBe(false);
 
-    await fireEvent.press(rendered.getByTestId('service-card-airport-transfer'));
-    expect(rendered.getAllByText('Traslado aeropuerto').length).toBe(2);
-    expect(rendered.queryAllByText('Desayuno en habitación').length).toBe(1);
+    await fireEvent.press(rendered.getByTestId('service-card-special-decoration'));
+    expect(rendered.getAllByText('Decoración especial').length).toBe(2);
+    expect(rendered.queryAllByText('Late check-out').length).toBe(1);
   });
 
   it('shows submitting, disables the CTA, and prevents concurrent duplicate submission', async () => {
@@ -100,7 +104,7 @@ describe('Services', () => {
     const submitRequest = jest.fn(() => deferred.promise);
     const rendered = await renderServices(new MockServicesService({ submitRequest }));
 
-    await selectBreakfast(rendered);
+    await selectLateCheckOut(rendered);
     const submitButton = rendered.getByTestId('services-submit-button');
     await fireEvent.press(submitButton);
     await fireEvent.press(submitButton);
@@ -111,7 +115,7 @@ describe('Services', () => {
     expect(submitRequest).toHaveBeenCalledTimes(1);
 
     await act(async () => {
-      deferred.resolve({ serviceFixtureKey: 'breakfast-in-room' });
+      deferred.resolve({ serviceFixtureKey: 'late-check-out' });
     });
     await waitFor(() => expect(rendered.getByTestId('services-submit-success')).toBeTruthy());
   });
@@ -119,7 +123,7 @@ describe('Services', () => {
   it('shows success only after the mock mutation and returns to the base catalog', async () => {
     const rendered = await renderServices(new MockServicesService());
 
-    await selectBreakfast(rendered);
+    await selectLateCheckOut(rendered);
     await fireEvent.press(rendered.getByTestId('services-submit-button'));
     await waitFor(() => expect(rendered.getByText('Servicio solicitado')).toBeTruthy());
     expect(rendered.getByText('Recibimos tu solicitud.')).toBeTruthy();
@@ -134,10 +138,10 @@ describe('Services', () => {
     const submitRequest = jest
       .fn<Promise<{ serviceFixtureKey: string }>, [{ serviceFixtureKey: string }]>()
       .mockRejectedValueOnce(new Error('mock failure'))
-      .mockResolvedValueOnce({ serviceFixtureKey: 'breakfast-in-room' });
+      .mockResolvedValueOnce({ serviceFixtureKey: 'late-check-out' });
     const rendered = await renderServices(new MockServicesService({ submitRequest }));
 
-    await selectBreakfast(rendered);
+    await selectLateCheckOut(rendered);
     await fireEvent.press(rendered.getByTestId('services-submit-button'));
     await waitFor(() => expect(rendered.getByTestId('services-submit-error')).toBeTruthy());
     expect(rendered.getByText('No pudimos enviar tu solicitud')).toBeTruthy();
@@ -148,17 +152,17 @@ describe('Services', () => {
     await fireEvent.press(rendered.getByText('Reintentar'));
     await waitFor(() => expect(rendered.getByTestId('services-submit-success')).toBeTruthy());
     expect(submitRequest).toHaveBeenCalledTimes(2);
-    expect(submitRequest).toHaveBeenLastCalledWith({ serviceFixtureKey: 'breakfast-in-room' });
+    expect(submitRequest).toHaveBeenLastCalledWith({ serviceFixtureKey: 'late-check-out' });
   });
 
   it('distinguishes NetworkError submit offline and retries without queuing work', async () => {
     const submitRequest = jest
       .fn<Promise<{ serviceFixtureKey: string }>, [{ serviceFixtureKey: string }]>()
       .mockRejectedValueOnce(new NetworkError())
-      .mockResolvedValueOnce({ serviceFixtureKey: 'breakfast-in-room' });
+      .mockResolvedValueOnce({ serviceFixtureKey: 'late-check-out' });
     const rendered = await renderServices(new MockServicesService({ submitRequest }));
 
-    await selectBreakfast(rendered);
+    await selectLateCheckOut(rendered);
     await fireEvent.press(rendered.getByTestId('services-submit-button'));
     await waitFor(() => expect(rendered.getByTestId('services-submit-offline')).toBeTruthy());
     expect(rendered.getByText('Sin conexión')).toBeTruthy();

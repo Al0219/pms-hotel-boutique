@@ -14,18 +14,6 @@ export const servicesCatalogFixture: ServicesCatalogFixtureDto = {
       priceText: 'Q 180',
     },
     {
-      fixtureKey: 'breakfast-in-room',
-      label: 'Desayuno en habitación',
-      detailText: 'Para 2 personas',
-      priceText: 'Q 145',
-    },
-    {
-      fixtureKey: 'airport-transfer',
-      label: 'Traslado aeropuerto',
-      detailText: 'Vehículo privado',
-      priceText: 'Q 220',
-    },
-    {
       fixtureKey: 'special-decoration',
       label: 'Decoración especial',
       detailText: 'Cumpleaños / aniversario',

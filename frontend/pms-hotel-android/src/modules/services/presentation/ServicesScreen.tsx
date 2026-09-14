@@ -93,6 +93,29 @@ function ServiceCard({
   );
 }
 
+function ServiceNavigationCard({
+  label,
+  onPress,
+  testID,
+}: {
+  label: string;
+  onPress: () => void;
+  testID: string;
+}) {
+  return (
+    <Pressable
+      accessibilityLabel={label}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={servicesStyles.serviceNavigationCard}
+      testID={testID}
+    >
+      <Text style={servicesStyles.serviceLabel}>{label}</Text>
+      <Text accessible={false} style={servicesStyles.navigationChevron} testID={`${testID}-chevron`}>›</Text>
+    </Pressable>
+  );
+}
+
 /** Services presentation: local selection plus Query-owned remote/mutation state. */
 export function ServicesScreen({ service }: ServicesScreenProps) {
   const catalogQuery = useServicesCatalog(service);
@@ -203,15 +226,8 @@ export function ServicesScreen({ service }: ServicesScreenProps) {
     <View style={servicesStyles.screen} testID="services-screen">
       <ScrollView contentContainerStyle={servicesStyles.content} style={servicesStyles.scroll}>
         <Text style={servicesStyles.title}>Servicios</Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Limpieza incluida"
-          onPress={() => router.push('/services/housekeeping')}
-          style={servicesStyles.serviceCard}
-          testID="services-housekeeping-launcher"
-        >
-          <Text style={servicesStyles.serviceLabel}>Limpieza incluida</Text>
-        </Pressable>
+        <ServiceNavigationCard label="Limpieza incluida" onPress={() => router.push('/services/housekeeping')} testID="services-housekeeping-launcher" />
+        <ServiceNavigationCard label="Room Service" onPress={() => router.push('/services/room-service')} testID="services-room-service-launcher" />
         {!hasSubmitFailure ? (
           <View style={servicesStyles.catalog}>
             {catalogState.data.items.map((item) => (

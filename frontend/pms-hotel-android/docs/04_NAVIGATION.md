@@ -66,3 +66,7 @@ Guest y Staff conservan contextos de navegación y sesión separados.
 ## IMP-AND-0110 — Servicios / Limpieza
 
 `/services/housekeeping` implementa MOB-21 y reutiliza el shell V3 con Servicios activa. El launcher `Limpieza incluida` usa `router.push`; Back desde ese flujo vuelve a `/services`. La acción visible `Volver a servicios`, disponible también en success, usa `router.dismissTo('/services')`. IMP-AND-0110 COMPLETADA; el contrato mínimo y los valores frontend/mock provisionales están en `26_HOUSEKEEPING_CONTRACT.md`.
+
+## IMP-AND-0111 — Servicios / Room Service
+
+`/services/room-service` implementa MOB-22 con Servicios activa. El launcher `Room Service` usa `router.push` y se presenta como card de navegación con chevron, igual que Limpieza incluida. Back y la acción de success `Volver a servicios` usan `router.dismissTo('/services')`. IMP-AND-0111 COMPLETADA; el contrato frontend/mock está en `27_ROOM_SERVICE_CONTRACT_PROPOSAL.md`.
