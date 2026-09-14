@@ -155,7 +155,7 @@ selector mock → TransferPlace → MockTransferRouteService → TransferFareCal
 
 ### Programación del traslado
 
-La UI conserva internamente un `Date` combinado y deriva `dateText`/`timeText` solo para presentación y el contrato mock. No usa strings editables ni parsing como fuente de verdad. Fecha usa calendario nativo y hora usa reloj nativo mediante `@react-native-community/datetimepicker`.
+La UI conserva internamente un `Date` combinado y deriva `dateText`/`timeText` solo para presentación y el contrato mock. No usa strings editables como fuente de verdad. Fecha usa calendario nativo; hora usa el `TimeWheelPicker` compartido en modo libre `00:00`–`23:59`, sin horarios operativos, disponibilidad ni slots comerciales. El valor fixture por defecto sigue siendo `08:00`.
 
 La regla frontend/mock aprobada es `MIN_TRANSFER_LEAD_TIME_MINUTES = 30`:
 
