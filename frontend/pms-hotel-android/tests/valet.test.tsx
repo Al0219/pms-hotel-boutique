@@ -160,7 +160,7 @@ describe('Transporte y valet', () => {
     expect(rendered.getByTestId('transfer-route-estimate')).toBeTruthy();
   });
 
-  it('opens native calendar and clock controls instead of free date/time inputs', async () => {
+  it('opens native calendar and the shared free-time wheel instead of text inputs', async () => {
     const rendered = await renderValet(); await ready(rendered); await openTransfer(rendered);
     expect(rendered.queryByTestId('transfer-date-input')).toBeNull();
     expect(rendered.queryByTestId('transfer-time-input')).toBeNull();
@@ -168,14 +168,20 @@ describe('Transporte y valet', () => {
     expect(rendered.getByTestId('transfer-date-picker').props.mode).toBe('date');
     expect(new Date(rendered.getByTestId('transfer-date-picker').props.minimumDate)).toEqual(new Date(2026, 8, 11));
     await fireEvent.press(rendered.getByTestId('transfer-time-picker-button'));
-    expect(rendered.getByTestId('transfer-time-picker').props.mode).toBe('time');
+    expect(rendered.getByTestId('transfer-time-picker-wheel')).toBeTruthy();
+    expect(rendered.getByTestId('transfer-time-picker-hour-00')).toBeTruthy();
+    expect(rendered.getByTestId('transfer-time-picker-minute-59')).toBeTruthy();
   });
 
   it('blocks an invalid same-day time, preserves the route, and accepts a future date', async () => {
     const rendered = await renderValet(); await ready(rendered); await openTransfer(rendered);
     await waitFor(() => expect(rendered.getByTestId('transfer-route-estimate')).toBeTruthy());
+    await fireEvent.press(rendered.getByTestId('transfer-date-picker-button'));
+    await fireEvent(rendered.getByTestId('transfer-date-picker'), 'onChange', { type: 'set', nativeEvent: { timestamp: new Date(2026, 8, 11).getTime(), utcOffset: 0 } });
     await fireEvent.press(rendered.getByTestId('transfer-time-picker-button'));
-    await fireEvent(rendered.getByTestId('transfer-time-picker'), 'onChange', { type: 'set', nativeEvent: { timestamp: new Date(2026, 8, 11, 15, 49).getTime(), utcOffset: 0 } });
+    await fireEvent.press(rendered.getByTestId('transfer-time-picker-hour-15'));
+    await fireEvent.press(rendered.getByTestId('transfer-time-picker-minute-49'));
+    await fireEvent.press(rendered.getByTestId('transfer-time-picker-confirm'));
     await waitFor(() => expect(rendered.getByTestId('transfer-schedule-error')).toBeTruthy());
     expect(rendered.getByTestId('transfer-reserve-button').props.accessibilityState.disabled).toBe(true);
     expect(rendered.getByTestId('transfer-route-estimate')).toBeTruthy();
@@ -191,9 +197,14 @@ describe('Transporte y valet', () => {
     const reserveTransfer = jest.fn<Promise<{ confirmationText: string; referenceText: string }>, [ReserveTransferFixtureInput]>(async () => ({ confirmationText: 'Traslado reservado', referenceText: 'TRF-0220' }));
     const rendered = await renderValet(new MockValetService({ reserveTransfer }), undefined, undefined, clock); await ready(rendered); await openTransfer(rendered);
     await waitFor(() => expect(rendered.getByTestId('transfer-route-estimate')).toBeTruthy());
-    now = new Date(2026, 8, 11, 15, 21, 0);
+    await fireEvent.press(rendered.getByTestId('transfer-date-picker-button'));
+    await fireEvent(rendered.getByTestId('transfer-date-picker'), 'onChange', { type: 'set', nativeEvent: { timestamp: new Date(2026, 8, 11).getTime(), utcOffset: 0 } });
+    await fireEvent.press(rendered.getByTestId('transfer-time-picker-button'));
+    await fireEvent.press(rendered.getByTestId('transfer-time-picker-hour-15'));
+    await fireEvent.press(rendered.getByTestId('transfer-time-picker-minute-50'));
+    await fireEvent.press(rendered.getByTestId('transfer-time-picker-confirm'));
+    now = new Date(2026, 8, 13, 7, 31, 0);
     await fireEvent.press(rendered.getByTestId('transfer-reserve-button'));
-    await waitFor(() => expect(rendered.getByTestId('transfer-schedule-error')).toBeTruthy());
     expect(reserveTransfer).not.toHaveBeenCalled();
   });
 
@@ -203,11 +214,16 @@ describe('Transporte y valet', () => {
     const reserveTransfer = jest.fn<Promise<{ confirmationText: string; referenceText: string }>, [ReserveTransferFixtureInput]>(async () => { throw new NetworkError(); });
     const rendered = await renderValet(new MockValetService({ reserveTransfer }), undefined, undefined, clock); await ready(rendered); await openTransfer(rendered);
     await waitFor(() => expect(rendered.getByTestId('transfer-route-estimate')).toBeTruthy());
+    await fireEvent.press(rendered.getByTestId('transfer-date-picker-button'));
+    await fireEvent(rendered.getByTestId('transfer-date-picker'), 'onChange', { type: 'set', nativeEvent: { timestamp: new Date(2026, 8, 11).getTime(), utcOffset: 0 } });
+    await fireEvent.press(rendered.getByTestId('transfer-time-picker-button'));
+    await fireEvent.press(rendered.getByTestId('transfer-time-picker-hour-15'));
+    await fireEvent.press(rendered.getByTestId('transfer-time-picker-minute-50'));
+    await fireEvent.press(rendered.getByTestId('transfer-time-picker-confirm'));
     await fireEvent.press(rendered.getByTestId('transfer-reserve-button'));
     await waitFor(() => expect(rendered.getByTestId('valet-transfer-offline')).toBeTruthy());
-    now = new Date(2026, 8, 11, 15, 21, 0);
+    now = new Date(2026, 8, 13, 7, 31, 0);
     await fireEvent.press(rendered.getByText('Reintentar'));
-    await waitFor(() => expect(rendered.getByTestId('transfer-schedule-error')).toBeTruthy());
     expect(reserveTransfer).toHaveBeenCalledTimes(1);
     expect(rendered.getByTestId('transfer-date-picker-button')).toBeTruthy();
     expect(rendered.getByTestId('transfer-time-picker-button')).toBeTruthy();

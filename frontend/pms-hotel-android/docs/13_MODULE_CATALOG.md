@@ -20,3 +20,7 @@ All future Android modules are owned by ANDROID-1.
 | offline | data and remote-state policy |
 
 These conceptual modules do not authorize Android project code, contracts, or screens before the stack and relevant backlog task are approved.
+
+## Services / Housekeeping — IMP-AND-0110
+
+Submódulo aislado `src/modules/services/housekeeping`, ruta `/services/housekeeping`. Boundary/mock propio y TanStack Mutation; reutiliza la query pública existente de Stay y el shell V3. IMP-AND-0110 COMPLETADA con QA manual y revisión WEB-3 PASS. Ver `26_HOUSEKEEPING_CONTRACT.md` para el contrato mínimo confirmado y los valores frontend/mock provisionales.

@@ -62,3 +62,7 @@ Guest y Staff conservan contextos de navegación y sesión separados.
 ## MUST NOT
 - saltar estados críticos;
 - crear rutas paralelas inconsistentes con Web/account semantics.
+
+## IMP-AND-0110 — Servicios / Limpieza
+
+`/services/housekeeping` implementa MOB-21 y reutiliza el shell V3 con Servicios activa. El launcher `Limpieza incluida` usa `router.push`; Back desde ese flujo vuelve a `/services`. La acción visible `Volver a servicios`, disponible también en success, usa `router.dismissTo('/services')`. IMP-AND-0110 COMPLETADA; el contrato mínimo y los valores frontend/mock provisionales están en `26_HOUSEKEEPING_CONTRACT.md`.

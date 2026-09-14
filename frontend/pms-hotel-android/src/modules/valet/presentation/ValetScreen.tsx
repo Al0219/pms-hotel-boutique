@@ -26,6 +26,7 @@ import { useTransferRouteEstimate } from '@/modules/valet/presentation/hooks/use
 import { useValetScreen } from '@/modules/valet/presentation/hooks/useValetScreen';
 import { valetStyles } from '@/modules/valet/presentation/valetStyles';
 import { deriveRemoteState } from '@/state/remoteState';
+import { TimeWheelPicker } from '@/shared/components';
 
 const defaultMapService = new GoogleMapsLinkingService();
 
@@ -40,6 +41,10 @@ type SelectorTarget = 'destination' | 'pickup' | null;
 
 function vehicleDisplay(vehicle: ValetVehicle): string {
   return `${vehicle.displayText} · ${vehicle.colorText}`;
+}
+
+function format24Hour(value: Date): string {
+  return `${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}`;
 }
 
 function StateCard({
@@ -279,7 +284,8 @@ export function ValetScreen({ clock = deviceClock, mapService = defaultMapServic
   const [destinationKey, setDestinationKey] = useState<string | null>(null);
   const [pickupKey, setPickupKey] = useState<string | null>(null);
   const [scheduledAt, setScheduledAt] = useState(() => getMinimumTransferDateTime(clock.getNow()));
-  const [pickerMode, setPickerMode] = useState<'date' | 'time' | null>(null);
+  const [datePickerVisible, setDatePickerVisible] = useState(false);
+  const [timePickerVisible, setTimePickerVisible] = useState(false);
   const [showScheduleFeedback, setShowScheduleFeedback] = useState(false);
   const [passengers, setPassengers] = useState(2);
   const [mapError, setMapError] = useState(false);
@@ -297,7 +303,8 @@ export function ValetScreen({ clock = deviceClock, mapService = defaultMapServic
   const scheduleIsValid = isTransferScheduleValid({ now: clock.getNow(), scheduledAt });
   const scheduleInvalid = showScheduleFeedback && !scheduleIsValid;
   const dateText = scheduledAt.toLocaleDateString();
-  const timeText = scheduledAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const timeText = format24Hour(scheduledAt);
+
 
   function submitVehicle() {
     if (!screen || vehicleRequest.isPending || vehicleInFlight.current) return;
@@ -320,11 +327,17 @@ export function ValetScreen({ clock = deviceClock, mapService = defaultMapServic
     setShowScheduleFeedback(true);
   }
 
-  function onPickerChange(event: DateTimePickerEvent, selectedValue?: Date) {
-    const mode = pickerMode;
-    setPickerMode(null);
-    if (event.type === 'dismissed' || !selectedValue || !mode) return;
-    updateSchedule(mode === 'date' ? replaceTransferDate(scheduledAt, selectedValue) : replaceTransferTime(scheduledAt, selectedValue));
+  function onDatePickerChange(event: DateTimePickerEvent, selectedValue?: Date) {
+    setDatePickerVisible(false);
+    if (event.type === 'dismissed' || !selectedValue) return;
+    updateSchedule(replaceTransferDate(scheduledAt, selectedValue));
+  }
+
+  function onTimeWheelConfirm(value: string) {
+    const [hours, minutes] = value.split(':').map(Number);
+    if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return;
+    updateSchedule(replaceTransferTime(scheduledAt, new Date(2000, 0, 1, hours, minutes)));
+    setTimePickerVisible(false);
   }
 
   async function openExternalMap() {
@@ -358,8 +371,9 @@ export function ValetScreen({ clock = deviceClock, mapService = defaultMapServic
     </ScrollView>
     <GuestNavigationShell />
     <VehicleModal activeKey={vehicle.key} onClose={() => setVehicleModalVisible(false)} onSelect={(key) => { setActiveVehicleKey(key); setVehicleModalVisible(false); }} vehicles={screen.vehicles} visible={vehicleModalVisible} />
-    <TransferModal dateText={dateText} destination={destination} fare={fare} mapError={mapError} onClose={() => setTransferModalVisible(false)} onOpenDatePicker={() => setPickerMode('date')} onOpenMap={() => { void openExternalMap(); }} onOpenSelector={setSelectorTarget} onOpenTimePicker={() => setPickerMode('time')} onPassengers={(value) => setPassengers(Math.max(1, Math.min(3, value)))} onReserve={submitTransfer} onRetryRoute={() => void route.refetch()} onReset={() => { transferReservation.reset(); transferInFlight.current = false; setMapError(false); }} origin={origin} passengers={passengers} pickup={pickup} reservation={transferReservation} route={route} scheduleInvalid={scheduleInvalid} scheduleIsValid={scheduleIsValid} timeText={timeText} visible={transferModalVisible} />
+    <TransferModal dateText={dateText} destination={destination} fare={fare} mapError={mapError} onClose={() => setTransferModalVisible(false)} onOpenDatePicker={() => setDatePickerVisible(true)} onOpenMap={() => { void openExternalMap(); }} onOpenSelector={setSelectorTarget} onOpenTimePicker={() => setTimePickerVisible(true)} onPassengers={(value) => setPassengers(Math.max(1, Math.min(3, value)))} onReserve={submitTransfer} onRetryRoute={() => void route.refetch()} onReset={() => { transferReservation.reset(); transferInFlight.current = false; setMapError(false); }} origin={origin} passengers={passengers} pickup={pickup} reservation={transferReservation} route={route} scheduleInvalid={scheduleInvalid} scheduleIsValid={scheduleIsValid} timeText={timeText} visible={transferModalVisible} />
     <PlaceSelector onClose={() => setSelectorTarget(null)} onSelect={(place) => { setMapError(false); if (selectorTarget === 'destination') { setDestinationKey(place.key); setPickupKey(null); } else { setPickupKey(place.key); } setSelectorTarget(null); }} places={screen.places} selectedKey={selectorTarget === 'pickup' ? pickup?.key ?? null : destination.key} target={selectorTarget} visible={selectorTarget !== null} />
-    {pickerMode ? <DateTimePicker display="default" minimumDate={pickerMode === 'date' ? startOfTransferDay(clock.getNow()) : undefined} mode={pickerMode} onChange={onPickerChange} testID={`transfer-${pickerMode}-picker`} value={scheduledAt} /> : null}
+    {datePickerVisible ? <DateTimePicker display="default" minimumDate={startOfTransferDay(clock.getNow())} mode="date" onChange={onDatePickerChange} testID="transfer-date-picker" value={scheduledAt} /> : null}
+    <TimeWheelPicker mode="time" onCancel={() => setTimePickerVisible(false)} onConfirm={onTimeWheelConfirm} testID="transfer-time-picker" title="Elegir hora" value={timeText} visible={timePickerVisible} />
   </View>;
 }

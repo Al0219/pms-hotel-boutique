@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
@@ -202,6 +203,15 @@ export function ServicesScreen({ service }: ServicesScreenProps) {
     <View style={servicesStyles.screen} testID="services-screen">
       <ScrollView contentContainerStyle={servicesStyles.content} style={servicesStyles.scroll}>
         <Text style={servicesStyles.title}>Servicios</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Limpieza incluida"
+          onPress={() => router.push('/services/housekeeping')}
+          style={servicesStyles.serviceCard}
+          testID="services-housekeeping-launcher"
+        >
+          <Text style={servicesStyles.serviceLabel}>Limpieza incluida</Text>
+        </Pressable>
         {!hasSubmitFailure ? (
           <View style={servicesStyles.catalog}>
             {catalogState.data.items.map((item) => (
