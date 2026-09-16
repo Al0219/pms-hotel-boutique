@@ -31,6 +31,11 @@ export const chatConversationFixture: ChatConversationFixtureDto = {
       fixtureKey: 'chat-message-reception-03',
       author: 'RECEPTION',
       text: 'Listo. Solicitud #4832 creada · salida 06:00.',
+      serviceAssignment: {
+        assignmentKey: 'chat-assignment-transfer-01',
+        title: 'Traslado al aeropuerto',
+        summary: 'Asignado por Recepción',
+      },
     },
   ],
 };

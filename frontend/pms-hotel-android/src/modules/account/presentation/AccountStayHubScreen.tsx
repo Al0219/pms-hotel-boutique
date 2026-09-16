@@ -1,7 +1,10 @@
+import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { accountStayHubStyles } from '@/modules/account/presentation/accountStayHubStyles';
 import { GuestNavigationShell } from '@/modules/navigation';
+import { filterServiceRequests, SessionServiceRequestCard, sessionServiceRequestEditPath, useCompleteSessionServiceRequest, useSessionServiceRequests } from '@/modules/service-requests';
 import { type StayService } from '@/modules/stay/data/services/StayService';
 import { useCurrentStay } from '@/modules/stay/presentation/hooks/useCurrentStay';
 import { deriveRemoteState } from '@/state/remoteState';
@@ -59,6 +62,10 @@ function AccountStayLoading() {
 export function AccountStayHubScreen({ service }: AccountStayHubScreenProps) {
   const query = useCurrentStay(service);
   const remoteState = deriveRemoteState(query, () => false);
+  const { removeRequest, requests } = useSessionServiceRequests();
+  const completeSessionRequest = useCompleteSessionServiceRequest();
+  const [nowMs] = useState(() => Date.now());
+  const activeRequests = filterServiceRequests(requests, 'ACTIVE');
 
   if (remoteState.kind === 'loading') {
     return (
@@ -122,6 +129,14 @@ export function AccountStayHubScreen({ service }: AccountStayHubScreenProps) {
           <View style={accountStayHubStyles.reference}>
             <Text style={accountStayHubStyles.referenceText}>{stay.reservationId}</Text>
           </View>
+        </View>
+        <View style={accountStayHubStyles.requestsSection} testID="account-session-requests">
+          <Text accessibilityRole="header" style={accountStayHubStyles.sectionTitle}>Mis servicios</Text>
+          {activeRequests.length === 0 ? <Text style={accountStayHubStyles.subtitle}>Aún no tienes servicios solicitados.</Text> : activeRequests.slice(0, 3).map((request) => <SessionServiceRequestCard key={request.sessionRequestId} nowMs={nowMs} onComplete={completeSessionRequest} onRemove={removeRequest} onEdit={(item) => {
+            const target = sessionServiceRequestEditPath(item);
+            router.push({ pathname: target, params: { editRequestId: item.sessionRequestId, editMode: item.kind, returnTo: 'account' } });
+          }} request={request} />)}
+          {requests.length > 0 ? <Pressable accessibilityRole="button" onPress={() => router.push('/services/requests')} style={accountStayHubStyles.button} testID="account-session-requests-all"><Text style={accountStayHubStyles.buttonLabel}>Ver todos</Text></Pressable> : null}
         </View>
       </ScrollView>
       <GuestNavigationShell />

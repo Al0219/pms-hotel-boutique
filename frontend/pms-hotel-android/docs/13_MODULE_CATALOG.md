@@ -28,3 +28,7 @@ Submódulo aislado `src/modules/services/housekeeping`, ruta `/services/housekee
 ## Services / Room Service — IMP-AND-0111
 
 Submódulo aislado `src/modules/services/room-service`, ruta `/services/room-service`. Query/mock de menú, Mutation de pedido, carrito local con reducer puro y hora de entrega frontend/mock mediante `TimeWheelPicker` compartido en modo libre; reutiliza Stay solo para habitación visual y el shell V3. IMP-AND-0111 COMPLETADA; ver `27_ROOM_SERVICE_CONTRACT_PROPOSAL.md` para el contrato frontend/mock aprobado y sus límites Backend.
+
+## Session Service Requests — IMP-AND-0112
+
+Módulo transversal `src/modules/service-requests`, montado una vez en el árbol Guest. Expone un registro Context + reducer solo de sesión para los productores Services, Housekeeping, Room Service, Valet y Chat; Cuenta consume un preview y `/services/requests` muestra la lista canónica. No incorpora persistencia, Backend ni TanStack Query como store. IMP-AND-0112 está IMPLEMENTADA y `EN_QA`; ver `28_SESSION_SERVICE_REQUESTS_PROPOSAL.md`.

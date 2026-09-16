@@ -1,18 +1,22 @@
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { NetworkError } from '@/data/remote/http/HttpError';
 import { GuestNavigationShell } from '@/modules/navigation';
+import { formatServiceDateLabel, useSessionServiceRequests } from '@/modules/service-requests';
 import { type ServicesService } from '@/modules/services/data/services/ServicesService';
 import { type ServiceCatalogItem } from '@/modules/services/domain/models/ServiceCatalog';
 import { useServicesCatalog } from '@/modules/services/presentation/hooks/useServicesCatalog';
 import { useSubmitServiceRequest } from '@/modules/services/presentation/hooks/useSubmitServiceRequest';
 import { servicesStyles } from '@/modules/services/presentation/servicesStyles';
+import { type StayService } from '@/modules/stay';
+import { useCurrentStay } from '@/modules/stay/presentation/hooks/useCurrentStay';
 import { deriveRemoteState } from '@/state/remoteState';
 
 export interface ServicesScreenProps {
   service?: ServicesService;
+  stayService?: StayService;
 }
 
 interface ServicesStateCardProps {
@@ -117,11 +121,14 @@ function ServiceNavigationCard({
 }
 
 /** Services presentation: local selection plus Query-owned remote/mutation state. */
-export function ServicesScreen({ service }: ServicesScreenProps) {
+export function ServicesScreen({ service, stayService }: ServicesScreenProps) {
   const catalogQuery = useServicesCatalog(service);
   const catalogState = deriveRemoteState(catalogQuery, () => false);
+  const stayState = deriveRemoteState(useCurrentStay(stayService), () => false);
   const submission = useSubmitServiceRequest(service);
+  const { addRequest } = useSessionServiceRequests();
   const [selectedFixtureKey, setSelectedFixtureKey] = useState<string | null>(null);
+  const [successOverlayVisible, setSuccessOverlayVisible] = useState(false);
   const submissionInFlight = useRef(false);
 
   const selectedService = catalogState.kind === 'success'
@@ -129,10 +136,22 @@ export function ServicesScreen({ service }: ServicesScreenProps) {
     : null;
 
   function submitSelectedService(): void {
-    if (!selectedService || submission.isPending || submissionInFlight.current) return;
+    const lateCheckoutUntil = selectedService?.lateCheckoutUntil;
+    if (!selectedService || selectedService.fixtureKey !== 'late-check-out' || !lateCheckoutUntil || stayState.kind !== 'success' || submission.isPending || submissionInFlight.current) return;
 
     submissionInFlight.current = true;
     submission.mutate(selectedService.fixtureKey, {
+      onSuccess: () => {
+        addRequest({
+          kind: 'LATE_CHECKOUT',
+          origin: 'SERVICES',
+          status: 'REQUESTED',
+          summary: `${formatServiceDateLabel(stayState.data.departure)} · Hasta ${lateCheckoutUntil}`,
+          title: selectedService.label,
+          details: { type: 'LATE_CHECKOUT', serviceDate: stayState.data.departure, checkoutUntil: lateCheckoutUntil },
+        });
+        setSuccessOverlayVisible(true);
+      },
       onSettled: () => {
         submissionInFlight.current = false;
       },
@@ -143,6 +162,7 @@ export function ServicesScreen({ service }: ServicesScreenProps) {
     submission.reset();
     submissionInFlight.current = false;
     setSelectedFixtureKey(null);
+    setSuccessOverlayVisible(false);
   }
 
   if (catalogState.kind === 'loading') {
@@ -194,30 +214,6 @@ export function ServicesScreen({ service }: ServicesScreenProps) {
     return null;
   }
 
-  if (submission.isSuccess) {
-    return (
-      <View style={servicesStyles.screen}>
-        <ScrollView
-          contentContainerStyle={[
-            servicesStyles.content,
-            servicesStyles.successContent,
-          ]}
-          style={servicesStyles.scroll}
-        >
-          <ServicesStateCard
-            body="Recibimos tu solicitud."
-            onRetry={resetToBase}
-            retryLabel="Volver a servicios"
-            success
-            testID="services-submit-success"
-            title="Servicio solicitado"
-          />
-        </ScrollView>
-        <GuestNavigationShell />
-      </View>
-    );
-  }
-
   const isSubmitOffline = submission.isError && submission.error instanceof NetworkError;
   const isSubmitError = submission.isError && !isSubmitOffline;
   const hasSubmitFailure = isSubmitOffline || isSubmitError;
@@ -226,8 +222,9 @@ export function ServicesScreen({ service }: ServicesScreenProps) {
     <View style={servicesStyles.screen} testID="services-screen">
       <ScrollView contentContainerStyle={servicesStyles.content} style={servicesStyles.scroll}>
         <Text style={servicesStyles.title}>Servicios</Text>
-        <ServiceNavigationCard label="Limpieza incluida" onPress={() => router.push('/services/housekeeping')} testID="services-housekeeping-launcher" />
+        <ServiceNavigationCard label="Limpieza" onPress={() => router.push('/services/housekeeping')} testID="services-housekeeping-launcher" />
         <ServiceNavigationCard label="Room Service" onPress={() => router.push('/services/room-service')} testID="services-room-service-launcher" />
+        <ServiceNavigationCard label="Mis servicios" onPress={() => router.push('/services/requests')} testID="services-requests-launcher" />
         {!hasSubmitFailure ? (
           <View style={servicesStyles.catalog}>
             {catalogState.data.items.map((item) => (
@@ -247,6 +244,7 @@ export function ServicesScreen({ service }: ServicesScreenProps) {
             <Text style={servicesStyles.serviceLabel}>{selectedService.label}</Text>
             <Text style={servicesStyles.serviceDetail}>{selectedService.detailText}</Text>
             <Text style={servicesStyles.servicePrice}>{selectedService.priceText}</Text>
+            {selectedService.lateCheckoutUntil ? <Text style={servicesStyles.serviceDetail} testID="services-late-checkout-schedule">{stayState.kind === 'success' ? `${formatServiceDateLabel(stayState.data.departure)} · Hasta ${selectedService.lateCheckoutUntil}` : 'Cargando fecha de salida...'}</Text> : null}
           </View>
         ) : null}
 
@@ -272,12 +270,12 @@ export function ServicesScreen({ service }: ServicesScreenProps) {
         {!hasSubmitFailure ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityState={{ disabled: !selectedService || submission.isPending }}
-            disabled={!selectedService || submission.isPending}
+            accessibilityState={{ disabled: !selectedService || stayState.kind !== 'success' || submission.isPending }}
+            disabled={!selectedService || stayState.kind !== 'success' || submission.isPending}
             onPress={submitSelectedService}
             style={[
               servicesStyles.button,
-              (!selectedService || submission.isPending) && servicesStyles.buttonDisabled,
+              (!selectedService || stayState.kind !== 'success' || submission.isPending) && servicesStyles.buttonDisabled,
             ]}
             testID="services-submit-button"
           >
@@ -288,6 +286,17 @@ export function ServicesScreen({ service }: ServicesScreenProps) {
         ) : null}
       </ScrollView>
       <GuestNavigationShell />
+      <Modal animationType="fade" onRequestClose={resetToBase} transparent visible={successOverlayVisible}>
+        <Pressable accessibilityLabel="Cerrar confirmación de servicio" onPress={resetToBase} style={servicesStyles.overlayBackdrop} testID="services-submit-success-backdrop">
+          <Pressable accessibilityViewIsModal onPress={(event) => event.stopPropagation()} style={servicesStyles.successOverlayCard} testID="services-submit-success">
+            <View style={servicesStyles.successOverlayHeading}>
+              <Text accessibilityRole="header" style={servicesStyles.stateTitle}>Servicio solicitado</Text>
+              <Pressable accessibilityLabel="Cerrar" accessibilityRole="button" onPress={resetToBase} style={servicesStyles.closeButton} testID="services-submit-success-close"><Text style={servicesStyles.closeButtonLabel}>×</Text></Pressable>
+            </View>
+            <Text style={servicesStyles.stateBody}>Hemos recibido tu solicitud.</Text>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }

@@ -5,5 +5,6 @@ export interface RoomServiceRequest {
     quantity: number;
   }[];
   deliveryTime: string;
+  serviceDate: string;
   notes?: string;
 }

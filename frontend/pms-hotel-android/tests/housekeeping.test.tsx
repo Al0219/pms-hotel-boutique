@@ -11,6 +11,12 @@ import { HousekeepingScreen, MockHousekeepingService, type HousekeepingRequest }
 import { MockStayService, type StayService } from '@/modules/stay';
 import { currentStayFixture } from '@/modules/stay/data/mocks/currentStayFixture';
 import { currentStayQueryKey } from '@/modules/stay/presentation/hooks/useCurrentStay';
+import { SessionServiceRequestsProvider, useSessionServiceRequests } from '@/modules/service-requests';
+
+function RequestProbe() {
+  const { requests } = useSessionServiceRequests();
+  return <Text testID="session-service-requests-probe">{JSON.stringify(requests)}</Text>;
+}
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -26,18 +32,18 @@ function client() {
   return new QueryClient({ defaultOptions: { queries: { gcTime: 0, retry: false }, mutations: { gcTime: 0, retry: false } } });
 }
 
-async function setup(service = new MockHousekeepingService(), stayService: StayService = new MockStayService()) {
+const morningNowMs = new Date(2026, 8, 11, 8, 0, 0).getTime();
+
+async function setup(service = new MockHousekeepingService(), stayService: StayService = new MockStayService(), nowMs: () => number = () => morningNowMs) {
   const queryClient = client();
   const ui = await render(
-    <QueryClientProvider client={queryClient}>
-      <HousekeepingScreen service={service} stayService={stayService} />
-    </QueryClientProvider>,
+    <QueryClientProvider client={queryClient}><SessionServiceRequestsProvider><RequestProbe /><HousekeepingScreen nowMs={nowMs} service={service} stayService={stayService} /></SessionServiceRequestsProvider></QueryClientProvider>,
   );
   return { ui, queryClient };
 }
 
 const expectedInput: HousekeepingRequest = {
-  timeSlot: '10:00–11:00', cleaningType: 'FULL_CLEANING',
+  serviceDate: '2026-09-11', timeSlot: '09:00–10:00', cleaningType: 'FULL_CLEANING',
 };
 
 async function ready(ui: Awaited<ReturnType<typeof render>>) {
@@ -50,9 +56,10 @@ describe('Housekeeping — IMP-AND-0110', () => {
     await ready(ui);
     expect(ui.getByText('Habitación 204')).toBeTruthy();
     expect(queryClient.getQueryData(currentStayQueryKey)).toEqual(expect.objectContaining({ id: currentStayFixture.id }));
-    expect(ui.getByText('10:00–11:00')).toBeTruthy();
+    expect(ui.getByText('09:00–10:00')).toBeTruthy();
     expect(ui.getByText('Limpieza completa')).toBeTruthy();
     expect(ui.getByTestId('housekeeping-notes').props.multiline).toBe(true);
+    expect(ui.getByTestId('housekeeping-notes').props.maxLength).toBe(500);
     await fireEvent.press(ui.getByTestId('housekeeping-time-selector'));
     expect(ui.getByTestId('housekeeping-time-picker-wheel')).toBeTruthy();
     expect(ui.getByTestId('housekeeping-time-picker-options').props.snapToInterval).toBe(48);
@@ -69,15 +76,44 @@ describe('Housekeeping — IMP-AND-0110', () => {
     await fireEvent(ui.getByTestId('housekeeping-time-picker-options'), 'momentumScrollEnd', {
       nativeEvent: { contentOffset: { y: 96 } },
     });
-    expect(within(ui.getByTestId('housekeeping-time-selector')).getByText('10:00–11:00')).toBeTruthy();
+    expect(within(ui.getByTestId('housekeeping-time-selector')).getByText('09:00–10:00')).toBeTruthy();
     await fireEvent.press(ui.getByTestId('housekeeping-time-picker-cancel'));
-    expect(within(ui.getByTestId('housekeeping-time-selector')).getByText('10:00–11:00')).toBeTruthy();
+    expect(within(ui.getByTestId('housekeeping-time-selector')).getByText('09:00–10:00')).toBeTruthy();
     await fireEvent.press(ui.getByTestId('housekeeping-time-selector'));
     await fireEvent(ui.getByTestId('housekeeping-time-picker-options'), 'momentumScrollEnd', {
       nativeEvent: { contentOffset: { y: 96 } },
     });
     await fireEvent.press(ui.getByTestId('housekeeping-time-picker-confirm'));
     expect(within(ui.getByTestId('housekeeping-time-selector')).getByText('11:00–12:00')).toBeTruthy();
+  });
+
+  it('uses injected nowMs to disable slots inside thirty minutes and blocks a stale selection before submit', async () => {
+    let now = new Date(2026, 8, 11, 9, 40, 0).getTime();
+    const submitRequest = jest.fn<Promise<void>, [HousekeepingRequest]>(async () => undefined);
+    const { ui } = await setup(new MockHousekeepingService({ submitRequest }), new MockStayService(), () => now);
+    await ready(ui);
+    expect(ui.getByTestId('housekeeping-submit').props.accessibilityState.disabled).toBe(false);
+    await fireEvent.press(ui.getByTestId('housekeeping-time-selector'));
+    expect(ui.getByTestId('housekeeping-time-picker-option-09:00–10:00').props.accessibilityState.disabled).toBe(true);
+    expect(ui.getByTestId('housekeeping-time-picker-option-10:00–11:00').props.accessibilityState.disabled).toBe(true);
+    expect(ui.getByTestId('housekeeping-time-picker-option-11:00–12:00').props.accessibilityState.disabled).toBe(false);
+    await fireEvent.press(ui.getByTestId('housekeeping-time-picker-option-11:00–12:00'));
+    await fireEvent.press(ui.getByTestId('housekeeping-time-picker-confirm'));
+    expect(ui.getByTestId('housekeeping-submit').props.accessibilityState.disabled).toBe(false);
+    now = new Date(2026, 8, 11, 10, 31, 0).getTime();
+    await fireEvent.press(ui.getByTestId('housekeeping-submit'));
+    expect(submitRequest).not.toHaveBeenCalled();
+    expect(ui.getByTestId('housekeeping-schedule-error')).toBeTruthy();
+  });
+
+  it('disables checkout-day slots that cannot finish by the normal checkout policy', async () => {
+    const { ui } = await setup(undefined, new MockStayService({ kind: 'success', dto: { ...currentStayFixture, departure: '2026-09-18' } }), () => new Date(2026, 8, 18, 11, 31).getTime());
+    await ready(ui);
+    await waitFor(() => expect(ui.getByTestId('housekeeping-no-availability')).toBeTruthy());
+    expect(ui.getByTestId('housekeeping-submit').props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(ui.getByTestId('housekeeping-time-selector'));
+    expect(ui.getByTestId('housekeeping-time-picker-option-11:00–12:00').props.accessibilityState.disabled).toBe(true);
+    expect(ui.getByTestId('housekeeping-time-picker-option-14:00–15:00').props.accessibilityState.disabled).toBe(true);
   });
 
   it('selects a temporary QA cleaning type and sends it in the frontend request', async () => {
@@ -95,7 +131,7 @@ describe('Housekeeping — IMP-AND-0110', () => {
     expect(within(ui.getByTestId('housekeeping-type-selector')).getByText('Limpieza ligera')).toBeTruthy();
     await fireEvent.press(ui.getByTestId('housekeeping-submit'));
     await waitFor(() => expect(submitRequest).toHaveBeenCalledWith({
-      timeSlot: '10:00–11:00', cleaningType: 'LIGHT_CLEANING',
+      serviceDate: '2026-09-11', timeSlot: '09:00–10:00', cleaningType: 'LIGHT_CLEANING',
     }));
     await waitFor(() => expect(ui.getByTestId('housekeeping-submit-success')).toBeTruthy());
   });
@@ -156,9 +192,13 @@ describe('Housekeeping — IMP-AND-0110', () => {
     expect(ui.getByTestId('housekeeping-type-selector').props.accessibilityState.disabled).toBe(true);
     expect(submitRequest).toHaveBeenCalledTimes(1);
     expect(ui.queryByTestId('housekeeping-submit-success')).toBeNull();
+    expect(ui.getByTestId('session-service-requests-probe').props.children).toBe('[]');
     await act(async () => pending.resolve());
     await waitFor(() => expect(ui.getByText('Limpieza solicitada')).toBeTruthy());
     expect(ui.queryByTestId('housekeeping-submit')).toBeNull();
+    expect(JSON.parse(ui.getByTestId('session-service-requests-probe').props.children)).toEqual([
+      expect.objectContaining({ kind: 'HOUSEKEEPING', origin: 'SERVICES', status: 'REQUESTED', title: 'Limpieza', summary: '11 sept 2026 · 09:00–10:00' }),
+    ]);
   });
 
   it.each([
@@ -173,14 +213,16 @@ describe('Housekeeping — IMP-AND-0110', () => {
     await waitFor(() => expect(ui.getByTestId(`housekeeping-submit-${kind}`)).toBeTruthy());
     expect(ui.queryByTestId(`housekeeping-submit-${kind === 'error' ? 'offline' : 'error'}`)).toBeNull();
     expect(ui.getByTestId('housekeeping-notes').props.value).toBe('  Mantener ventana cerrada  ');
-    expect(ui.getByText('10:00–11:00')).toBeTruthy();
+    expect(ui.getByText('09:00–10:00')).toBeTruthy();
     expect(submitRequest).toHaveBeenCalledTimes(1);
     expect(ui.queryByTestId('housekeeping-submit-success')).toBeNull();
+    expect(ui.getByTestId('session-service-requests-probe').props.children).toBe('[]');
     await fireEvent.press(ui.getByRole('button', { name: 'Reintentar' }));
     await waitFor(() => expect(ui.getByTestId('housekeeping-submit-success')).toBeTruthy());
     expect(submitRequest.mock.calls).toEqual([
       [{ ...expectedInput, notes: 'Mantener ventana cerrada' }], [{ ...expectedInput, notes: 'Mantener ventana cerrada' }],
     ]);
+    expect(JSON.parse(ui.getByTestId('session-service-requests-probe').props.children)).toHaveLength(1);
   });
 
   it('shows Stay loading until the existing boundary resolves', async () => {
@@ -206,17 +248,18 @@ describe('Housekeeping — IMP-AND-0110', () => {
   });
 
   it('opens the productive route from Services, keeps Services active, and returns via Back and success', async () => {
+    const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(morningNowMs);
     const queryClient = client();
     const ui = await renderRouter({
-      _layout: () => <QueryClientProvider client={queryClient}><PathProbe /><Slot /></QueryClientProvider>,
+      _layout: () => <QueryClientProvider client={queryClient}><SessionServiceRequestsProvider><PathProbe /><Slot /></SessionServiceRequestsProvider></QueryClientProvider>,
       services: ServicesRoute,
       'services/housekeeping': HousekeepingRoute,
     }, { initialUrl: '/services' });
     await waitFor(() => expect(ui.getByTestId('services-housekeeping-launcher')).toBeTruthy());
-    for (const label of ['Late check-out', 'Decoración especial', 'Limpieza incluida', 'Room Service']) {
+    for (const label of ['Late check-out', 'Limpieza', 'Room Service']) {
       expect(ui.getByText(label)).toBeTruthy();
     }
-    await fireEvent.press(ui.getByRole('button', { name: 'Limpieza incluida' }));
+    await fireEvent.press(ui.getByRole('button', { name: 'Limpieza' }));
     await ready(ui);
     expect(ui.getByTestId('pathname').props.children).toBe('/services/housekeeping');
     expect(ui.getByRole('tab', { name: 'Servicios' }).props.accessibilityState.selected).toBe(true);
@@ -233,5 +276,6 @@ describe('Housekeeping — IMP-AND-0110', () => {
     await waitFor(() => expect(ui.getByTestId('housekeeping-submit-success')).toBeTruthy());
     await fireEvent.press(ui.getByRole('button', { name: 'Volver a servicios' }));
     expect(ui.getByTestId('pathname').props.children).toBe('/services');
+    nowSpy.mockRestore();
   });
 });

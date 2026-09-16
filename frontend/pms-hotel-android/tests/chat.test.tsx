@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { renderRouter } from 'expo-router/testing-library';
-import { Keyboard } from 'react-native';
+import { Keyboard, Text } from 'react-native';
 
 import { NetworkError } from '@/data/remote/http/HttpError';
 import {
@@ -10,6 +10,7 @@ import {
   MockChatService,
 } from '@/modules/chat';
 import { chatConversationFixture } from '@/data/mocks/chat/chatConversationFixture';
+import { SessionServiceRequestsProvider, useSessionServiceRequests } from '@/modules/service-requests';
 
 declare const require: (moduleName: string) => { readFileSync(path: string, encoding: string): string };
 
@@ -28,13 +29,16 @@ function createQueryClient() {
   });
 }
 
+function RequestProbe() {
+  const { requests } = useSessionServiceRequests();
+  return <Text testID="session-service-requests-probe">{JSON.stringify(requests)}</Text>;
+}
+
 async function renderChat(service: MockChatService) {
   const queryClient = createQueryClient();
 
   return render(
-    <QueryClientProvider client={queryClient}>
-      <ChatScreen service={service} />
-    </QueryClientProvider>,
+    <QueryClientProvider client={queryClient}><SessionServiceRequestsProvider><RequestProbe /><ChatScreen service={service} /></SessionServiceRequestsProvider></QueryClientProvider>,
   );
 }
 
@@ -55,9 +59,35 @@ describe('Chat con Recepción', () => {
         { key: 'chat-message-guest-01', author: 'guest', text: 'Necesito un taxi mañana a las 6:00.' },
         { key: 'chat-message-reception-02', author: 'reception', text: 'Claro. ¿Destino Aeropuerto La Aurora?' },
         { key: 'chat-message-guest-02', author: 'guest', text: 'Sí, por favor.' },
-        { key: 'chat-message-reception-03', author: 'reception', text: 'Listo. Solicitud #4832 creada · salida 06:00.' },
+        {
+          key: 'chat-message-reception-03',
+          author: 'reception',
+          text: 'Listo. Solicitud #4832 creada · salida 06:00.',
+          serviceAssignment: {
+            assignmentKey: 'chat-assignment-transfer-01',
+            title: 'Traslado al aeropuerto',
+            summary: 'Asignado por Recepción',
+          },
+        },
       ],
     });
+  });
+
+  it('registers only structured hotel assignments once and leaves normal messages out of session requests', async () => {
+    const assigned = await renderChat(new MockChatService());
+    await waitFor(() => expect(JSON.parse(assigned.getByTestId('session-service-requests-probe').props.children)).toHaveLength(1));
+    expect(JSON.parse(assigned.getByTestId('session-service-requests-probe').props.children)).toEqual([
+      expect.objectContaining({ kind: 'HOTEL_ASSIGNED', origin: 'CHAT', status: 'ASSIGNED', title: 'Traslado al aeropuerto', summary: 'Asignado por Recepción' }),
+    ]);
+
+    const normalOnly = await renderChat(new MockChatService({
+      getConversation: async () => ({
+        ...chatConversationFixture,
+        messages: chatConversationFixture.messages.map(({ serviceAssignment: _serviceAssignment, ...message }) => message),
+      }),
+    }));
+    await waitForChat(normalOnly);
+    expect(normalOnly.getByTestId('session-service-requests-probe').props.children).toBe('[]');
   });
 
   it('keeps the presentation layer independent from fixture DTOs, datasets, and direct network calls', () => {
@@ -96,9 +126,7 @@ describe('Chat con Recepción', () => {
   it('renders approved context, initial thread, accessible left send arrow, and Chat as active', async () => {
     const queryClient = createQueryClient();
     const ChatRoute = () => (
-      <QueryClientProvider client={queryClient}>
-        <ChatScreen service={new MockChatService()} />
-      </QueryClientProvider>
+      <QueryClientProvider client={queryClient}><SessionServiceRequestsProvider><ChatScreen service={new MockChatService()} /></SessionServiceRequestsProvider></QueryClientProvider>
     );
     const rendered = await renderRouter({ chat: ChatRoute }, { initialUrl: '/chat' });
 
@@ -116,6 +144,7 @@ describe('Chat con Recepción', () => {
     const composerRow = rendered.getByTestId('chat-composer-row');
     expect(composerRow.props.children[0].props.testID).toBe('chat-send-button');
     expect(composerRow.props.children[1].props.testID).toBe('chat-composer-input');
+    expect(rendered.getByTestId('chat-composer-input').props.maxLength).toBe(1000);
     expect(rendered.getByLabelText('Chat').props.accessibilityState).toEqual({ disabled: false, selected: true });
     expect(rendered.getByLabelText('Servicios').props.accessibilityState).toEqual({ disabled: false, selected: false });
     expect(rendered.getByLabelText('Valet').props.accessibilityState.disabled).toBe(false);

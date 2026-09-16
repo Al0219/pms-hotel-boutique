@@ -12,6 +12,18 @@
 
 **Extensión QA aprobada (2026-09-11):** El traslado se generaliza a `Traslado` para una simulación frontend/mock. Esta extensión sustituye la presentación fija de “Traslado al aeropuerto” y `Q 220`; no aprueba ni anticipa una API Backend, proveedor de rutas/datos de mapas ni integración de tarifas. `Ver ruta en Maps` queda aprobado exclusivamente como visualización externa.
 
+**Extensión QA session-only (IMP-AND-0112):** Los vehículos del huésped se registran en memoria con `PARKED`/`WITH_GUEST`, separados de la solicitud de vehículo y del traslado. `VEHICLE_REQUEST` usa solo un vehículo registrado y en parqueo; `TRANSFER` representa transporte del hotel y no usa vehículos del huésped. La entrega/recepción se simula mediante acciones manuales de sesión y el éxito de request no cambia el estado físico. No añade Backend, persistencia, tickets, tracking ni lifecycle autoritativo.
+
+Para `VEHICLE_REQUEST`, `serviceDate` local (`YYYY-MM-DD`) se combina con `requestedTime` `HH:mm` y el datetime resultante debe cumplir `>= now + 30 minutos`, estar dentro de la fecha inclusiva `ReservationStay.departure` y, solo en departure, no superar el checkout estándar `12:00`. Traslado usa el mismo límite de fecha y hora. El selector de fecha, selector de hora, CTA y guard de submit usan la misma validación central; un candidato inválido no se confirma y una selección vencida conserva el formulario con feedback. `12:00` es la política frontend/mock actual del Hotel Boutique, no un campo de `ReservationStay` ni autoridad Backend; una configuración futura de propiedad podrá reemplazarla. Late check-out conserva su excepción independiente hasta `14:00`. El selector de ubicación del registro es un radio controlado: `PARKED` / En parqueo y `WITH_GUEST` / Conmigo son mutuamente excluyentes, se persisten exactamente en `SessionVehicle.status`, y solo `PARKED` puede seleccionarse para solicitar entrega.
+
+Abrir `Registrar vehículo` siempre inicia un draft de creación limpio y conserva intacto el registro session-only anterior. `Editar vehículo` es un entry point explícito que precarga únicamente ese registro y actualiza solo su `sessionVehicleId`; no se infiere desde el último vehículo creado. Abrir `Solicitar traslado` también descarta el draft local y el resultado de creación anterior antes de preparar una solicitud nueva. La edición de solicitudes de vehículo o traslado sigue entrando exclusivamente con su `editRequestId` desde Mis servicios; estos resets no dependen de desmontar la pantalla.
+
+Solicitar mi vehículo sigue el orden explícito: abrir `VEHICLE_SELECTION`, elegir vehículo `PARKED`, pasar sin cerrar la misma superficie a `VEHICLE_CONFIGURATION`, configurar hora, pulsar `Solicitar vehículo`, resolver mutation y recién entonces crear o actualizar `SessionServiceRequest`. `Cambiar vehículo` vuelve al selector dentro de la misma superficie. Elegir una card modifica únicamente la configuración local; nunca envía ni registra una solicitud.
+
+**Validación frontend session-only (QA IMP-AND-0112):** Marca y modelo son requeridos y admiten hasta 40 caracteres; color es opcional y admite 30. La placa separa un selector de prefijo y un body. El selector contiene `P`, `A`, `C`, `TE`, `U`, `TRC`, `M`, `MT`, `TC`, `O`, `CD`, `CC`, `MI`, `DIS`; el body admite hasta 6 caracteres, se recorta y convierte a mayúsculas, y cumple `^\d{2,3}[A-Z]{3}$`. La comparación local usa prefijo más body normalizado: el mismo body con prefijos distintos no duplica un vehículo. Este catálogo y validación son frontend; no son validación oficial SAT, no consultan un registro, no garantizan validez legal/registral y un Backend futuro podrá reemplazarlos.
+
+**Historial session-only (QA IMP-AND-0112):** Una solicitud de vehículo se completa por `sessionRequestId` exacto. Desde Mis servicios puede confirmarse como recibida incluso después de salir de Valet; esa confirmación cambia únicamente el vehículo enlazado `PARKED → WITH_GUEST` y conserva la solicitud como `COMPLETED` en el historial local. Un vehículo `WITH_GUEST` no permite una nueva solicitud inmediata. Varias solicitudes para un vehículo `PARKED` pueden coexistir cuando corresponden a submits distintos; completar una no modifica las demás.
+
 ---
 
 ## 1. Propósito y límites
@@ -271,3 +283,5 @@ El copy de Folio del frame puede mostrarse solo como texto informativo. Esta tar
 ## 10. Futuro Backend
 
 En una etapa posterior, un servicio API podrá sustituir los mock services detrás de DTOs y mappers. Este contrato frontend/mock no obliga su forma: los campos, identificadores, cálculo de ruta/tarifa, reglas de disponibilidad y semántica de reserva deberán aprobarse entonces por separado.
+
+`VEHICLE_REQUEST` conserva `serviceDate` local (`YYYY-MM-DD`) junto con `requestedTime`. Esto permite solicitudes independientes para el mismo vehículo en fechas u horas distintas; no se deduplica por vehículo.

@@ -17,6 +17,7 @@ import { useChatConversation } from '@/modules/chat/presentation/hooks/useChatCo
 import { useSendChatMessage } from '@/modules/chat/presentation/hooks/useSendChatMessage';
 import { chatStyles } from '@/modules/chat/presentation/chatStyles';
 import { GuestNavigationShell } from '@/modules/navigation';
+import { useSessionServiceRequests } from '@/modules/service-requests';
 import { deriveRemoteState } from '@/state/remoteState';
 
 export interface ChatScreenProps {
@@ -75,11 +76,30 @@ export function ChatScreen({ service }: ChatScreenProps) {
   const conversationQuery = useChatConversation(service);
   const conversationState = deriveRemoteState(conversationQuery, () => false);
   const submission = useSendChatMessage(service);
+  const { addRequest } = useSessionServiceRequests();
   const [draftText, setDraftText] = useState('');
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const submissionInFlight = useRef(false);
   const messageKeyAwaitingScroll = useRef<string | null>(null);
   const messagesScrollViewRef = useRef<ScrollView>(null);
+  const conversationMessages = conversationState.kind === 'success' ? conversationState.data.messages : null;
+
+  useEffect(() => {
+    if (!conversationMessages) return;
+
+    conversationMessages.forEach((message) => {
+      if (message.author !== 'reception' || !message.serviceAssignment) return;
+
+      addRequest({
+        dedupeKey: message.serviceAssignment.assignmentKey,
+        kind: 'HOTEL_ASSIGNED',
+        origin: 'CHAT',
+        status: 'ASSIGNED',
+        summary: message.serviceAssignment.summary,
+        title: message.serviceAssignment.title,
+      });
+    });
+  }, [addRequest, conversationMessages]);
 
   const scrollToLastMessage = useCallback(() => {
     requestAnimationFrame(() => {
@@ -240,6 +260,7 @@ export function ChatScreen({ service }: ChatScreenProps) {
             <TextInput
               accessibilityLabel="Mensaje para Recepción"
               editable={!submission.isPending}
+              maxLength={1000}
               onChangeText={setDraftText}
               placeholder="Escribe un mensaje…"
               style={chatStyles.input}

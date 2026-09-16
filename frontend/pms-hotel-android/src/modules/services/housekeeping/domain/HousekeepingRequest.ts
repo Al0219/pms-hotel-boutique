@@ -14,6 +14,7 @@ export type HousekeepingCleaningType =
   | 'TOWELS_AND_AMENITIES';
 
 export interface HousekeepingRequest {
+  serviceDate: string;
   timeSlot: HousekeepingTimeSlot;
   cleaningType: HousekeepingCleaningType;
   notes?: string;

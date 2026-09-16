@@ -8,6 +8,7 @@ import { type ReservationStayDto } from '@/modules/stay/data/dtos/ReservationSta
 import { currentStayFixture } from '@/modules/stay/data/mocks/currentStayFixture';
 import { MockStayService } from '@/modules/stay/data/mocks/MockStayService';
 import { type StayService } from '@/modules/stay/data/services/StayService';
+import { SessionServiceRequestsProvider } from '@/modules/service-requests';
 
 function createQueryClient() {
   return new QueryClient({
@@ -18,9 +19,7 @@ function createQueryClient() {
 function createAccountRoute(service: StayService) {
   return function AccountRoute() {
     return (
-      <QueryClientProvider client={createQueryClient()}>
-        <AccountStayHubScreen service={service} />
-      </QueryClientProvider>
+      <QueryClientProvider client={createQueryClient()}><SessionServiceRequestsProvider><AccountStayHubScreen service={service} /></SessionServiceRequestsProvider></QueryClientProvider>
     );
   };
 }

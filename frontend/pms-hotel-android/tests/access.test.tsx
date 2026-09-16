@@ -41,6 +41,8 @@ describe('Access / Vincular reserva', () => {
     expect(screen.getByText('Vincula tu reserva')).toBeTruthy();
     expect(screen.getByTestId('access-reservation-code')).toBeTruthy();
     expect(screen.getByTestId('access-email')).toBeTruthy();
+    expect(screen.getByTestId('access-reservation-code').props.maxLength).toBe(32);
+    expect(screen.getByTestId('access-email').props.maxLength).toBe(254);
     expect(screen.queryByText('Servicios')).toBeNull();
     expect(screen.queryByText('Chat')).toBeNull();
     expect(screen.queryByText('Valet')).toBeNull();

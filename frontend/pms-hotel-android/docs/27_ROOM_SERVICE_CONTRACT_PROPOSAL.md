@@ -45,7 +45,7 @@ Existe una sola nota multiline opcional de pedido dentro del panel. Antes del su
 
 `ReservationStay` se reutiliza solo para presentar contexto visual: `Habitación {number}` o exactamente `Habitación por asignar` cuando `room === null`. No es una segunda fuente de verdad.
 
-La entrega comienza sin valor seleccionado. El panel usa el `TimeWheelPicker` compartido en `mode="time"`, igual que Valet: permite hora `00`–`23` y minuto `00`–`59`, sin catálogo de slots, horario laboral, disponibilidad, fecha ni timezone. Cancelar conserva la selección previa; Aceptar guarda `HH:mm`. Esta hora es contrato frontend/mock: la integración Backend deberá definir después su semántica temporal.
+La entrega se programa con fecha local `serviceDate` (`YYYY-MM-DD`) y `deliveryTime` `HH:mm`. El panel usa `ServiceDatePicker` y el `TimeWheelPicker` compartido en `mode="time"`; permite hora `00`–`23` y minuto `00`–`59`, sin catálogo de slots, horario laboral ni disponibilidad. Cancelar conserva la selección previa. La UI y el guard de submit exigen `>= now + 30 minutos`, fecha inclusiva `serviceDate <= ReservationStay.departure` y, únicamente en departure, `deliveryTime <= 12:00`. `12:00` es una política frontend/mock del Hotel Boutique, no un valor de `ReservationStay` ni contrato Backend; una futura configuración hotel/property podrá sustituirla. Late checkout hasta `14:00` conserva su excepción independiente. Esta programación es frontend/session-only y no define timezone ni semántica temporal Backend.
 
 ## Request y boundary
 
@@ -57,12 +57,13 @@ interface RoomServiceRequest {
     itemFixtureKey: string;
     quantity: number;
   }[];
+  serviceDate: string;
   deliveryTime: string;
   notes?: string;
 }
 ```
 
-`deliveryTime` usa el formato `HH:mm`. El request no contiene precio, total, categoría, habitación, IDs de Stay/Reservation/Room/Property, payment, status, request ID ni lifecycle. La asociación Backend futura continúa sin definir.
+`serviceDate` usa `YYYY-MM-DD` local y `deliveryTime` usa `HH:mm`. El request no contiene precio, total, categoría, habitación, IDs de Stay/Reservation/Room/Property, payment, status, request ID ni lifecycle. La asociación Backend futura continúa sin definir.
 
 `RoomServiceService` es un boundary cohesivo y sustituible:
 
@@ -75,7 +76,7 @@ submitRequest(request: RoomServiceRequest): Promise<void>
 
 ## Estado y arquitectura
 
-TanStack Query es la autoridad server-like del menú mock: loading, success, generic error y `NetworkError`/offline con retry manual. TanStack Mutation es la única autoridad server-like del submit: configured, submitting, success tras resolver la Promise, generic error y offline con retry manual. El carrito, la nota y `deliveryTime` permanecen tras fallo; `isPending` y un guard `useRef` evitan doble submit. No hay éxito optimista, cola offline, NetInfo ni sync.
+TanStack Query es la autoridad server-like del menú mock: loading, success, generic error y `NetworkError`/offline con retry manual. TanStack Mutation es la única autoridad server-like del submit: configured, submitting, success tras resolver la Promise, generic error y offline con retry manual. El carrito, la nota, `serviceDate` y `deliveryTime` permanecen tras fallo; `isPending` y un guard `useRef` evitan doble submit. No hay éxito optimista, cola offline, NetInfo ni sync.
 
 La implementación aislada vive en `src/modules/services/room-service/`:
 
@@ -89,7 +90,7 @@ No se crearon DTOs o mappers sin transformación real, Zustand ni Context global
 
 ## Presentación, accesibilidad y navegación
 
-- Launcher accesible **Room Service** en Servicios usa `router.push('/services/room-service')`; es una card de navegación con chevron decorativo, igual que Limpieza incluida. Los upsells inline restantes son Late check-out y Decoración especial.
+- Launcher accesible **Room Service** en Servicios usa `router.push('/services/room-service')`; es una card de navegación con chevron decorativo, igual que Limpieza. El único upsell inline actual es Late check-out.
 - La flecha Back y el icono de carrito fijo están dentro de Safe Area, fuera del scroll. Back tiene label `Volver a servicios` y usa `router.dismissTo('/services')`; carrito tiene label `Abrir carrito`.
 - Categorías usan tabs accesibles y selección visible; agregar, incrementar, decrementar y eliminar incluyen labels con el nombre del producto.
 - Carrito, nota, entrega, CTA, retry y controles de header tienen roles, estados disabled cuando corresponde y test IDs estables.
@@ -107,10 +108,12 @@ Success muestra **Pedido solicitado**, `Recibimos tu pedido de Room Service.` y 
 
 ## Fuera de alcance
 
-Backend/HTTP real, persistencia, pago, room charge, impuestos, fees, descuentos, propina, imágenes remotas, stock, variantes, extras, cocina, kitchen ticket, tracking, notificaciones, NetInfo, cola offline, sync, reglas operativas de horario, delivery slots, fecha, timezone Backend, Web e `IMP-AND-0112`.
+Backend/HTTP real, persistencia, pago, room charge, impuestos, fees, descuentos, propina, imágenes remotas, stock, variantes, extras, cocina, kitchen ticket, tracking, notificaciones, NetInfo, cola offline, sync, reglas operativas de horario, delivery slots, timezone Backend, Web e `IMP-AND-0112`.
 
 ## Evidencia y pendientes
 
 Las suites Room Service cubren header, panel cerrado/abierto, carrito vacío, persistencia local, cantidades, total, notas, selector libre de hora, `deliveryTime`, payload sin IDs, habitación nullable, Query, Mutation, doble submit, retry y navegación. Esta iteración obtuvo `npm run lint` PASS, `npm run typecheck` PASS, `npm run test` PASS (16 suites / 101 tests), `npx expo-doctor` PASS (21/21), `npx expo export --platform android` PASS y Metro inició en el puerto 8082 y se detuvo correctamente.
 
 QA manual y revisión de implementación WEB-3 completaron PASS. Una fase posterior deberá definir catálogo/API Backend, scope, pricing operacional, disponibilidad y lifecycle sin convertir este mock en contrato Backend.
+
+Room Service conserva `serviceDate` local (`YYYY-MM-DD`) con `deliveryTime`; fecha y hora se validan como datetime completo. La fecha futura conserva una hora válida y la nueva solicitud inicia en la hora válida más cercana.

@@ -14,6 +14,7 @@ export type RoomServiceCartAction =
   | { type: 'INCREMENT_ITEM'; itemFixtureKey: string }
   | { type: 'DECREMENT_ITEM'; itemFixtureKey: string }
   | { type: 'REMOVE_ITEM'; itemFixtureKey: string }
+  | { type: 'SET_ITEMS'; items: readonly RoomServiceCartLine[] }
   | { type: 'CLEAR' };
 
 export const initialRoomServiceCart: RoomServiceCartState = { items: [] };
@@ -24,6 +25,7 @@ export function roomServiceCartReducer(
   action: RoomServiceCartAction,
 ): RoomServiceCartState {
   if (action.type === 'CLEAR') return initialRoomServiceCart;
+  if (action.type === 'SET_ITEMS') return { items: action.items };
 
   const line = state.items.find((item) => item.itemFixtureKey === action.itemFixtureKey);
 

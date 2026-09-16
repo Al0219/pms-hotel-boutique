@@ -3,6 +3,7 @@ export type {
   ChatFixtureContextDto,
   ChatMessageAuthorFixture,
   ChatMessageFixtureDto,
+  ChatServiceAssignmentFixtureDto,
   SendChatMessageFixtureInput,
   SendChatMessageFixtureResult,
 } from '@/modules/chat/data/dtos/ChatFixtureDto';
@@ -18,5 +19,6 @@ export type {
   ChatConversation,
   ChatMessage,
   ChatMessageAuthor,
+  ChatServiceAssignment,
 } from '@/modules/chat/domain/models/ChatConversation';
 export { ChatScreen } from '@/modules/chat/presentation/ChatScreen';
