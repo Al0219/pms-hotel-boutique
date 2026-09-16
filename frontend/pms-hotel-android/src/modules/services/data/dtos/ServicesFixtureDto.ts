@@ -12,6 +12,8 @@ export interface ServiceCatalogFixtureDto {
   label: string;
   detailText: string;
   priceText: string;
+  /** Hotel-defined mock setting, only applicable to the Late check-out fixture. */
+  lateCheckoutUntil?: string;
 }
 
 export interface ServicesCatalogFixtureDto {

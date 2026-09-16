@@ -18,7 +18,7 @@ No es un contrato API Backend. No define endpoints, métodos HTTP, payloads Back
 - Estados de Servicios aprobados para implementación: sección `1818:410 — APPROVED FOR IMPLEMENTATION — IMP-AND-0103 — Services states`.
 - Frames: Base `1821:410`, Selected `1818:411`, Loading `1819:410`, Submitting `1820:410`, Success `1820:13372`, Error `1820:13290` y Offline `1820:13331`.
 - El flujo autorizado de producto es Base → Selected → Submitting → Success → Base. Error y Offline son variantes **QA ONLY**, accesibles desde `1827:411 — QA ONLY — Services failure variants`; no son acciones normales del huésped.
-- La fixture original contenía cuatro upsells. La decisión de producto aprobada durante QA de `IMP-AND-0111` retira `Desayuno en habitación` porque su flujo pertenece a Room Service y `Traslado aeropuerto` porque pertenece a Valet/Transfer. El catálogo inline final conserva `Late check-out` / `Hasta 14:00` / `Q180` y `Decoración especial` / `Cumpleaños o aniversario` / `Q320`; `Limpieza incluida` y `Room Service` son launchers a flujos dedicados, no upsells inline.
+- La fixture original contenía cuatro upsells. La decisión de producto retira `Desayuno en habitación` porque su flujo pertenece a Room Service, `Traslado aeropuerto` porque pertenece a Valet/Transfer y Decoración especial del alcance Android actual. El catálogo inline final conserva únicamente `Late check-out` / `Hasta 14:00` / `Q180`; `Limpieza` y `Room Service` son launchers a flujos dedicados, no upsells inline.
 - `priceText` es texto de presentación visual. No representa monto, moneda, impuesto, cargo ni semántica financiera Backend.
 - Los estados visuales no agregan pagos, cargos, promesas de procesamiento ni status Backend. No se añade estado Empty.
 
@@ -96,7 +96,7 @@ El mock se conecta en la frontera Remote/API y conserva `Remote/API → DTO fixt
 | --- | --- |
 | `idle` | No existe solicitud en curso. |
 | `submitting` | La mutation mock está pendiente; se conserva la selección, se muestra `Confirmando...` y el CTA queda disabled. |
-| `success` | Solo ocurre tras recibir `SubmitServiceRequestFixtureResult`; se muestra `Servicio solicitado` y `Recibimos tu solicitud.` |
+| `success` | Solo ocurre tras recibir `SubmitServiceRequestFixtureResult`; Late check-out muestra el overlay local `Servicio solicitado` con `Hemos recibido tu solicitud.`, cerrable con `X` o backdrop. No crea una ruta ni sustituye `/services`. |
 | `error` | La mutation mock falla técnicamente; se muestra `No pudimos enviar tu solicitud`, `Intenta nuevamente.` y `Reintentar`. |
 | `offline` | La mutation mock falla con `NetworkError`; se muestra `Sin conexión`, `Conéctate a internet para solicitar este servicio.` y `Reintentar`. |
 
@@ -176,3 +176,5 @@ No existe en el backlog ni en la documentación vigente un gate adicional de rev
 - Implementar `IMP-AND-0103`, modificar `services.tsx`, crear feature branch, DTOs productivos, mappers, Domain, hooks, queries, mutations, fixtures funcionales o tests de Servicios.
 - Endpoints, auth, permisos, entidades, tablas, migraciones, persistencia, audit, reglas Backend o estados de negocio/cross-app de una solicitud.
 - Cambiar Figma, `IMP-AND-0100` o `IMP-AND-0102`.
+
+La política temporal frontend/mock del Hotel Boutique define checkout estándar `12:00`. Late check-out usa exclusivamente `ReservationStay.departure` como `serviceDate` y el valor estructurado frontend/mock `lateCheckoutUntil: '14:00'`: es una excepción aprobada al checkout estándar. El huésped no elige fecha ni hora; los valores no se extraen del copy visual. Una futura configuración de propiedad o Backend podrá sustituir esta política sin convertirla hoy en contrato Backend.

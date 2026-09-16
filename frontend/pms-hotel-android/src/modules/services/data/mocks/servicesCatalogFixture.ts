@@ -12,12 +12,7 @@ export const servicesCatalogFixture: ServicesCatalogFixtureDto = {
       label: 'Late check-out',
       detailText: 'Hasta las 14:00',
       priceText: 'Q 180',
-    },
-    {
-      fixtureKey: 'special-decoration',
-      label: 'Decoración especial',
-      detailText: 'Cumpleaños / aniversario',
-      priceText: 'Q 320',
+      lateCheckoutUntil: '14:00',
     },
   ],
 };

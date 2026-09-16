@@ -16,6 +16,6 @@ export const currentStayFixture: ReservationStayDto = {
     number: '204',
   },
   arrival: '2026-08-28',
-  departure: '2026-08-31',
+  departure: '2026-09-18',
   status: 'REMOTE_STATUS',
 };

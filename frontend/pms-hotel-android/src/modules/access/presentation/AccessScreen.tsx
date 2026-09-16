@@ -62,6 +62,16 @@ export function AccessScreen({ service, onLinked = () => router.replace('/accoun
     reservationCode: reservationCode.trim(),
   });
 
+  function changeReservationCode(value: string): void {
+    setReservationCode(value);
+    if (fieldErrors.reservationCode) setFieldErrors((current) => ({ ...current, reservationCode: undefined }));
+  }
+
+  function changeEmail(value: string): void {
+    setEmail(value);
+    if (fieldErrors.email) setFieldErrors((current) => ({ ...current, email: undefined }));
+  }
+
   function submit(): void {
     const nextRequest = request();
     const errors = validate(nextRequest);
@@ -99,32 +109,36 @@ export function AccessScreen({ service, onLinked = () => router.replace('/accoun
           <View style={accessStyles.field}>
             <Text nativeID="access-reservation-code-label" style={accessStyles.label}>Código de reserva</Text>
             <TextInput
+              accessibilityHint={fieldErrors.reservationCode}
               accessibilityLabel="Código de reserva"
               accessibilityState={{ disabled: isPending }}
               editable={!isPending}
-              onChangeText={setReservationCode}
+              maxLength={32}
+              onChangeText={changeReservationCode}
               onFocus={keepFormReachable}
               style={[accessStyles.input, fieldErrors.reservationCode && accessStyles.inputInvalid]}
               testID="access-reservation-code"
               value={reservationCode}
             />
-            {fieldErrors.reservationCode ? <Text style={accessStyles.fieldError}>{fieldErrors.reservationCode}</Text> : null}
+            {fieldErrors.reservationCode ? <Text accessibilityLiveRegion="polite" style={accessStyles.fieldError}>{fieldErrors.reservationCode}</Text> : null}
           </View>
           <View style={accessStyles.field}>
             <Text nativeID="access-email-label" style={accessStyles.label}>Correo electrónico</Text>
             <TextInput
+              accessibilityHint={fieldErrors.email}
               accessibilityLabel="Correo electrónico"
               accessibilityState={{ disabled: isPending }}
               autoCapitalize="none"
               editable={!isPending}
               keyboardType="email-address"
-              onChangeText={setEmail}
+              maxLength={254}
+              onChangeText={changeEmail}
               onFocus={keepFormReachable}
               style={[accessStyles.input, fieldErrors.email && accessStyles.inputInvalid]}
               testID="access-email"
               value={email}
             />
-            {fieldErrors.email ? <Text style={accessStyles.fieldError}>{fieldErrors.email}</Text> : null}
+            {fieldErrors.email ? <Text accessibilityLiveRegion="polite" style={accessStyles.fieldError}>{fieldErrors.email}</Text> : null}
           </View>
           {isNotFound ? (
             <AccessStateCard

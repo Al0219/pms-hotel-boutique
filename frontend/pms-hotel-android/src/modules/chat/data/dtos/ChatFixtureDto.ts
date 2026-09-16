@@ -13,6 +13,14 @@ export interface ChatMessageFixtureDto {
   fixtureKey: string;
   author: ChatMessageAuthorFixture;
   text: string;
+  serviceAssignment?: ChatServiceAssignmentFixtureDto;
+}
+
+/** Structured frontend mock metadata; never derived from message text. */
+export interface ChatServiceAssignmentFixtureDto {
+  assignmentKey: string;
+  title: string;
+  summary?: string;
 }
 
 export interface ChatConversationFixtureDto {

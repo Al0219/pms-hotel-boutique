@@ -47,6 +47,7 @@ function mapItem(dto: ServiceCatalogFixtureDto, index: number): ServiceCatalogIt
     label: requireNonBlankString(item.label, `services.items[${index}].label`),
     detailText: requireNonBlankString(item.detailText, `services.items[${index}].detailText`),
     priceText: requireNonBlankString(item.priceText, `services.items[${index}].priceText`),
+    ...(item.lateCheckoutUntil ? { lateCheckoutUntil: requireNonBlankString(item.lateCheckoutUntil, `services.items[${index}].lateCheckoutUntil`) } : {}),
   };
 }
 

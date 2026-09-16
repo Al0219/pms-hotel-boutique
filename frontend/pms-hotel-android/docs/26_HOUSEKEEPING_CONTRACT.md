@@ -1,4 +1,4 @@
-# 26 — Housekeeping / Limpieza incluida
+# 26 — Housekeeping / Limpieza
 
 **Tarea:** IMP-AND-0110 — MOB-21. **Estado final:** COMPLETADA.
 
@@ -30,10 +30,11 @@ La UI solo conserva horario, tipo y notas. Antes del submit aplica `notes.trim()
 
 ## Presentación y navegación
 
-- Launcher accesible `Limpieza incluida` en Services usa `router.push('/services/housekeeping')`; conserva los cuatro upsells.
+- Launcher accesible `Limpieza` en Services usa `router.push('/services/housekeeping')`; conserva los cuatro upsells.
 - QA reemplaza el botón superior por una flecha accesible fija, de target táctil 56 × 56, fuera del scroll y dentro de Safe Area; el CTA textual solo permanece en success.
 - Tipo de limpieza usa una lista modal desde el catálogo temporal de QA. Horario usa `TimeWheelPicker` compartido con Valet en modo de slots: `FlatList` vertical con snap, fila central indicada y selección temporal hasta `Aceptar`; `Cancelar` conserva el campo principal.
 - La pantalla reutiliza los estilos/tokens de Services y `GuestNavigationShell`; Servicios sigue activa en la ruta hija.
+- El selector evalúa cada franja por su hora de inicio contra `now + 30 minutos`. Las franjas inválidas son disabled, Aceptar no confirma un candidate inválido y el CTA/guard de submit revalidan con la hora actual; el aviso conserva la configuración para elegir otra franja.
 - `ReservationStay.room` muestra su número o exactamente `Habitación por asignar` cuando es null.
 - Query de Stay: loading, generic error/retry y NetworkError/offline/retry.
 - Mutation: submitting con formulario/CTA deshabilitados; success tras resolución; error/offline con formulario conservado y retry manual.
@@ -47,3 +48,5 @@ Suite `tests/housekeeping.test.tsx`: fixture de Stay, room nullable, defaults, s
 QA manual: PASS. Revisión WEB-3: PASS. Ambas validaciones cierran `IMP-AND-0110` como COMPLETADA. Esta aprobación no ratifica los catálogos QA como producto ni contrato Backend: las franjas y tipos adicionales siguen siendo datos frontend/mock provisionales y deberán sustituirse si producto define un catálogo autoritativo.
 
 Validación automatizada de esta reconstrucción: `npm run lint` PASS (0), `npm run typecheck` PASS (0), `npm run test` PASS (0; 14 suites / 86 tests, incluidos 14 de Housekeeping), `npx expo-doctor` PASS (21/21) y `npx expo export --platform android` PASS (0). Persiste un warning de deprecación de DateTimePicker en la suite existente de Valet.
+
+La programación session-only incorpora `serviceDate` local (`YYYY-MM-DD`) más el inicio del slot. El selector de fecha conserva el slot si sigue siendo válido y usa el slot válido más cercano si no; el submit valida inicio contra +30 minutos, fecha inclusiva `serviceDate <= ReservationStay.departure` y, solo en departure, final de slot `<= 12:00`. `12:00` es la política frontend/mock actual del Hotel Boutique y no se infiere desde copy ni se confunde con la excepción de late checkout hasta `14:00`; una futura configuración de propiedad o Backend podrá sustituirla. Para completion, Housekeeping usa igualmente el final del slot: una franja `11:00–12:00` solo puede completarse a las `12:00` o después; creación y cutoff continúan usando el inicio.

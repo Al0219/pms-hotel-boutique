@@ -30,6 +30,15 @@ export const accountStayHubStyles = StyleSheet.create({
     fontFamily: tokens.typography.family,
     fontSize: tokens.typography.size.bodyMedium,
   },
+  sectionTitle: {
+    color: tokens.color.inkStrong,
+    fontFamily: tokens.typography.family,
+    fontSize: tokens.typography.size.sectionTitle,
+    fontWeight: '600',
+  },
+  requestsSection: {
+    gap: tokens.space.sm,
+  },
   stayCard: {
     backgroundColor: tokens.color.inkStrong,
     borderRadius: tokens.radius.card,

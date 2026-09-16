@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { tokens } from '@/shared/theme/tokens';
 
@@ -16,6 +16,7 @@ type CommonProps = {
   title: string;
   value: string;
   visible: boolean;
+  isValueDisabled?: (value: string) => boolean;
 };
 
 export type TimeWheelPickerProps =
@@ -36,14 +37,27 @@ function optionText(value: number): string {
 export function TimeWheelPicker(props: TimeWheelPickerProps) {
   const [draftOverride, setDraftOverride] = useState<string | null>(null);
   const slotList = useRef<FlatList<TimeSlotOption>>(null);
-  const draft = draftOverride ?? (props.mode === 'time' ? normalizeTime(props.value) : props.value);
+  const hourList = useRef<FlatList<number>>(null);
+  const minuteList = useRef<FlatList<number>>(null);
+  const requestedDraft = draftOverride ?? (props.mode === 'time' ? normalizeTime(props.value) : props.value);
+  const firstEnabledSlot = props.mode === 'slots'
+    ? props.options.find((option) => !props.disabled && !props.isValueDisabled?.(option.value))?.value
+    : undefined;
+  const draft = props.mode === 'slots' && props.isValueDisabled?.(requestedDraft)
+    ? firstEnabledSlot ?? requestedDraft
+    : requestedDraft;
   const [draftHour, draftMinute] = normalizeTime(draft).split(':');
   const selectTimePart = (hour: string, minute: string) => setDraftOverride(`${hour}:${minute}`);
   const cancel = () => { setDraftOverride(null); props.onCancel(); };
-  const confirm = () => { setDraftOverride(null); props.onConfirm(draft); };
+  const draftDisabled = Boolean(props.disabled || props.isValueDisabled?.(draft));
+  const confirm = () => { if (draftDisabled) return; setDraftOverride(null); props.onConfirm(draft); };
 
   function centerSelectedSlot() {
-    if (props.mode !== 'slots') return;
+    if (props.mode === 'time') {
+      hourList.current?.scrollToOffset({ animated: false, offset: Number(draftHour) * slotItemHeight });
+      minuteList.current?.scrollToOffset({ animated: false, offset: Number(draftMinute) * slotItemHeight });
+      return;
+    }
     const selectedIndex = Math.max(0, props.options.findIndex((option) => option.value === draft));
     slotList.current?.scrollToOffset({ animated: false, offset: selectedIndex * slotItemHeight });
   }
@@ -70,15 +84,16 @@ export function TimeWheelPicker(props: TimeWheelPickerProps) {
                 onMomentumScrollEnd={(event) => {
                   const index = Math.max(0, Math.min(props.options.length - 1, Math.round(event.nativeEvent.contentOffset.y / slotItemHeight)));
                   const option = props.options[index];
-                  if (option) setDraftOverride(option.value);
+                  if (option && !props.disabled && !props.isValueDisabled?.(option.value)) setDraftOverride(option.value);
                 }}
                 ref={slotList}
                 renderItem={({ index, item }) => {
                   const selected = draft === item.value;
-                  return <Pressable accessibilityRole="radio" accessibilityState={{ disabled: props.disabled, selected }} disabled={props.disabled}
+                  const disabled = Boolean(props.disabled || props.isValueDisabled?.(item.value));
+                  return <Pressable accessibilityRole="radio" accessibilityState={{ disabled, selected }} disabled={disabled}
                     onPress={() => selectSlot(index, item.value)} style={[styles.slotOption, selected && styles.optionSelected]}
                     testID={`${props.testID}-option-${item.value}`}>
-                    <Text style={[styles.optionText, !selected && styles.optionMuted]}>{item.label}</Text>
+                    <Text style={[styles.optionText, !selected && styles.optionMuted, disabled && styles.optionDisabled]}>{item.label}</Text>
                   </Pressable>;
                 }}
                 showsVerticalScrollIndicator={false}
@@ -90,29 +105,35 @@ export function TimeWheelPicker(props: TimeWheelPickerProps) {
             </View>
           ) : (
             <View accessibilityLabel="Selector de hora" style={styles.wheel} testID={`${props.testID}-wheel`}>
-              <ScrollView contentContainerStyle={styles.wheelColumn} showsVerticalScrollIndicator={false}>
-                {Array.from({ length: 24 }, (_, hour) => {
+              <FlatList
+                contentContainerStyle={styles.timeWheelContent} data={Array.from({ length: 24 }, (_, hour) => hour)} decelerationRate="fast" disableIntervalMomentum initialNumToRender={24}
+                getItemLayout={(_, index) => ({ index, length: slotItemHeight, offset: slotItemHeight * index })}
+                keyExtractor={(hour) => String(hour)} onMomentumScrollEnd={(event) => selectTimePart(optionText(Math.max(0, Math.min(23, Math.round(event.nativeEvent.contentOffset.y / slotItemHeight)))), draftMinute)}
+                ref={hourList} renderItem={({ item: hour }) => {
                   const value = optionText(hour);
-                  return <Pressable accessibilityRole="radio" accessibilityState={{ disabled: props.disabled, selected: draftHour === value }} disabled={props.disabled} key={value}
-                    onPress={() => selectTimePart(value, draftMinute)} style={[styles.wheelOption, draftHour === value && styles.optionSelected]}
-                    testID={`${props.testID}-hour-${value}`}><Text style={styles.optionText}>{value}</Text></Pressable>;
-                })}
-              </ScrollView>
+                  const selected = draftHour === value;
+                  return <Pressable accessibilityRole="radio" accessibilityState={{ disabled: props.disabled, selected }} disabled={props.disabled} key={value}
+                    onPress={() => selectTimePart(value, draftMinute)} style={[styles.wheelOption, selected && styles.optionSelected]}
+                    testID={`${props.testID}-hour-${value}`}><Text style={[styles.optionText, selected && draftDisabled && styles.optionDisabled]}>{value}</Text></Pressable>;
+                }} showsVerticalScrollIndicator={false} snapToInterval={slotItemHeight} style={styles.timeList} testID={`${props.testID}-hours`} />
               <Text style={styles.separator}>:</Text>
-              <ScrollView contentContainerStyle={styles.wheelColumn} showsVerticalScrollIndicator={false}>
-                {Array.from({ length: 60 }, (_, minute) => {
+              <FlatList
+                contentContainerStyle={styles.timeWheelContent} data={Array.from({ length: 60 }, (_, minute) => minute)} decelerationRate="fast" disableIntervalMomentum initialNumToRender={60}
+                getItemLayout={(_, index) => ({ index, length: slotItemHeight, offset: slotItemHeight * index })}
+                keyExtractor={(minute) => String(minute)} onMomentumScrollEnd={(event) => selectTimePart(draftHour, optionText(Math.max(0, Math.min(59, Math.round(event.nativeEvent.contentOffset.y / slotItemHeight)))))}
+                ref={minuteList} renderItem={({ item: minute }) => {
                   const value = optionText(minute);
-                  return <Pressable accessibilityRole="radio" accessibilityState={{ disabled: props.disabled, selected: draftMinute === value }} disabled={props.disabled} key={value}
-                    onPress={() => selectTimePart(draftHour, value)} style={[styles.wheelOption, draftMinute === value && styles.optionSelected]}
-                    testID={`${props.testID}-minute-${value}`}><Text style={styles.optionText}>{value}</Text></Pressable>;
-                })}
-              </ScrollView>
+                  const selected = draftMinute === value;
+                  return <Pressable accessibilityRole="radio" accessibilityState={{ disabled: props.disabled, selected }} disabled={props.disabled} key={value}
+                    onPress={() => selectTimePart(draftHour, value)} style={[styles.wheelOption, selected && styles.optionSelected]}
+                    testID={`${props.testID}-minute-${value}`}><Text style={[styles.optionText, selected && draftDisabled && styles.optionDisabled]}>{value}</Text></Pressable>;
+                }} showsVerticalScrollIndicator={false} snapToInterval={slotItemHeight} style={styles.timeList} testID={`${props.testID}-minutes`} />
             </View>
           )}
           <View style={styles.actions}>
             <Pressable accessibilityLabel="Cancelar" accessibilityRole="button" onPress={cancel} style={styles.secondaryButton} testID={`${props.testID}-cancel`}><Text style={styles.secondaryLabel}>Cancelar</Text></Pressable>
-            <Pressable accessibilityLabel="Aceptar" accessibilityRole="button" accessibilityState={{ disabled: props.disabled }} disabled={props.disabled}
-              onPress={confirm} style={[styles.primaryButton, props.disabled && styles.buttonDisabled]} testID={`${props.testID}-confirm`}><Text style={styles.primaryLabel}>Aceptar</Text></Pressable>
+            <Pressable accessibilityLabel="Aceptar" accessibilityRole="button" accessibilityState={{ disabled: draftDisabled }} disabled={draftDisabled}
+              onPress={confirm} style={[styles.primaryButton, draftDisabled && styles.buttonDisabled]} testID={`${props.testID}-confirm`}><Text style={styles.primaryLabel}>Aceptar</Text></Pressable>
           </View>
         </View>
       </View>
@@ -132,9 +153,11 @@ const styles = StyleSheet.create({
   optionSelected: { backgroundColor: tokens.color.surfaceAccent },
   optionText: { color: tokens.color.inkStrong, fontFamily: tokens.typography.family, fontSize: tokens.typography.size.label, textAlign: 'center' },
   optionMuted: { color: tokens.color.muted },
+  optionDisabled: { color: tokens.color.muted, textDecorationLine: 'line-through' },
   wheel: { alignItems: 'center', flexDirection: 'row', height: tokens.layout.controlHeight * 3, justifyContent: 'center' },
-  wheelColumn: { gap: tokens.space.xs, paddingHorizontal: tokens.space.sm },
-  wheelOption: { borderRadius: tokens.radius.control, minWidth: tokens.layout.buttonHeight, paddingVertical: tokens.space.xs },
+  timeList: { height: slotItemHeight * 3, width: tokens.layout.buttonHeight },
+  timeWheelContent: { paddingVertical: slotItemHeight },
+  wheelOption: { alignItems: 'center', height: slotItemHeight, justifyContent: 'center' },
   separator: { color: tokens.color.inkStrong, fontSize: tokens.typography.size.sectionTitle },
   actions: { flexDirection: 'row', gap: tokens.space.sm },
   primaryButton: { alignItems: 'center', backgroundColor: tokens.color.brand, borderRadius: tokens.radius.control, flex: 1, height: tokens.layout.buttonHeight, justifyContent: 'center' },

@@ -10,8 +10,12 @@ import { NetworkError } from '@/data/remote/http/HttpError';
 import { MockRoomServiceService, RoomServiceScreen, roomServiceMenuFixture, type RoomServiceRequest, type RoomServiceService } from '@/modules/services/room-service';
 import { MockStayService, type StayService } from '@/modules/stay';
 import { currentStayFixture } from '@/modules/stay/data/mocks/currentStayFixture';
+import { SessionServiceRequestsProvider, useSessionServiceRequests } from '@/modules/service-requests';
 
-declare const require: (moduleName: string) => { existsSync(path: string): boolean };
+function RequestProbe() {
+  const { requests } = useSessionServiceRequests();
+  return <Text testID="session-service-requests-probe">{JSON.stringify(requests)}</Text>;
+}
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -23,8 +27,10 @@ function client() {
   return new QueryClient({ defaultOptions: { queries: { gcTime: 0, retry: false }, mutations: { gcTime: 0, retry: false } } });
 }
 
-async function setup(service: RoomServiceService = new MockRoomServiceService(), stayService: StayService = new MockStayService()) {
-  const ui = await render(<QueryClientProvider client={client()}><RoomServiceScreen service={service} stayService={stayService} /></QueryClientProvider>);
+const afternoonNowMs = new Date(2026, 8, 11, 13, 0, 0).getTime();
+
+async function setup(service: RoomServiceService = new MockRoomServiceService(), stayService: StayService = new MockStayService(), nowMs: () => number = () => afternoonNowMs) {
+  const ui = await render(<QueryClientProvider client={client()}><SessionServiceRequestsProvider><RequestProbe /><RoomServiceScreen nowMs={nowMs} service={service} stayService={stayService} /></SessionServiceRequestsProvider></QueryClientProvider>);
   return { ui };
 }
 
@@ -91,6 +97,7 @@ describe('Room Service — IMP-AND-0111', () => {
     expect(ui.getByTestId('room-service-cart-line-continental-breakfast')).toBeTruthy();
     expect(ui.getByTestId('room-service-total').props.children).toBe('Q 75');
     await fireEvent.changeText(ui.getByTestId('room-service-notes'), 'Sin cebolla\nPor favor');
+    expect(ui.getByTestId('room-service-notes').props.maxLength).toBe(500);
     await fireEvent.press(ui.getByTestId('room-service-cart-close'));
     await openCart(ui);
     expect(ui.getByTestId('room-service-cart-line-continental-breakfast')).toBeTruthy();
@@ -118,20 +125,53 @@ describe('Room Service — IMP-AND-0111', () => {
     const { ui } = await setup();
     await ready(ui);
     await openCart(ui);
-    expect(ui.getByText('Seleccionar hora')).toBeTruthy();
+    expect(ui.getByText('13:30')).toBeTruthy();
     expect(ui.getByTestId('room-service-submit').props.accessibilityState.disabled).toBe(true);
     await fireEvent.press(ui.getByTestId('room-service-delivery-picker'));
     expect(ui.getByTestId('room-service-delivery-time-picker-hour-00')).toBeTruthy();
     expect(ui.getByTestId('room-service-delivery-time-picker-minute-59')).toBeTruthy();
     await fireEvent.press(ui.getByTestId('room-service-delivery-time-picker-cancel'));
-    expect(ui.getByText('Seleccionar hora')).toBeTruthy();
+    expect(ui.getByText('13:30')).toBeTruthy();
     await fireEvent.press(ui.getByTestId('room-service-cart-close'));
     await fireEvent.press(ui.getByTestId('room-service-add-continental-breakfast'));
     await openCart(ui);
-    expect(ui.getByTestId('room-service-submit').props.accessibilityState.disabled).toBe(true);
+    expect(ui.getByTestId('room-service-submit').props.accessibilityState.disabled).toBe(false);
     await chooseDeliveryTime(ui);
     expect(ui.getByText('13:45')).toBeTruthy();
     expect(ui.getByTestId('room-service-submit').props.accessibilityState.disabled).toBe(false);
+  });
+
+  it('enforces the thirty-minute boundary in the picker, CTA, and stale submit guard', async () => {
+    let now = new Date(2026, 8, 11, 13, 0, 0).getTime();
+    const submitRequest = jest.fn<Promise<void>, [RoomServiceRequest]>(async () => undefined);
+    const { ui } = await setup(new MockRoomServiceService({ submitRequest }), new MockStayService(), () => now);
+    await ready(ui);
+    await fireEvent.press(ui.getByTestId('room-service-add-continental-breakfast'));
+    await openCart(ui);
+    await fireEvent.press(ui.getByTestId('room-service-delivery-picker'));
+    await fireEvent.press(ui.getByTestId('room-service-delivery-time-picker-hour-13'));
+    await fireEvent.press(ui.getByTestId('room-service-delivery-time-picker-minute-29'));
+    expect(ui.getByTestId('room-service-delivery-time-picker-confirm').props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(ui.getByTestId('room-service-delivery-time-picker-minute-30'));
+    expect(ui.getByTestId('room-service-delivery-time-picker-confirm').props.accessibilityState.disabled).toBe(false);
+    await fireEvent.press(ui.getByTestId('room-service-delivery-time-picker-confirm'));
+    expect(ui.getByTestId('room-service-submit').props.accessibilityState.disabled).toBe(false);
+    now = new Date(2026, 8, 11, 13, 1, 0).getTime();
+    await fireEvent.press(ui.getByTestId('room-service-submit'));
+    expect(submitRequest).not.toHaveBeenCalled();
+    expect(ui.getByTestId('room-service-schedule-error')).toBeTruthy();
+  });
+
+  it('shows no availability when checkout-day minimum time exceeds the normal checkout policy', async () => {
+    const nowMs = () => new Date(2026, 8, 18, 11, 31).getTime();
+    const { ui } = await setup(undefined, new MockStayService({ kind: 'success', dto: { ...currentStayFixture, departure: '2026-09-18' } }), nowMs);
+    await ready(ui);
+    await fireEvent.press(ui.getByTestId('room-service-add-continental-breakfast'));
+    await openCart(ui);
+    await waitFor(() => expect(ui.getByTestId('room-service-no-availability')).toBeTruthy());
+    expect(ui.getByTestId('room-service-submit').props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(ui.getByTestId('room-service-delivery-picker'));
+    expect(ui.getByTestId('room-service-delivery-time-picker-confirm').props.accessibilityState.disabled).toBe(true);
   });
 
   it.each(['', '   \n  '])('omits whitespace-only notes from the request (%j)', async (notes) => {
@@ -143,7 +183,7 @@ describe('Room Service — IMP-AND-0111', () => {
     await fireEvent.changeText(ui.getByTestId('room-service-notes'), notes);
     await chooseDeliveryTime(ui);
     await fireEvent.press(ui.getByTestId('room-service-submit'));
-    await waitFor(() => expect(submitRequest).toHaveBeenCalledWith({ items: [{ itemFixtureKey: 'continental-breakfast', quantity: 1 }], deliveryTime: '13:45' }));
+    await waitFor(() => expect(submitRequest).toHaveBeenCalledWith({ items: [{ itemFixtureKey: 'continental-breakfast', quantity: 1 }], deliveryTime: '13:45', serviceDate: '2026-09-11' }));
   });
 
   it('trims multiline notes and sends no Stay, Reservation, Room, total, or price data', async () => {
@@ -158,7 +198,7 @@ describe('Room Service — IMP-AND-0111', () => {
     await chooseDeliveryTime(ui);
     await fireEvent.press(ui.getByTestId('room-service-submit'));
     await waitFor(() => expect(submitRequest).toHaveBeenCalledWith({
-      items: [{ itemFixtureKey: 'continental-breakfast', quantity: 1 }], deliveryTime: '13:45', notes: 'Sin cebolla\nPor favor',
+      items: [{ itemFixtureKey: 'continental-breakfast', quantity: 1 }], deliveryTime: '13:45', serviceDate: '2026-09-11', notes: 'Sin cebolla\nPor favor',
     }));
     const request = submitRequest.mock.calls[0][0];
     for (const key of ['stayId', 'reservationId', 'roomId', 'propertyId', 'total', 'priceAmount']) expect(request).not.toHaveProperty(key);
@@ -177,8 +217,12 @@ describe('Room Service — IMP-AND-0111', () => {
     await waitFor(() => expect(ui.getByText('Enviando pedido...')).toBeTruthy());
     expect(submitRequest).toHaveBeenCalledTimes(1);
     expect(ui.queryByTestId('room-service-submit-success')).toBeNull();
+    expect(ui.getByTestId('session-service-requests-probe').props.children).toBe('[]');
     await act(async () => pending.resolve());
     await waitFor(() => expect(ui.getByTestId('room-service-submit-success')).toBeTruthy());
+    expect(JSON.parse(ui.getByTestId('session-service-requests-probe').props.children)).toEqual([
+      expect.objectContaining({ kind: 'ROOM_SERVICE', origin: 'SERVICES', status: 'REQUESTED', title: 'Room Service', summary: '11 sept 2026 · 13:45 · 1 producto' }),
+    ]);
   });
 
   it.each([
@@ -229,7 +273,7 @@ describe('Room Service — IMP-AND-0111', () => {
   it('opens from Services, keeps Servicios active, and returns through Back and success', async () => {
     const queryClient = client();
     const ui = await renderRouter({
-      _layout: () => <QueryClientProvider client={queryClient}><PathProbe /><Slot /></QueryClientProvider>,
+      _layout: () => <QueryClientProvider client={queryClient}><SessionServiceRequestsProvider><PathProbe /><Slot /></SessionServiceRequestsProvider></QueryClientProvider>,
       services: ServicesRoute,
       'services/room-service': RoomServiceRoute,
     }, { initialUrl: '/services' });
@@ -246,8 +290,4 @@ describe('Room Service — IMP-AND-0111', () => {
     expect(ui.getByTestId('pathname').props.children).toBe('/services');
   });
 
-  it('does not introduce the separate IMP-AND-0112 requests route', () => {
-    const fs = require('fs');
-    expect(fs.existsSync('app/(guest)/services/requests.tsx')).toBe(false);
-  });
 });

@@ -1,9 +1,15 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { renderRouter } from 'expo-router/testing-library';
+import { Slot } from 'expo-router';
+import { useEffect, useRef } from 'react';
+import { Text } from 'react-native';
 
 import { NetworkError } from '@/data/remote/http/HttpError';
 import { valetScreenFixture } from '@/data/mocks/valet/valetScreenFixture';
 import { GuestNavigationTabs } from '@/modules/navigation';
+import { SessionServiceRequestsProvider, type AddSessionServiceRequestInput, useSessionServiceRequests } from '@/modules/service-requests';
+import { initialSessionVehiclesState, SessionVehiclesProvider, sessionVehiclesReducer } from '@/modules/valet';
 import { mapValetScreenFixtureDto, MockValetService, type ReserveTransferFixtureInput, ValetScreen } from '@/modules/valet';
 import { type ExternalMapService } from '@/modules/valet/data/services/GoogleMapsLinkingService';
 import { MockTransferRouteService } from '@/modules/valet/data/mocks/MockTransferRouteService';
@@ -13,14 +19,28 @@ import { calculateTransferFare, transferFareConfig } from '@/modules/valet/domai
 declare const require: (name: string) => { readFileSync(path: string, encoding: string): string };
 
 function deferred<T>() { let resolve!: (value: T) => void; const promise = new Promise<T>((next) => { resolve = next; }); return { promise, resolve }; }
+function RequestProbe() { const { requests } = useSessionServiceRequests(); return <Text testID="session-service-requests-probe">{JSON.stringify(requests)}</Text>; }
+function SeedRequests({ requests }: { requests: readonly AddSessionServiceRequestInput[] }) {
+  const { addRequest } = useSessionServiceRequests();
+  const seeded = useRef(false);
+  useEffect(() => { if (!seeded.current) { seeded.current = true; requests.forEach(addRequest); } }, [addRequest, requests]);
+  return null;
+}
 const fixedNow = new Date(2026, 8, 11, 15, 20, 0);
 const fixedClock: Clock = { getNow: () => new Date(fixedNow) };
 function queryClient() { return new QueryClient({ defaultOptions: { queries: { gcTime: 0, retry: false }, mutations: { gcTime: 0, retry: false } } }); }
-async function renderValet(service = new MockValetService(), routeService?: MockTransferRouteService, mapService?: ExternalMapService, clock: Clock = fixedClock) { return render(<QueryClientProvider client={queryClient()}><ValetScreen clock={clock} mapService={mapService} routeService={routeService} service={service} /></QueryClientProvider>); }
+async function renderValet(service = new MockValetService(), routeService?: MockTransferRouteService, mapService?: ExternalMapService, clock: Clock = fixedClock) { return render(<QueryClientProvider client={queryClient()}><SessionServiceRequestsProvider><SessionVehiclesProvider><RequestProbe /><ValetScreen clock={clock} mapService={mapService} routeService={routeService} service={service} /></SessionVehiclesProvider></SessionServiceRequestsProvider></QueryClientProvider>); }
 async function ready(rendered: Awaited<ReturnType<typeof render>>) { await waitFor(() => expect(rendered.getByTestId('valet-screen')).toBeTruthy()); }
 async function openTransfer(rendered: Awaited<ReturnType<typeof render>>) { await fireEvent.press(rendered.getByTestId('valet-transfer-card')); await waitFor(() => expect(rendered.getByTestId('valet-transfer-modal')).toBeTruthy()); }
 
 describe('Transporte y valet', () => {
+  it('keeps the vehicle registry empty initially, supports multiple session vehicles, and changes only physical status', () => {
+    const parked = { sessionVehicleId: 'session-vehicle-1', make: 'Toyota', model: 'Corolla', platePrefix: 'P' as const, plateBody: '123ABC', status: 'PARKED' as const };
+    const withGuest = { sessionVehicleId: 'session-vehicle-2', make: 'Honda', model: 'Civic', platePrefix: 'P' as const, plateBody: '456DEF', color: 'Azul', status: 'WITH_GUEST' as const };
+    const added = sessionVehiclesReducer(sessionVehiclesReducer(initialSessionVehiclesState, { type: 'ADD', vehicle: parked }), { type: 'ADD', vehicle: withGuest });
+    const received = sessionVehiclesReducer(added, { type: 'SET_STATUS', sessionVehicleId: parked.sessionVehicleId, status: 'WITH_GUEST' });
+    expect(initialSessionVehiclesState.vehicles).toEqual([]); expect(added.vehicles).toHaveLength(2); expect(received.vehicles[0]).toMatchObject({ status: 'WITH_GUEST', platePrefix: 'P', plateBody: '123ABC' });
+  });
   it('maps fixture places, active vehicle, and semantic transfer defaults to Domain', () => {
     const domain = mapValetScreenFixtureDto(valetScreenFixture);
     expect(domain.activeVehicleKey).toBe('valet-vehicle-primary');
@@ -42,7 +62,7 @@ describe('Transporte y valet', () => {
 
   it('renders Traslado and the approved Guest V3 states', async () => {
     const rendered = await renderValet(); await ready(rendered);
-    expect(rendered.getByText('Traslado')).toBeTruthy(); expect(rendered.getByText('Aeropuerto Internacional La Aurora')).toBeTruthy();
+    expect(rendered.getByText('Solicitar traslado')).toBeTruthy(); expect(rendered.getByText('Aeropuerto Internacional La Aurora')).toBeTruthy();
     const navigation = await render(<GuestNavigationTabs pathname="/valet" />);
     expect(navigation.getByLabelText('Valet').props.accessibilityState).toMatchObject({ disabled: false, selected: true });
     expect(navigation.getByLabelText('Servicios').props.accessibilityState.disabled).toBe(false); expect(navigation.getByLabelText('Chat').props.accessibilityState.disabled).toBe(false); expect(navigation.getByLabelText('Cuenta').props.accessibilityState.disabled).toBe(false);
@@ -54,10 +74,69 @@ describe('Transporte y valet', () => {
     const offline = await renderValet(new MockValetService({ getScreen: async () => { throw new NetworkError(); } })); await waitFor(() => expect(offline.getByTestId('valet-screen-offline')).toBeTruthy());
   });
 
-  it('selects a local vehicle and sends only its fixture key after pending resolves', async () => {
+  it('registers a parked guest vehicle and creates a vehicle request only after pending resolves', async () => {
     const wait = deferred<{ vehicleFixtureKey: string; requestReferenceText: string }>(); const requestVehicle = jest.fn(() => wait.promise); const rendered = await renderValet(new MockValetService({ requestVehicle })); await ready(rendered);
-    await fireEvent.press(rendered.getByTestId('valet-vehicle-card')); await fireEvent.press(rendered.getByTestId('valet-vehicle-option-valet-vehicle-secondary')); await fireEvent.press(rendered.getByTestId('valet-request-button')); await fireEvent.press(rendered.getByTestId('valet-request-button'));
-    expect(requestVehicle).toHaveBeenCalledTimes(1); expect(requestVehicle).toHaveBeenCalledWith({ vehicleFixtureKey: 'valet-vehicle-secondary' }); expect(rendered.queryByTestId('valet-request-success')).toBeNull(); await act(async () => { wait.resolve({ vehicleFixtureKey: 'valet-vehicle-secondary', requestReferenceText: 'VAL-0148' }); }); await waitFor(() => expect(rendered.getByTestId('valet-request-success')).toBeTruthy()); expect(rendered.getByText('Mazda CX-5 · Blanco')).toBeTruthy();
+    await fireEvent.press(rendered.getByTestId('valet-register-vehicle')); await fireEvent.changeText(rendered.getByTestId('register-vehicle-make'), 'Toyota'); await fireEvent.changeText(rendered.getByTestId('register-vehicle-model'), 'Corolla'); await fireEvent.changeText(rendered.getByTestId('register-vehicle-license-plate'), '123ABC'); await fireEvent.press(rendered.getByTestId('register-vehicle-submit'));
+    await fireEvent.press(rendered.getByTestId('valet-register-vehicle')); await fireEvent.changeText(rendered.getByTestId('register-vehicle-make'), 'Honda'); await fireEvent.changeText(rendered.getByTestId('register-vehicle-model'), 'Civic'); await fireEvent.changeText(rendered.getByTestId('register-vehicle-license-plate'), '456DEF'); await fireEvent.press(rendered.getByTestId('register-vehicle-status-WITH_GUEST')); expect(rendered.getByTestId('register-vehicle-status-WITH_GUEST').props.accessibilityState.selected).toBe(true); expect(rendered.getByTestId('register-vehicle-status-PARKED').props.accessibilityState.selected).toBe(false); await fireEvent.press(rendered.getByTestId('register-vehicle-status-PARKED')); await fireEvent.press(rendered.getByTestId('register-vehicle-status-WITH_GUEST')); await fireEvent.press(rendered.getByTestId('register-vehicle-submit'));
+    await fireEvent.press(rendered.getByTestId('valet-vehicle-card')); expect(rendered.getByTestId('valet-session-vehicle-option-session-vehicle-2').props.accessibilityState.disabled).toBe(true); await fireEvent.press(rendered.getByTestId('valet-session-vehicle-option-session-vehicle-1')); expect(rendered.getByTestId('valet-vehicle-modal')).toBeTruthy(); expect(rendered.getByTestId('valet-vehicle-configuration')).toBeTruthy(); expect(rendered.getByTestId('valet-request-button').props.accessibilityState.disabled).toBe(false); expect(requestVehicle).not.toHaveBeenCalled(); await fireEvent.press(rendered.getByTestId('valet-change-vehicle')); expect(rendered.queryByTestId('valet-vehicle-configuration')).toBeNull(); await fireEvent.press(rendered.getByTestId('valet-session-vehicle-option-session-vehicle-1')); await fireEvent.press(rendered.getByTestId('valet-request-time-picker')); await fireEvent.press(rendered.getByTestId('valet-request-time-picker-wheel-hour-16')); await fireEvent.press(rendered.getByTestId('valet-request-time-picker-wheel-minute-00')); await fireEvent.press(rendered.getByTestId('valet-request-time-picker-wheel-confirm')); await fireEvent.press(rendered.getByTestId('valet-request-button')); await fireEvent.press(rendered.getByTestId('valet-request-button'));
+    expect(requestVehicle).toHaveBeenCalledTimes(1); expect(rendered.queryByTestId('valet-request-success')).toBeNull(); expect(rendered.getByTestId('session-service-requests-probe').props.children).toBe('[]'); await act(async () => { wait.resolve({ vehicleFixtureKey: 'valet-vehicle-primary', requestReferenceText: 'VAL-0148' }); }); await waitFor(() => expect(rendered.getByTestId('valet-request-success')).toBeTruthy()); expect(JSON.parse(rendered.getByTestId('session-service-requests-probe').props.children)).toEqual([expect.objectContaining({ kind: 'VEHICLE_REQUEST', origin: 'VALET', status: 'REQUESTED', title: 'Solicitar mi vehículo', summary: expect.stringContaining('Toyota Corolla') })]);
+  });
+
+  it('opens a blank create draft after registering a vehicle without leaving Valet', async () => {
+    const rendered = await renderValet(); await ready(rendered);
+    await fireEvent.press(rendered.getByTestId('valet-register-vehicle'));
+    await fireEvent.changeText(rendered.getByTestId('register-vehicle-make'), 'Toyota'); await fireEvent.changeText(rendered.getByTestId('register-vehicle-model'), 'Corolla'); await fireEvent.changeText(rendered.getByTestId('register-vehicle-license-plate'), '123ABC'); await fireEvent.press(rendered.getByTestId('register-vehicle-submit'));
+    await waitFor(() => expect(rendered.getByText('Toyota Corolla')).toBeTruthy());
+    await fireEvent.press(rendered.getByTestId('valet-register-vehicle'));
+    expect(rendered.getByTestId('register-vehicle-make').props.value).toBe('');
+    expect(rendered.getByTestId('register-vehicle-model').props.value).toBe('');
+    expect(rendered.getByTestId('register-vehicle-license-plate').props.value).toBe('');
+    expect(rendered.getByTestId('register-vehicle-status-PARKED').props.accessibilityState.selected).toBe(true);
+    await fireEvent.changeText(rendered.getByTestId('register-vehicle-make'), 'Honda'); await fireEvent.changeText(rendered.getByTestId('register-vehicle-model'), 'Civic'); await fireEvent.changeText(rendered.getByTestId('register-vehicle-license-plate'), '456DEF'); await fireEvent.press(rendered.getByTestId('register-vehicle-submit'));
+    await waitFor(() => expect(rendered.getByText('Honda Civic')).toBeTruthy());
+    expect(rendered.getByText('Toyota Corolla')).toBeTruthy();
+    await fireEvent.press(rendered.getByTestId('valet-edit-session-vehicle-1'));
+    expect(rendered.getByRole('header', { name: 'Editar vehículo' })).toBeTruthy();
+    expect(rendered.getByTestId('register-vehicle-make').props.value).toBe('Toyota');
+    await fireEvent.changeText(rendered.getByTestId('register-vehicle-color'), 'Rojo'); await fireEvent.press(rendered.getByTestId('register-vehicle-submit'));
+    await waitFor(() => expect(rendered.getByText('Toyota Corolla · Rojo')).toBeTruthy());
+    expect(rendered.getByText('Honda Civic')).toBeTruthy();
+  });
+
+  it('applies the thirty-minute vehicle rule to the picker, CTA, and stale submit guard', async () => {
+    let now = new Date(2026, 8, 11, 13, 0, 0);
+    const clock: Clock = { getNow: () => new Date(now) };
+    const requestVehicle = jest.fn(async () => ({ vehicleFixtureKey: 'valet-vehicle-primary', requestReferenceText: 'VAL-0300' }));
+    const rendered = await renderValet(new MockValetService({ requestVehicle }), undefined, undefined, clock); await ready(rendered);
+    await fireEvent.press(rendered.getByTestId('valet-register-vehicle')); await fireEvent.changeText(rendered.getByTestId('register-vehicle-make'), 'Toyota'); await fireEvent.changeText(rendered.getByTestId('register-vehicle-model'), 'Corolla'); await fireEvent.changeText(rendered.getByTestId('register-vehicle-license-plate'), '123ABC'); await fireEvent.press(rendered.getByTestId('register-vehicle-submit'));
+    await fireEvent.press(rendered.getByTestId('valet-vehicle-card')); await fireEvent.press(rendered.getByTestId('valet-session-vehicle-option-session-vehicle-1')); await fireEvent.press(rendered.getByTestId('valet-request-time-picker'));
+    await fireEvent.press(rendered.getByTestId('valet-request-time-picker-wheel-hour-13')); await fireEvent.press(rendered.getByTestId('valet-request-time-picker-wheel-minute-29'));
+    expect(rendered.getByTestId('valet-request-time-picker-wheel-confirm').props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(rendered.getByTestId('valet-request-time-picker-wheel-minute-30')); await fireEvent.press(rendered.getByTestId('valet-request-time-picker-wheel-confirm'));
+    expect(rendered.getByTestId('valet-request-button').props.accessibilityState.disabled).toBe(false);
+    now = new Date(2026, 8, 11, 13, 1, 0);
+    await fireEvent.press(rendered.getByTestId('valet-request-button'));
+    expect(requestVehicle).not.toHaveBeenCalled();
+    expect(rendered.getByTestId('valet-request-schedule-error')).toBeTruthy();
+  });
+
+  it('limits, trims, normalizes, and rejects duplicate vehicle registration data with inline errors', async () => {
+    const rendered = await renderValet(); await ready(rendered);
+    await fireEvent.press(rendered.getByTestId('valet-register-vehicle'));
+    await fireEvent.press(rendered.getByTestId('register-vehicle-plate-prefix'));
+    expect(rendered.getByTestId('register-vehicle-prefix-DIS')).toBeTruthy();
+    await fireEvent.press(rendered.getByTestId('register-vehicle-prefix-C'));
+    expect(rendered.getByTestId('register-vehicle-make').props.maxLength).toBe(40);
+    expect(rendered.getByTestId('register-vehicle-model').props.maxLength).toBe(40);
+    expect(rendered.getByTestId('register-vehicle-license-plate').props.maxLength).toBe(6);
+    expect(rendered.getByTestId('register-vehicle-license-plate').props.autoCapitalize).toBe('characters');
+    expect(rendered.getByTestId('register-vehicle-color').props.maxLength).toBe(30);
+    await fireEvent.press(rendered.getByTestId('register-vehicle-submit'));
+    expect(rendered.getByText('Marca requerida.')).toBeTruthy(); expect(rendered.getByText('Modelo requerido.')).toBeTruthy(); expect(rendered.getByTestId('register-vehicle-license-plate-error').props.children).toBe('Placa requerida.');
+    await fireEvent.changeText(rendered.getByTestId('register-vehicle-make'), ' Mercedes-Benz '); await fireEvent.changeText(rendered.getByTestId('register-vehicle-model'), ' GLE '); await fireEvent.changeText(rendered.getByTestId('register-vehicle-license-plate'), '001SAT'); await fireEvent.changeText(rendered.getByTestId('register-vehicle-color'), ' Azul '); await fireEvent.press(rendered.getByTestId('register-vehicle-submit'));
+    await waitFor(() => expect(rendered.getByText('Mercedes-Benz GLE · Azul')).toBeTruthy()); expect(rendered.getByText(/C 001SAT/)).toBeTruthy();
+    await fireEvent.press(rendered.getByTestId('valet-register-vehicle')); await fireEvent.press(rendered.getByTestId('register-vehicle-plate-prefix')); await fireEvent.press(rendered.getByTestId('register-vehicle-prefix-C')); await fireEvent.changeText(rendered.getByTestId('register-vehicle-make'), 'Toyota'); await fireEvent.changeText(rendered.getByTestId('register-vehicle-model'), 'Corolla'); await fireEvent.changeText(rendered.getByTestId('register-vehicle-license-plate'), '001sat'); await fireEvent.press(rendered.getByTestId('register-vehicle-submit'));
+    expect(rendered.getByTestId('register-vehicle-license-plate-error').props.children).toBe('Este vehículo ya está registrado.');
   });
 
   it('calculates Hotel to place, presents route/fare, and reserves with no pickup', async () => {
@@ -65,6 +144,50 @@ describe('Transporte y valet', () => {
     await waitFor(() => expect(rendered.getByTestId('transfer-route-estimate')).toBeTruthy()); expect(rendered.queryByTestId('transfer-pickup-selector')).toBeNull(); await fireEvent.press(rendered.getByTestId('transfer-reserve-button')); await waitFor(() => expect(rendered.getByTestId('valet-transfer-success')).toBeTruthy());
     expect(reserveTransfer).toHaveBeenCalledWith(expect.objectContaining({ destinationType: 'PLACE', destinationPlaceFixtureKey: 'place-airport', routeEstimate: expect.objectContaining({ distanceKm: expect.any(Number) }), fareEstimate: expect.objectContaining({ estimatedPrice: expect.any(Number) }) }));
     expect(reserveTransfer.mock.calls[0][0]).not.toHaveProperty('pickupPlaceFixtureKey');
+  });
+
+  it('opens a fresh transfer create draft after success and adds a second request', async () => {
+    const reserveTransfer = jest.fn<Promise<{ confirmationText: string; referenceText: string }>, [ReserveTransferFixtureInput]>(async () => ({ confirmationText: 'Traslado reservado', referenceText: 'TRF-0220' }));
+    const rendered = await renderValet(new MockValetService({ reserveTransfer })); await ready(rendered); await openTransfer(rendered);
+    await fireEvent.press(rendered.getByTestId('transfer-destination-selector')); await fireEvent.press(rendered.getByTestId('transfer-place-option-place-hotel'));
+    await fireEvent.press(rendered.getByTestId('transfer-pickup-selector')); await fireEvent.press(rendered.getByTestId('transfer-place-option-place-oakland'));
+    await fireEvent.press(rendered.getByTestId('transfer-passengers-increment'));
+    await waitFor(() => expect(rendered.getByTestId('transfer-route-estimate')).toBeTruthy());
+    await fireEvent.press(rendered.getByTestId('transfer-reserve-button')); await waitFor(() => expect(rendered.getByTestId('valet-transfer-success')).toBeTruthy());
+    await fireEvent.press(rendered.getByText('Cerrar'));
+    await fireEvent.press(rendered.getByTestId('valet-transfer-card')); await waitFor(() => expect(rendered.getByTestId('valet-transfer-modal')).toBeTruthy());
+    expect(rendered.getByLabelText('Destino').props.value).toBe('Aeropuerto Internacional La Aurora');
+    expect(rendered.queryByTestId('transfer-pickup-selector')).toBeNull();
+    expect(rendered.getByTestId('transfer-passengers-value').props.children).toBe(2);
+    await waitFor(() => expect(rendered.getByTestId('transfer-route-estimate')).toBeTruthy());
+    await fireEvent.press(rendered.getByTestId('transfer-reserve-button')); await waitFor(() => expect(rendered.getByTestId('valet-transfer-success')).toBeTruthy());
+    const transfers = JSON.parse(rendered.getByTestId('session-service-requests-probe').props.children).filter((request: { kind: string }) => request.kind === 'TRANSFER');
+    expect(transfers).toHaveLength(2);
+    expect(transfers[0].sessionRequestId).not.toBe(transfers[1].sessionRequestId);
+  });
+
+  it('loads an explicit transfer edit request and updates only that request', async () => {
+    const scheduledAtMs = new Date(2026, 8, 11, 16, 0).getTime();
+    const first: AddSessionServiceRequestInput = { kind: 'TRANSFER', origin: 'VALET', status: 'REQUESTED', title: 'Traslado', details: { type: 'TRANSFER', destinationKey: 'place-airport', scheduledAtMs, passengers: 1 } };
+    const second: AddSessionServiceRequestInput = { kind: 'TRANSFER', origin: 'VALET', status: 'REQUESTED', title: 'Traslado', details: { type: 'TRANSFER', destinationKey: 'place-oakland', scheduledAtMs: new Date(2026, 8, 12, 9, 0).getTime(), passengers: 3 } };
+    const dateNow = jest.spyOn(Date, 'now').mockReturnValue(fixedNow.getTime());
+    try {
+      const ui = await renderRouter({
+        _layout: () => <QueryClientProvider client={queryClient()}><SessionServiceRequestsProvider><SessionVehiclesProvider><SeedRequests requests={[first, second]} /><RequestProbe /><Slot /></SessionVehiclesProvider></SessionServiceRequestsProvider></QueryClientProvider>,
+        valet: () => <ValetScreen clock={fixedClock} service={new MockValetService()} />,
+      }, { initialUrl: '/valet?editRequestId=session-request-1&returnTo=requests' });
+      await waitFor(() => expect(ui.getByTestId('valet-transfer-modal')).toBeTruthy());
+      expect(ui.getByLabelText('Destino').props.value).toBe('Aeropuerto Internacional La Aurora');
+      expect(ui.getByTestId('transfer-passengers-value').props.children).toBe(1);
+      await fireEvent.press(ui.getByTestId('transfer-passengers-increment'));
+      await waitFor(() => expect(ui.getByTestId('transfer-route-estimate')).toBeTruthy());
+      await fireEvent.press(ui.getByTestId('transfer-reserve-button'));
+      await waitFor(() => expect(ui.getByTestId('valet-transfer-success')).toBeTruthy());
+      const requests = JSON.parse(ui.getByTestId('session-service-requests-probe').props.children);
+      expect(requests).toHaveLength(2);
+      expect(requests.find((request: { sessionRequestId: string }) => request.sessionRequestId === 'session-request-1').details.passengers).toBe(2);
+      expect(requests.find((request: { sessionRequestId: string }) => request.sessionRequestId === 'session-request-2').details).toEqual(second.details);
+    } finally { dateNow.mockRestore(); }
   });
 
   it('requires a non-Hotel pickup for place to Hotel and includes it only then', async () => {
@@ -106,9 +229,13 @@ describe('Transporte y valet', () => {
     await fireEvent.press(rendered.getByTestId('transfer-reserve-button'));
     await waitFor(() => expect(rendered.getByTestId('valet-transfer-error')).toBeTruthy());
     expect(rendered.getByTestId('transfer-date-picker-button')).toBeTruthy();
+    expect(rendered.getByTestId('session-service-requests-probe').props.children).toBe('[]');
     await fireEvent.press(rendered.getByText('Reintentar'));
     await waitFor(() => expect(rendered.getByTestId('valet-transfer-success')).toBeTruthy());
     expect(reserveTransfer).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(rendered.getByTestId('session-service-requests-probe').props.children)).toEqual([
+      expect.objectContaining({ kind: 'TRANSFER', origin: 'VALET', status: 'REQUESTED', title: 'Traslado', summary: 'Aeropuerto Internacional La Aurora · 9/11/2026 · 15:50' }),
+    ]);
   });
 
   it('keeps the transfer draft and reports offline when reservation has a NetworkError', async () => {
@@ -164,6 +291,7 @@ describe('Transporte y valet', () => {
     const rendered = await renderValet(); await ready(rendered); await openTransfer(rendered);
     expect(rendered.queryByTestId('transfer-date-input')).toBeNull();
     expect(rendered.queryByTestId('transfer-time-input')).toBeNull();
+    expect(rendered.getByLabelText('Destino').props.maxLength).toBe(100);
     await fireEvent.press(rendered.getByTestId('transfer-date-picker-button'));
     expect(rendered.getByTestId('transfer-date-picker').props.mode).toBe('date');
     expect(new Date(rendered.getByTestId('transfer-date-picker').props.minimumDate)).toEqual(new Date(2026, 8, 11));
@@ -181,9 +309,8 @@ describe('Transporte y valet', () => {
     await fireEvent.press(rendered.getByTestId('transfer-time-picker-button'));
     await fireEvent.press(rendered.getByTestId('transfer-time-picker-hour-15'));
     await fireEvent.press(rendered.getByTestId('transfer-time-picker-minute-49'));
-    await fireEvent.press(rendered.getByTestId('transfer-time-picker-confirm'));
-    await waitFor(() => expect(rendered.getByTestId('transfer-schedule-error')).toBeTruthy());
-    expect(rendered.getByTestId('transfer-reserve-button').props.accessibilityState.disabled).toBe(true);
+    expect(rendered.getByTestId('transfer-time-picker-confirm').props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(rendered.getByTestId('transfer-time-picker-cancel'));
     expect(rendered.getByTestId('transfer-route-estimate')).toBeTruthy();
     await fireEvent.press(rendered.getByTestId('transfer-date-picker-button'));
     await fireEvent(rendered.getByTestId('transfer-date-picker'), 'onChange', { type: 'set', nativeEvent: { timestamp: new Date(2026, 8, 12).getTime(), utcOffset: 0 } });
