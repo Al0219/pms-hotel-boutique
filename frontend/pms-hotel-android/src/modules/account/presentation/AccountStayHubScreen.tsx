@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { accountStayHubStyles } from '@/modules/account/presentation/accountStayHubStyles';
-import { GuestNavigationShell } from '@/modules/navigation';
+import { GuestNavigationShell, useGuestNotice } from '@/modules/navigation';
+import { ConfirmationModal } from '@/shared/components';
 import { filterServiceRequests, SessionServiceRequestCard, sessionServiceRequestEditPath, useCompleteSessionServiceRequest, useSessionServiceRequests } from '@/modules/service-requests';
 import { type StayService } from '@/modules/stay/data/services/StayService';
 import { useCurrentStay } from '@/modules/stay/presentation/hooks/useCurrentStay';
@@ -65,7 +66,9 @@ export function AccountStayHubScreen({ service }: AccountStayHubScreenProps) {
   const { removeRequest, requests } = useSessionServiceRequests();
   const completeSessionRequest = useCompleteSessionServiceRequest();
   const [nowMs] = useState(() => Date.now());
+  const { dismissNotice, notice } = useGuestNotice();
   const activeRequests = filterServiceRequests(requests, 'ACTIVE');
+  const submittedConfirmationVisible = notice?.type === 'SERVICE_REQUEST_SUCCESS';
 
   if (remoteState.kind === 'loading') {
     return (
@@ -139,6 +142,7 @@ export function AccountStayHubScreen({ service }: AccountStayHubScreenProps) {
           {requests.length > 0 ? <Pressable accessibilityRole="button" onPress={() => router.push('/services/requests')} style={accountStayHubStyles.button} testID="account-session-requests-all"><Text style={accountStayHubStyles.buttonLabel}>Ver todos</Text></Pressable> : null}
         </View>
       </ScrollView>
+      <ConfirmationModal body={notice?.mode === 'UPDATED' ? 'Los cambios se guardaron correctamente.' : 'Tu solicitud fue registrada correctamente.'} confirmLabel="Entendido" onCancel={dismissNotice} onConfirm={dismissNotice} showCancel={false} testID="account-service-request-submitted" title={notice?.mode === 'UPDATED' ? 'Solicitud actualizada' : 'Solicitud enviada'} visible={submittedConfirmationVisible} />
       <GuestNavigationShell />
     </View>
   );

@@ -44,6 +44,10 @@ async function openCart(ui: Awaited<ReturnType<typeof render>>) {
 }
 
 async function chooseDeliveryTime(ui: Awaited<ReturnType<typeof render>>, hour = '13', minute = '45') {
+  if (!ui.queryByTestId('room-service-schedule-panel')) {
+    await fireEvent.press(ui.getByTestId('room-service-next'));
+    await waitFor(() => expect(ui.getByTestId('room-service-schedule-panel')).toBeTruthy());
+  }
   await fireEvent.press(ui.getByTestId('room-service-delivery-picker'));
   await waitFor(() => expect(ui.getByTestId('room-service-delivery-time-picker-wheel')).toBeTruthy());
   await fireEvent.press(ui.getByTestId(`room-service-delivery-time-picker-hour-${hour}`));
@@ -68,7 +72,7 @@ describe('Room Service — IMP-AND-0111', () => {
 
     await openCart(ui);
     expect(ui.getByText('Aún no has agregado productos.')).toBeTruthy();
-    expect(ui.getByTestId('room-service-submit').props.accessibilityState.disabled).toBe(true);
+    expect(ui.getByTestId('room-service-next').props.accessibilityState.disabled).toBe(true);
     await fireEvent.press(ui.getByTestId('room-service-cart-close'));
     expect(ui.queryByTestId('room-service-cart-panel')).toBeNull();
   });
@@ -92,7 +96,7 @@ describe('Room Service — IMP-AND-0111', () => {
   it('keeps cart lines and multiline notes after closing and reopening the cart', async () => {
     const { ui } = await setup();
     await ready(ui);
-    await fireEvent.press(ui.getByTestId('room-service-add-continental-breakfast'));
+    await fireEvent.press(ui.getByTestId('room-service-product-continental-breakfast-increment'));
     await openCart(ui);
     expect(ui.getByTestId('room-service-cart-line-continental-breakfast')).toBeTruthy();
     expect(ui.getByTestId('room-service-total').props.children).toBe('Q 75');
@@ -107,35 +111,67 @@ describe('Room Service — IMP-AND-0111', () => {
   it('manages quantities and derives the cart total in the panel', async () => {
     const { ui } = await setup();
     await ready(ui);
-    await fireEvent.press(ui.getByTestId('room-service-add-continental-breakfast'));
-    await fireEvent.press(ui.getByTestId('room-service-increment-continental-breakfast'));
+    await fireEvent.press(ui.getByTestId('room-service-product-continental-breakfast-increment'));
+    await fireEvent.press(ui.getByTestId('room-service-product-continental-breakfast-increment'));
     await fireEvent.press(ui.getByTestId('room-service-category-Bebidas'));
-    await fireEvent.press(ui.getByTestId('room-service-add-coffee'));
+    await fireEvent.press(ui.getByTestId('room-service-product-coffee-increment'));
     await openCart(ui);
     expect(ui.getByTestId('room-service-total').props.children).toBe('Q 170');
-    await fireEvent.press(ui.getByTestId('room-service-decrement-continental-breakfast'));
-    await fireEvent.press(ui.getByTestId('room-service-decrement-continental-breakfast'));
+    await fireEvent.press(ui.getByTestId('room-service-cart-item-continental-breakfast-decrement'));
+    await fireEvent.press(ui.getByTestId('room-service-cart-item-continental-breakfast-decrement'));
     expect(ui.queryByTestId('room-service-cart-line-continental-breakfast')).toBeNull();
     expect(ui.getByTestId('room-service-total').props.children).toBe('Q 20');
-    await fireEvent.press(ui.getByTestId('room-service-remove-coffee'));
-    expect(ui.getByText('Aún no has agregado productos.')).toBeTruthy();
+    expect(ui.queryByTestId('room-service-remove-coffee')).toBeNull();
+    expect(ui.getByTestId('room-service-cart-coffee')).toBeTruthy();
+  });
+
+  it('warns only when a create cart leaves the service flow and preserves it on cancel', async () => {
+    const { ui } = await setup();
+    await ready(ui);
+    await fireEvent.press(ui.getByTestId('room-service-product-continental-breakfast-increment'));
+    await openCart(ui);
+    await fireEvent.press(ui.getByTestId('room-service-cart-close'));
+    expect(ui.queryByTestId('room-service-discard-modal')).toBeNull();
+    await fireEvent.press(ui.getByTestId('room-service-back-arrow'));
+    expect(ui.getByTestId('room-service-discard-modal')).toBeTruthy();
+    await fireEvent.press(ui.getByTestId('room-service-discard-modal-cancel'));
+    expect(ui.getByTestId('room-service-cart-badge').props.children).toBe(1);
+  });
+
+  it('caps each Room Service product at five while allowing independent lines and their total badge', async () => {
+    const { ui } = await setup();
+    await ready(ui);
+    await fireEvent.press(ui.getByTestId('room-service-category-Bebidas'));
+    for (let index = 0; index < 5; index += 1) await fireEvent.press(ui.getByTestId('room-service-product-coffee-increment'));
+    expect(ui.getByTestId('room-service-product-coffee-increment').props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(ui.getByTestId('room-service-product-coffee-increment'));
+    expect(ui.getByLabelText('Cantidad de Café: 5')).toBeTruthy();
+    await fireEvent.press(ui.getByTestId('room-service-product-natural-juice-increment'));
+    await fireEvent.press(ui.getByTestId('room-service-product-natural-juice-increment'));
+    await fireEvent.press(ui.getByTestId('room-service-product-natural-juice-increment'));
+    await fireEvent.press(ui.getByTestId('room-service-product-natural-juice-increment'));
+    await fireEvent.press(ui.getByTestId('room-service-product-natural-juice-increment'));
+    await openCart(ui);
+    expect(ui.getByTestId('room-service-total').props.children).toBe('Q 225');
+    expect(ui.getByTestId('room-service-cart-item-coffee-increment').props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(ui.getByTestId('room-service-cart-close'));
+    expect(ui.getByTestId('room-service-cart-badge').props.children).toBe(10);
   });
 
   it('uses the shared free-time picker, preserves the value on cancel, and enables submit only with an item and time', async () => {
     const { ui } = await setup();
     await ready(ui);
+    await fireEvent.press(ui.getByTestId('room-service-product-continental-breakfast-increment'));
     await openCart(ui);
+    await fireEvent.press(ui.getByTestId('room-service-next'));
+    await waitFor(() => expect(ui.getByTestId('room-service-schedule-panel')).toBeTruthy());
     expect(ui.getByText('13:30')).toBeTruthy();
-    expect(ui.getByTestId('room-service-submit').props.accessibilityState.disabled).toBe(true);
+    expect(ui.getByTestId('room-service-submit').props.accessibilityState.disabled).toBe(false);
     await fireEvent.press(ui.getByTestId('room-service-delivery-picker'));
     expect(ui.getByTestId('room-service-delivery-time-picker-hour-00')).toBeTruthy();
     expect(ui.getByTestId('room-service-delivery-time-picker-minute-59')).toBeTruthy();
     await fireEvent.press(ui.getByTestId('room-service-delivery-time-picker-cancel'));
     expect(ui.getByText('13:30')).toBeTruthy();
-    await fireEvent.press(ui.getByTestId('room-service-cart-close'));
-    await fireEvent.press(ui.getByTestId('room-service-add-continental-breakfast'));
-    await openCart(ui);
-    expect(ui.getByTestId('room-service-submit').props.accessibilityState.disabled).toBe(false);
     await chooseDeliveryTime(ui);
     expect(ui.getByText('13:45')).toBeTruthy();
     expect(ui.getByTestId('room-service-submit').props.accessibilityState.disabled).toBe(false);
@@ -146,8 +182,10 @@ describe('Room Service — IMP-AND-0111', () => {
     const submitRequest = jest.fn<Promise<void>, [RoomServiceRequest]>(async () => undefined);
     const { ui } = await setup(new MockRoomServiceService({ submitRequest }), new MockStayService(), () => now);
     await ready(ui);
-    await fireEvent.press(ui.getByTestId('room-service-add-continental-breakfast'));
+    await fireEvent.press(ui.getByTestId('room-service-product-continental-breakfast-increment'));
     await openCart(ui);
+    await fireEvent.press(ui.getByTestId('room-service-next'));
+    await waitFor(() => expect(ui.getByTestId('room-service-schedule-panel')).toBeTruthy());
     await fireEvent.press(ui.getByTestId('room-service-delivery-picker'));
     await fireEvent.press(ui.getByTestId('room-service-delivery-time-picker-hour-13'));
     await fireEvent.press(ui.getByTestId('room-service-delivery-time-picker-minute-29'));
@@ -166,8 +204,9 @@ describe('Room Service — IMP-AND-0111', () => {
     const nowMs = () => new Date(2026, 8, 18, 11, 31).getTime();
     const { ui } = await setup(undefined, new MockStayService({ kind: 'success', dto: { ...currentStayFixture, departure: '2026-09-18' } }), nowMs);
     await ready(ui);
-    await fireEvent.press(ui.getByTestId('room-service-add-continental-breakfast'));
+    await fireEvent.press(ui.getByTestId('room-service-product-continental-breakfast-increment'));
     await openCart(ui);
+    await fireEvent.press(ui.getByTestId('room-service-next'));
     await waitFor(() => expect(ui.getByTestId('room-service-no-availability')).toBeTruthy());
     expect(ui.getByTestId('room-service-submit').props.accessibilityState.disabled).toBe(true);
     await fireEvent.press(ui.getByTestId('room-service-delivery-picker'));
@@ -178,7 +217,7 @@ describe('Room Service — IMP-AND-0111', () => {
     const submitRequest = jest.fn<Promise<void>, [RoomServiceRequest]>(async () => undefined);
     const { ui } = await setup(new MockRoomServiceService({ submitRequest }));
     await ready(ui);
-    await fireEvent.press(ui.getByTestId('room-service-add-continental-breakfast'));
+    await fireEvent.press(ui.getByTestId('room-service-product-continental-breakfast-increment'));
     await openCart(ui);
     await fireEvent.changeText(ui.getByTestId('room-service-notes'), notes);
     await chooseDeliveryTime(ui);
@@ -192,7 +231,7 @@ describe('Room Service — IMP-AND-0111', () => {
       ...currentStayFixture, id: 'another-stay', reservationId: 'another-reservation', room: { id: 'another-room', number: '205' },
     } }));
     await ready(ui);
-    await fireEvent.press(ui.getByTestId('room-service-add-continental-breakfast'));
+    await fireEvent.press(ui.getByTestId('room-service-product-continental-breakfast-increment'));
     await openCart(ui);
     await fireEvent.changeText(ui.getByTestId('room-service-notes'), '  Sin cebolla\nPor favor  ');
     await chooseDeliveryTime(ui);
@@ -209,7 +248,7 @@ describe('Room Service — IMP-AND-0111', () => {
     const submitRequest = jest.fn(() => pending.promise);
     const { ui } = await setup(new MockRoomServiceService({ submitRequest }));
     await ready(ui);
-    await fireEvent.press(ui.getByTestId('room-service-add-continental-breakfast'));
+    await fireEvent.press(ui.getByTestId('room-service-product-continental-breakfast-increment'));
     await openCart(ui);
     await chooseDeliveryTime(ui);
     await fireEvent.press(ui.getByTestId('room-service-submit'));
@@ -231,15 +270,18 @@ describe('Room Service — IMP-AND-0111', () => {
     const submitRequest = jest.fn<Promise<void>, [RoomServiceRequest]>().mockRejectedValueOnce(error).mockResolvedValueOnce(undefined);
     const { ui } = await setup(new MockRoomServiceService({ submitRequest }));
     await ready(ui);
-    await fireEvent.press(ui.getByTestId('room-service-add-continental-breakfast'));
+    await fireEvent.press(ui.getByTestId('room-service-product-continental-breakfast-increment'));
     await openCart(ui);
     await fireEvent.changeText(ui.getByTestId('room-service-notes'), '  Sin azúcar  ');
     await chooseDeliveryTime(ui);
     await fireEvent.press(ui.getByTestId('room-service-submit'));
     await waitFor(() => expect(ui.getByTestId(`room-service-submit-${kind}`)).toBeTruthy());
+    expect(ui.getByTestId('room-service-schedule-panel')).toBeTruthy();
+    expect(ui.getByText('13:45')).toBeTruthy();
+    await fireEvent.press(ui.getByTestId('room-service-schedule-back'));
     expect(ui.getByTestId('room-service-cart-line-continental-breakfast')).toBeTruthy();
     expect(ui.getByTestId('room-service-notes').props.value).toBe('  Sin azúcar  ');
-    expect(ui.getByText('13:45')).toBeTruthy();
+    await fireEvent.press(ui.getByTestId('room-service-next'));
     await fireEvent.press(ui.getByTestId('room-service-submit'));
     await waitFor(() => expect(ui.getByTestId('room-service-submit-success')).toBeTruthy());
     expect(submitRequest).toHaveBeenCalledTimes(2);
@@ -274,9 +316,11 @@ describe('Room Service — IMP-AND-0111', () => {
     const queryClient = client();
     const ui = await renderRouter({
       _layout: () => <QueryClientProvider client={queryClient}><SessionServiceRequestsProvider><PathProbe /><Slot /></SessionServiceRequestsProvider></QueryClientProvider>,
+      account: () => <Text testID="account-root">Cuenta</Text>,
       services: ServicesRoute,
       'services/room-service': RoomServiceRoute,
     }, { initialUrl: '/services' });
+    await act(async () => router.replace('/services'));
     await waitFor(() => expect(ui.getByTestId('services-room-service-launcher')).toBeTruthy());
     await fireEvent.press(ui.getByRole('button', { name: 'Room Service' }));
     await waitFor(() => expect(ui.getByTestId('room-service-cart-button')).toBeTruthy());

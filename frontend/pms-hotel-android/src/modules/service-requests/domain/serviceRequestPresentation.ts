@@ -133,6 +133,7 @@ export function getServiceRequestScheduledAtMs(request: SessionServiceRequest, n
   if (details.type === 'VEHICLE_REQUEST') return details.serviceDate ? getServiceDateTimeMs(details.serviceDate, details.requestedTime) : null;
   if (details.type === 'HOUSEKEEPING') return details.serviceDate ? getServiceDateTimeMs(details.serviceDate, details.timeSlot) : null;
   if (details.type === 'LATE_CHECKOUT') return getServiceDateTimeMs(details.serviceDate, details.checkoutUntil);
+  if (details.type === 'AMENITIES') return getServiceDateTimeMs(details.serviceDate, details.deliveryTime);
   return null;
 }
 
@@ -148,6 +149,7 @@ export function getServiceRequestCompletionEligibleAt(request: SessionServiceReq
   if (details.type === 'VEHICLE_REQUEST') return details.serviceDate ? getServiceDateTimeMs(details.serviceDate, details.requestedTime) : null;
   if (details.type === 'TRANSFER') return details.scheduledAtMs;
   if (details.type === 'LATE_CHECKOUT') return getServiceDateTimeMs(details.serviceDate, details.checkoutUntil);
+  if (details.type === 'AMENITIES') return getServiceDateTimeMs(details.serviceDate, details.deliveryTime);
   return null;
 }
 

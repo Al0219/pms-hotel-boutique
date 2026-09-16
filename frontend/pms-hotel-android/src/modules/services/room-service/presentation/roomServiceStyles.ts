@@ -52,6 +52,8 @@ export const roomServiceStyles = StyleSheet.create({
   deliveryChevron: { color: tokens.color.muted, fontFamily: tokens.typography.family, fontSize: tokens.typography.size.sectionTitle },
   button: { alignItems: 'center', backgroundColor: tokens.color.brand, borderRadius: tokens.radius.control, height: tokens.layout.buttonHeight, justifyContent: 'center', paddingHorizontal: tokens.space.md },
   buttonDisabled: { backgroundColor: tokens.color.brandSoft },
+  editItems: { alignItems: 'center', minHeight: tokens.layout.buttonHeight, justifyContent: 'center' },
+  editItemsLabel: { color: tokens.color.brand, fontFamily: tokens.typography.family, fontSize: tokens.typography.size.label, fontWeight: '600' },
   buttonLabel: { color: tokens.color.white, fontFamily: tokens.typography.family, fontSize: tokens.typography.size.label, fontWeight: '600' },
   stateCard: { backgroundColor: tokens.color.surfaceMuted, borderColor: tokens.color.border, borderRadius: tokens.radius.card, borderWidth: 1, gap: tokens.space.sm, padding: tokens.space.lg },
   offlineStateCard: { backgroundColor: tokens.color.pendingSurface },

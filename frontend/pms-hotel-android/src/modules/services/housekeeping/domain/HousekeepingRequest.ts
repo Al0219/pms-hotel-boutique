@@ -10,8 +10,7 @@ export type HousekeepingTimeSlot =
 
 export type HousekeepingCleaningType =
   | 'FULL_CLEANING'
-  | 'LIGHT_CLEANING'
-  | 'TOWELS_AND_AMENITIES';
+  | 'LIGHT_CLEANING';
 
 export interface HousekeepingRequest {
   serviceDate: string;

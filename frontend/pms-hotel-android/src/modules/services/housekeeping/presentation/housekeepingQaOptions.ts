@@ -20,5 +20,4 @@ export const housekeepingQaCleaningTypes: readonly {
 }[] = [
   { value: 'FULL_CLEANING', label: 'Limpieza completa' },
   { value: 'LIGHT_CLEANING', label: 'Limpieza ligera' },
-  { value: 'TOWELS_AND_AMENITIES', label: 'Toallas y amenidades' },
 ];

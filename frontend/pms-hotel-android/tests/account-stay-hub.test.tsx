@@ -1,9 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, waitFor } from '@testing-library/react-native';
+import { useEffect } from 'react';
 import { renderRouter } from 'expo-router/testing-library';
 
 import { NetworkError } from '@/data/remote/http/HttpError';
 import { AccountStayHubScreen } from '@/modules/account';
+import { GuestNoticeProvider, useGuestNotice } from '@/modules/navigation';
 import { type ReservationStayDto } from '@/modules/stay/data/dtos/ReservationStayDto';
 import { currentStayFixture } from '@/modules/stay/data/mocks/currentStayFixture';
 import { MockStayService } from '@/modules/stay/data/mocks/MockStayService';
@@ -16,10 +18,12 @@ function createQueryClient() {
   });
 }
 
-function createAccountRoute(service: StayService) {
+function NoticeTrigger() { const { showServiceRequestSuccess } = useGuestNotice(); useEffect(() => { showServiceRequestSuccess(); }, [showServiceRequestSuccess]); return null; }
+
+function createAccountRoute(service: StayService, withNotice = false) {
   return function AccountRoute() {
     return (
-      <QueryClientProvider client={createQueryClient()}><SessionServiceRequestsProvider><AccountStayHubScreen service={service} /></SessionServiceRequestsProvider></QueryClientProvider>
+      <QueryClientProvider client={createQueryClient()}><GuestNoticeProvider>{withNotice ? <NoticeTrigger /> : null}<SessionServiceRequestsProvider><AccountStayHubScreen service={service} /></SessionServiceRequestsProvider></GuestNoticeProvider></QueryClientProvider>
     );
   };
 }
@@ -78,4 +82,17 @@ describe('Account / Stay Hub V3', () => {
     expect(getCurrentStay).toHaveBeenCalledTimes(2);
   });
 
+});
+
+describe('Account / service request confirmation', () => {
+  it('shows the one-action confirmation after a submitted service handoff', async () => {
+    const AccountRoute = createAccountRoute(new MockStayService({ kind: 'success', dto: currentStayFixture }), true);
+    const rendered = await renderRouter({ account: AccountRoute }, { initialUrl: '/account' });
+    await waitFor(() => expect(rendered.getByTestId('account-service-request-submitted')).toBeTruthy());
+    expect(rendered.getByText('Solicitud enviada')).toBeTruthy();
+    expect(rendered.getByText('Tu solicitud fue registrada correctamente.')).toBeTruthy();
+    expect(rendered.queryByTestId('account-service-request-submitted-cancel')).toBeNull();
+    await fireEvent.press(rendered.getByTestId('account-service-request-submitted-confirm'));
+    await waitFor(() => expect(rendered.queryByTestId('account-service-request-submitted')).toBeNull());
+  });
 });

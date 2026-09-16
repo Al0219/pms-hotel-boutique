@@ -4,7 +4,7 @@ import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, Tex
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { NetworkError } from '@/data/remote/http/HttpError';
-import { GuestNavigationShell } from '@/modules/navigation';
+import { GuestNavigationShell, useGuestNotice } from '@/modules/navigation';
 import { formatServiceDateLabel, getFirstAvailableServiceDate, getInitialServiceDate, getNearestServiceTime, isServiceDateWithinStay, isServiceWithinStayWindow, parseServiceDate, useSessionServiceRequests } from '@/modules/service-requests';
 import { type HousekeepingService } from '@/modules/services/housekeeping/data/services/HousekeepingService';
 import { type HousekeepingCleaningType, type HousekeepingTimeSlot } from '@/modules/services/housekeeping/domain/HousekeepingRequest';
@@ -55,7 +55,8 @@ export function HousekeepingScreen({ service, stayService, nowMs = Date.now }: H
   const stay = deriveRemoteState(query, () => false);
   const submission = useSubmitHousekeeping(service);
   const { addRequest, requests, updateRequest } = useSessionServiceRequests();
-  const { editRequestId, returnTo } = useLocalSearchParams<{ editRequestId?: string; returnTo?: string }>();
+  const { showServiceRequestSuccess } = useGuestNotice();
+  const { editRequestId } = useLocalSearchParams<{ editRequestId?: string }>();
   const [serviceDate, setServiceDate] = useState(() => getInitialServiceDate(nowMs(), housekeepingQaTimeSlots));
   const [timeSlot, setTimeSlot] = useState<HousekeepingTimeSlot>(() => getNearestServiceTime(getInitialServiceDate(nowMs(), housekeepingQaTimeSlots), housekeepingQaTimeSlots, nowMs()) as HousekeepingTimeSlot ?? housekeepingQaTimeSlots[0]);
   const [cleaningType, setCleaningType] = useState<HousekeepingCleaningType>('FULL_CLEANING');
@@ -70,7 +71,6 @@ export function HousekeepingScreen({ service, stayService, nowMs = Date.now }: H
   const scroll = useRef<ScrollView>(null);
   const editLoaded = useRef<string | null>(null);
   const editedRequest = typeof editRequestId === 'string' ? requests.find((request) => request.sessionRequestId === editRequestId && request.details?.type === 'HOUSEKEEPING') : undefined;
-  const returnFromEdit = () => router.dismissTo(returnTo === 'account' ? '/account' : returnTo === 'requests' ? '/services/requests' : '/services');
 
   useEffect(() => {
     const details = editedRequest?.details;
@@ -134,7 +134,7 @@ export function HousekeepingScreen({ service, stayService, nowMs = Date.now }: H
     }, {
       onSuccess: () => {
         const input = { kind: 'HOUSEKEEPING' as const, origin: 'SERVICES' as const, status: 'REQUESTED' as const, summary: `${formatServiceDateLabel(serviceDate)} · ${timeSlot}`, title: 'Limpieza', details: { type: 'HOUSEKEEPING' as const, serviceDate, cleaningType, timeSlot, ...(trimmedNotes ? { notes: trimmedNotes } : {}) } };
-        if (editedRequest) updateRequest(editedRequest.sessionRequestId, input); else addRequest(input);
+        if (editedRequest) updateRequest(editedRequest.sessionRequestId, input); else addRequest(input); showServiceRequestSuccess(editedRequest ? 'UPDATED' : 'CREATED'); router.replace('/account');
       },
       onSettled: () => { inFlight.current = false; },
     });
@@ -155,9 +155,7 @@ export function HousekeepingScreen({ service, stayService, nowMs = Date.now }: H
       <KeyboardAvoidingView style={styles.scroll} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView ref={scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" style={styles.scroll}>
           <Text accessibilityRole="header" style={styles.title}>Limpieza</Text>
-          {submission.isSuccess ? (
-            <><StateCard title="Limpieza solicitada" body="Recibimos tu solicitud." testID="housekeeping-submit-success" />{editedRequest ? <Button label="Volver" onPress={returnFromEdit} testID="housekeeping-edit-return" /> : null}</>
-          ) : stay.kind === 'loading' ? (
+          {submission.isSuccess ? <View testID="housekeeping-submit-success" /> : stay.kind === 'loading' ? (
             <StateCard title="Cargando mi estadía" body="Espera un momento." testID="housekeeping-stay-loading" />
           ) : stay.kind === 'error' || stay.kind === 'offline' ? (
             <>

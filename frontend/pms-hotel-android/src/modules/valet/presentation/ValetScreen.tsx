@@ -4,7 +4,7 @@ import DateTimePicker, { type DateTimePickerEvent } from '@react-native-communit
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { NetworkError } from '@/data/remote/http/HttpError';
-import { GuestNavigationShell } from '@/modules/navigation';
+import { GuestNavigationShell, useGuestNotice } from '@/modules/navigation';
 import { formatServiceDate, formatServiceDateLabel, getFirstAvailableServiceDate, getInitialServiceDate, getNearestServiceTime, isServiceDateWithinStay, isServiceWithinStayWindow, parseServiceDate, useSessionServiceRequests } from '@/modules/service-requests';
 import {
   GoogleMapsLinkingService,
@@ -381,7 +381,8 @@ export function ValetScreen({ clock = deviceClock, mapService = defaultMapServic
   const vehicleRequest = useRequestValetVehicle(service);
   const transferReservation = useReserveTransfer(service);
   const { addRequest, requests, updateRequest } = useSessionServiceRequests();
-  const { editRequestId, returnTo } = useLocalSearchParams<{ editRequestId?: string; returnTo?: string }>();
+  const { showServiceRequestSuccess } = useGuestNotice();
+  const { editRequestId } = useLocalSearchParams<{ editRequestId?: string }>();
   const { addVehicle, setVehicleStatus, updateVehicle, vehicles } = useSessionVehicles();
   const vehicleInFlight = useRef(false);
   const transferInFlight = useRef(false);
@@ -402,7 +403,6 @@ export function ValetScreen({ clock = deviceClock, mapService = defaultMapServic
   const dateText = scheduledAt.toLocaleDateString();
   const timeText = format24Hour(scheduledAt);
   const editedRequest = typeof editRequestId === 'string' && editRequestId !== ignoredTransferEditRequestId ? requests.find((request) => request.sessionRequestId === editRequestId) : undefined;
-  const returnFromEdit = () => router.dismissTo(returnTo === 'account' ? '/account' : returnTo === 'requests' ? '/services/requests' : '/valet');
   useEffect(() => {
     if (!editedRequest || editLoaded.current === editedRequest.sessionRequestId) return;
     editLoaded.current = editedRequest.sessionRequestId;
@@ -448,7 +448,7 @@ export function ValetScreen({ clock = deviceClock, mapService = defaultMapServic
     vehicleRequest.mutate(screen.activeVehicleKey, {
       onSuccess: () => {
         const input = { kind: 'VEHICLE_REQUEST' as const, origin: 'VALET' as const, status: 'REQUESTED' as const, summary: `${formatServiceDateLabel(vehicleServiceDate)} · ${requestedTime} · ${vehicleDisplay(selectedVehicle)}`, title: 'Solicitar mi vehículo', details: { type: 'VEHICLE_REQUEST' as const, serviceDate: vehicleServiceDate, sessionVehicleId: selectedVehicle.sessionVehicleId, requestedTime } };
-        if (editedRequest?.kind === 'VEHICLE_REQUEST') updateRequest(editedRequest.sessionRequestId, input); else addRequest(input);
+        if (editedRequest?.kind === 'VEHICLE_REQUEST') updateRequest(editedRequest.sessionRequestId, input); else addRequest(input); showServiceRequestSuccess(editedRequest ? 'UPDATED' : 'CREATED'); router.replace('/account');
       },
       onSettled: () => { vehicleInFlight.current = false; },
     });
@@ -464,7 +464,7 @@ export function ValetScreen({ clock = deviceClock, mapService = defaultMapServic
     transferReservation.mutate({ destinationType: destination.type, destinationPlace: destination, pickupPlace: destination.type === 'HOTEL' ? pickup : null, dateText, timeText, passengers, routeEstimate: route.data, fareEstimate: fare }, {
       onSuccess: () => {
         const input = { kind: 'TRANSFER' as const, origin: 'VALET' as const, status: 'REQUESTED' as const, summary: `${destination.displayText} · ${dateText} · ${timeText}`, title: 'Traslado', details: { type: 'TRANSFER' as const, destinationKey: destination.key, ...(pickup ? { pickupKey: pickup.key } : {}), scheduledAtMs: scheduledAt.getTime(), passengers } };
-        if (editedRequest?.kind === 'TRANSFER') updateRequest(editedRequest.sessionRequestId, input); else addRequest(input);
+        if (editedRequest?.kind === 'TRANSFER') updateRequest(editedRequest.sessionRequestId, input); else addRequest(input); resetTransferDraft(); setTransferModalVisible(false); showServiceRequestSuccess(editedRequest ? 'UPDATED' : 'CREATED'); router.replace('/account');
       },
       onSettled: () => { transferInFlight.current = false; },
     });
@@ -537,7 +537,6 @@ export function ValetScreen({ clock = deviceClock, mapService = defaultMapServic
   const vehicleOffline = vehicleRequest.isError && vehicleRequest.error instanceof NetworkError;
   const vehicleError = vehicleRequest.isError && !vehicleOffline;
 
-  if (vehicleRequest.isSuccess && vehicle) return <View style={valetStyles.screen} testID="valet-request-success-screen"><ScrollView contentContainerStyle={[valetStyles.content, valetStyles.successContent]} style={valetStyles.scroll}><StateCard body="Tu solicitud fue enviada. Podrás confirmar la recepción cuando llegue el horario solicitado." success testID="valet-request-success" title="✓ Solicitud enviada" /><Text style={valetStyles.bodyText}>{vehicleDisplay(vehicle)} · {formatVehiclePlate(vehicle.platePrefix, vehicle.plateBody)}</Text>{editedRequest ? <Pressable accessibilityRole="button" onPress={returnFromEdit} style={valetStyles.secondaryButton} testID="valet-edit-return"><Text style={valetStyles.secondaryButtonLabel}>Volver</Text></Pressable> : null}</ScrollView><GuestNavigationShell /></View>;
 
   return <View style={valetStyles.screen} testID="valet-screen">
     <ScrollView contentContainerStyle={valetStyles.content} style={valetStyles.scroll}>

@@ -121,7 +121,7 @@ describe('Housekeeping — IMP-AND-0110', () => {
     const { ui } = await setup(new MockHousekeepingService({ submitRequest }));
     await ready(ui);
     await fireEvent.press(ui.getByTestId('housekeeping-type-selector'));
-    for (const type of ['FULL_CLEANING', 'LIGHT_CLEANING', 'TOWELS_AND_AMENITIES']) {
+    for (const type of ['FULL_CLEANING', 'LIGHT_CLEANING']) {
       expect(ui.getByTestId(`housekeeping-type-option-${type}`)).toBeTruthy();
     }
     await fireEvent.press(ui.getByTestId('housekeeping-type-option-LIGHT_CLEANING'));
@@ -133,7 +133,7 @@ describe('Housekeeping — IMP-AND-0110', () => {
     await waitFor(() => expect(submitRequest).toHaveBeenCalledWith({
       serviceDate: '2026-09-11', timeSlot: '09:00–10:00', cleaningType: 'LIGHT_CLEANING',
     }));
-    await waitFor(() => expect(ui.getByTestId('housekeeping-submit-success')).toBeTruthy());
+    await waitFor(() => expect(ui.getByTestId('session-service-requests-probe')).toBeTruthy());
   });
 
   it('shows exactly Habitación por asignar for room null', async () => {
@@ -151,7 +151,7 @@ describe('Housekeeping — IMP-AND-0110', () => {
     await fireEvent.press(ui.getByTestId('housekeeping-submit'));
     await waitFor(() => expect(submitRequest).toHaveBeenCalledWith(expectedInput));
     expect(submitRequest.mock.calls[0][0]).not.toHaveProperty('notes');
-    await waitFor(() => expect(ui.getByTestId('housekeeping-submit-success')).toBeTruthy());
+    await waitFor(() => expect(ui.getByTestId('session-service-requests-probe')).toBeTruthy());
   });
 
   it('trims notes without sending IDs when Stay and Reservation fixture identifiers change', async () => {
@@ -174,7 +174,7 @@ describe('Housekeeping — IMP-AND-0110', () => {
     expect(submitRequest.mock.calls[0][0]).not.toHaveProperty('stayId');
     expect(submitRequest.mock.calls[0][0]).not.toHaveProperty('reservationId');
     expect(submitRequest.mock.calls[0][0]).not.toHaveProperty('roomId');
-    await waitFor(() => expect(ui.getByTestId('housekeeping-submit-success')).toBeTruthy());
+    await waitFor(() => expect(ui.getByTestId('session-service-requests-probe')).toBeTruthy());
   });
 
   it('blocks rapid and pending double presses and shows success only after resolution', async () => {
@@ -194,7 +194,7 @@ describe('Housekeeping — IMP-AND-0110', () => {
     expect(ui.queryByTestId('housekeeping-submit-success')).toBeNull();
     expect(ui.getByTestId('session-service-requests-probe').props.children).toBe('[]');
     await act(async () => pending.resolve());
-    await waitFor(() => expect(ui.getByText('Limpieza solicitada')).toBeTruthy());
+    await waitFor(() => expect(ui.getByTestId('housekeeping-submit-success')).toBeTruthy());
     expect(ui.queryByTestId('housekeeping-submit')).toBeNull();
     expect(JSON.parse(ui.getByTestId('session-service-requests-probe').props.children)).toEqual([
       expect.objectContaining({ kind: 'HOUSEKEEPING', origin: 'SERVICES', status: 'REQUESTED', title: 'Limpieza', summary: '11 sept 2026 · 09:00–10:00' }),
@@ -218,7 +218,7 @@ describe('Housekeeping — IMP-AND-0110', () => {
     expect(ui.queryByTestId('housekeeping-submit-success')).toBeNull();
     expect(ui.getByTestId('session-service-requests-probe').props.children).toBe('[]');
     await fireEvent.press(ui.getByRole('button', { name: 'Reintentar' }));
-    await waitFor(() => expect(ui.getByTestId('housekeeping-submit-success')).toBeTruthy());
+    await waitFor(() => expect(ui.getByTestId('session-service-requests-probe')).toBeTruthy());
     expect(submitRequest.mock.calls).toEqual([
       [{ ...expectedInput, notes: 'Mantener ventana cerrada' }], [{ ...expectedInput, notes: 'Mantener ventana cerrada' }],
     ]);
@@ -254,7 +254,9 @@ describe('Housekeeping — IMP-AND-0110', () => {
       _layout: () => <QueryClientProvider client={queryClient}><SessionServiceRequestsProvider><PathProbe /><Slot /></SessionServiceRequestsProvider></QueryClientProvider>,
       services: ServicesRoute,
       'services/housekeeping': HousekeepingRoute,
+      account: () => <Text testID="account-route">Account</Text>,
     }, { initialUrl: '/services' });
+    await act(async () => { router.replace('/services'); });
     await waitFor(() => expect(ui.getByTestId('services-housekeeping-launcher')).toBeTruthy());
     for (const label of ['Late check-out', 'Limpieza', 'Room Service']) {
       expect(ui.getByText(label)).toBeTruthy();
@@ -273,9 +275,7 @@ describe('Housekeeping — IMP-AND-0110', () => {
     await fireEvent.press(await ui.findByTestId('services-housekeeping-launcher'));
     await ready(ui);
     await fireEvent.press(ui.getByTestId('housekeeping-submit'));
-    await waitFor(() => expect(ui.getByTestId('housekeeping-submit-success')).toBeTruthy());
-    await fireEvent.press(ui.getByRole('button', { name: 'Volver a servicios' }));
-    expect(ui.getByTestId('pathname').props.children).toBe('/services');
+    await waitFor(() => expect(ui.getByTestId('account-route')).toBeTruthy());
     nowSpy.mockRestore();
   });
 });

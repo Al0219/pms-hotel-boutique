@@ -125,35 +125,15 @@ describe('Services', () => {
     await act(async () => {
       deferred.resolve({ serviceFixtureKey: 'late-check-out' });
     });
-    await waitFor(() => expect(rendered.getByTestId('services-submit-success')).toBeTruthy());
+    await waitFor(() => expect(rendered.getByTestId('session-service-requests-probe')).toBeTruthy());
   });
 
-  it('shows success only after the mock mutation as a local overlay and returns to the base catalog when closed', async () => {
-    const rendered = await renderServices(new MockServicesService());
-
-    await selectLateCheckOut(rendered);
-    await fireEvent.press(rendered.getByTestId('services-submit-button'));
-    await waitFor(() => expect(rendered.getByText('Servicio solicitado')).toBeTruthy());
-    expect(rendered.getByText('Hemos recibido tu solicitud.')).toBeTruthy();
-
-    expect(rendered.getByTestId('services-screen')).toBeTruthy();
-    await fireEvent.press(rendered.getByTestId('services-submit-success-close'));
-    await waitFor(() => expect(rendered.getByTestId('services-screen')).toBeTruthy());
-    expect(rendered.queryByTestId('services-selection')).toBeNull();
-    expect(rendered.getByTestId('services-submit-button').props.accessibilityState.disabled).toBe(true);
-  });
-
-  it('closes the success overlay from its backdrop but not when pressing its card', async () => {
+  it('routes successful Late check-out requests to Account instead of a local success screen', async () => {
     const rendered = await renderServices(new MockServicesService());
     await selectLateCheckOut(rendered);
     await fireEvent.press(rendered.getByTestId('services-submit-button'));
-    await waitFor(() => expect(rendered.getByTestId('services-submit-success')).toBeTruthy());
-
-    await fireEvent.press(rendered.getByTestId('services-submit-success'));
-    expect(rendered.getByTestId('services-submit-success')).toBeTruthy();
-    await fireEvent.press(rendered.getByTestId('services-submit-success-backdrop'));
-    await waitFor(() => expect(rendered.queryByTestId('services-submit-success')).toBeNull());
-    expect(rendered.getByTestId('services-screen')).toBeTruthy();
+    await waitFor(() => expect(JSON.parse(rendered.getByTestId('session-service-requests-probe').props.children)).toHaveLength(1));
+    expect(rendered.queryByText('Servicio solicitado')).toBeNull();
   });
 
   it('records only successful inline services with their approved presentation data', async () => {
@@ -161,7 +141,7 @@ describe('Services', () => {
     const lateCheckout = await renderServices(new MockServicesService({ submitRequest }));
     await selectLateCheckOut(lateCheckout);
     await fireEvent.press(lateCheckout.getByTestId('services-submit-button'));
-    await waitFor(() => expect(lateCheckout.getByTestId('services-submit-success')).toBeTruthy());
+    await waitFor(() => expect(lateCheckout.getByTestId('session-service-requests-probe')).toBeTruthy());
     expect(JSON.parse(lateCheckout.getByTestId('session-service-requests-probe').props.children)).toEqual([
       expect.objectContaining({ kind: 'LATE_CHECKOUT', origin: 'SERVICES', status: 'REQUESTED', title: 'Late check-out', summary: expect.stringContaining('Hasta 14:00'), details: { type: 'LATE_CHECKOUT', serviceDate: '2026-09-18', checkoutUntil: '14:00' } }),
     ]);
@@ -183,7 +163,7 @@ describe('Services', () => {
     expect(rendered.queryByTestId('services-submit-button')).toBeNull();
 
     await fireEvent.press(rendered.getByText('Reintentar'));
-    await waitFor(() => expect(rendered.getByTestId('services-submit-success')).toBeTruthy());
+    await waitFor(() => expect(rendered.getByTestId('session-service-requests-probe')).toBeTruthy());
     expect(submitRequest).toHaveBeenCalledTimes(2);
     expect(submitRequest).toHaveBeenLastCalledWith({ serviceFixtureKey: 'late-check-out' });
   });
@@ -204,7 +184,7 @@ describe('Services', () => {
     expect(rendered.queryByTestId('services-submit-button')).toBeNull();
 
     await fireEvent.press(rendered.getByText('Reintentar'));
-    await waitFor(() => expect(rendered.getByTestId('services-submit-success')).toBeTruthy());
+    await waitFor(() => expect(rendered.getByTestId('session-service-requests-probe')).toBeTruthy());
     expect(submitRequest).toHaveBeenCalledTimes(2);
   });
 

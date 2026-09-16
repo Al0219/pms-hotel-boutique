@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { NetworkError } from '@/data/remote/http/HttpError';
-import { GuestNavigationShell } from '@/modules/navigation';
+import { GuestNavigationShell, useGuestNotice } from '@/modules/navigation';
 import { formatServiceDateLabel, useSessionServiceRequests } from '@/modules/service-requests';
 import { type ServicesService } from '@/modules/services/data/services/ServicesService';
 import { type ServiceCatalogItem } from '@/modules/services/domain/models/ServiceCatalog';
@@ -127,6 +127,7 @@ export function ServicesScreen({ service, stayService }: ServicesScreenProps) {
   const stayState = deriveRemoteState(useCurrentStay(stayService), () => false);
   const submission = useSubmitServiceRequest(service);
   const { addRequest } = useSessionServiceRequests();
+  const { showServiceRequestSuccess } = useGuestNotice();
   const [selectedFixtureKey, setSelectedFixtureKey] = useState<string | null>(null);
   const [successOverlayVisible, setSuccessOverlayVisible] = useState(false);
   const submissionInFlight = useRef(false);
@@ -150,7 +151,8 @@ export function ServicesScreen({ service, stayService }: ServicesScreenProps) {
           title: selectedService.label,
           details: { type: 'LATE_CHECKOUT', serviceDate: stayState.data.departure, checkoutUntil: lateCheckoutUntil },
         });
-        setSuccessOverlayVisible(true);
+        showServiceRequestSuccess();
+        router.replace('/account');
       },
       onSettled: () => {
         submissionInFlight.current = false;
@@ -224,6 +226,7 @@ export function ServicesScreen({ service, stayService }: ServicesScreenProps) {
         <Text style={servicesStyles.title}>Servicios</Text>
         <ServiceNavigationCard label="Limpieza" onPress={() => router.push('/services/housekeeping')} testID="services-housekeeping-launcher" />
         <ServiceNavigationCard label="Room Service" onPress={() => router.push('/services/room-service')} testID="services-room-service-launcher" />
+        <ServiceNavigationCard label="Amenidades" onPress={() => router.push('/services/amenities')} testID="services-amenities-launcher" />
         <ServiceNavigationCard label="Mis servicios" onPress={() => router.push('/services/requests')} testID="services-requests-launcher" />
         {!hasSubmitFailure ? (
           <View style={servicesStyles.catalog}>

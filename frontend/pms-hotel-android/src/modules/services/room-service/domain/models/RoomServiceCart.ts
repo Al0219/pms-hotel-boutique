@@ -9,6 +9,14 @@ export interface RoomServiceCartState {
   items: readonly RoomServiceCartLine[];
 }
 
+/** Frontend/mock business rule; it is not inventory or Backend stock. */
+export const ROOM_SERVICE_MIN_ITEM_QUANTITY = 1;
+export const ROOM_SERVICE_MAX_ITEM_QUANTITY = 5;
+
+export function isRoomServiceCartValid(cart: RoomServiceCartState): boolean {
+  return cart.items.every((line) => line.quantity >= ROOM_SERVICE_MIN_ITEM_QUANTITY && line.quantity <= ROOM_SERVICE_MAX_ITEM_QUANTITY);
+}
+
 export type RoomServiceCartAction =
   | { type: 'ADD_ITEM'; itemFixtureKey: string }
   | { type: 'INCREMENT_ITEM'; itemFixtureKey: string }
@@ -25,11 +33,15 @@ export function roomServiceCartReducer(
   action: RoomServiceCartAction,
 ): RoomServiceCartState {
   if (action.type === 'CLEAR') return initialRoomServiceCart;
-  if (action.type === 'SET_ITEMS') return { items: action.items };
+  if (action.type === 'SET_ITEMS') {
+    const next = { items: action.items };
+    return isRoomServiceCartValid(next) ? next : state;
+  }
 
   const line = state.items.find((item) => item.itemFixtureKey === action.itemFixtureKey);
 
   if (action.type === 'ADD_ITEM' || action.type === 'INCREMENT_ITEM') {
+    if (line && line.quantity >= ROOM_SERVICE_MAX_ITEM_QUANTITY) return state;
     return {
       items: line
         ? state.items.map((item) => item.itemFixtureKey === action.itemFixtureKey

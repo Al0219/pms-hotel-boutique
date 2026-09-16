@@ -285,3 +285,7 @@ El copy de Folio del frame puede mostrarse solo como texto informativo. Esta tar
 En una etapa posterior, un servicio API podrá sustituir los mock services detrás de DTOs y mappers. Este contrato frontend/mock no obliga su forma: los campos, identificadores, cálculo de ruta/tarifa, reglas de disponibilidad y semántica de reserva deberán aprobarse entonces por separado.
 
 `VEHICLE_REQUEST` conserva `serviceDate` local (`YYYY-MM-DD`) junto con `requestedTime`. Esto permite solicitudes independientes para el mismo vehículo en fechas u horas distintas; no se deduplica por vehículo.
+
+## UX regression IMP-AND-0113
+
+Los éxitos de solicitud de vehículo y traslado registran o actualizan la solicitud de sesión y navegan a Cuenta con aviso de una sola vez. El envío no cambia por sí mismo el estado del vehículo. La regresión UX incluida en `IMP-AND-0113` fue validada con QA manual y revisión WEB-3 PASS; no altera el estado COMPLETADA de este contrato.

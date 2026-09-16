@@ -10,7 +10,7 @@
 
 ## Alcance aprobado para Android frontend-first
 
-El MVP autorizado es `/services` → launcher **Room Service** → catálogo → icono de carrito → panel de carrito → nota opcional de pedido y hora de entrega → confirmación → submitting → success. La ruta es `/services/room-service`; conserva Servicios activa, reutiliza `GuestNavigationShell` y Back vuelve a `/services`.
+El MVP autorizado es `/services` → launcher **Room Service** → **CATALOG** → **CART** → **SCHEDULE** → confirmación → submitting → success. El catálogo concentra productos y el carrito accesible con badge; CART contiene el resumen, cantidades, total y nota opcional, mientras SCHEDULE concentra fecha, hora y confirmación. Las tarjetas de catálogo reutilizan `ServiceCatalogItemCard`. La ruta es `/services/room-service`; conserva Servicios activa, reutiliza `GuestNavigationShell` y Back vuelve a `/services`.
 
 No hay frame V3 específico de MOB-22. Esta ausencia no bloquea el MVP aprobado: la pantalla adopta tokens y patrones Android V3 existentes y queda sujeta a QA visual manual. No se declara equivalencia con un frame Figma inexistente.
 
@@ -33,11 +33,11 @@ Las categorías exactas son `Desayunos`, `Comidas` y `Bebidas`. La UI permite fi
 
 ## Carrito, total y nota
 
-El carrito es estado local de la feature mediante reducer puro. Permite múltiples productos, agregar, incrementar, decrementar, eliminar y derivar total. La cantidad mínima efectiva es 1: decrementar una línea en 1 la elimina. No hay máximo aprobado.
+El carrito es estado local de la feature mediante reducer puro. Permite múltiples productos, agregar, incrementar, decrementar, eliminar y derivar total. La cantidad mínima efectiva es 1: decrementar una línea en 1 la elimina. La cantidad máxima frontend/mock es 5 por producto/línea; el reducer rechaza estados inválidos sin aplicar clamp silencioso.
 
 No se almacena subtotal ni total en el estado. Se deriva de `priceAmount × quantity`; para el MVP `total = subtotal`, sin componentes monetarios adicionales. La UI presenta únicamente `Total`.
 
-El resumen no permanece bajo el catálogo. Un icono de carrito fijo, accesible y dentro de Safe Area abre un panel modal scrollable que contiene las líneas, controles de cantidad/eliminación, total, nota, entrega y CTA. Cerrar el panel no vacía el carrito ni la nota.
+El resumen no permanece bajo el catálogo. Un icono de carrito fijo, accesible y dentro de Safe Area abre CART con las líneas, controles de cantidad/eliminación, total y nota. El paso SCHEDULE concentra entrega y CTA; volver desde SCHEDULE conserva el carrito y la nota.
 
 Existe una sola nota multiline opcional de pedido dentro del panel. Antes del submit se aplica `notes.trim()`; se omite si queda vacía y se conservan saltos internos. No existen notas por producto.
 
@@ -104,7 +104,7 @@ No se crearon DTOs o mappers sin transformación real, Zustand ni Context global
 | Menú | loading, success, generic error/retry, offline/retry |
 | Pedido | configured, submitting, success, generic error/retry, offline/retry |
 
-Success muestra **Pedido solicitado**, `Recibimos tu pedido de Room Service.` y **Volver a servicios**. No implementa tracking, detalle persistido, estado operacional ni `IMP-AND-0112 — Mis solicitudes`.
+Al resolver la mutation, Room Service registra o actualiza primero la `SessionServiceRequest` y navega a `/account`. Cuenta muestra la confirmación **Solicitud enviada**, `Tu solicitud fue registrada correctamente.` y el CTA **Entendido**. No implementa tracking, detalle persistido, estado operacional ni `IMP-AND-0112 — Mis solicitudes`.
 
 ## Fuera de alcance
 
@@ -117,3 +117,11 @@ Las suites Room Service cubren header, panel cerrado/abierto, carrito vacío, pe
 QA manual y revisión de implementación WEB-3 completaron PASS. Una fase posterior deberá definir catálogo/API Backend, scope, pricing operacional, disponibilidad y lifecycle sin convertir este mock en contrato Backend.
 
 Room Service conserva `serviceDate` local (`YYYY-MM-DD`) con `deliveryTime`; fecha y hora se validan como datetime completo. La fecha futura conserva una hora válida y la nueva solicitud inicia en la hora válida más cercana.
+
+## UX regression IMP-AND-0113
+
+El carrito elimina líneas mediante `SwipeToDelete` compartido y confirmación; no tiene CTA permanente de edición. Los cambios o carritos pendientes avisan solo al abandonar el flujo, no al transitar entre catálogo, carrito y programación. Un envío exitoso navega a Cuenta y muestra el aviso de una sola vez. La regresión UX incluida en `IMP-AND-0113` fue validada con QA manual y revisión WEB-3 PASS; no altera el estado COMPLETADA de este contrato.
+
+### Cantidades frontend/mock
+
+Cada producto de Room Service tiene cantidad mínima `1` y máxima `5` por línea. Es una regla frontend/mock y no representa stock ni límite de Backend. Varias líneas pueden alcanzar `5` independientemente.
