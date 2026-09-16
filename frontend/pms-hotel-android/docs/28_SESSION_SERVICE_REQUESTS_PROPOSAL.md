@@ -134,3 +134,7 @@ Las solicitudes programables creadas por el huésped guardan `serviceDate` local
 Los launchers explícitos de creación restablecen únicamente su estado transitorio: `Registrar vehículo` abre marca, modelo, placa, color y estado con defaults limpios; `Solicitar traslado` abre destino, recogida, fecha, hora, pasajeros y estado de mutation de creación nuevos. `Editar vehículo` precarga y actualiza solo el registro de vehículo elegido por su `sessionVehicleId`; la edición de solicitudes sigue usando el `editRequestId` explícito de una card y preserva sus retornos `returnTo`. Las solicitudes ya creadas siguen en el provider session-only.
 
 Las cards activas separan el cuerpo editable del check de 48dp situado a la derecha. Completion y eliminación usan `ConfirmationModal`; la eliminación vuelve a comprobar el cutoff al confirmar. Los summaries session-only incluyen fecha y hora/slot cuando existen; Late check-out muestra `fecha de salida · Hasta 14:00`. No se calculan total de estadía, saldo, folio, pagos ni cargos: una solicitud session-only no es una transacción financiera.
+
+## UX regression IMP-AND-0113
+
+Los submits Guest exitosos actualizan o crean la solicitud de sesión y redirigen a Cuenta con un notice transitorio de sesión Guest; cerrarlo descarta el notice sin navegación ni cambios de URL. El lifecycle existente no cambia. La regresión UX incluida en `IMP-AND-0113` fue validada con QA manual y revisión WEB-3 PASS; no altera el estado COMPLETADA de este contrato.

@@ -13,6 +13,7 @@ export interface GuestNavigationTabsProps {
   pathname: string;
   tabs?: readonly GuestNavigationTab[];
   onReplace?: (basePath: string) => void;
+  onNavigateAway?: (basePath: string) => void;
 }
 
 function replaceGuestRoute(basePath: string): void {
@@ -24,12 +25,13 @@ export function GuestNavigationTabs({
   pathname,
   tabs = guestNavigationTabs,
   onReplace = replaceGuestRoute,
+  onNavigateAway,
 }: GuestNavigationTabsProps) {
   return (
     <View accessibilityLabel="Navegación principal de huésped" accessibilityRole="tablist" style={guestNavigationStyles.shell}>
       {tabs.map((tab) => {
         const isActive = isGuestNavigationTabActive(tab, pathname);
-        const onPress = getGuestNavigationTabPressHandler(tab, pathname, onReplace);
+        const onPress = getGuestNavigationTabPressHandler(tab, pathname, onNavigateAway ?? onReplace);
 
         return (
           <Pressable
@@ -54,6 +56,6 @@ export function GuestNavigationTabs({
 }
 
 /** Router-integrated entry point for future authorized V3 feature routes. */
-export function GuestNavigationShell() {
-  return <GuestNavigationTabs pathname={usePathname()} />;
+export function GuestNavigationShell({ onNavigateAway }: Pick<GuestNavigationTabsProps, 'onNavigateAway'> = {}) {
+  return <GuestNavigationTabs onNavigateAway={onNavigateAway} pathname={usePathname()} />;
 }

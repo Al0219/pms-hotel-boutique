@@ -7,3 +7,5 @@ export {
   type GuestNavigationTab,
   type GuestNavigationTabId,
 } from '@/modules/navigation/guestNavigationTabs';
+
+export { GuestNoticeProvider, useGuestNotice, type GuestServiceNotice } from '@/modules/navigation/GuestNoticeProvider';

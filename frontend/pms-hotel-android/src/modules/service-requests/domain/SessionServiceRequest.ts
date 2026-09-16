@@ -4,6 +4,7 @@ export type SessionServiceRequestKind =
   | 'ROOM_SERVICE'
   | 'VEHICLE_REQUEST'
   | 'TRANSFER'
+  | 'AMENITIES'
   | 'LATE_CHECKOUT'
   | 'HOTEL_ASSIGNED';
 
@@ -29,7 +30,8 @@ export type SessionServiceRequestDetails =
   | { type: 'VEHICLE_REQUEST'; sessionVehicleId: string; requestedTime: string; serviceDate?: string }
   | { type: 'LATE_CHECKOUT'; serviceDate: string; checkoutUntil: string }
   | { type: 'HOTEL_ASSIGNED' }
-  | { type: 'TRANSFER'; destinationKey: string; pickupKey?: string; scheduledAtMs: number; passengers: number };
+  | { type: 'TRANSFER'; destinationKey: string; pickupKey?: string; scheduledAtMs: number; passengers: number }
+  | { type: 'AMENITIES'; serviceDate: string; deliveryTime: string; items: readonly { itemFixtureKey: string; quantity: number }[]; notes?: string };
 
 export interface AddSessionServiceRequestInput {
   kind: SessionServiceRequestKind;

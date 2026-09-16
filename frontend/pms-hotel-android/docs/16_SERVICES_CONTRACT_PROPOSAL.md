@@ -178,3 +178,7 @@ No existe en el backlog ni en la documentación vigente un gate adicional de rev
 - Cambiar Figma, `IMP-AND-0100` o `IMP-AND-0102`.
 
 La política temporal frontend/mock del Hotel Boutique define checkout estándar `12:00`. Late check-out usa exclusivamente `ReservationStay.departure` como `serviceDate` y el valor estructurado frontend/mock `lateCheckoutUntil: '14:00'`: es una excepción aprobada al checkout estándar. El huésped no elige fecha ni hora; los valores no se extraen del copy visual. Una futura configuración de propiedad o Backend podrá sustituir esta política sin convertirla hoy en contrato Backend.
+
+## UX regression IMP-AND-0113
+
+Late check-out exitoso navega a Cuenta con el aviso de solicitud registrada; no existe una pantalla de éxito intermedia. La regresión UX incluida en `IMP-AND-0113` fue validada con QA manual y revisión WEB-3 PASS; no altera el estado COMPLETADA de este contrato.

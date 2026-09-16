@@ -4,6 +4,9 @@ export type { RoomServiceService } from './data/services/RoomServiceService';
 export {
   calculateRoomServiceTotal,
   initialRoomServiceCart,
+  isRoomServiceCartValid,
+  ROOM_SERVICE_MAX_ITEM_QUANTITY,
+  ROOM_SERVICE_MIN_ITEM_QUANTITY,
   roomServiceCartReducer,
 } from './domain/models/RoomServiceCart';
 export { roomServiceCategories } from './domain/models/RoomServiceMenu';

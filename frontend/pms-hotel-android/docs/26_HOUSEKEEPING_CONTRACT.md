@@ -20,7 +20,7 @@ interface HousekeepingRequest {
 }
 ```
 
-`housekeepingQaTimeSlots` contiene provisionalmente `09:00–10:00`, `10:00–11:00`, `11:00–12:00` y `14:00–15:00`; `housekeepingQaCleaningTypes` contiene `FULL_CLEANING`, `LIGHT_CLEANING` y `TOWELS_AND_AMENITIES`. Ambos son catálogos mock/frontend para QA, con `10:00–11:00` y `FULL_CLEANING` como defaults. Los valores adicionales no son un contrato Backend ni una aprobación de producto.
+`housekeepingQaTimeSlots` contiene provisionalmente `09:00–10:00`, `10:00–11:00`, `11:00–12:00` y `14:00–15:00`; `housekeepingQaCleaningTypes` contiene `FULL_CLEANING` y `LIGHT_CLEANING`, con `10:00–11:00` y `FULL_CLEANING` como defaults. Los valores son frontend/mock y no un contrato Backend. `TOWELS_AND_AMENITIES` fue retirado del flujo visible de Limpieza: los artículos pertenecen a Amenidades (`IMP-AND-0113`).
 
 `ReservationStay` se reutiliza exclusivamente para resolver y presentar la estadía actual, incluida la habitación asignada o `Habitación por asignar`. La identidad y el scope de un futuro request Backend todavía no están definidos: el mock frontend no fija esa decisión. Esta reconstrucción no envía IDs de Reservation, Stay ni Room.
 
@@ -50,3 +50,7 @@ QA manual: PASS. Revisión WEB-3: PASS. Ambas validaciones cierran `IMP-AND-0110
 Validación automatizada de esta reconstrucción: `npm run lint` PASS (0), `npm run typecheck` PASS (0), `npm run test` PASS (0; 14 suites / 86 tests, incluidos 14 de Housekeeping), `npx expo-doctor` PASS (21/21) y `npx expo export --platform android` PASS (0). Persiste un warning de deprecación de DateTimePicker en la suite existente de Valet.
 
 La programación session-only incorpora `serviceDate` local (`YYYY-MM-DD`) más el inicio del slot. El selector de fecha conserva el slot si sigue siendo válido y usa el slot válido más cercano si no; el submit valida inicio contra +30 minutos, fecha inclusiva `serviceDate <= ReservationStay.departure` y, solo en departure, final de slot `<= 12:00`. `12:00` es la política frontend/mock actual del Hotel Boutique y no se infiere desde copy ni se confunde con la excepción de late checkout hasta `14:00`; una futura configuración de propiedad o Backend podrá sustituirla. Para completion, Housekeeping usa igualmente el final del slot: una franja `11:00–12:00` solo puede completarse a las `12:00` o después; creación y cutoff continúan usando el inicio.
+
+## UX regression IMP-AND-0113
+
+La confirmación exitosa de Limpieza registra o actualiza la solicitud de sesión y navega a Cuenta con el aviso de una sola vez. Los errores conservan el formulario y permiten reintento. La regresión UX incluida en `IMP-AND-0113` fue validada con QA manual y revisión WEB-3 PASS; no altera el estado COMPLETADA de este contrato.
