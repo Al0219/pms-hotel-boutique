@@ -1,0 +1,317 @@
+.page {
+  background-color: #F9F9F6;
+  padding: 2rem;
+  min-height: 100vh;
+  color: #111827;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  color: #6B7280;
+  margin-top: 0.25rem;
+}
+
+.headerActions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.btnGray {
+  background-color: #6B7280;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+}
+
+.btnPillOutline {
+  border: 1px solid #D1D5DB;
+  background: transparent;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.btnOlive {
+  background-color: #65735B;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+}
+
+.btnOutline {
+  border: 1px solid #D1D5DB;
+  background: transparent;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+}
+
+.grid4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.grid6040 {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.card {
+  background-color: #FFFFFF;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  border: 1px solid #E5E7EB;
+  margin-bottom: 1.5rem;
+}
+
+.cardNoMargin {
+  background-color: #FFFFFF;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  border: 1px solid #E5E7EB;
+}
+
+.cardFlex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cardTitle {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #111827;
+  margin: 0 0 0.75rem 0;
+}
+
+.cardTitleSmall {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #6B7280;
+  margin: 0 0 0.5rem 0;
+}
+
+.cardValueBig {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0.5rem 0;
+  line-height: 1;
+}
+
+.cardValueMedium {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0.5rem 0;
+  line-height: 1;
+}
+
+.badgeGreen {
+  background-color: #ECFDF5;
+  color: #065F46;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.badgeGray {
+  background-color: #F3F4F6;
+  color: #374151;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.cardFooter {
+  font-size: 0.75rem;
+  color: #6B7280;
+  margin-top: 0.75rem;
+}
+
+.cardFooterBold {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #111827;
+  margin-top: 0.25rem;
+}
+
+.table {
+  width: 100%;
+  text-align: left;
+  border-collapse: collapse;
+}
+
+.th {
+  padding: 0.75rem;
+  border-bottom: 1px solid #E5E7EB;
+  font-size: 0.75rem;
+  color: #6B7280;
+  font-weight: 600;
+  text-transform: uppercase;
+  background-color: #F9FAFB;
+}
+
+.td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #E5E7EB;
+  font-size: 0.875rem;
+  color: #111827;
+}
+
+.tdBold {
+  font-weight: 700;
+}
+
+.tdGray {
+  color: #6B7280;
+}
+
+.textBold {
+  font-weight: 700;
+}
+
+.textGray {
+  color: #6B7280;
+}
+
+.textRight {
+  text-align: right;
+}
+
+.flexBetween {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.flexStart {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.footerActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+  padding-top: 1rem;
+}
+
+.listRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.listRow:last-child {
+  border-bottom: none;
+}
+
+.pillWide {
+  background-color: #F3F4F6;
+  border-radius: 9999px;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.monoText {
+  font-family: monospace;
+  font-size: 0.875rem;
+  color: #6B7280;
+  line-height: 1.5;
+  background-color: #F3F4F6;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.selectedItem {
+  background-color: #ECFDF5;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #065F46;
+}
+
+.paragraph {
+  font-size: 0.875rem;
+  color: #374151;
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.dateBlock {
+  display: flex;
+  flex-direction: column;
+}
+
+.dateLabel {
+  font-size: 0.75rem;
+  color: #6B7280;
+  margin-bottom: 0.25rem;
+}
+
+.dateValue {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.arrow {
+  color: #9CA3AF;
+  font-size: 1.5rem;
+}
