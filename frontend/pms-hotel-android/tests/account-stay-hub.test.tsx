@@ -36,6 +36,7 @@ describe('Account / Stay Hub V3', () => {
     await waitFor(() => expect(rendered.getByTestId('account-stay-hub-screen')).toBeTruthy());
 
     expect(rendered.getByText('Mi estadía')).toBeTruthy();
+    expect(rendered.queryByTestId('account-rewards-launcher')).toBeNull();
     expect(rendered.getByText('Habitación 204')).toBeTruthy();
     expect(rendered.getByText('Deluxe King')).toBeTruthy();
     expect(rendered.getByText('HB-2026-004281')).toBeTruthy();
@@ -90,6 +91,7 @@ describe('Account / service request confirmation', () => {
     const rendered = await renderRouter({ account: AccountRoute }, { initialUrl: '/account' });
     await waitFor(() => expect(rendered.getByTestId('account-service-request-submitted')).toBeTruthy());
     expect(rendered.getByTestId('account-stay-hub-screen')).toBeTruthy();
+    expect(rendered.queryByTestId('account-rewards-launcher')).toBeNull();
     expect(rendered.getByLabelText('Inicio').props.accessibilityState.selected).toBe(true);
     expect(rendered.getByText('Solicitud enviada')).toBeTruthy();
     expect(rendered.getByText('Tu solicitud fue registrada correctamente.')).toBeTruthy();

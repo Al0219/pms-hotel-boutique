@@ -120,7 +120,8 @@ describe('Hotel — IMP-AND-0114', () => {
     await waitFor(() => expect(ui.getByTestId('guest-navigation-menu-button')).toBeTruthy());
     await fireEvent.press(ui.getByLabelText('Abrir menú'));
     expect(ui.getByTestId('guest-navigation-drawer-panel')).toBeTruthy();
-    expect(within(ui.getByTestId('guest-navigation-drawer-panel')).getByText('Tu estadía')).toBeTruthy();
+    expect(within(ui.getByTestId('guest-navigation-drawer-panel')).getByText('Menú')).toBeTruthy();
+    expect(within(ui.getByTestId('guest-navigation-drawer-panel')).getByText('Navega por tu estancia')).toBeTruthy();
     await fireEvent.press(ui.getByTestId('guest-navigation-drawer-close'));
     await waitFor(() => expect(ui.queryByTestId('guest-navigation-drawer-panel')).toBeNull());
   });

@@ -1,4 +1,4 @@
-export { guestNavigationDrawerLinks, GuestNavigationShell, GuestNavigationTabs, isGuestRootRoute } from '@/modules/navigation/GuestNavigationShell';
+export { guestNavigationDrawerLinks, guestNavigationDrawerSections, GuestNavigationShell, GuestNavigationTabs, isGuestRootRoute, type GuestNavigationDrawerLink, type GuestNavigationDrawerSection } from '@/modules/navigation/GuestNavigationShell';
 export {
   getGuestNavigationTabPressHandler,
   guestNavigationTabs,

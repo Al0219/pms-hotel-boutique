@@ -71,6 +71,7 @@ export const guestNavigationStyles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     height: tokens.layout.guestNavigationTabHeight,
+    gap: tokens.space.xs / 2,
     justifyContent: 'center',
     paddingHorizontal: tokens.space.xs,
     paddingVertical: tokens.space.xs,
@@ -78,6 +79,9 @@ export const guestNavigationStyles = StyleSheet.create({
   tabActive: {
     backgroundColor: tokens.color.surfaceAccent,
     borderRadius: tokens.radius.guestNavigationTab,
+  },
+  tabPressed: {
+    opacity: 0.72,
   },
   tabLabel: {
     color: tokens.color.muted,
@@ -117,53 +121,91 @@ export const guestNavigationStyles = StyleSheet.create({
   drawerBackdrop: {
     backgroundColor: tokens.color.black,
     flex: 1,
-    opacity: 0.68,
+    opacity: 0.48,
   },
   drawerBackdropFill: {
     flex: 1,
   },
   drawer: {
     backgroundColor: tokens.color.surface,
+    borderBottomLeftRadius: tokens.radius.card,
+    borderColor: tokens.color.border,
+    borderLeftWidth: 1,
+    borderTopLeftRadius: tokens.radius.card,
     bottom: 0,
-    opacity: 1,
-    right: 0,
-    padding: tokens.layout.screenInset,
+    elevation: 4,
+    maxWidth: 420,
+    paddingHorizontal: tokens.layout.screenInset,
+    paddingVertical: tokens.space.md,
     position: 'absolute',
+    right: 0,
     top: 0,
-    width: '82%',
+    width: '88%',
   },
   drawerHeader: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: tokens.space.lg,
+    marginBottom: tokens.space.xl,
+  },
+  drawerHeaderCopy: {
+    gap: tokens.space.xs,
   },
   drawerTitle: {
     color: tokens.color.inkStrong,
     fontFamily: tokens.typography.family,
-    fontSize: tokens.typography.size.sectionTitle,
+    fontSize: tokens.typography.size.title,
     fontWeight: '600',
+  },
+  drawerSubtitle: {
+    color: tokens.color.muted,
+    fontFamily: tokens.typography.family,
+    fontSize: tokens.typography.size.bodyMedium,
   },
   drawerCloseButton: {
     alignItems: 'center',
+    borderRadius: tokens.radius.control,
     height: tokens.layout.controlHeight,
     justifyContent: 'center',
     width: tokens.layout.controlHeight,
   },
-  drawerCloseLabel: {
-    color: tokens.color.inkStrong,
+  drawerSections: {
+    gap: tokens.space.lg,
+  },
+  drawerSection: {
+    gap: tokens.space.xs,
+  },
+  drawerSectionTitle: {
+    color: tokens.color.muted,
     fontFamily: tokens.typography.family,
-    fontSize: tokens.typography.size.title,
+    fontSize: tokens.typography.size.caption,
+    fontWeight: '600',
+    letterSpacing: 0.6,
+    paddingHorizontal: tokens.space.xs,
   },
   drawerLink: {
-    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: tokens.radius.control,
+    flexDirection: 'row',
+    gap: tokens.space.sm,
     minHeight: tokens.layout.controlHeight,
-    paddingVertical: tokens.space.xs,
+    paddingHorizontal: tokens.space.sm,
+  },
+  drawerLinkActive: {
+    backgroundColor: tokens.color.surfaceAccent,
+  },
+  drawerItemPressed: {
+    opacity: 0.72,
   },
   drawerLinkLabel: {
     color: tokens.color.ink,
     fontFamily: tokens.typography.family,
     fontSize: tokens.typography.size.label,
+    fontWeight: '500',
+  },
+  drawerLinkLabelActive: {
+    color: tokens.color.brand,
     fontWeight: '600',
   },
+
 });

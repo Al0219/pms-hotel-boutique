@@ -4,14 +4,18 @@
 
 **Tarea:** `IMP-AND-0301 — Rewards`  
 **Estado:** `APPROVED`  
-**Autoridad visual:**  
+**Referencias visuales (guía de producto/UI):**
 - `576:300 — MOB-16 — Rewards / Loyalty`
 - `1163:360 — MOB-V3 — Rewards / Loading`
 - `1163:379 — MOB-V3 — Rewards / Error`
 - `1163:398 — MOB-V3 — Rewards / Offline`
 
 **Reviewer:** `WEB-2`  
-**DoR objetivo:** `Rewards frontend/mock contract approved`
+**DoR:** `PASS — Rewards frontend/mock contract approved`
+**Implementación:** `COMPLETADA`
+**QA automatizada:** `PASS — lint, typecheck, 212 tests, Expo Doctor 21/21, Android export y Metro /status`
+**QA manual:** `PASS`
+**WEB-2:** `PASS`
 
 ---
 
@@ -120,24 +124,29 @@ No mutation es necesaria para el frame actual.
 
 ## 5. Navegación
 
-Desde Cuenta:
+Desde el drawer Guest:
 
 ```text
-Rewards · Silver · 3/8 hacia Gold
+ESTANCIA
 → Rewards
+→ /account/rewards
 ```
+
+Rewards mantiene ownership de Account/Inicio, pero no se muestra como launcher en `/account`. Desde cualquier raíz Guest el drawer cierra y navega a `/account/rewards`; Back retorna siempre a `/account`.
 
 Dentro de Rewards:
 
 ```text
 ← Mi cuenta
-Ver servicios
-Ver promociones aplicables
 ```
 
-Cuenta debe permanecer la tab activa porque Rewards es una subruta del dominio Cuenta, salvo que la arquitectura de rutas aprobada determine otra cosa explícitamente.
+La implementación frontend-first usa `/account/rewards` como hija de Inicio/Cuenta. Muestra `GuestChildHeader`, sin footbar, menú, drawer ni FAB Chat; Back retorna de forma segura a `/account`. La entrada de Rewards se limita al drawer Guest y no deriva datos de perfil o estadía para su presentación.
 
-No crear una quinta tab.
+`Ver promociones aplicables` no se presenta todavía: `/account/promotions` no existe y `IMP-AND-0302` no forma parte de esta entrega. Esta omisión conserva la intención de enlazar Rewards con Promotions sin crear una pantalla o ruta no autorizada.
+
+Las referencias Figma indicadas arriba orientan composición, jerarquía y estados; la navegación vigente, el contrato aprobado y la usabilidad frontend-first tienen prioridad ante una implementación literal incompatible.
+
+Cuenta permanece la tab activa porque Rewards es una subruta de `/account`. No crear una quinta tab.
 
 ---
 
@@ -175,8 +184,6 @@ Sin canje, acumulación, mutation ni Backend.
 - offline;
 - retry;
 - navegación Cuenta ↔ Rewards;
-- navegación Rewards → Services;
-- navegación Rewards → Promotions;
 - shell compartido.
 
 ---
@@ -189,3 +196,7 @@ Como resultado de esta aprobación:
 IMP-AND-0301
 PENDIENTE → READY
 ```
+
+## 9. Implementación frontend-first
+
+La implementación se organiza en `src/modules/rewards` con DTO local → mapper → domain → `RewardsService` → `MockRewardsService` → `useRewards` (TanStack Query) → presentación. No hay fetch, axios, Backend, persistencia, mutation ni DTO importado por UI. `NetworkError` se representa como estado offline y los estados error/offline reintentan la misma Query. El card de nivel se resuelve en presentación con tratamiento local para los tiers de texto conocidos `Silver` y `Gold`, más fallback neutral; no incorpora colores ni categorías en Domain.

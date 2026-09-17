@@ -69,7 +69,10 @@ La footbar V2 implementada por esta excepción no convierte V2 en autoridad glob
 ## 04 Loading, error y offline
 Estados universales.
 
-## Regla
-No inventar pantalla que contradiga Figma.
+## Política de autoridad Figma
+
+Figma es una guía visual y de intención de producto para Android: informa jerarquía, contenido, componentes y estilo. No exige pixel parity, navegación histórica, tabs incompatibles, layouts que reduzcan usabilidad mobile ni estructuras que contradigan la arquitectura vigente.
+
+Cuando una implementación literal entra en conflicto, el orden de decisión es: backlog, criterios funcionales y dependencias; contratos aprobados y reglas de negocio; arquitectura y navegación vigentes; coherencia frontend-first y UX mobile; y finalmente Figma como referencia visual. Cada desviación significativa conserva la intención funcional y se documenta en el contrato de la feature correspondiente; no autoriza funcionalidades adicionales.
 
 Los Node IDs son solo trazabilidad documental; nunca son identificadores runtime.
