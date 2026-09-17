@@ -1,7 +1,78 @@
-.page {
-  background-color: #F9F9F6;
-  padding: 2rem;
+.layoutContainer {
+  display: flex;
   min-height: 100vh;
+}
+
+.sidebar {
+  width: 260px;
+  background-color: #28312B;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.sidebarHeader {
+  padding: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: white;
+}
+
+.sidebarNav {
+  flex: 1;
+  padding: 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sidebarNavItem {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  color: #D1D5DB;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: block;
+  border: none;
+  background: transparent;
+  text-align: left;
+  width: 100%;
+}
+
+.sidebarNavItem:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.sidebarNavItemActive {
+  background-color: #65735B;
+  color: #F9F9F6;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: default;
+}
+
+.sidebarFooter {
+  padding: 1.5rem;
+  font-size: 0.875rem;
+  color: #9CA3AF;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mainContent {
+  flex: 1;
+  overflow-y: auto;
+  background-color: #F9F9F6;
+}
+
+.page {
+  background-color: transparent;
+  padding: 2rem;
   color: #111827;
 }
 

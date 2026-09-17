@@ -2,8 +2,9 @@
 
 import React from "react";
 import styles from "./multi-property.module.css";
+import { ViewProps } from "../types";
 
-export function AvailabilitySearch() {
+export function AvailabilitySearch({ onNavigate }: ViewProps) {
   const HEADER = {
     title: "Disponibilidad cross-property",
     subtitle: "Comparar propiedades autorizadas y noches del stay antes de reservar o trasladar.",
@@ -77,8 +78,8 @@ export function AvailabilitySearch() {
 
       {/* Acciones */}
       <div className={styles.footerActions}>
-        <button className={styles.btnOutline}>&lt;- Dashboard Multi-property</button>
-        <button className={styles.btnOlive}>Buscar disponibilidad</button>
+        <button className={styles.btnOutline} onClick={() => onNavigate('dashboard')}>&lt;- Dashboard Multi-property</button>
+        <button className={styles.btnOlive} onClick={() => onNavigate('results')}>Buscar disponibilidad</button>
       </div>
     </div>
   );

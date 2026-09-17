@@ -2,8 +2,9 @@
 
 import React from "react";
 import styles from "./multi-property.module.css";
+import { ViewProps } from "../types";
 
-export function RebookingApplied() {
+export function RebookingApplied({ onNavigate }: ViewProps) {
   const HEADER = {
     title: "Rebooking cross-property · Aplicado",
     subtitle: "RBK-08421-01 · tarifa, política y disponibilidad destino confirmadas antes del commit.",
@@ -85,8 +86,8 @@ export function RebookingApplied() {
 
       {/* Acciones */}
       <div className={styles.footerActions}>
-        <button className={styles.btnOutline}>&lt;- Resultados disponibilidad</button>
-        <button className={styles.btnOutline}>Dashboard Multi-property</button>
+        <button className={styles.btnOutline} onClick={() => onNavigate('results')}>&lt;- Resultados disponibilidad</button>
+        <button className={styles.btnOutline} onClick={() => onNavigate('dashboard')}>Dashboard Multi-property</button>
       </div>
     </div>
   );

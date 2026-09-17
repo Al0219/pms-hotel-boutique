@@ -2,8 +2,9 @@
 
 import React from "react";
 import styles from "./multi-property.module.css";
+import { ViewProps } from "../types";
 
-export function RebookingEvaluate() {
+export function RebookingEvaluate({ onNavigate }: ViewProps) {
   const HEADER = {
     title: "Rebooking cross-property · Evaluar",
     subtitle: "Escenario RBK-08421-01 · no aplicar hasta confirmar tarifa, política y disponibilidad destino.",
@@ -94,8 +95,8 @@ export function RebookingEvaluate() {
 
       {/* Acciones */}
       <div className={styles.footerActions}>
-        <button className={styles.btnOutline}>&lt;- Resultados disponibilidad</button>
-        <button className={styles.btnOlive}>Confirmar rebooking</button>
+        <button className={styles.btnOutline} onClick={() => onNavigate('results')}>&lt;- Resultados disponibilidad</button>
+        <button className={styles.btnOlive} onClick={() => onNavigate('applied')}>Confirmar rebooking</button>
       </div>
     </div>
   );

@@ -2,8 +2,9 @@
 
 import React from "react";
 import styles from "./multi-property.module.css";
+import { ViewProps } from "../types";
 
-export function AvailabilityResults() {
+export function AvailabilityResults({ onNavigate }: ViewProps) {
   const HEADER = {
     title: "Disponibilidad cross-property",
     subtitle: "12–14 sep 2026 · 2 noches · scope ALL_PROPERTIES {GT-HB-01, GT-HB-03}",
@@ -128,10 +129,10 @@ export function AvailabilityResults() {
 
       {/* Acciones */}
       <div className={styles.footerActions}>
-        <button className={styles.btnOutline}>&lt;- Cambiar fechas</button>
+        <button className={styles.btnOutline} onClick={() => onNavigate('search')}>&lt;- Cambiar fechas</button>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button className={styles.btnOutline}>Dashboard Multi-property</button>
-          <button className={styles.btnOlive}>Evaluar rebooking</button>
+          <button className={styles.btnOutline} onClick={() => onNavigate('dashboard')}>Dashboard Multi-property</button>
+          <button className={styles.btnOlive} onClick={() => onNavigate('evaluate')}>Evaluar rebooking</button>
         </div>
       </div>
     </div>

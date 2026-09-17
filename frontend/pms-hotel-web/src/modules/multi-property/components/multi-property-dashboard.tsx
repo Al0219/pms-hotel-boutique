@@ -2,8 +2,9 @@
 
 import React from "react";
 import styles from "./multi-property.module.css";
+import { ViewProps } from "../types";
 
-export function MultiPropertyDashboard() {
+export function MultiPropertyDashboard({ onNavigate }: ViewProps) {
   const HEADER = {
     title: "Dashboard Multi-property",
     subtitle: "Portfolio autorizado · snapshot 08 sep 2026 · métricas consolidadas por propiedad",
@@ -80,7 +81,7 @@ export function MultiPropertyDashboard() {
           <button className={styles.btnGray}>Gerencia</button>
           <span className={styles.btnPillOutline}>Portfolio · 2 propiedades</span>
           <button className={styles.btnOlive}>Cambiar a GT-HB-03</button>
-          <button className={styles.btnOlive}>Comparar disponibilidad</button>
+          <button className={styles.btnOlive} onClick={() => onNavigate('search')}>Comparar disponibilidad</button>
         </div>
       </header>
 

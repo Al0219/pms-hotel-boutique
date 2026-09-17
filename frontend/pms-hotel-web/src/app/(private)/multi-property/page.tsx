@@ -1,5 +1,5 @@
-import { MultiPropertyDashboard } from "@/modules/multi-property";
+import { MultiPropertyContainer } from "@/modules/multi-property";
 
 export default function MultiPropertyRoute() {
-  return <MultiPropertyDashboard />;
+  return <MultiPropertyContainer />;
 }
