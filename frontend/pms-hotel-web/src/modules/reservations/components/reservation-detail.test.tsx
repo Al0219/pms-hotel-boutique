@@ -7,13 +7,14 @@ import { ReservationDetail } from "./reservation-detail";
 
 afterEach(() => cleanup());
 
-const { useReservationDetailMock, useCancellationPreviewMock, useApplyCancellationMock, useNoShowPreviewMock, useApplyNoShowMock, RoomMoveMock } = vi.hoisted(() => ({
+const { useReservationDetailMock, useCancellationPreviewMock, useApplyCancellationMock, useNoShowPreviewMock, useApplyNoShowMock, RoomMoveMock, StayExtensionMock } = vi.hoisted(() => ({
   useReservationDetailMock: vi.fn(),
   useCancellationPreviewMock: vi.fn(),
   useApplyCancellationMock: vi.fn(),
   useNoShowPreviewMock: vi.fn(),
   useApplyNoShowMock: vi.fn(),
   RoomMoveMock: vi.fn(),
+  StayExtensionMock: vi.fn(),
 }));
 
 vi.mock("../hooks/use-reservation-detail", () => ({ useReservationDetail: useReservationDetailMock }));
@@ -28,7 +29,7 @@ vi.mock("../hooks/use-reservation-no-show", () => ({
   useApplyNoShow: useApplyNoShowMock,
 }));
 
-vi.mock("@/modules/stays", () => ({ RoomMove: RoomMoveMock }));
+vi.mock("@/modules/stays", () => ({ RoomMove: RoomMoveMock, StayExtension: StayExtensionMock }));
 
 function detailData() {
   return {
@@ -278,5 +279,40 @@ describe("ReservationDetail", () => {
     );
 
     expect(screen.queryByRole("button", { name: "Cambiar habitación" })).not.toBeInTheDocument();
+  });
+
+  it("opens the stays extension flow for an active stay and passes the stay id", () => {
+    useReservationDetailMock.mockReturnValue({ data: detailData(), error: null, isLoading: false, refetch: vi.fn() });
+
+    StayExtensionMock.mockReset();
+    StayExtensionMock.mockImplementation(() => <div data-testid="stay-extension" />);
+
+    render(
+      <ReservationDetail propertyId="GT-HB-01" endpoint="http://pms.test/contract/reservations" reservationId="HB-2026-08421" />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Extender estadía" }));
+
+    expect(screen.getByTestId("stay-extension")).toBeInTheDocument();
+    expect(StayExtensionMock).toHaveBeenCalledTimes(1);
+    expect(StayExtensionMock.mock.calls[0][0]).toMatchObject({
+      propertyId: "GT-HB-01",
+      endpoint: "http://pms.test/contract/reservations",
+      reservationId: "HB-2026-08421",
+      stayId: "STAY-001",
+      onClose: expect.any(Function),
+    });
+  });
+
+  it("does not offer the extension action for a non-extensible travel state", () => {
+    const data = detailData();
+    data.stays[0].travelState = "NO_SHOW";
+    useReservationDetailMock.mockReturnValue({ data, error: null, isLoading: false, refetch: vi.fn() });
+
+    render(
+      <ReservationDetail propertyId="GT-HB-01" endpoint="http://pms.test/contract/reservations" reservationId="HB-2026-08421" />,
+    );
+
+    expect(screen.queryByRole("button", { name: "Extender estadía" })).not.toBeInTheDocument();
   });
 });

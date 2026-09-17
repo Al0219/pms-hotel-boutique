@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { HttpNetworkError } from "@/lib/http/errors";
-import { RoomMove } from "@/modules/stays";
+import { RoomMove, StayExtension } from "@/modules/stays";
 
 import { useReservationDetail } from "../hooks/use-reservation-detail";
 import type { ReservationDetailData, ReservationStayDetail, StayTravelState } from "../model/reservation-detail";
@@ -86,14 +86,16 @@ function paymentLine(detail: ReservationDetailData): string {
   }
 }
 
-const MOVEABLE_TRAVEL_STATES: ReadonlySet<StayTravelState> = new Set(["RESERVED", "IN_HOUSE"]);
+const ACTIVE_TRAVEL_STATES: ReadonlySet<StayTravelState> = new Set(["RESERVED", "IN_HOUSE"]);
 
 function StayBlock({
   stay,
   singleRoom,
   onRoomMove,
-}: Readonly<{ stay: ReservationStayDetail; singleRoom: boolean; onRoomMove?: () => void }>) {
-  const moveable = onRoomMove !== undefined && MOVEABLE_TRAVEL_STATES.has(stay.travelState);
+  onExtend,
+}: Readonly<{ stay: ReservationStayDetail; singleRoom: boolean; onRoomMove?: () => void; onExtend?: () => void }>) {
+  const moveable = onRoomMove !== undefined && ACTIVE_TRAVEL_STATES.has(stay.travelState);
+  const extensible = onExtend !== undefined && ACTIVE_TRAVEL_STATES.has(stay.travelState);
 
   return (
     <div className={styles.stayItem}>
@@ -105,6 +107,11 @@ function StayBlock({
       {moveable ? (
         <button className={styles.stayAction} type="button" onClick={onRoomMove}>
           Cambiar habitación
+        </button>
+      ) : null}
+      {extensible ? (
+        <button className={styles.stayAction} type="button" onClick={onExtend}>
+          Extender estadía
         </button>
       ) : null}
     </div>
@@ -124,6 +131,7 @@ export function ReservationDetail({ propertyId, endpoint, reservationId }: Reado
   const [cancelling, setCancelling] = useState(false);
   const [markingNoShow, setMarkingNoShow] = useState(false);
   const [movingRoom, setMovingRoom] = useState<string | null>(null);
+  const [extending, setExtending] = useState<string | null>(null);
 
   const title = reservationId ? `Reserva ${reservationId}` : "Detalle de reserva";
 
@@ -226,6 +234,16 @@ export function ReservationDetail({ propertyId, endpoint, reservationId }: Reado
         />
       ) : null}
 
+      {extending && propertyId && endpoint && reservationId ? (
+        <StayExtension
+          propertyId={propertyId}
+          endpoint={endpoint}
+          reservationId={reservationId}
+          stayId={extending}
+          onClose={() => setExtending(null)}
+        />
+      ) : null}
+
       <div className={styles.grid}>
         <section className={styles.card} aria-labelledby="reservation-data-title">
           <h2 id="reservation-data-title">Datos de la reserva</h2>
@@ -245,9 +263,9 @@ export function ReservationDetail({ propertyId, endpoint, reservationId }: Reado
             <div className={styles.definitionRow}>
               <dt>{singleRoom ? "Habitación" : "Habitaciones"}</dt>
               <dd>
-                <StayBlock stay={detail.stays[0]} singleRoom={singleRoom} onRoomMove={() => setMovingRoom(detail.stays[0].id)} />
+                <StayBlock stay={detail.stays[0]} singleRoom={singleRoom} onRoomMove={() => setMovingRoom(detail.stays[0].id)} onExtend={() => setExtending(detail.stays[0].id)} />
                 {detail.stays.slice(1).map((stay) => (
-                  <StayBlock key={stay.id} stay={stay} singleRoom={false} onRoomMove={() => setMovingRoom(stay.id)} />
+                  <StayBlock key={stay.id} stay={stay} singleRoom={false} onRoomMove={() => setMovingRoom(stay.id)} onExtend={() => setExtending(stay.id)} />
                 ))}
               </dd>
             </div>

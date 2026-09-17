@@ -14,6 +14,10 @@ import type { NoShowApplyDto, NoShowPreviewDto } from "@/modules/reservations/dt
 import type { ReservationDetailDto } from "@/modules/reservations/dtos/reservation-detail.dto";
 import type { ReservationCenterDto, ReservationListItemDto } from "@/modules/reservations/dtos/reservation-list.dto";
 import type { RoomMoveApplyDto, RoomMovePreviewDto } from "@/modules/stays/dtos/room-move.dto";
+import type {
+  StayExtensionApplyDto,
+  StayExtensionPreviewDto,
+} from "@/modules/stays/dtos/stay-extension.dto";
 
 const RESERVATIONS_ENDPOINT = "http://pms.test/contract/reservations";
 
@@ -356,6 +360,36 @@ const roomMovePreviews: Record<string, RoomMovePreviewDto> = {
   },
 };
 
+const extensionPreviews: Record<string, StayExtensionPreviewDto> = {
+  "HB-2026-08421": {
+    reservation_id: "HB-2026-08421",
+    stay_id: "STAY-2026-08421-A",
+    guest_name: "María Fernández",
+    current_stay: {
+      room_label: "203",
+      room_type: "Deluxe King",
+      check_in: "2026-08-28",
+      check_out: "2026-08-31",
+      nights: 3,
+    },
+    requested_departure: "2026-09-02",
+    extra_nights: 2,
+    rate_per_night: "1160",
+    rate_confirmed: true,
+    rate_confirmation: "Tarifa Deluxe King · 1,160 GTQ/noche confirmada.",
+    availability_confirmed: true,
+    availability_note: "Deluxe King 203 disponible · 31 ago – 2 sep.",
+    delta_amount: "2320",
+    new_total_amount: "5800",
+    currency: "GTQ",
+    inventory_note: "ReservationStay A · 28 ago → 2 sep · ATS -2/noche.",
+    calendar_note: "Calendario: 203 reservada hasta 2 sep.",
+    folio_note: "Mismo folio · se agrega cargo por 2 noches adicionales.",
+    can_extend: true,
+    reason: null,
+  },
+};
+
 export const reservationHandlers = [
   http.get(RESERVATIONS_ENDPOINT, ({ request }) => {
     const propertyId = new URL(request.url).searchParams.get("propertyId") ?? "GT-HB-01";
@@ -433,15 +467,15 @@ export const reservationHandlers = [
   http.post(`${RESERVATIONS_ENDPOINT}/:reservationId/room-move`, async ({ params, request }) => {
     const reservationId = String(params.reservationId);
     const body = (await request.json()) as {
-      stay_id: string;
-      target_room_id: string;
+      stayId: string;
+      targetRoomId: string;
       reason?: string | null;
     };
 
     const preview = roomMovePreviews[reservationId];
-    const target = preview?.candidates.find((candidate) => candidate.room_id === body.target_room_id);
+    const target = preview?.candidates.find((candidate) => candidate.room_id === body.targetRoomId);
 
-    if (!preview || preview.stay_id !== body.stay_id) {
+    if (!preview || preview.stay_id !== body.stayId) {
       return HttpResponse.text(null, { status: 404 });
     }
 
@@ -457,7 +491,7 @@ export const reservationHandlers = [
 
     const result: RoomMoveApplyDto = {
       reservation_id: reservationId,
-      stay_id: body.stay_id,
+      stay_id: body.stayId,
       status: "ROOM_MOVED",
       from_room_id: preview.current_room.room_id,
       to_room_id: target.room_id,
@@ -467,6 +501,69 @@ export const reservationHandlers = [
       message: body.reason
         ? `HK: 203→POR LIMPIAR · 101→OCUPADA · Inventario: asignación 203→101 · ATS neto sin cambio · AuditTrail ROOM_MOVED · Motivo: ${body.reason}`
         : "HK: 203→POR LIMPIAR · 101→OCUPADA · Inventario: asignación 203→101 · ATS neto sin cambio · AuditTrail ROOM_MOVED",
+    };
+
+    return HttpResponse.json(result);
+  }),
+  http.get(`${RESERVATIONS_ENDPOINT}/:reservationId/extension-preview`, ({ params, request }) => {
+    const reservationId = String(params.reservationId);
+    const stayId = new URL(request.url).searchParams.get("stayId");
+
+    const preview = extensionPreviews[reservationId];
+
+    if (!preview || preview.stay_id !== stayId) {
+      return HttpResponse.text(null, { status: 404 });
+    }
+
+    return HttpResponse.json(preview);
+  }),
+  http.post(`${RESERVATIONS_ENDPOINT}/:reservationId/extension`, async ({ params, request }) => {
+    const reservationId = String(params.reservationId);
+    const body = (await request.json()) as {
+      stayId: string;
+      newDeparture: string;
+      reason?: string | null;
+    };
+
+    const preview = extensionPreviews[reservationId];
+
+    if (!preview || preview.stay_id !== body.stayId) {
+      return HttpResponse.text(null, { status: 404 });
+    }
+
+    if (!preview.can_extend || preview.requested_departure !== body.newDeparture) {
+      return HttpResponse.json(
+        {
+          error_code: "STAY_EXTENSION_UNAVAILABLE",
+          message: "La disponibilidad para las noches solicitadas ya no está. Revalida y elige otra salida.",
+        },
+        { status: 409 },
+      );
+    }
+
+    const detail = reservationDetails[reservationId];
+    const stay = detail?.stays.find((item) => item.stay_id === body.stayId);
+
+    if (detail && stay) {
+      stay.check_out = body.newDeparture;
+      stay.nights = detail.stays.length === 1 ? 5 : stay.nights;
+    }
+
+    const result: StayExtensionApplyDto = {
+      reservation_id: reservationId,
+      stay_id: body.stayId,
+      status: "EXTENDED",
+      previous_departure: preview.current_stay.check_out,
+      new_departure: body.newDeparture,
+      extra_nights: preview.extra_nights,
+      nights: 5,
+      rate_per_night: preview.rate_per_night,
+      delta_amount: preview.delta_amount,
+      extended_at: new Date().toISOString(),
+      audit_summary: "EXTENDED 31 ago → 2 sep · ReservationStay actualizado · Inventario y calendario actualizados",
+      message: body.reason
+        ? `Cargo adicional Q${preview.delta_amount} · ATS -2/noche · AuditTrail STAY_EXTENDED · Motivo: ${body.reason}`
+        : `Cargo adicional Q${preview.delta_amount} · ATS -2/noche · AuditTrail STAY_EXTENDED`,
     };
 
     return HttpResponse.json(result);

@@ -5,8 +5,14 @@
  */
 
 export { RoomMove } from "./components/room-move";
+export { StayExtension } from "./components/stay-extension";
 export type {
   RoomMoveCandidate,
   RoomMovePreview,
   RoomMoveResult,
 } from "./model/room-move";
+export type {
+  StayExtensionCurrentStay,
+  StayExtensionPreview,
+  StayExtensionResult,
+} from "./model/stay-extension";
