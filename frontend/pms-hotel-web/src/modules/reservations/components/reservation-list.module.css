@@ -32,40 +32,6 @@
   width: 1px;
 }
 
-.tableContainer {
-  background: var(--color-surface-card);
-  border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-md);
-  overflow-x: auto;
-}
-
-.table {
-  border-collapse: collapse;
-  min-width: 900px;
-  width: 100%;
-}
-
-.table thead th {
-  background: var(--color-surface-subtle);
-  border-bottom: 1px solid var(--color-border-default);
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-caption);
-  font-weight: var(--font-weight-semibold);
-  letter-spacing: var(--letter-spacing-caption);
-  padding: var(--space-3) var(--space-4);
-  text-align: left;
-  text-transform: uppercase;
-}
-
-.table tbody td {
-  border-bottom: 1px solid var(--color-border-default);
-  padding: var(--space-4);
-  vertical-align: top;
-}
-
-.table tbody tr:last-child td { border-bottom: 0; }
-.table tbody tr:hover td { background: var(--color-surface-subtle); }
-
 .reference { display: block; font-size: var(--font-size-label-md); font-weight: var(--font-weight-semibold); }
 .guestName { color: var(--color-text-primary); display: block; font-size: var(--font-size-body-md); margin-top: 2px; }
 

@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 
+import { DataTable } from "@/shared/components";
+
 import type { ReservationListItem, ReservationStatus } from "../model/reservation-summary";
 
 import styles from "./reservation-list.module.css";
@@ -168,51 +170,65 @@ export function ReservationList({ reservations, onConvert }: Readonly<Reservatio
         <p className={styles.emptyResults}>{filtered.length === 0 ? "Sin resultados con los filtros actuales." : "No hay reservas para esta propiedad."}</p>
       ) : (
         <>
-          <div className={styles.tableContainer}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th scope="col">Reserva / Huésped</th>
-                  <th scope="col">Estadía / Canal</th>
-                  <th scope="col">Finanzas / Alerta</th>
-                  <th scope="col">Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pageItems.map((item) => (
-                  <tr key={item.id}>
-                    <td>
-                      <strong className={styles.reference}>{item.id}</strong>
-                      <span className={styles.guestName}>{item.guestName}</span>
-                    </td>
-                    <td>
-                      <p className={styles.cellLine}>{item.sourceLabel}{item.roomLabel ? ` · ${item.roomLabel}` : ""}</p>
-                      {item.sourceReference ? <p className={styles.cellMuted}>{item.sourceReference}</p> : null}
-                      <p className={styles.cellMuted}>
-                        {formatShortDate(item.stayStart)} → {formatShortDate(item.stayEnd)} · {pluralize(item.nights, "noche", "noches")}
-                      </p>
-                      <p className={styles.cellMuted}>
-                        {pluralize(item.adults, "adulto", "adultos")} · {item.roomCount === null ? "solicitud" : pluralize(item.roomCount, "habitación", "habitaciones")}
-                      </p>
-                    </td>
-                    <td>
-                      <p className={styles.finance}>{financeLine(item)}</p>
-                      <p className={styles.cellMuted}>{item.alertText ?? "Sin alertas"}</p>
-                    </td>
-                    <td>
-                      <span className={`${styles.badge} ${STATUS_BADGE[item.status]}`}>{STATUS_LABELS[item.status]}</span>
-                      {item.statusDetail ? <p className={styles.statusDetail}>{item.statusDetail}</p> : null}
-                      {item.status === "WAITLIST" && onConvert ? (
-                        <button className={styles.convertButton} type="button" onClick={() => onConvert(item.id)}>
-                          Convertir a reserva
-                        </button>
-                      ) : null}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            label="Reservas de la propiedad"
+            minWidth={900}
+            rows={pageItems}
+            getRowKey={(item) => item.id}
+            columns={[
+              {
+                key: "reservation",
+                header: "Reserva / Huésped",
+                render: (item) => (
+                  <>
+                    <strong className={styles.reference}>{item.id}</strong>
+                    <span className={styles.guestName}>{item.guestName}</span>
+                  </>
+                ),
+              },
+              {
+                key: "stay",
+                header: "Estadía / Canal",
+                render: (item) => (
+                  <>
+                    <p className={styles.cellLine}>{item.sourceLabel}{item.roomLabel ? ` · ${item.roomLabel}` : ""}</p>
+                    {item.sourceReference ? <p className={styles.cellMuted}>{item.sourceReference}</p> : null}
+                    <p className={styles.cellMuted}>
+                      {formatShortDate(item.stayStart)} → {formatShortDate(item.stayEnd)} · {pluralize(item.nights, "noche", "noches")}
+                    </p>
+                    <p className={styles.cellMuted}>
+                      {pluralize(item.adults, "adulto", "adultos")} · {item.roomCount === null ? "solicitud" : pluralize(item.roomCount, "habitación", "habitaciones")}
+                    </p>
+                  </>
+                ),
+              },
+              {
+                key: "finance",
+                header: "Finanzas / Alerta",
+                render: (item) => (
+                  <>
+                    <p className={styles.finance}>{financeLine(item)}</p>
+                    <p className={styles.cellMuted}>{item.alertText ?? "Sin alertas"}</p>
+                  </>
+                ),
+              },
+              {
+                key: "status",
+                header: "Estado",
+                render: (item) => (
+                  <>
+                    <span className={`${styles.badge} ${STATUS_BADGE[item.status]}`}>{STATUS_LABELS[item.status]}</span>
+                    {item.statusDetail ? <p className={styles.statusDetail}>{item.statusDetail}</p> : null}
+                    {item.status === "WAITLIST" && onConvert ? (
+                      <button className={styles.convertButton} type="button" onClick={() => onConvert(item.id)}>
+                        Convertir a reserva
+                      </button>
+                    ) : null}
+                  </>
+                ),
+              },
+            ]}
+          />
 
           <nav className={styles.pagination} aria-label="Paginación de reservas">
             <p className={styles.paginationSummary}>{from}–{to} de {filtered.length} reservas</p>
