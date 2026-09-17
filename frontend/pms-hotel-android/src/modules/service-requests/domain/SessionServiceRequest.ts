@@ -12,6 +12,17 @@ export type SessionServiceRequestOrigin = 'SERVICES' | 'VALET' | 'CHAT';
 
 export type SessionServiceRequestStatus = 'REQUESTED' | 'ASSIGNED' | 'COMPLETED';
 
+export type SessionBillingAmountNature = 'CONFIRMED' | 'ESTIMATED';
+export interface SessionBillingLineItem { label: string; quantity?: number; priceText: string; }
+export interface SessionBillingSnapshot {
+  label: string;
+  priceText: string;
+  lineItems?: readonly SessionBillingLineItem[];
+  amountMinor?: number;
+  currency?: 'GTQ';
+  amountNature?: SessionBillingAmountNature;
+}
+
 export interface SessionServiceRequest {
   sessionRequestId: string;
   kind: SessionServiceRequestKind;
@@ -22,6 +33,8 @@ export interface SessionServiceRequest {
   /** Session-only timestamp used exclusively to order the local list. */
   createdAtMs: number;
   details?: SessionServiceRequestDetails;
+  /** Immutable session-only presentation captured by the producing feature. */
+  billingSnapshot?: SessionBillingSnapshot;
 }
 
 export type SessionServiceRequestDetails =
@@ -42,4 +55,6 @@ export interface AddSessionServiceRequestInput {
   /** Local idempotency key, useful for structured Chat assignments. */
   dedupeKey?: string;
   details?: SessionServiceRequestDetails;
+  /** Immutable session-only presentation captured by the producing feature. */
+  billingSnapshot?: SessionBillingSnapshot;
 }

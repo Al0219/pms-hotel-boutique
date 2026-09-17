@@ -29,7 +29,11 @@ These conceptual modules do not authorize Android project code, contracts, or sc
 
 ## Hotel — IMP-AND-0114
 
-Módulo aislado `src/modules/hotel`, ruta `/hotel`. Consume un perfil central frontend/mock de demostración, sin Query, Mutation, `ReservationStay`, `SessionServiceRequest`, finanzas ni Backend. Es una pantalla exclusivamente informativa. Ver `30_HOTEL_INFO_CONTRACT_PROPOSAL.md`.
+Módulo aislado `src/modules/hotel`, ruta `/hotel`. Consume un perfil central frontend/mock, sin Query, Mutation, `ReservationStay`, `SessionServiceRequest`, finanzas ni Backend. La UI usa estados neutrales cuando falta información configurada. Es una pantalla exclusivamente informativa. Ver `30_HOTEL_INFO_CONTRACT_PROPOSAL.md`.
+
+## Checkout / Invoice — IMP-AND-0203
+
+Módulo aislado `src/modules/checkout`, con DTOs locales, mappers y boundary/mock. Sus rutas hijas son `/account/checkout` y `/account/invoice`; `/account` conserva la navegación global y las hijas usan `GuestChildHeader` sin footbar. Folio es un read model vivo de la sesión actual: Room Service, Late Checkout y Transfer aportan importes estructurados; Transfer conserva metadata estimada y participa en `checkoutTotal`. El snapshot congela ese total para Invoice. Los schedulers de servicios aplican la ventana local `max(arrival, today) → departure`. El snapshot además habilita los gates de creación de servicios de estancia y el launcher Ver factura. No hay Backend, pagos, fiscalidad ni persistencia. IMP-AND-0203 está `COMPLETADA`; ver `20_CHECKOUT_FOLIO_CONTRACT_PROPOSAL.md`.
 
 ## Services / Housekeeping — IMP-AND-0110
 

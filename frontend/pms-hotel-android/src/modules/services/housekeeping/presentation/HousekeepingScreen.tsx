@@ -3,8 +3,9 @@ import { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { NetworkError } from '@/data/remote/http/HttpError';
+import { useCheckoutStatus } from '@/modules/checkout';
 import { GuestChildHeader, GuestNavigationShell, useGuestNotice } from '@/modules/navigation';
-import { formatServiceDateLabel, getFirstAvailableServiceDate, getInitialServiceDate, getNearestServiceTime, isServiceDateWithinStay, isServiceWithinStayWindow, parseServiceDate, useSessionServiceRequests } from '@/modules/service-requests';
+import { formatServiceDateLabel, getFirstAvailableServiceDate, getInitialServiceDate, getNearestServiceTime, getStayServiceDateWindow, isServiceDateWithinStay, isServiceWithinStayWindow, parseServiceDate, useSessionServiceRequests } from '@/modules/service-requests';
 import { type HousekeepingService } from '@/modules/services/housekeeping/data/services/HousekeepingService';
 import { type HousekeepingCleaningType, type HousekeepingTimeSlot } from '@/modules/services/housekeeping/domain/HousekeepingRequest';
 import { useSubmitHousekeeping } from '@/modules/services/housekeeping/presentation/hooks/useSubmitHousekeeping';
@@ -54,6 +55,7 @@ export function HousekeepingScreen({ service, stayService, nowMs = Date.now }: H
   const stay = deriveRemoteState(query, () => false);
   const submission = useSubmitHousekeeping(service);
   const { addRequest, requests, updateRequest } = useSessionServiceRequests();
+  const { isCheckedOut } = useCheckoutStatus();
   const { showServiceRequestSuccess } = useGuestNotice();
   const { editRequestId } = useLocalSearchParams<{ editRequestId?: string }>();
   const [serviceDate, setServiceDate] = useState(() => getInitialServiceDate(nowMs(), housekeepingQaTimeSlots));
@@ -86,16 +88,16 @@ export function HousekeepingScreen({ service, stayService, nowMs = Date.now }: H
 
   useEffect(() => {
     if (stay.kind !== 'success') return;
-    const firstAvailable = getFirstAvailableServiceDate(nowMs(), housekeepingQaTimeSlots, stay.data.departure);
-    const nearest = isServiceDateWithinStay(serviceDate, nowMs(), stay.data.departure)
-      ? getNearestServiceTime(serviceDate, housekeepingQaTimeSlots, nowMs(), timeSlot, stay.data.departure)
+    const firstAvailable = getFirstAvailableServiceDate(nowMs(), housekeepingQaTimeSlots, stay.data.arrival, stay.data.departure);
+    const nearest = isServiceDateWithinStay(serviceDate, nowMs(), stay.data.arrival, stay.data.departure)
+      ? getNearestServiceTime(serviceDate, housekeepingQaTimeSlots, nowMs(), timeSlot, stay.data.arrival, stay.data.departure)
       : null;
     if (nearest) return;
     const timer = setTimeout(() => {
       if (firstAvailable) {
         setServiceDate(firstAvailable);
-        setTimeSlot(getNearestServiceTime(firstAvailable, housekeepingQaTimeSlots, nowMs(), undefined, stay.data.departure) as HousekeepingTimeSlot);
-      } else if (!isServiceDateWithinStay(serviceDate, nowMs(), stay.data.departure)) setServiceDate(stay.data.departure);
+        setTimeSlot(getNearestServiceTime(firstAvailable, housekeepingQaTimeSlots, nowMs(), undefined, stay.data.arrival, stay.data.departure) as HousekeepingTimeSlot);
+      } else if (!isServiceDateWithinStay(serviceDate, nowMs(), stay.data.arrival, stay.data.departure)) setServiceDate(stay.data.departure);
     }, 0);
     return () => clearTimeout(timer);
   }, [serviceDate, stay, timeSlot, nowMs]);
@@ -105,20 +107,21 @@ export function HousekeepingScreen({ service, stayService, nowMs = Date.now }: H
     return () => clearInterval(interval);
   }, []);
 
-  const serviceDateWithinStay = stay.kind === 'success' && isServiceDateWithinStay(serviceDate, nowMs(), stay.data.departure);
-  const noAvailability = stay.kind === 'success' && getFirstAvailableServiceDate(nowMs(), housekeepingQaTimeSlots, stay.data.departure) === null;
-  const timeSlotAllowed = stay.kind === 'success' && isServiceWithinStayWindow({ departure: stay.data.departure, nowMs: nowMs(), serviceDate, startTime: timeSlot });
+  const serviceDateWithinStay = stay.kind === 'success' && isServiceDateWithinStay(serviceDate, nowMs(), stay.data.arrival, stay.data.departure);
+  const stayDateWindow = stay.kind === 'success' ? getStayServiceDateWindow(stay.data.arrival, stay.data.departure, nowMs()) : null;
+  const noAvailability = stay.kind === 'success' && getFirstAvailableServiceDate(nowMs(), housekeepingQaTimeSlots, stay.data.arrival, stay.data.departure) === null;
+  const timeSlotAllowed = stay.kind === 'success' && isServiceWithinStayWindow({ arrival: stay.data.arrival, departure: stay.data.departure, nowMs: nowMs(), serviceDate, startTime: timeSlot });
 
   function selectServiceDate(nextDate: string) {
     setDatePickerVisible(false);
     setServiceDate(nextDate);
-    const nearest = stay.kind === 'success' ? getNearestServiceTime(nextDate, housekeepingQaTimeSlots, nowMs(), timeSlot, stay.data.departure) as HousekeepingTimeSlot | null : null;
+    const nearest = stay.kind === 'success' ? getNearestServiceTime(nextDate, housekeepingQaTimeSlots, nowMs(), timeSlot, stay.data.arrival, stay.data.departure) as HousekeepingTimeSlot | null : null;
     if (nearest) setTimeSlot(nearest);
   }
 
   function submit() {
     if (stay.kind !== 'success' || submission.isPending || submission.isSuccess || inFlight.current) return;
-    if (!serviceDateWithinStay || !isServiceWithinStayWindow({ departure: stay.data.departure, nowMs: nowMs(), serviceDate, startTime: timeSlot })) {
+    if (!serviceDateWithinStay || !isServiceWithinStayWindow({ arrival: stay.data.arrival, departure: stay.data.departure, nowMs: nowMs(), serviceDate, startTime: timeSlot })) {
       setScheduleError(true);
       return;
     }
@@ -142,6 +145,8 @@ export function HousekeepingScreen({ service, stayService, nowMs = Date.now }: H
   const offline = submission.isError && submission.error instanceof NetworkError;
   const selectedCleaningType = housekeepingQaCleaningTypes.find((type) => type.value === cleaningType)!;
   const timeSlotOptions: readonly TimeSlotOption[] = housekeepingQaTimeSlots.map((slot) => ({ value: slot, label: slot }));
+
+  if (isCheckedOut) return <View style={styles.screen} testID="housekeeping-stay-completed"><GuestChildHeader backAccessibilityLabel="Volver a servicios" backTestID="housekeeping-back-arrow" onBack={returnToServices} title="Limpieza" /><View style={styles.content}><StateCard body="Los servicios de estancia ya no están disponibles." testID="housekeeping-creation-blocked" title="Estancia finalizada" /></View><GuestNavigationShell /></View>;
 
   return (
     <View style={styles.screen} testID="housekeeping-screen">
@@ -196,8 +201,8 @@ export function HousekeepingScreen({ service, stayService, nowMs = Date.now }: H
           <View style={housekeepingStyles.modalActions}><Button label="Cancelar" onPress={() => setTypePickerVisible(false)} testID="housekeeping-type-cancel" /><Button label="Aceptar" onPress={() => { setCleaningType(draftCleaningType); setTypePickerVisible(false); }} testID="housekeeping-type-confirm" /></View>
         </View></View>
       </Modal>
-      <ServiceDatePicker maximumDate={stay.kind === 'success' ? parseServiceDate(stay.data.departure) ?? undefined : undefined} minimumDate={new Date(nowMs())} onCancel={() => setDatePickerVisible(false)} onConfirm={selectServiceDate} testID="housekeeping-date-picker" value={serviceDate} visible={datePickerVisible} />
-      <TimeWheelPicker isValueDisabled={(value) => stay.kind !== 'success' || !isServiceWithinStayWindow({ departure: stay.data.departure, nowMs: nowMs(), serviceDate, startTime: value })} mode="slots" onCancel={() => setTimePickerVisible(false)} onConfirm={(value) => { if (stay.kind === 'success' && housekeepingQaTimeSlots.includes(value as HousekeepingTimeSlot) && isServiceWithinStayWindow({ departure: stay.data.departure, nowMs: nowMs(), serviceDate, startTime: value })) { setScheduleError(false); setTimeSlot(value as HousekeepingTimeSlot); } setTimePickerVisible(false); }} options={timeSlotOptions} testID="housekeeping-time-picker" title="Elegir horario" value={timeSlot} visible={timePickerVisible} />
+      <ServiceDatePicker maximumDate={stayDateWindow ? parseServiceDate(stayDateWindow.maximumDate) ?? undefined : undefined} minimumDate={stayDateWindow ? parseServiceDate(stayDateWindow.minimumDate) ?? new Date(nowMs()) : new Date(nowMs())} onCancel={() => setDatePickerVisible(false)} onConfirm={selectServiceDate} testID="housekeeping-date-picker" value={serviceDate} visible={datePickerVisible && stayDateWindow !== null} />
+      <TimeWheelPicker isValueDisabled={(value) => stay.kind !== 'success' || !isServiceWithinStayWindow({ arrival: stay.data.arrival, departure: stay.data.departure, nowMs: nowMs(), serviceDate, startTime: value })} mode="slots" onCancel={() => setTimePickerVisible(false)} onConfirm={(value) => { if (stay.kind === 'success' && housekeepingQaTimeSlots.includes(value as HousekeepingTimeSlot) && isServiceWithinStayWindow({ arrival: stay.data.arrival, departure: stay.data.departure, nowMs: nowMs(), serviceDate, startTime: value })) { setScheduleError(false); setTimeSlot(value as HousekeepingTimeSlot); } setTimePickerVisible(false); }} options={timeSlotOptions} testID="housekeeping-time-picker" title="Elegir horario" value={timeSlot} visible={timePickerVisible} />
     </View>
   );
 }

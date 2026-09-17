@@ -26,7 +26,7 @@ export function HotelScreen({ profile = getHotelProfile() }: HotelScreenProps) {
       <GuestRootHeader title={profile.name} />
       <ScrollView contentContainerStyle={styles.content} style={styles.scroll}>
         <View style={styles.hero} testID="hotel-hero">
-          <Text accessibilityLabel={profile.statusLabel} style={styles.demoIndicator} testID="hotel-demo-indicator">{profile.statusLabel}</Text>
+          <Text accessibilityLabel={profile.statusLabel} style={styles.statusIndicator} testID="hotel-status-indicator">{profile.statusLabel}</Text>
           <Text style={styles.description}>{profile.description}</Text>
         </View>
         <HotelInfoCard testID="hotel-stay-info" title="Tu estadía">
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { gap: tokens.space.md, padding: tokens.layout.screenInset, paddingBottom: tokens.space.xxl },
   hero: { gap: tokens.space.sm },
-  demoIndicator: { alignSelf: 'flex-start', backgroundColor: tokens.color.pendingSurface, borderRadius: tokens.radius.chip, color: tokens.color.pendingText, fontFamily: tokens.typography.family, fontSize: tokens.typography.size.body, fontWeight: '600', paddingHorizontal: tokens.space.sm, paddingVertical: tokens.space.xs },
+  statusIndicator: { alignSelf: 'flex-start', backgroundColor: tokens.color.pendingSurface, borderRadius: tokens.radius.chip, color: tokens.color.pendingText, fontFamily: tokens.typography.family, fontSize: tokens.typography.size.body, fontWeight: '600', paddingHorizontal: tokens.space.sm, paddingVertical: tokens.space.xs },
   description: { color: tokens.color.muted, fontFamily: tokens.typography.family, fontSize: tokens.typography.size.bodyMedium, lineHeight: tokens.typography.size.bodyMedium * 1.5 },
   card: { backgroundColor: tokens.color.white, borderColor: tokens.color.border, borderRadius: tokens.radius.card, borderWidth: 1, gap: tokens.space.xs, padding: tokens.space.md },
   cardTitle: { color: tokens.color.inkStrong, fontFamily: tokens.typography.family, fontSize: tokens.typography.size.label, fontWeight: '600' },

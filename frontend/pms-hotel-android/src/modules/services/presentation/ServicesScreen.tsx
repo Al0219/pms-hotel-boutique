@@ -1,8 +1,10 @@
+import { buildLateCheckoutSessionRequestInput } from '@/modules/services/domain/buildLateCheckoutSessionRequestInput';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { NetworkError } from '@/data/remote/http/HttpError';
+import { useCheckoutStatus } from '@/modules/checkout';
 import { GuestNavigationShell, GuestRootHeader, useGuestNotice } from '@/modules/navigation';
 import { formatServiceDateLabel, useSessionServiceRequests } from '@/modules/service-requests';
 import { type ServicesService } from '@/modules/services/data/services/ServicesService';
@@ -98,10 +100,12 @@ function ServiceCard({
 }
 
 function ServiceNavigationCard({
+  disabled = false,
   label,
   onPress,
   testID,
 }: {
+  disabled?: boolean;
   label: string;
   onPress: () => void;
   testID: string;
@@ -110,8 +114,10 @@ function ServiceNavigationCard({
     <Pressable
       accessibilityLabel={label}
       accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       onPress={onPress}
-      style={servicesStyles.serviceNavigationCard}
+      style={[servicesStyles.serviceNavigationCard, disabled && servicesStyles.buttonDisabled]}
       testID={testID}
     >
       <Text style={servicesStyles.serviceLabel}>{label}</Text>
@@ -126,7 +132,8 @@ export function ServicesScreen({ service, stayService }: ServicesScreenProps) {
   const catalogState = deriveRemoteState(catalogQuery, () => false);
   const stayState = deriveRemoteState(useCurrentStay(stayService), () => false);
   const submission = useSubmitServiceRequest(service);
-  const { addRequest } = useSessionServiceRequests();
+  const { addRequest, requests } = useSessionServiceRequests();
+  const { isCheckedOut } = useCheckoutStatus();
   const { showServiceRequestSuccess } = useGuestNotice();
   const [selectedFixtureKey, setSelectedFixtureKey] = useState<string | null>(null);
   const [successOverlayVisible, setSuccessOverlayVisible] = useState(false);
@@ -135,22 +142,17 @@ export function ServicesScreen({ service, stayService }: ServicesScreenProps) {
   const selectedService = catalogState.kind === 'success'
     ? catalogState.data.items.find((item) => item.fixtureKey === selectedFixtureKey) ?? null
     : null;
+  const lateCheckoutAlreadyRequested = requests.some((request) => request.kind === 'LATE_CHECKOUT');
 
   function submitSelectedService(): void {
     const lateCheckoutUntil = selectedService?.lateCheckoutUntil;
-    if (!selectedService || selectedService.fixtureKey !== 'late-check-out' || !lateCheckoutUntil || stayState.kind !== 'success' || submission.isPending || submissionInFlight.current) return;
+    const lateCheckoutPriceAmount = selectedService?.priceAmount;
+    if (!selectedService || selectedService.fixtureKey !== 'late-check-out' || lateCheckoutAlreadyRequested || isCheckedOut || !lateCheckoutUntil || typeof lateCheckoutPriceAmount !== 'number' || stayState.kind !== 'success' || submission.isPending || submissionInFlight.current) return;
 
     submissionInFlight.current = true;
     submission.mutate(selectedService.fixtureKey, {
       onSuccess: () => {
-        addRequest({
-          kind: 'LATE_CHECKOUT',
-          origin: 'SERVICES',
-          status: 'REQUESTED',
-          summary: `${formatServiceDateLabel(stayState.data.departure)} · Hasta ${lateCheckoutUntil}`,
-          title: selectedService.label,
-          details: { type: 'LATE_CHECKOUT', serviceDate: stayState.data.departure, checkoutUntil: lateCheckoutUntil },
-        });
+        addRequest(buildLateCheckoutSessionRequestInput({ checkoutUntil: lateCheckoutUntil, priceAmount: lateCheckoutPriceAmount, priceText: selectedService.priceText, serviceDate: stayState.data.departure, summary: `${formatServiceDateLabel(stayState.data.departure)} · Hasta ${lateCheckoutUntil}`, title: selectedService.label }));
         showServiceRequestSuccess();
         router.replace('/account');
       },
@@ -227,10 +229,11 @@ export function ServicesScreen({ service, stayService }: ServicesScreenProps) {
     <View style={servicesStyles.screen} testID="services-screen">
       <GuestRootHeader title="Servicios" />
       <ScrollView contentContainerStyle={servicesStyles.content} style={servicesStyles.scroll}>
-        <ServiceNavigationCard label="Limpieza" onPress={() => router.push('/services/housekeeping')} testID="services-housekeeping-launcher" />
-        <ServiceNavigationCard label="Room Service" onPress={() => router.push('/services/room-service')} testID="services-room-service-launcher" />
-        <ServiceNavigationCard label="Amenidades" onPress={() => router.push('/services/amenities')} testID="services-amenities-launcher" />
+        <ServiceNavigationCard disabled={isCheckedOut} label="Limpieza" onPress={() => router.push('/services/housekeeping')} testID="services-housekeeping-launcher" />
+        <ServiceNavigationCard disabled={isCheckedOut} label="Room Service" onPress={() => router.push('/services/room-service')} testID="services-room-service-launcher" />
+        <ServiceNavigationCard disabled={isCheckedOut} label="Amenidades" onPress={() => router.push('/services/amenities')} testID="services-amenities-launcher" />
         <ServiceNavigationCard label="Mis servicios" onPress={() => router.push('/services/requests')} testID="services-requests-launcher" />
+        {isCheckedOut ? <ServicesStateCard body="Los servicios de estancia ya no están disponibles." testID="services-stay-completed" title="Estancia finalizada" /> : null}
         {!hasSubmitFailure ? (
           <View style={servicesStyles.catalog}>
             {catalogState.data.items.map((item) => (
@@ -273,15 +276,17 @@ export function ServicesScreen({ service, stayService }: ServicesScreenProps) {
           />
         ) : null}
 
+        {selectedService?.fixtureKey === 'late-check-out' && lateCheckoutAlreadyRequested ? <ServicesStateCard body="Puedes revisar la solicitud existente en Mis servicios." onRetry={() => router.push('/services/requests')} retryLabel="Ver mis servicios" testID="services-late-checkout-already-requested" title="Late check-out ya solicitado" /> : null}
+
         {!hasSubmitFailure ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityState={{ disabled: !selectedService || stayState.kind !== 'success' || submission.isPending }}
-            disabled={!selectedService || stayState.kind !== 'success' || submission.isPending}
+            accessibilityState={{ disabled: !selectedService || isCheckedOut || lateCheckoutAlreadyRequested || stayState.kind !== 'success' || submission.isPending }}
+            disabled={!selectedService || isCheckedOut || lateCheckoutAlreadyRequested || stayState.kind !== 'success' || submission.isPending}
             onPress={submitSelectedService}
             style={[
               servicesStyles.button,
-              (!selectedService || stayState.kind !== 'success' || submission.isPending) && servicesStyles.buttonDisabled,
+              (!selectedService || isCheckedOut || lateCheckoutAlreadyRequested || stayState.kind !== 'success' || submission.isPending) && servicesStyles.buttonDisabled,
             ]}
             testID="services-submit-button"
           >

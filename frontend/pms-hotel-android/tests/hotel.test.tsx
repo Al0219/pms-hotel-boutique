@@ -29,20 +29,19 @@ function GuestTestLayout() {
 }
 
 describe('Hotel — IMP-AND-0114', () => {
-  it('renders the central demo profile without stay, request, mutation, or remote-state dependencies', async () => {
+  it('renders the central hotel profile without stay, request, mutation, or remote-state dependencies', async () => {
     const ui = await render(<SessionServiceRequestsProvider><RequestProbe /><HotelScreen /></SessionServiceRequestsProvider>);
 
     expect(ui.getByText(hotelProfileFixture.name)).toBeTruthy();
-    expect(ui.getByTestId('hotel-demo-indicator')).toHaveTextContent('Datos de demostración');
+    expect(ui.getByTestId('hotel-status-indicator')).toHaveTextContent('Información en configuración');
     expect(ui.getByText(hotelProfileFixture.description)).toBeTruthy();
-    expect(ui.getByText('Check-in · 15:00')).toBeTruthy();
+    expect(ui.getByText('Check-in · No disponible')).toBeTruthy();
     expect(ui.getByText('Check-out · 12:00')).toBeTruthy();
-    expect(ui.getByText('Recepción · 24 horas')).toBeTruthy();
-    expect(ui.getByText('Red · HotelBoutique_Guest')).toBeTruthy();
-    expect(ui.getByText('Contraseña · demo-guest-2026')).toBeTruthy();
-    expect(ui.getByText('+502 0000-0000')).toBeTruthy();
-    expect(ui.getByText('recepcion@hotel-demo.local')).toBeTruthy();
-    expect(ui.getByText('Dirección de demostración · pendiente de configuración')).toBeTruthy();
+    expect(ui.getByText('Recepción · No disponible')).toBeTruthy();
+    expect(ui.getByText('Red · No disponible')).toBeTruthy();
+    expect(ui.getByText('Contraseña · No disponible')).toBeTruthy();
+    expect(ui.getAllByText('No disponible')).toHaveLength(2);
+    expect(ui.getByText('Ubicación no disponible')).toBeTruthy();
     expect(ui.queryByText('Servicios disponibles')).toBeNull();
     expect(ui.queryByRole('button', { name: 'Ver servicios' })).toBeNull();
     expect(ui.getByTestId('hotel-requests')).toHaveTextContent('[]');

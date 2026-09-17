@@ -1,0 +1,2 @@
+import { type AddSessionServiceRequestInput } from '@/modules/service-requests';
+export function buildLateCheckoutSessionRequestInput({checkoutUntil,priceAmount,priceText,serviceDate,summary,title}:{checkoutUntil:string;priceAmount:number;priceText:string;serviceDate:string;summary:string;title:string}):AddSessionServiceRequestInput{return{kind:'LATE_CHECKOUT',origin:'SERVICES',status:'REQUESTED',title,summary,details:{type:'LATE_CHECKOUT',serviceDate,checkoutUntil},billingSnapshot:{label:title,priceText,amountMinor:priceAmount*100,currency:'GTQ',amountNature:'CONFIRMED'}}}

@@ -12,6 +12,7 @@ export const servicesCatalogFixture: ServicesCatalogFixtureDto = {
       label: 'Late check-out',
       detailText: 'Hasta las 14:00',
       priceText: 'Q 180',
+      priceAmount: 180,
       lateCheckoutUntil: '14:00',
     },
   ],

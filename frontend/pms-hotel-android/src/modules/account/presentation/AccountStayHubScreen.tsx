@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { accountStayHubStyles } from '@/modules/account/presentation/accountStayHubStyles';
+import { useCheckoutStatus } from '@/modules/checkout';
 import { GuestNavigationShell, GuestRootHeader, useGuestNotice } from '@/modules/navigation';
 import { ConfirmationModal } from '@/shared/components';
 import { filterServiceRequests, SessionServiceRequestCard, sessionServiceRequestEditPath, useCompleteSessionServiceRequest, useSessionServiceRequests } from '@/modules/service-requests';
@@ -64,6 +65,7 @@ export function AccountStayHubScreen({ service }: AccountStayHubScreenProps) {
   const query = useCurrentStay(service);
   const remoteState = deriveRemoteState(query, () => false);
   const { removeRequest, requests } = useSessionServiceRequests();
+  const { isCheckedOut } = useCheckoutStatus();
   const completeSessionRequest = useCompleteSessionServiceRequest();
   const [nowMs] = useState(() => Date.now());
   const { dismissNotice, notice } = useGuestNotice();
@@ -137,6 +139,7 @@ export function AccountStayHubScreen({ service }: AccountStayHubScreenProps) {
             <Text style={accountStayHubStyles.referenceText}>{stay.reservationId}</Text>
           </View>
         </View>
+        <Pressable accessibilityLabel={isCheckedOut ? 'Ver factura' : 'Abrir Check-out'} accessibilityRole="button" onPress={() => router.push(isCheckedOut ? '/account/invoice' : '/account/checkout')} style={accountStayHubStyles.button} testID="account-checkout-launcher"><Text style={accountStayHubStyles.buttonLabel}>{isCheckedOut ? 'Ver factura' : 'Check-out'}</Text></Pressable>
         <View style={accountStayHubStyles.requestsSection} testID="account-session-requests">
           <Text accessibilityRole="header" style={accountStayHubStyles.sectionTitle}>Mis servicios</Text>
           {activeRequests.length === 0 ? <Text style={accountStayHubStyles.subtitle}>Aún no tienes servicios solicitados.</Text> : activeRequests.slice(0, 3).map((request) => <SessionServiceRequestCard key={request.sessionRequestId} nowMs={nowMs} onComplete={completeSessionRequest} onRemove={removeRequest} onEdit={(item) => {

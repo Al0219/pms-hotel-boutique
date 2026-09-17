@@ -1,3 +1,4 @@
+import { buildTransferSessionRequestInput } from '@/modules/valet/domain/buildTransferSessionRequestInput';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
@@ -5,7 +6,7 @@ import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-nativ
 
 import { NetworkError } from '@/data/remote/http/HttpError';
 import { GuestNavigationShell, GuestRootHeader, useGuestNotice } from '@/modules/navigation';
-import { formatServiceDate, formatServiceDateLabel, getFirstAvailableServiceDate, getInitialServiceDate, getNearestServiceTime, isServiceDateWithinStay, isServiceWithinStayWindow, parseServiceDate, useSessionServiceRequests } from '@/modules/service-requests';
+import { formatServiceDate, formatServiceDateLabel, getFirstAvailableServiceDate, getInitialServiceDate, getNearestServiceTime, getStayServiceDateWindow, isServiceDateWithinStay, isServiceWithinStayWindow, parseServiceDate, useSessionServiceRequests } from '@/modules/service-requests';
 import {
   GoogleMapsLinkingService,
   type ExternalMapService,
@@ -395,9 +396,11 @@ export function ValetScreen({ clock = deviceClock, mapService = defaultMapServic
   const origin = destination?.type === 'HOTEL' ? pickup : hotel;
   const route = useTransferRouteEstimate(origin?.key ?? null, destination?.key ?? null, routeService);
   const fare = route.data ? calculateTransferFare(route.data) : null;
+  const arrival = stay.kind === 'success' ? stay.data.arrival : null;
   const departure = stay.kind === 'success' ? stay.data.departure : null;
-  const transferWithinStay = departure !== null && isServiceWithinStayWindow({ departure, nowMs: clock.getNow().getTime(), serviceDate: formatServiceDate(scheduledAt), startTime: format24Hour(scheduledAt) });
-  const transferNoAvailability = departure !== null && getFirstAvailableServiceDate(clock.getNow().getTime(), allDayTimes, departure) === null;
+  const stayDateWindow = arrival !== null && departure !== null ? getStayServiceDateWindow(arrival, departure, clock.getNow().getTime()) : null;
+  const transferWithinStay = arrival !== null && departure !== null && isServiceWithinStayWindow({ arrival, departure, nowMs: clock.getNow().getTime(), serviceDate: formatServiceDate(scheduledAt), startTime: format24Hour(scheduledAt) });
+  const transferNoAvailability = arrival !== null && departure !== null && getFirstAvailableServiceDate(clock.getNow().getTime(), allDayTimes, arrival, departure) === null;
   const scheduleIsValid = transferWithinStay && isTransferScheduleValid({ now: clock.getNow(), scheduledAt });
   const scheduleInvalid = showScheduleFeedback && !scheduleIsValid;
   const dateText = scheduledAt.toLocaleDateString();
@@ -414,20 +417,33 @@ export function ValetScreen({ clock = deviceClock, mapService = defaultMapServic
   }, [editedRequest]);
 
   useEffect(() => {
-    if (!departure) return;
-    const firstAvailable = getFirstAvailableServiceDate(clock.getNow().getTime(), allDayTimes, departure);
-    const nearest = isServiceDateWithinStay(vehicleServiceDate, clock.getNow().getTime(), departure)
-      ? getNearestServiceTime(vehicleServiceDate, allDayTimes, clock.getNow().getTime(), requestedTime, departure)
+    if (!arrival || !departure) return;
+    const firstAvailable = getFirstAvailableServiceDate(clock.getNow().getTime(), allDayTimes, arrival, departure);
+    const nearest = isServiceDateWithinStay(vehicleServiceDate, clock.getNow().getTime(), arrival, departure)
+      ? getNearestServiceTime(vehicleServiceDate, allDayTimes, clock.getNow().getTime(), requestedTime, arrival, departure)
       : null;
     if (nearest) return;
     const timer = setTimeout(() => {
       if (firstAvailable) {
         setVehicleServiceDate(firstAvailable);
-        setRequestedTime(getNearestServiceTime(firstAvailable, allDayTimes, clock.getNow().getTime(), undefined, departure));
-      } else if (!isServiceDateWithinStay(vehicleServiceDate, clock.getNow().getTime(), departure)) setVehicleServiceDate(departure);
+        setRequestedTime(getNearestServiceTime(firstAvailable, allDayTimes, clock.getNow().getTime(), undefined, arrival, departure));
+      } else if (!isServiceDateWithinStay(vehicleServiceDate, clock.getNow().getTime(), arrival, departure)) setVehicleServiceDate(departure);
     }, 0);
     return () => clearTimeout(timer);
-  }, [clock, departure, requestedTime, vehicleServiceDate]);
+  }, [arrival, clock, departure, requestedTime, vehicleServiceDate]);
+
+  useEffect(() => {
+    if (!stayDateWindow) return;
+    const selectedDate = formatServiceDate(scheduledAt);
+    const boundedDate = selectedDate < stayDateWindow.minimumDate
+      ? stayDateWindow.minimumDate
+      : selectedDate > stayDateWindow.maximumDate ? stayDateWindow.maximumDate : null;
+    if (!boundedDate) return;
+    const parsedDate = parseServiceDate(boundedDate);
+    if (!parsedDate) return;
+    const timer = setTimeout(() => setScheduledAt((current) => replaceTransferDate(current, parsedDate)), 0);
+    return () => clearTimeout(timer);
+  }, [scheduledAt, stayDateWindow]);
 
   useEffect(() => {
     const interval = setInterval(() => setTimeCheckVersion((current) => current + 1), 30_000);
@@ -439,7 +455,7 @@ export function ValetScreen({ clock = deviceClock, mapService = defaultMapServic
     if (!screen || vehicleRequest.isPending || vehicleInFlight.current) return;
     const selectedVehicle = vehicles.find((item) => item.sessionVehicleId === activeVehicleKey);
     if (!selectedVehicle || selectedVehicle.status !== 'PARKED' || !requestedTime) return;
-    if (!departure || !isServiceWithinStayWindow({ departure, nowMs: clock.getNow().getTime(), serviceDate: vehicleServiceDate, startTime: requestedTime })) {
+    if (!arrival || !departure || !isServiceWithinStayWindow({ arrival, departure, nowMs: clock.getNow().getTime(), serviceDate: vehicleServiceDate, startTime: requestedTime })) {
       setVehicleScheduleError(true);
       return;
     }
@@ -463,7 +479,7 @@ export function ValetScreen({ clock = deviceClock, mapService = defaultMapServic
     transferInFlight.current = true;
     transferReservation.mutate({ destinationType: destination.type, destinationPlace: destination, pickupPlace: destination.type === 'HOTEL' ? pickup : null, dateText, timeText, passengers, routeEstimate: route.data, fareEstimate: fare }, {
       onSuccess: () => {
-        const input = { kind: 'TRANSFER' as const, origin: 'VALET' as const, status: 'REQUESTED' as const, summary: `${destination.displayText} · ${dateText} · ${timeText}`, title: 'Traslado', details: { type: 'TRANSFER' as const, destinationKey: destination.key, ...(pickup ? { pickupKey: pickup.key } : {}), scheduledAtMs: scheduledAt.getTime(), passengers } };
+        const input = buildTransferSessionRequestInput({ destinationKey: destination.key, ...(pickup ? { pickupKey: pickup.key } : {}), scheduledAtMs: scheduledAt.getTime(), passengers, estimatedAmount: fare.estimatedPrice, fareText: fare.estimatedPriceText, summary: `${destination.displayText} · ${dateText} · ${timeText}` });
         if (editedRequest?.kind === 'TRANSFER') updateRequest(editedRequest.sessionRequestId, input); else addRequest(input); resetTransferDraft(); setTransferModalVisible(false); showServiceRequestSuccess(editedRequest ? 'UPDATED' : 'CREATED'); router.replace('/account');
       },
       onSettled: () => { transferInFlight.current = false; },
@@ -551,13 +567,13 @@ export function ValetScreen({ clock = deviceClock, mapService = defaultMapServic
       {vehicleError ? <StateCard body="Intenta nuevamente." onRetry={submitVehicle} testID="valet-request-error" title="No pudimos solicitar tu vehículo" /> : null}
     </ScrollView>
     <GuestNavigationShell />
-    <VehicleModal activeKey={vehicle?.sessionVehicleId ?? ''} noAvailability={departure !== null && getFirstAvailableServiceDate(clock.getNow().getTime(), allDayTimes, departure) === null} onClose={() => setVehicleModalVisible(false)} onOpenDatePicker={() => setVehicleDatePickerVisible(true)} onOpenTimePicker={() => { setVehicleScheduleError(false); setVehicleTimePickerVisible(true); }} onSelect={setActiveVehicleKey} onSubmit={submitVehicle} requestedTime={requestedTime} requestedTimeAllowed={departure !== null && requestedTime !== null && isServiceWithinStayWindow({ departure, nowMs: clock.getNow().getTime(), serviceDate: vehicleServiceDate, startTime: requestedTime })} scheduleError={vehicleScheduleError} serviceDate={vehicleServiceDate} submitting={vehicleRequest.isPending} vehicles={vehicles} visible={vehicleModalVisible} />
+    <VehicleModal activeKey={vehicle?.sessionVehicleId ?? ''} noAvailability={stayDateWindow === null || getFirstAvailableServiceDate(clock.getNow().getTime(), allDayTimes, arrival!, departure!) === null} onClose={() => setVehicleModalVisible(false)} onOpenDatePicker={() => setVehicleDatePickerVisible(true)} onOpenTimePicker={() => { setVehicleScheduleError(false); setVehicleTimePickerVisible(true); }} onSelect={setActiveVehicleKey} onSubmit={submitVehicle} requestedTime={requestedTime} requestedTimeAllowed={arrival !== null && departure !== null && requestedTime !== null && isServiceWithinStayWindow({ arrival, departure, nowMs: clock.getNow().getTime(), serviceDate: vehicleServiceDate, startTime: requestedTime })} scheduleError={vehicleScheduleError} serviceDate={vehicleServiceDate} submitting={vehicleRequest.isPending} vehicles={vehicles} visible={vehicleModalVisible} />
     <RegisterVehicleModal editing={editingVehicleId !== null} ref={registerVehicleForm} onClose={() => { setEditingVehicleId(null); setRegisterVehicleVisible(false); }} onRegister={(input) => editingVehicleId ? updateVehicle(editingVehicleId, input) : addVehicle(input)} vehicles={editingVehicleId ? vehicles.filter((vehicle) => vehicle.sessionVehicleId !== editingVehicleId) : vehicles} visible={registerVehicleVisible} />
     <TransferModal dateText={dateText} destination={destination} fare={fare} mapError={mapError} noAvailability={transferNoAvailability} onClose={() => setTransferModalVisible(false)} onOpenDatePicker={() => setDatePickerVisible(true)} onOpenMap={() => { void openExternalMap(); }} onOpenSelector={setSelectorTarget} onOpenTimePicker={() => setTimePickerVisible(true)} onPassengers={(value) => setPassengers(Math.max(1, Math.min(3, value)))} onReserve={submitTransfer} onRetryRoute={() => void route.refetch()} onReset={() => { setIgnoredTransferEditRequestId(typeof editRequestId === 'string' ? editRequestId : null); resetTransferDraft(); }} origin={origin} passengers={passengers} pickup={pickup} reservation={transferReservation} route={route} scheduleInvalid={scheduleInvalid} scheduleIsValid={scheduleIsValid} timeText={timeText} visible={transferModalVisible} />
     <PlaceSelector onClose={() => setSelectorTarget(null)} onSelect={(place) => { setMapError(false); if (selectorTarget === 'destination') { setDestinationKey(place.key); setPickupKey(null); } else { setPickupKey(place.key); } setSelectorTarget(null); }} places={screen.places} selectedKey={selectorTarget === 'pickup' ? pickup?.key ?? null : destination.key} target={selectorTarget} visible={selectorTarget !== null} />
-    {datePickerVisible ? <DateTimePicker display="default" maximumDate={departure ? parseServiceDate(departure) ?? undefined : undefined} minimumDate={startOfTransferDay(clock.getNow())} mode="date" onChange={onDatePickerChange} testID="transfer-date-picker" value={scheduledAt} /> : null}
-    <TimeWheelPicker isValueDisabled={(value) => departure === null || !isServiceWithinStayWindow({ departure, nowMs: clock.getNow().getTime(), serviceDate: formatServiceDate(scheduledAt), startTime: value })} mode="time" onCancel={() => setTimePickerVisible(false)} onConfirm={(value) => { if (departure !== null && isServiceWithinStayWindow({ departure, nowMs: clock.getNow().getTime(), serviceDate: formatServiceDate(scheduledAt), startTime: value })) onTimeWheelConfirm(value); }} testID="transfer-time-picker" title="Elegir hora" value={timeText} visible={timePickerVisible} />
-    <ServiceDatePicker maximumDate={departure ? parseServiceDate(departure) ?? undefined : undefined} minimumDate={startOfTransferDay(clock.getNow())} onCancel={() => setVehicleDatePickerVisible(false)} onConfirm={(nextDate) => { setVehicleDatePickerVisible(false); setVehicleServiceDate(nextDate); setRequestedTime(departure ? getNearestServiceTime(nextDate, allDayTimes, clock.getNow().getTime(), requestedTime, departure) : null); }} testID="valet-request-date-picker" value={vehicleServiceDate} visible={vehicleDatePickerVisible} />
-    <TimeWheelPicker isValueDisabled={(value) => departure === null || !isServiceWithinStayWindow({ departure, nowMs: clock.getNow().getTime(), serviceDate: vehicleServiceDate, startTime: value })} mode="time" onCancel={() => setVehicleTimePickerVisible(false)} onConfirm={(value) => { if (departure !== null && isServiceWithinStayWindow({ departure, nowMs: clock.getNow().getTime(), serviceDate: vehicleServiceDate, startTime: value })) { setVehicleScheduleError(false); setRequestedTime(value); } setVehicleTimePickerVisible(false); }} testID="valet-request-time-picker-wheel" title="Elegir hora de solicitud" value={requestedTime ?? '00:00'} visible={vehicleTimePickerVisible} />
+    {datePickerVisible && stayDateWindow ? <DateTimePicker display="default" maximumDate={parseServiceDate(stayDateWindow.maximumDate) ?? undefined} minimumDate={parseServiceDate(stayDateWindow.minimumDate) ?? startOfTransferDay(clock.getNow())} mode="date" onChange={onDatePickerChange} testID="transfer-date-picker" value={scheduledAt} /> : null}
+    <TimeWheelPicker isValueDisabled={(value) => arrival === null || departure === null || !isServiceWithinStayWindow({ arrival, departure, nowMs: clock.getNow().getTime(), serviceDate: formatServiceDate(scheduledAt), startTime: value })} mode="time" onCancel={() => setTimePickerVisible(false)} onConfirm={(value) => { if (arrival !== null && departure !== null && isServiceWithinStayWindow({ arrival, departure, nowMs: clock.getNow().getTime(), serviceDate: formatServiceDate(scheduledAt), startTime: value })) onTimeWheelConfirm(value); }} testID="transfer-time-picker" title="Elegir hora" value={timeText} visible={timePickerVisible} />
+    <ServiceDatePicker maximumDate={stayDateWindow ? parseServiceDate(stayDateWindow.maximumDate) ?? undefined : undefined} minimumDate={stayDateWindow ? parseServiceDate(stayDateWindow.minimumDate) ?? startOfTransferDay(clock.getNow()) : startOfTransferDay(clock.getNow())} onCancel={() => setVehicleDatePickerVisible(false)} onConfirm={(nextDate) => { setVehicleDatePickerVisible(false); setVehicleServiceDate(nextDate); setRequestedTime(arrival && departure ? getNearestServiceTime(nextDate, allDayTimes, clock.getNow().getTime(), requestedTime, arrival, departure) : null); }} testID="valet-request-date-picker" value={vehicleServiceDate} visible={vehicleDatePickerVisible && stayDateWindow !== null} />
+    <TimeWheelPicker isValueDisabled={(value) => arrival === null || departure === null || !isServiceWithinStayWindow({ arrival, departure, nowMs: clock.getNow().getTime(), serviceDate: vehicleServiceDate, startTime: value })} mode="time" onCancel={() => setVehicleTimePickerVisible(false)} onConfirm={(value) => { if (arrival !== null && departure !== null && isServiceWithinStayWindow({ arrival, departure, nowMs: clock.getNow().getTime(), serviceDate: vehicleServiceDate, startTime: value })) { setVehicleScheduleError(false); setRequestedTime(value); } setVehicleTimePickerVisible(false); }} testID="valet-request-time-picker-wheel" title="Elegir hora de solicitud" value={requestedTime ?? '00:00'} visible={vehicleTimePickerVisible} />
   </View>;
 }

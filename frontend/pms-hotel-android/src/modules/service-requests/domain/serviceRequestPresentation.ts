@@ -57,7 +57,14 @@ export function getStayCheckoutDateTimeMs(departure: string): number | null {
 }
 
 /** Applies the inclusive stay date and normal-checkout boundary to a scheduled service. */
-export function isServiceWithinStayWindow({ departure, endTime, nowMs, serviceDate, startTime }: {
+export function getStayServiceDateWindow(arrival: string, departure: string, nowMs: number): { minimumDate: string; maximumDate: string } | null {
+  if (!parseServiceDate(arrival) || !parseServiceDate(departure) || arrival > departure) return null;
+  const minimumDate = arrival > formatServiceDate(new Date(nowMs)) ? arrival : formatServiceDate(new Date(nowMs));
+  return minimumDate <= departure ? { minimumDate, maximumDate: departure } : null;
+}
+
+export function isServiceWithinStayWindow({ arrival, departure, endTime, nowMs, serviceDate, startTime }: {
+  arrival: string;
   departure: string;
   endTime?: string;
   nowMs: number;
@@ -65,7 +72,7 @@ export function isServiceWithinStayWindow({ departure, endTime, nowMs, serviceDa
   startTime: string;
 }): boolean {
   const scheduledAtMs = getServiceDateTimeMs(serviceDate, startTime);
-  if (!isServiceDateWithinStay(serviceDate, nowMs, departure) || scheduledAtMs === null || !isServiceTimeAllowed(scheduledAtMs, nowMs)) return false;
+  if (!isServiceDateWithinStay(serviceDate, nowMs, arrival, departure) || scheduledAtMs === null || !isServiceTimeAllowed(scheduledAtMs, nowMs)) return false;
   if (serviceDate < departure) return true;
   const checkoutAtMs = getStayCheckoutDateTimeMs(departure);
   const serviceEndAtMs = getServiceDateTimeMs(serviceDate, endTime ?? getServiceEndTime(startTime));
@@ -73,18 +80,19 @@ export function isServiceWithinStayWindow({ departure, endTime, nowMs, serviceDa
 }
 
 /** Checks a local date against the current calendar day and inclusive stay departure. */
-export function isServiceDateWithinStay(serviceDate: string, nowMs: number, departure: string): boolean {
-  return parseServiceDate(serviceDate) !== null && serviceDate >= formatServiceDate(new Date(nowMs)) && serviceDate <= departure;
+export function isServiceDateWithinStay(serviceDate: string, nowMs: number, arrival: string, departure: string): boolean {
+  const window = getStayServiceDateWindow(arrival, departure, nowMs);
+  return window !== null && parseServiceDate(serviceDate) !== null && serviceDate >= window.minimumDate && serviceDate <= window.maximumDate;
 }
 
 /** Finds the first date within the stay with a valid configured time. */
-export function getFirstAvailableServiceDate(nowMs: number, availableTimes: readonly string[], departure: string): string | null {
-  const departureDate = parseServiceDate(departure);
-  const cursor = parseServiceDate(formatServiceDate(new Date(nowMs)));
-  if (!departureDate || !cursor) return null;
-  while (formatServiceDate(cursor) <= departure) {
+export function getFirstAvailableServiceDate(nowMs: number, availableTimes: readonly string[], arrival: string, departure: string): string | null {
+  const window = getStayServiceDateWindow(arrival, departure, nowMs);
+  const cursor = window ? parseServiceDate(window.minimumDate) : null;
+  if (!window || !cursor) return null;
+  while (formatServiceDate(cursor) <= window.maximumDate) {
     const date = formatServiceDate(cursor);
-    if (availableTimes.some((value) => isServiceWithinStayWindow({ departure, nowMs, serviceDate: date, startTime: value }))) return date;
+    if (availableTimes.some((value) => isServiceWithinStayWindow({ arrival, departure, nowMs, serviceDate: date, startTime: value }))) return date;
     cursor.setDate(cursor.getDate() + 1);
   }
   return null;
@@ -103,9 +111,9 @@ export function hasServiceTimeAvailableToday(nowMs: number): boolean {
 }
 
 /** Returns the closest valid configured value, retaining a valid current choice. */
-export function getNearestServiceTime(serviceDate: string, availableTimes: readonly string[], nowMs: number, currentValue?: string | null, departure?: string): string | null {
-  const isAllowed = (value: string) => departure
-    ? isServiceWithinStayWindow({ departure, nowMs, serviceDate, startTime: value })
+export function getNearestServiceTime(serviceDate: string, availableTimes: readonly string[], nowMs: number, currentValue?: string | null, arrival?: string, departure?: string): string | null {
+  const isAllowed = (value: string) => arrival && departure
+    ? isServiceWithinStayWindow({ arrival, departure, nowMs, serviceDate, startTime: value })
     : isServiceDateTimeAllowed(serviceDate, value, nowMs);
   if (currentValue && availableTimes.includes(currentValue) && isAllowed(currentValue)) return currentValue;
   return availableTimes.find(isAllowed) ?? null;
