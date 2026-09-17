@@ -25,6 +25,15 @@ Los gates de cierre de `IMP-AND-0107` obtuvieron:
 
 El freeze Early Journey → V3 queda aprobado. La evidencia final está registrada en el backlog canónico.
 
+## Reejecución QA global — IMP-AND-0106
+
+La reejecución global de Sprint 1 Android cerró con **PASS** tras completarse las migraciones y su validación automatizada, manual y de WEB-3.
+
+- `QA-AND-0106-01`: **RESUELTO**. La única shell productiva Guest usa Inicio · Servicios · Valet · Hotel; `/account` es la representación vigente de Inicio y no existe una footbar V1 separada.
+- `QA-AND-0106-02`: **RESUELTO**. `IMP-AND-0107` y `IMP-AND-0108..0114` están COMPLETADAS, con la matriz de rutas V3 de este documento implementada.
+
+`IMP-AND-0106` queda **COMPLETADA** con Android Global DoD PASS, QA técnica PASS, QA manual PASS y WEB-3 PASS.
+
 ## Decisiones congeladas
 
 - La shell Guest vigente es `Inicio · Servicios · Valet · Hotel`; Chat es una acción flotante fuera de la footbar y el drawer contiene Inicio, Mis servicios, Servicios, Valet y Hotel.
@@ -86,14 +95,14 @@ UI
 - No se implementan pantallas, rutas, DTOs, mappers, Domain, hooks, mocks funcionales ni tests en este Change Control.
 - No se definen endpoints, HTTP real, autenticación real, Backend, persistencia, secretos, NetInfo, cola offline ni sincronización en segundo plano.
 - No se modifica Figma ni se convierten los frames `31:*` en fuente vigente.
-- `IMP-AND-0110` e `IMP-AND-0111` están COMPLETADAS. `IMP-AND-0112` implementa el registro session-only de MOB-23 y permanece `EN_QA`. `IMP-AND-0114` está COMPLETADA: implementa Hotel independiente y migra la shell como decisión frontend-first, con QA manual y revisión WEB-3 PASS.
+- `IMP-AND-0110..0114` están COMPLETADAS. La reejecución de IMP-AND-0106 confirmó esta migración sin introducir alcance Backend, persistencia ni navegación V1 productiva.
 
 ## Gates cerrados de `IMP-AND-0107`
 
 1. Revisión documental ANDROID-1 PASS, WEB-3 PASS y consulta WEB-2 PASS.
-2. Backlog sincronizado: `IMP-AND-0106` permanece `EN_PROGRESO`, `IMP-AND-0108..0114` permanecen `PENDIENTE` y `IMP-AND-0201` depende de `IMP-AND-0109`.
+2. Al cierre histórico de IMP-AND-0107, el backlog mantenía `IMP-AND-0106` en `EN_PROGRESO` para reejecutar QA tras las migraciones; `IMP-AND-0201` depende de `IMP-AND-0109`.
 3. `IMP-AND-0109` precede a `IMP-AND-0108`: Access necesita `/account` como destino post-success real y validable.
 4. Las rutas, parent-tab semantics, ownership, dependencias y exclusiones de la matriz permanecen sin ambigüedad.
 5. No se introdujeron cambios productivos de Android ni diseño Backend anticipado en este Change Control.
 
-`IMP-AND-0106` solo puede volver a `EN_QA` cuando la migración deje de tener estos hallazgos bloqueantes y su QA transversal se ejecute de nuevo.
+La reejecución de QA transversal confirmó ambos hallazgos como RESUELTOS y cerró `IMP-AND-0106` como COMPLETADA.
