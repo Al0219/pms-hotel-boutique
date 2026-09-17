@@ -13,7 +13,11 @@
 - `1163:512 — MOB-V3 — Perfil / Offline`
 
 **Reviewer:** `WEB-2`  
-**DoR objetivo:** Sprint 0 completada + `Account/Profile frontend/mock contract approved`
+**DoR:** `PASS — Sprint 0, Account / Stay Hub y contrato frontend/mock aprobados`
+**Implementación:** `COMPLETADA`
+**QA automatizada:** `PASS — lint, typecheck, 231 tests, Expo Doctor 21/21, export Android y Metro /status`
+**QA manual:** `PASS — inspección contractual y comportamiento mock/session controlado`
+**WEB-2:** `PASS — revisión contractual de implementación`
 
 ---
 
@@ -500,6 +504,12 @@ Retry manual.
 No asumir persistencia real.
 
 ---
+
+## 13.1 Implementación contractual
+
+La implementación vive en `src/modules/account/profile/`: DTO, mapper puro, Domain, `AccountProfileService`, `MockAccountProfileService` y hooks TanStack Query/Mutation. El fixture aprobado permanece en `src/data/mocks/account/`. El mock conserva cambios autorizados solo en memoria durante la sesión; el éxito de Mutation sincroniza la query con `setQueryData`, sin actualización optimista.
+
+No se crea pantalla, formulario, ruta ni entry point en `IMP-AND-0201`.
 
 ## 14. Navegación
 
