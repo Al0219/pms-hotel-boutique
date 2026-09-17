@@ -1,0 +1,201 @@
+.page {
+  min-height: 100vh;
+  padding-bottom: var(--space-16);
+  background-color: var(--color-surface-page);
+}
+
+.header {
+  align-items: center;
+  border-bottom: 1px solid var(--color-border-default);
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-5) 6vw;
+  background-color: var(--color-surface-card);
+}
+
+.brand {
+  color: var(--color-text-primary);
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-h3);
+  text-decoration: none;
+  font-weight: 400;
+}
+
+.header nav {
+  display: flex;
+  gap: var(--space-6);
+  align-items: center;
+}
+
+.header nav a {
+  color: var(--color-text-primary);
+  font-size: var(--font-size-label-md);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.activeNav {
+  font-weight: 600 !important;
+  color: var(--color-text-brand) !important;
+}
+
+.container {
+  margin: 0 auto;
+  max-width: 1040px;
+  padding: var(--space-10) var(--space-6) 0;
+}
+
+.title {
+  font-family: var(--font-family-display);
+  font-size: clamp(32px, 4vw, var(--font-size-display-xl));
+  font-weight: 400;
+  line-height: var(--line-height-display-xl);
+  margin: 0 0 var(--space-2);
+  color: var(--color-text-primary);
+}
+
+.subtitle {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-body-lg);
+  line-height: var(--line-height-body-lg);
+  margin: 0 0 var(--space-8);
+}
+
+.tabBar {
+  display: flex;
+  gap: var(--space-6);
+  border-bottom: 1px solid var(--color-border-default);
+  margin-bottom: var(--space-8);
+  background: var(--color-surface-card);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-md);
+}
+
+.tab {
+  background: none;
+  border: none;
+  font-size: var(--font-size-body-md);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  cursor: pointer;
+  padding: var(--space-2) 0;
+  position: relative;
+}
+
+.tabActive {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.card {
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  overflow: hidden;
+  min-height: 180px;
+}
+
+.cardThumb {
+  background-color: var(--color-brand-subtle);
+  background-size: cover;
+  background-position: center;
+  min-height: 180px;
+}
+
+.cardBody {
+  padding: var(--space-6) var(--space-8);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cardInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.code {
+  font-size: var(--font-size-caption);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  margin: 0 0 var(--space-1);
+}
+
+.roomTitle {
+  font-size: var(--font-size-h3);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-2);
+}
+
+.details {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-body-md);
+  margin: 0 0 var(--space-4);
+}
+
+.badgeConfirmed {
+  align-self: flex-start;
+  background-color: var(--color-system-success-soft);
+  color: var(--color-system-success);
+  font-size: var(--font-size-caption);
+  font-weight: 600;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+}
+
+.cardRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-4);
+}
+
+.price {
+  font-size: var(--font-size-h3);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.btnDetails {
+  background: var(--color-surface-card);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-6);
+  text-decoration: none;
+  font-size: var(--font-size-body-md);
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+}
+
+.btnDetails:hover {
+  background: var(--color-surface-subtle);
+}
+
+@media (max-width: 768px) {
+  .card {
+    grid-template-columns: 1fr;
+  }
+  .cardBody {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+  }
+  .cardRight {
+    align-items: flex-start;
+  }
+}
