@@ -1,0 +1,104 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-family: var(--font-family-body);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  text-decoration: none;
+  line-height: var(--line-height-label-md);
+  user-select: none;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--color-brand-primary-strong);
+  outline-offset: 2px;
+}
+
+/* Sizes */
+.sizeSm {
+  padding: 6px var(--space-3);
+  font-size: var(--font-size-caption);
+  border-radius: var(--radius-sm);
+}
+
+.sizeMd {
+  padding: 10px var(--space-4);
+  font-size: var(--font-size-label-md);
+}
+
+.sizeLg {
+  padding: 14px var(--space-6);
+  font-size: var(--font-size-body-md);
+}
+
+/* Variants */
+.variantPrimary {
+  background-color: var(--color-brand-primary);
+  color: var(--color-text-inverse);
+  border-color: var(--color-brand-primary);
+}
+
+.variantPrimary:hover:not(:disabled) {
+  background-color: var(--color-brand-primary-hover);
+  border-color: var(--color-brand-primary-hover);
+}
+
+.variantSecondary {
+  background-color: var(--color-brand-soft);
+  color: var(--color-brand-dark);
+  border-color: var(--color-brand-soft);
+}
+
+.variantSecondary:hover:not(:disabled) {
+  background-color: var(--pms-color-sage-600);
+  color: var(--color-text-inverse);
+}
+
+.variantOutline {
+  background-color: transparent;
+  color: var(--color-brand-primary-strong);
+  border-color: var(--color-border-strong);
+}
+
+.variantOutline:hover:not(:disabled) {
+  background-color: var(--color-brand-subtle);
+  border-color: var(--color-brand-primary);
+}
+
+.variantGhost {
+  background-color: transparent;
+  color: var(--color-text-primary);
+  border-color: transparent;
+}
+
+.variantGhost:hover:not(:disabled) {
+  background-color: var(--color-surface-subtle);
+}
+
+/* Disabled & Loading */
+.button:disabled,
+.buttonDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.spinner {
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

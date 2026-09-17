@@ -1,0 +1,2 @@
+import { type CheckoutRequest, type CheckoutContent, type Folio, type Invoice } from '@/modules/checkout/domain/Checkout';
+export interface CheckoutService { getFolio(): Promise<Folio>; getCheckout(): Promise<CheckoutContent>; getInvoice(): Promise<Invoice>; submitCheckout(input: CheckoutRequest): Promise<{ completed: true }>; generateInvoicePdf(): Promise<{ fileDisplayText: string }>; sendInvoiceEmail(): Promise<{ confirmationText: string }>; }

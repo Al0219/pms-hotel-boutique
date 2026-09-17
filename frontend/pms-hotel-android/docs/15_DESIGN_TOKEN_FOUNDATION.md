@@ -8,8 +8,15 @@ Figma canónico: `238:132 — Implementation Ready — Android V2 + V3`.
 - Tipografía: Inter; tamaños observados 9, 10, 11, 12, 14, 15, 16, 18, 21, 24, 25, 26, 42 y 48.
 - Radios: 10 y 14.
 - Screen canónico `238:133`: inset horizontal 24, ancho de contenido 364, campos de 48 y botón de 44.
+- Footbar Guest V3: 76 de alto, tabs de 52, inset lateral 18, separación 16 y radio 14. Estos aliases se limitan al shell transversal V3; no modifican la excepción V2 de `IMP-AND-0102`.
 
 ## Implementación Sprint 0
 `src/shared/theme/tokens.ts` asigna nombres semánticos a estos valores y `styles.ts` los consume mediante React Native `StyleSheet`.
 
 No hay dark mode, componentes visuales finales ni fuente empaquetada en Sprint 0. El token `Inter` conserva la trazabilidad de Figma; la carga de una fuente local requiere una tarea posterior aprobada.
+
+## Reutilización acotada de tokens — IMP-AND-0102
+
+La pantalla `31:154 — MOB-02 — Inicio / Mi estadía` es una excepción visual exclusiva de `IMP-AND-0102`. Reutiliza aliases semánticos compatibles con la Foundation existente: `border`, `pendingSurface`, `pendingText`, `chip` y `card`, con los valores observados `#E2E1DC`, `#F7ECD8`, `#A8732A`, 12 y 16.
+
+Esta reutilización no convierte la referencia histórica en autoridad global ni altera la fuente canónica `238:132`. La referencia utiliza Lora en sus títulos, pero no existe una fuente empaquetada aprobada. La implementación conserva el token tipográfico existente sin declarar Lora como fuente disponible ni introducir una dependencia de fuentes en esta tarea.

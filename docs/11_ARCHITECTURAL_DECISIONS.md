@@ -38,6 +38,34 @@ Append-only/compensatory.
 ### DEC-G-012 — Integrations
 Idempotentes y trazables.
 
+### DEC-G-013 — Contratos frontend-first para features sin Backend
+
+**Fecha:** 2026-09-10
+**Status:** APPROVED — aceptada mediante Change Control.
+**Responsable de aprobación:** Equipo PMS Hotel Boutique.
+
+**Contexto:** Web y Android se implementarán antes de diseñar e implementar Backend. Algunas features frontend necesitan datos estables para construir UI, dominio frontend, mapper, estados y pruebas durante esa fase.
+
+**Problema:** Exigir una API Backend inexistente bloquea el trabajo frontend; tratar mocks como API obligaría prematuramente decisiones de transporte, seguridad, persistencia y negocio que corresponden a Backend.
+
+**Decisión propuesta:** Durante la fase frontend-first, una feature Web o Android podrá basarse en un contrato explícito de datos/mocks frontend, aprobado para su tarea. El contrato fija solo los datos, escenarios y boundaries necesarios para la UI, el dominio frontend, mapper y pruebas. No constituye contrato API Backend ni define endpoints, HTTP, auth, permisos, persistencia, tablas o reglas Backend.
+
+**Consecuencias propuestas:**
+- Backend será la autoridad de la API real cuando inicie su fase.
+- DTO/Mapper absorberán la futura API sin permitir DTOs en UI.
+- El contrato frontend no puede inventar reglas de negocio no confirmadas por producto, Figma, reglas de dominio o backlog.
+- El DoR de una tarea afectada solo puede cambiarse mediante el workflow de Change Control y aprobación correspondiente.
+
+**Alternativas consideradas:** Mantener el bloqueo hasta diseñar Backend completo; o declarar los mocks como API anticipada. Ambas alternativas se rechazan provisionalmente porque contradicen la estrategia frontend-first o congelan decisiones Backend sin su fase de diseño.
+
+#### Clarificación aprobada — Android con datos dummy/locales
+
+Durante la fase frontend-first, la ausencia de Backend no bloquea por sí sola una feature Android. Android puede ejecutarse completamente con datos dummy/locales cuando la tarea cuenta con autoridad visual/funcional suficiente y un contrato frontend/mock aprobado para su módulo.
+
+Ese contrato determina solo los campos, escenarios de UI y boundaries que necesita Android. Los datos se sirven desde fixtures locales detrás de una implementación mock sustituible; la UI no importa fixtures ni DTOs. Cuando corresponde server-like state, TanStack Query/Mutation conserva esa autoridad. La integración futura reemplazará la implementación mock por una API real mediante DTO/Mapper, manteniendo Domain, UI, hooks públicos y query keys cuando sea razonable.
+
+Los contratos frontend/mock no son API Backend: no definen endpoints, HTTP, persistencia, entidades, IDs Backend, base de datos, auth ni permisos. Backend será autoridad únicamente al iniciar su integración. Cada feature continúa bloqueada si faltan Figma, campos, comportamiento, semántica de dominio, navegación, pruebas o la aprobación de su propio contrato frontend/mock.
+
 ## Web — Sprint 0 aprobadas
 
 ### DEC-W-001 — Framework
@@ -122,6 +150,23 @@ La fuente visual y funcional canónica para Android es `238:132 — Implementati
 **Validación de Foundation:** `npm ci`, `npx expo-doctor`, `npx tsc --noEmit`, `npx expo export` y un smoke de navegación/app técnica. La exigencia anterior de `Gradle build/assemble` queda sustituida.
 
 **Uso nativo local:** Android Studio se puede usar para emulador, debugging y compilación local. Cuando sea necesario, `npx expo prebuild` o `npx expo run:android` generan el proyecto nativo efímero sin autorizar su versionado.
+
+### DEC-A-004 — Android Guest Navigation Shell V3
+
+**Fecha:** 2026-09-10
+**Status:** APPROVED
+**Owner:** ANDROID-1
+**Reviewer principal:** WEB-3. WEB-2 participa como consulta adicional cuando la navegación futura de Cuenta requiera validar su semántica.
+
+**Decisión:** `IMP-AND-0100` implementará un único shell Guest V3 reutilizable para `Servicios · Chat · Valet · Cuenta`, conforme a `238:132 — Implementation Ready — Android V2 + V3`. Sus rutas objetivo conceptuales son `/services`, `/chat`, `/valet` y `/account`. Una ruta objetivo no autoriza crear su archivo ni su feature.
+
+**Destinos no implementados:** Las cuatro tabs permanecen visibles, pero están disabled hasta que su feature real esté autorizada e implementada. No navegan a rutas ficticias ni a placeholders. El handoff técnico `/services` de `IMP-AND-0102` no convierte Servicios en una feature V3 disponible.
+
+**Selección, accesibilidad y navegación:** `usePathname()` es la única fuente de verdad para la tab activa. Una tab está activa en su `basePath` y sus hijas. No existe store global para selección. El shell usa la semántica accesible soportada por React Native; cada tab declara su label visible, `accessibilityRole="tab"`, estado `selected` cuando aplica y estado `disabled` sin handler ejecutable cuando no está disponible. El objetivo táctil mínimo es 44 × 44 dp. Un cambio entre tabs disponibles usa `router.replace(basePath)`; las rutas hijas usan `router.push(childPath)` y Android Back conserva el stack estándar, sin ciclos artificiales ni stacks independientes por tab. Tocar la tab activa es un no-op.
+
+**Montaje y límites:** Se autoriza crear `frontend/pms-hotel-android/src/modules/navigation` como módulo transversal durante `IMP-AND-0100`. Aloja configuración declarativa, shell/footbar compartido, resolución pura de tab activa, integración Expo Router, estados enabled/disabled y accesibilidad. No contiene lógica de Stay, Services, Chat, Valet ni Account. El shell no envuelve globalmente `(guest)`, no monta sobre Home V2 y no modifica `IMP-AND-0102` ni el handoff `/services`. Su primer consumidor productivo será una feature V3 autorizada.
+
+**Coexistencia V2/V3:** Home V2 conserva temporalmente `Inicio · Solicitudes · Explorar · Hotel`. No se agrega Inicio al shell V3. Su futura migración exige una tarea y Change Control independientes.
 
 ## Nueva decisión futura
 Registrar ID, fecha, status, contexto, problema, decisión, alternativas, consecuencias y responsables. No borrar historia; usar `SUPERSEDED`.
