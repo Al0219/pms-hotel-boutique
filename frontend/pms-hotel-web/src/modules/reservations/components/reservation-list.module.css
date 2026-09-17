@@ -1,0 +1,115 @@
+.panel { display: grid; gap: var(--space-4); }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+
+.searchField, .filterField { display: flex; align-items: center; }
+.searchInput, .filterSelect {
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: var(--font-size-label-md);
+  line-height: var(--line-height-label-md);
+  min-height: 40px;
+  padding: var(--space-2) var(--space-3);
+}
+.searchInput { flex: 1 1 280px; min-width: 240px; }
+.filterSelect { min-width: 180px; }
+.searchInput::placeholder { color: var(--color-text-secondary); }
+.searchInput:focus-visible, .filterSelect:focus-visible, .pageButton:focus-visible {
+  outline: 3px solid var(--color-brand-accent);
+  outline-offset: 2px;
+}
+
+.visuallyHidden {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.tableContainer {
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+}
+
+.table {
+  border-collapse: collapse;
+  min-width: 900px;
+  width: 100%;
+}
+
+.table thead th {
+  background: var(--color-surface-subtle);
+  border-bottom: 1px solid var(--color-border-default);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-caption);
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.table tbody td {
+  border-bottom: 1px solid var(--color-border-default);
+  padding: var(--space-4);
+  vertical-align: top;
+}
+
+.table tbody tr:last-child td { border-bottom: 0; }
+.table tbody tr:hover td { background: var(--color-surface-subtle); }
+
+.reference { display: block; font-size: var(--font-size-label-md); font-weight: var(--font-weight-semibold); }
+.guestName { color: var(--color-text-primary); display: block; font-size: var(--font-size-body-md); margin-top: 2px; }
+
+.cellLine { margin: 0 0 2px; }
+.cellMuted { color: var(--color-text-secondary); font-size: var(--font-size-caption); line-height: var(--line-height-caption); margin: 0; }
+.finance { font-size: var(--font-size-label-md); font-weight: var(--font-weight-medium); margin: 0 0 2px; }
+
+.badge {
+  border-radius: 999px;
+  display: inline-block;
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-caption);
+  padding: 2px var(--space-3);
+}
+.statusConfirmed { background: var(--color-system-success-soft); color: var(--color-system-success); }
+.statusPending { background: var(--color-system-warning-soft); color: var(--color-system-warning); }
+.statusWaitlist { background: var(--color-system-info-soft); color: var(--color-system-info); }
+.statusNoShow { background: var(--color-system-error-soft); color: var(--color-system-error); }
+.statusDetail { color: var(--color-text-secondary); font-size: var(--font-size-caption); line-height: var(--line-height-caption); margin: var(--space-2) 0 0; }
+
+.emptyResults { color: var(--color-text-secondary); margin: var(--space-4) 0; }
+
+.pagination { align-items: center; display: flex; flex-wrap: wrap; gap: var(--space-3); justify-content: space-between; }
+.paginationSummary { color: var(--color-text-secondary); font-size: var(--font-size-caption); margin: 0; }
+.pager { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.pageButton {
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-label-md);
+  min-height: 32px;
+  min-width: 32px;
+  padding: var(--space-2) var(--space-3);
+}
+.pageButton:disabled { cursor: default; opacity: 0.5; }
+.pageButtonActive, .pageButton:not(:disabled):hover { background: var(--color-brand-subtle); border-color: var(--color-brand-primary); }
+.pageEllipsis { color: var(--color-text-secondary); line-height: 32px; padding: 0 2px; }
+
+@media (max-width: 720px) {
+  .toolbar { flex-direction: column; }
+  .searchInput, .filterSelect { min-width: 0; width: 100%; }
+  .pagination { align-items: flex-start; flex-direction: column; }
+}
