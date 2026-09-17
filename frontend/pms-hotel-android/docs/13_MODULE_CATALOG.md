@@ -23,6 +23,10 @@ All future Android modules are owned by ANDROID-1.
 
 These conceptual modules do not authorize Android project code, contracts, or screens before the stack and relevant backlog task are approved.
 
+## Account / Profile contracts — IMP-AND-0201
+
+Submódulo contractual `src/modules/account/profile`, bajo Account. Separa `GuestAccount` de `GuestProfile`; el fixture frontend/mock, mapper, service boundary y hooks Query/Mutation preparan lectura y actualización session-only de preferencias y Marketing SMS. No crea UI, ruta, launcher, navegación ni persistencia. IMP-AND-0201 está `COMPLETADA`; ver `19_ACCOUNT_PROFILE_CONTRACT_PROPOSAL.md`.
+
 ## Navigation shell — IMP-AND-0114
 
 `src/modules/navigation` owns the shared Guest shell. `/account` is visually **Inicio**, `/services` and its children remain Servicios, `/valet` and its children remain Valet, and `/hotel` is Hotel. Chat is available only through the shell floating action and has no active tab. The drawer contains navigation links only and derives no guest identity or room data.
