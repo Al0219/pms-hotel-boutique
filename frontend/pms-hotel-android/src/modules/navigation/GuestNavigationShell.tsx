@@ -6,30 +6,50 @@ import {
   getGuestNavigationTabPressHandler,
   guestNavigationTabs,
   isGuestNavigationTabActive,
+  type GuestNavigationIcon,
   type GuestNavigationTab,
 } from '@/modules/navigation/guestNavigationTabs';
 import { guestNavigationStyles } from '@/modules/navigation/guestNavigationStyles';
 import { tokens } from '@/shared/theme/tokens';
 
-export interface GuestNavigationTabsProps {
-  pathname: string;
-  tabs?: readonly GuestNavigationTab[];
-  onReplace?: (basePath: string) => void;
-  onNavigateAway?: (basePath: string) => void;
-}
-
 export interface GuestNavigationDrawerLink {
+  icon: GuestNavigationIcon;
   label: string;
   path: string;
 }
 
-export const guestNavigationDrawerLinks: readonly GuestNavigationDrawerLink[] = [
-  { label: 'Inicio', path: '/account' },
-  { label: 'Mis servicios', path: '/services/requests' },
-  { label: 'Servicios', path: '/services' },
-  { label: 'Valet', path: '/valet' },
-  { label: 'Hotel', path: '/hotel' },
+export interface GuestNavigationDrawerSection {
+  id: 'stay' | 'services' | 'hotel';
+  label: 'ESTANCIA' | 'SERVICIOS' | 'HOTEL';
+  links: readonly GuestNavigationDrawerLink[];
+}
+
+export const guestNavigationDrawerSections: readonly GuestNavigationDrawerSection[] = [
+  {
+    id: 'stay',
+    label: 'ESTANCIA',
+    links: [
+      { icon: { android: 'home', ios: 'house.fill', web: 'home' }, label: 'Inicio', path: '/account' },
+      { icon: { android: 'list', ios: 'list.bullet', web: 'list' }, label: 'Mis servicios', path: '/services/requests' },
+      { icon: { android: 'star', ios: 'star.fill', web: 'star' }, label: 'Rewards', path: '/account/rewards' },
+    ],
+  },
+  {
+    id: 'services',
+    label: 'SERVICIOS',
+    links: [
+      { icon: { android: 'room_service', ios: 'bell.fill', web: 'room_service' }, label: 'Servicios', path: '/services' },
+      { icon: { android: 'directions_car', ios: 'car.fill', web: 'directions_car' }, label: 'Valet', path: '/valet' },
+    ],
+  },
+  {
+    id: 'hotel',
+    label: 'HOTEL',
+    links: [{ icon: { android: 'apartment', ios: 'building.2.fill', web: 'apartment' }, label: 'Hotel', path: '/hotel' }],
+  },
 ];
+
+export const guestNavigationDrawerLinks = guestNavigationDrawerSections.flatMap((section) => section.links);
 
 const guestNavigationRootPaths = new Set(['/account', '/services', '/valet', '/hotel']);
 
@@ -64,9 +84,17 @@ export function GuestNavigationTabs({
             disabled={tab.disabled}
             key={tab.id}
             onPress={onPress}
-            style={[guestNavigationStyles.tab, isActive && guestNavigationStyles.tabActive]}
+            style={({ pressed }) => [guestNavigationStyles.tab, isActive && guestNavigationStyles.tabActive, pressed && guestNavigationStyles.tabPressed]}
             testID={`guest-navigation-tab-${tab.id}`}
           >
+            <View accessible={false} testID={`guest-navigation-tab-icon-${tab.id}`}>
+              <SymbolView
+                accessibilityElementsHidden
+                name={tab.icon}
+                size={tokens.typography.size.sectionTitle}
+                tintColor={isActive ? tokens.color.brand : tokens.color.muted}
+              />
+            </View>
             <Text accessible={false} style={[guestNavigationStyles.tabLabel, isActive && guestNavigationStyles.tabLabelActive]}>
               {tab.label}
             </Text>
@@ -75,6 +103,13 @@ export function GuestNavigationTabs({
       })}
     </View>
   );
+}
+
+export interface GuestNavigationTabsProps {
+  pathname: string;
+  tabs?: readonly GuestNavigationTab[];
+  onReplace?: (basePath: string) => void;
+  onNavigateAway?: (basePath: string) => void;
 }
 
 /** Router-integrated entry point for future authorized V3 feature routes. */

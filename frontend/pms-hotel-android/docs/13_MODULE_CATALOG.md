@@ -31,6 +31,10 @@ These conceptual modules do not authorize Android project code, contracts, or sc
 
 Módulo aislado `src/modules/hotel`, ruta `/hotel`. Consume un perfil central frontend/mock, sin Query, Mutation, `ReservationStay`, `SessionServiceRequest`, finanzas ni Backend. La UI usa estados neutrales cuando falta información configurada. Es una pantalla exclusivamente informativa. Ver `30_HOTEL_INFO_CONTRACT_PROPOSAL.md`.
 
+## Rewards — IMP-AND-0301
+
+Módulo aislado `src/modules/rewards`, ruta hija `/account/rewards`. La entrada está en `ESTANCIA > Rewards` del drawer Guest; no aparece en Account/Inicio ni agrega una tab. La hija usa `GuestChildHeader` sin shell global y Back seguro hacia `/account`. El flujo es DTO local → mapper → domain → `RewardsService`/`MockRewardsService` → TanStack Query → UI. Los valores de nivel, progreso, beneficios y métricas son texto frontend/mock y no representan IDs, saldo, puntos ni moneda Backend. No hay fetch, persistencia, mutation ni Promotions. Las referencias Figma orientan la UI; la arquitectura y contratos aprobados prevalecen ante una implementación literal incompatible. IMP-AND-0301 está `COMPLETADA`; ver `21_REWARDS_CONTRACT_PROPOSAL.md`.
+
 ## Checkout / Invoice — IMP-AND-0203
 
 Módulo aislado `src/modules/checkout`, con DTOs locales, mappers y boundary/mock. Sus rutas hijas son `/account/checkout` y `/account/invoice`; `/account` conserva la navegación global y las hijas usan `GuestChildHeader` sin footbar. Folio es un read model vivo de la sesión actual: Room Service, Late Checkout y Transfer aportan importes estructurados; Transfer conserva metadata estimada y participa en `checkoutTotal`. El snapshot congela ese total para Invoice. Los schedulers de servicios aplican la ventana local `max(arrival, today) → departure`. El snapshot además habilita los gates de creación de servicios de estancia y el launcher Ver factura. No hay Backend, pagos, fiscalidad ni persistencia. IMP-AND-0203 está `COMPLETADA`; ver `20_CHECKOUT_FOLIO_CONTRACT_PROPOSAL.md`.
