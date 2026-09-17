@@ -1,5 +1,6 @@
 import { httpRequest } from "@/lib/http/client";
 
+import type { CancellationApplyDto, CancellationPreviewDto } from "../dtos/reservation-cancellation.dto";
 import type { ReservationDetailDto } from "../dtos/reservation-detail.dto";
 import type { ReservationCenterDto } from "../dtos/reservation-list.dto";
 
@@ -53,6 +54,64 @@ export async function getReservationDetail({
 
   return httpRequest<ReservationDetailDto>({
     path: `${base}/${encodeURIComponent(reservationId)}${separator}${searchParams.toString()}`,
+    signal,
+  });
+}
+
+export interface ReservationCancellationRequest {
+  /** Approved by Backend; the module intentionally has no default endpoint. */
+  endpoint: string;
+  /** Resolved from an authorized staff session before this request is made. */
+  propertyId: string;
+  reservationId: string;
+  signal?: AbortSignal;
+}
+
+export interface ApplyCancellationRequest extends ReservationCancellationRequest {
+  /** Obligatorio: se registra en AuditTrail junto con política e importe. */
+  reason: string;
+}
+
+/**
+ * Proyecta la política (penalización/reembolso/liberación) sin ejecutar nada.
+ * El UI no habilita la cancelación sin un preview válido.
+ */
+export async function previewCancellation({
+  endpoint,
+  propertyId,
+  reservationId,
+  signal,
+}: ReservationCancellationRequest): Promise<CancellationPreviewDto> {
+  const searchParams = new URLSearchParams({ propertyId });
+  const separator = endpoint.includes("?") ? "&" : "?";
+  const base = endpoint.endsWith("/") ? endpoint.slice(0, -1) : endpoint;
+
+  return httpRequest<CancellationPreviewDto>({
+    path: `${base}/${encodeURIComponent(reservationId)}/cancellation-preview${separator}${searchParams.toString()}`,
+    signal,
+  });
+}
+
+/**
+ * Confirma la cancelación. El motivo es obligatorio y viaja con la petición;
+ * Backend es la única fuente de verdad del resultado CANCELLED.
+ */
+export async function applyCancellation({
+  endpoint,
+  propertyId,
+  reservationId,
+  reason,
+  signal,
+}: ApplyCancellationRequest): Promise<CancellationApplyDto> {
+  const searchParams = new URLSearchParams({ propertyId });
+  const separator = endpoint.includes("?") ? "&" : "?";
+  const base = endpoint.endsWith("/") ? endpoint.slice(0, -1) : endpoint;
+
+  return httpRequest<CancellationApplyDto>({
+    path: `${base}/${encodeURIComponent(reservationId)}/cancellation${separator}${searchParams.toString()}`,
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ propertyId, reservationId, reason }),
     signal,
   });
 }

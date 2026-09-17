@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { HttpNetworkError } from "@/lib/http/errors";
@@ -7,9 +7,18 @@ import { ReservationDetail } from "./reservation-detail";
 
 afterEach(() => cleanup());
 
-const { useReservationDetailMock } = vi.hoisted(() => ({ useReservationDetailMock: vi.fn() }));
+const { useReservationDetailMock, useCancellationPreviewMock, useApplyCancellationMock } = vi.hoisted(() => ({
+  useReservationDetailMock: vi.fn(),
+  useCancellationPreviewMock: vi.fn(),
+  useApplyCancellationMock: vi.fn(),
+}));
 
 vi.mock("../hooks/use-reservation-detail", () => ({ useReservationDetail: useReservationDetailMock }));
+
+vi.mock("../hooks/use-reservation-cancellation", () => ({
+  useCancellationPreview: useCancellationPreviewMock,
+  useApplyCancellation: useApplyCancellationMock,
+}));
 
 function detailData() {
   return {
@@ -136,5 +145,55 @@ describe("ReservationDetail", () => {
     expect(screen.getByText("203 · Deluxe King")).toBeInTheDocument();
     expect(screen.getByText("101 · Deluxe King")).toBeInTheDocument();
     expect(screen.getByText("En casa")).toBeInTheDocument();
+  });
+
+  it("opens the cancellation flow from the detail header for an active reservation", () => {
+    useReservationDetailMock.mockReturnValue({ data: detailData(), error: null, isLoading: false, refetch: vi.fn() });
+    useCancellationPreviewMock.mockReturnValue({
+      data: {
+        reservationId: "HB-2026-08421",
+        policySummary: "Flexible 48h · Viajes Maya.",
+        cutoffAt: new Date(2026, 7, 26, 15, 0),
+        penaltyAmount: 1160,
+        refundAmount: 0,
+        releaseNote: null,
+        canCancel: true,
+        reason: null,
+      },
+      error: null,
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+    useApplyCancellationMock.mockReturnValue({
+      data: undefined,
+      error: null,
+      isError: false,
+      isPending: false,
+      isSuccess: false,
+      mutate: vi.fn(),
+      reset: vi.fn(),
+    });
+
+    render(
+      <ReservationDetail propertyId="GT-HB-01" endpoint="http://pms.test/contract/reservations" reservationId="HB-2026-08421" />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancelar reserva" }));
+
+    expect(screen.getByRole("heading", { name: "Cancelar reserva" })).toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "Cancelar reserva" })).getByText("Política aplicable")).toBeInTheDocument();
+  });
+
+  it("does not offer cancellation for a non-cancellable state", () => {
+    const data = detailData();
+    data.status = "NO_SHOW";
+    useReservationDetailMock.mockReturnValue({ data, error: null, isLoading: false, refetch: vi.fn() });
+
+    render(
+      <ReservationDetail propertyId="GT-HB-01" endpoint="http://pms.test/contract/reservations" reservationId="HB-2026-08421" />,
+    );
+
+    expect(screen.getByText("No-show")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Cancelar reserva" })).not.toBeInTheDocument();
   });
 });

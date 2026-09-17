@@ -4,7 +4,7 @@
  * Contrato del Reservation Center (V3 - 01 Reservation Engine).
  */
 
-export type ReservationStatusDto = "CONFIRMED" | "PENDING" | "WAITLIST" | "NO_SHOW_PENDING" | "NO_SHOW";
+export type ReservationStatusDto = "CONFIRMED" | "PENDING" | "WAITLIST" | "NO_SHOW_PENDING" | "NO_SHOW" | "CANCELLED";
 
 export type ReservationFinanceStateDto = "PAID" | "BALANCE" | "DEPOSIT" | "NO_CAPTURE" | "ESTIMATED";
 

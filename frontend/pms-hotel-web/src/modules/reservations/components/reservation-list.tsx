@@ -15,6 +15,7 @@ const STATUS_OPTIONS: ReadonlyArray<{ value: ReservationStatus | "ALL"; label: s
   { value: "WAITLIST", label: "Waitlist" },
   { value: "NO_SHOW_PENDING", label: "No-show pendiente" },
   { value: "NO_SHOW", label: "No-show" },
+  { value: "CANCELLED", label: "Canceladas" },
 ];
 
 const STATUS_LABELS: Record<ReservationStatus, string> = {
@@ -23,6 +24,7 @@ const STATUS_LABELS: Record<ReservationStatus, string> = {
   WAITLIST: "Waitlist",
   NO_SHOW_PENDING: "No-show pendiente",
   NO_SHOW: "No-show",
+  CANCELLED: "Cancelada",
 };
 
 const STATUS_BADGE: Record<ReservationStatus, string> = {
@@ -31,6 +33,7 @@ const STATUS_BADGE: Record<ReservationStatus, string> = {
   WAITLIST: styles.statusWaitlist,
   NO_SHOW_PENDING: styles.statusNoShow,
   NO_SHOW: styles.statusNoShow,
+  CANCELLED: styles.statusCancelled,
 };
 
 function formatMoney(amount: number, currency: string): string {

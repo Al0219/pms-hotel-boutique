@@ -3,7 +3,8 @@ export type ReservationStatus =
   | "PENDING"
   | "WAITLIST"
   | "NO_SHOW_PENDING"
-  | "NO_SHOW";
+  | "NO_SHOW"
+  | "CANCELLED";
 
 export type ReservationFinanceState = "PAID" | "BALANCE" | "DEPOSIT" | "NO_CAPTURE" | "ESTIMATED";
 

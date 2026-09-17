@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
+
 import { HttpNetworkError } from "@/lib/http/errors";
 
 import { useReservationDetail } from "../hooks/use-reservation-detail";
 import type { ReservationDetailData, ReservationStayDetail, StayTravelState } from "../model/reservation-detail";
 import type { ReservationStatus } from "../model/reservation-summary";
+import { ReservationCancellation } from "./reservation-cancellation";
 
 import styles from "./reservation-detail.module.css";
 
@@ -14,6 +17,7 @@ const STATUS_LABELS: Record<ReservationStatus, string> = {
   WAITLIST: "Waitlist",
   NO_SHOW_PENDING: "No-show pendiente",
   NO_SHOW: "No-show",
+  CANCELLED: "Cancelada",
 };
 
 const STATUS_BADGE: Record<ReservationStatus, string> = {
@@ -22,6 +26,7 @@ const STATUS_BADGE: Record<ReservationStatus, string> = {
   WAITLIST: styles.statusWaitlist,
   NO_SHOW_PENDING: styles.statusNoShow,
   NO_SHOW: styles.statusNoShow,
+  CANCELLED: styles.statusCancelled,
 };
 
 const TRAVEL_STATE_LABELS: Record<StayTravelState, string> = {
@@ -101,6 +106,7 @@ interface ReservationDetailProps {
 
 export function ReservationDetail({ propertyId, endpoint, reservationId }: Readonly<ReservationDetailProps>) {
   const { data: detail, error, isLoading, refetch } = useReservationDetail(propertyId, endpoint, reservationId);
+  const [cancelling, setCancelling] = useState(false);
 
   const title = reservationId ? `Reserva ${reservationId}` : "Detalle de reserva";
 
@@ -140,6 +146,7 @@ export function ReservationDetail({ propertyId, endpoint, reservationId }: Reado
 
   const singleRoom = detail.stays.length === 1;
   const reference = detail.source.reference ? ` · ${detail.source.reference}` : "";
+  const cancellable = detail.status === "CONFIRMED" || detail.status === "PENDING";
 
   return (
     <div className={styles.page}>
@@ -150,8 +157,27 @@ export function ReservationDetail({ propertyId, endpoint, reservationId }: Reado
             <span className={`${styles.badge} ${STATUS_BADGE[detail.status]}`}>{STATUS_LABELS[detail.status]}</span>
           </p>
           <p className={styles.origin}>Origen: {detail.source.label}{reference} · Creada {formatLongDate(detail.createdAt)}</p>
+          {cancellable ? (
+            <button
+              className={styles.cancelAction}
+              type="button"
+              onClick={() => setCancelling(true)}
+              disabled={cancelling}
+            >
+              Cancelar reserva
+            </button>
+          ) : null}
         </div>
       </header>
+
+      {cancelling && propertyId && endpoint && reservationId ? (
+        <ReservationCancellation
+          propertyId={propertyId}
+          endpoint={endpoint}
+          reservationId={reservationId}
+          onClose={() => setCancelling(false)}
+        />
+      ) : null}
 
       <div className={styles.grid}>
         <section className={styles.card} aria-labelledby="reservation-data-title">

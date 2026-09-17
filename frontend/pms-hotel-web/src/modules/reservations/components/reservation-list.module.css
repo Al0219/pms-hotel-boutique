@@ -85,6 +85,7 @@
 .statusPending { background: var(--color-system-warning-soft); color: var(--color-system-warning); }
 .statusWaitlist { background: var(--color-system-info-soft); color: var(--color-system-info); }
 .statusNoShow { background: var(--color-system-error-soft); color: var(--color-system-error); }
+.statusCancelled { background: var(--color-surface-subtle); color: var(--color-text-secondary); }
 .statusDetail { color: var(--color-text-secondary); font-size: var(--font-size-caption); line-height: var(--line-height-caption); margin: var(--space-2) 0 0; }
 
 .convertButton {
