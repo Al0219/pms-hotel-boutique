@@ -29,7 +29,7 @@ Submódulo contractual `src/modules/account/profile`, bajo Account. Separa `Gues
 
 ## Profile UI canónica — IMP-AND-0202
 
-`IMP-AND-0202` es la única implementación productiva de Profile y está `READY`. Pertenece a Account, reutiliza la foundation de `src/modules/account/profile` y tendrá la ruta hija `/account/profile`, con entrada exclusiva `CUENTA > Perfil` en el drawer y Back estable hacia `/account`. `IMP-AND-0303` queda absorbida: no crea UI, ruta, domain, service, Query/Mutation ni otra fuente de verdad. La decisión está en `31_ACCOUNT_PROFILE_CHANGE_CONTROL.md`.
+`IMP-AND-0202` es la única implementación productiva de Profile y está `EN_PROGRESO`. Pertenece a Account, reutiliza la foundation de `src/modules/account/profile` y tendrá la ruta hija `/account/profile`, con la primera acción `Perfil` del drawer y Back estable hacia `/account`. `IMP-AND-0303` queda absorbida: no crea UI, ruta, domain, service, Query/Mutation ni otra fuente de verdad. Las decisiones están en `31_ACCOUNT_PROFILE_CHANGE_CONTROL.md` y `32_AUTH_RESERVATION_CONTEXT_CHANGE_CONTROL.md`.
 
 ## Navigation shell — IMP-AND-0114
 

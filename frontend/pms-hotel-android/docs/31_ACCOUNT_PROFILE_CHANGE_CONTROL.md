@@ -10,11 +10,11 @@ La causa es el solapamiento explícito en el backlog: 0202 exige display/edit de
 
 - Ownership: `Account`.
 - Ruta canónica: `/account/profile`.
-- Entry point único: drawer Guest, `CUENTA → Perfil`.
+- Entry point único: primera acción `Perfil` del drawer Guest; `32_AUTH_RESERVATION_CONTEXT_CHANGE_CONTROL.md` sustituye la agrupación anterior `CUENTA → Perfil`.
 - No hay launcher/card adicional en `/account`.
 - No hay tab nueva, entrada bajo BENEFICIOS ni mezcla con Rewards/Promotions.
-- La estructura del drawer pasa a `ESTANCIA: Inicio, Mis servicios`; `CUENTA: Perfil`; `BENEFICIOS: Rewards, Promociones`; `SERVICIOS: Servicios, Valet`; `HOTEL: Hotel`.
-- Profile es una hija focused de Account con `GuestChildHeader`, sin shell global, footbar, hamburger, drawer propio ni Chat FAB.
+- La estructura del drawer inicia con `Perfil` antes de headings; después presenta `ESTANCIA: Inicio, Mis servicios`; `BENEFICIOS: Rewards, Promociones`; `SERVICIOS: Servicios, Valet`; `HOTEL: Hotel`.
+- Profile es una hija focused de Account con `GuestChildHeader`, sin shell global, footbar, hamburger, drawer propio ni Chat FAB. La confirmación de cambios sin guardar mantiene Profile visible detrás con backdrop transparente o ligeramente atenuado, según `32_AUTH_RESERVATION_CONTEXT_CHANGE_CONTROL.md`.
 - Back usa `router.dismissTo('/account')` para un retorno estable, sin depender del historial accidental.
 
 ## Alcance canónico de IMP-AND-0202
@@ -32,13 +32,13 @@ La salida con cambios sin guardar requiere una confirmación de descarte o conti
 - Dirty state, submit disabled sin cambios, pending y prevención de doble submit.
 - Success, error/offline de mutation, retry y ausencia de optimistic update.
 - Confirmación de cambios sin guardar.
-- Drawer `CUENTA → Perfil`, Back hacia `/account`, sin quinta tab.
+- Primera acción `Perfil` del drawer, Back hacia `/account`, sin quinta tab.
 - Accesibilidad, teclado/scroll y regresiones de Account, Rewards y Promotions.
 
 ## Impacto de backlog
 
-- `IMP-AND-0202`: `READY`; DoR PASS.
-- `IMP-AND-0303`: mantiene el estado permitido `PENDIENTE` con la nota **ABSORBIDA POR IMP-AND-0202 — NO IMPLEMENTAR**. No se usa un estado nuevo porque el XLSX canónico solo contiene `PENDIENTE`, `READY` y `COMPLETADA`.
+- `IMP-AND-0202`: `EN_PROGRESO`; DoR PASS. Los ajustes de `32_AUTH_RESERVATION_CONTEXT_CHANGE_CONTROL.md` dejan QA automática, manual y WEB-2 pendientes.
+- `IMP-AND-0303`: conserva el estado canónico `PENDIENTE` con la nota **ABSORBIDA POR IMP-AND-0202 — NO IMPLEMENTAR**; la absorción no crea una implementación separada.
 - `IMP-AND-0304`: sustituye la dependencia `IMP-AND-0303` por `IMP-AND-0202`; sigue PENDIENTE hasta que 0202 complete.
 - `IMP-AND-0204`: conserva las dependencias `IMP-AND-0202, IMP-AND-0203`.
 
