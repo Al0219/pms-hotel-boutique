@@ -5,6 +5,16 @@
  */
 
 export { ReservationCenter } from "./components/reservation-center";
+export { ReservationDetail } from "./components/reservation-detail";
+export type {
+  ReservationDetailData,
+  ReservationDetailFinancialSummary,
+  ReservationFinanceLine,
+  ReservationGuestSummary,
+  ReservationSource,
+  ReservationStayDetail,
+  StayTravelState,
+} from "./model/reservation-detail";
 export type {
   ReservationAlertItem,
   ReservationCenterData,
