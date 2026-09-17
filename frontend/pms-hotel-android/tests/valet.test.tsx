@@ -65,7 +65,7 @@ describe('Transporte y valet', () => {
     expect(rendered.getByText('Solicitar traslado')).toBeTruthy(); expect(rendered.getByText('Aeropuerto Internacional La Aurora')).toBeTruthy();
     const navigation = await render(<GuestNavigationTabs pathname="/valet" />);
     expect(navigation.getByLabelText('Valet').props.accessibilityState).toMatchObject({ disabled: false, selected: true });
-    expect(navigation.getByLabelText('Servicios').props.accessibilityState.disabled).toBe(false); expect(navigation.getByLabelText('Chat').props.accessibilityState.disabled).toBe(false); expect(navigation.getByLabelText('Cuenta').props.accessibilityState.disabled).toBe(false);
+    expect(navigation.getByLabelText('Servicios').props.accessibilityState.disabled).toBe(false); expect(navigation.getByLabelText('Inicio').props.accessibilityState.disabled).toBe(false); expect(navigation.getByLabelText('Hotel').props.accessibilityState.disabled).toBe(false);
   });
 
   it('keeps loading, generic error, and NetworkError query states distinct', async () => {

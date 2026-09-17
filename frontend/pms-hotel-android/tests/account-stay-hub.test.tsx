@@ -29,7 +29,7 @@ function createAccountRoute(service: StayService, withNotice = false) {
 }
 
 describe('Account / Stay Hub V3', () => {
-  it('renders /account from ReservationStay and selects Cuenta in the approved V3 shell', async () => {
+  it('renders /account as Inicio from ReservationStay and selects Inicio in the shell', async () => {
     const AccountRoute = createAccountRoute(new MockStayService({ kind: 'success', dto: currentStayFixture }));
     const rendered = await renderRouter({ account: AccountRoute }, { initialUrl: '/account' });
 
@@ -41,9 +41,9 @@ describe('Account / Stay Hub V3', () => {
     expect(rendered.getByText('HB-2026-004281')).toBeTruthy();
     expect(rendered.queryByText('REMOTE_STATUS')).toBeNull();
     expect(rendered.queryByTestId('account-stay-status')).toBeNull();
-    expect(rendered.getByLabelText('Cuenta').props.accessibilityState).toEqual({ disabled: false, selected: true });
+    expect(rendered.getAllByText('Inicio')).toHaveLength(2);
+    expect(rendered.getByLabelText('Inicio').props.accessibilityState).toEqual({ disabled: false, selected: true });
     expect(rendered.getByLabelText('Servicios').props.accessibilityState).toEqual({ disabled: false, selected: false });
-    expect(rendered.queryByText('Inicio')).toBeNull();
   });
 
   it('keeps room nullable without inventing an assignment', async () => {
@@ -89,10 +89,13 @@ describe('Account / service request confirmation', () => {
     const AccountRoute = createAccountRoute(new MockStayService({ kind: 'success', dto: currentStayFixture }), true);
     const rendered = await renderRouter({ account: AccountRoute }, { initialUrl: '/account' });
     await waitFor(() => expect(rendered.getByTestId('account-service-request-submitted')).toBeTruthy());
+    expect(rendered.getByTestId('account-stay-hub-screen')).toBeTruthy();
+    expect(rendered.getByLabelText('Inicio').props.accessibilityState.selected).toBe(true);
     expect(rendered.getByText('Solicitud enviada')).toBeTruthy();
     expect(rendered.getByText('Tu solicitud fue registrada correctamente.')).toBeTruthy();
     expect(rendered.queryByTestId('account-service-request-submitted-cancel')).toBeNull();
     await fireEvent.press(rendered.getByTestId('account-service-request-submitted-confirm'));
     await waitFor(() => expect(rendered.queryByTestId('account-service-request-submitted')).toBeNull());
+    expect(rendered.getByTestId('account-stay-hub-screen')).toBeTruthy();
   });
 });

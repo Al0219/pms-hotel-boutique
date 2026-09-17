@@ -3,10 +3,6 @@ import { StyleSheet } from 'react-native';
 import { tokens } from '@/shared/theme/tokens';
 
 export const housekeepingStyles = StyleSheet.create({
-  backSafeArea: { backgroundColor: tokens.color.surface },
-  backHeader: { paddingHorizontal: tokens.space.md, paddingTop: tokens.space.xs },
-  backButton: { alignItems: 'center', height: tokens.layout.controlHeight + tokens.space.xs, justifyContent: 'center', width: tokens.layout.controlHeight + tokens.space.xs },
-  backArrow: { color: tokens.color.inkStrong, fontFamily: tokens.typography.family, fontSize: tokens.typography.size.title + tokens.space.xs / 2 },
   selector: { alignItems: 'center', backgroundColor: tokens.color.white, borderColor: tokens.color.border, borderRadius: tokens.radius.control, borderWidth: 1, flexDirection: 'row', height: tokens.layout.controlHeight, justifyContent: 'space-between', paddingHorizontal: tokens.space.md },
   chevron: { color: tokens.color.muted, fontSize: tokens.typography.size.sectionTitle },
   modalBackdrop: { backgroundColor: 'rgba(0, 0, 0, 0.35)', flex: 1, justifyContent: 'flex-end' },

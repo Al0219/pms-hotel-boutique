@@ -1,6 +1,6 @@
 # 01 — Figma Screen Catalog Android
 
-Fuente canónica:
+Referencia visual histórica:
 `238:132 — Implementation Ready — Android V2 + V3`.
 
 `31:132 — Reference — Android Early Journey` es únicamente una referencia histórica. No autoriza rutas, pantallas ni alcance funcional del backlog actual.
@@ -9,16 +9,14 @@ Fuente canónica:
 
 La footbar histórica de `31:132` es `Inicio · Solicitudes · Explorar · Hotel`. No es autoridad para nuevas features.
 
-Para nuevas features derivadas de `238:132`, la navegación Guest visible confirmada es `Servicios · Chat · Valet · Cuenta`. Se verificó en:
+La navegación `Servicios · Chat · Valet · Cuenta` se verificó históricamente en:
 
 - `238:192 — MOB-09 — Chat con hotel`;
 - `239:132 — MOB-10 — Servicios / Upselling`;
 - `239:197 — MOB-11 — Transporte / Valet`;
 - `240:132 — MOB-12 — Mi cuenta / cargos`.
 
-Esta autoridad visual de navegación queda aprobada mediante Change Control para nuevas pantallas derivadas de `238:132`. Figma usa frames y textos locales; Android implementa el `GuestNavigationShell` V3 compartido como adaptación reutilizable de esa navegación.
-
-Estado actual del shell: Servicios, Chat, Valet y Cuenta están disponibles. Cuenta fue habilitada por `IMP-AND-0109`.
+La referencia no es autoridad para el shell actual: IMP-AND-0114 adoptó la decisión frontend-first Inicio · Servicios · Valet · Hotel, con Chat flotante y drawer. Figma no contiene esa migración; `04_NAVIGATION.md` es la autoridad de navegación vigente.
 
 ## Autoridad visual — IMP-AND-0108 Access / Vincular reserva
 

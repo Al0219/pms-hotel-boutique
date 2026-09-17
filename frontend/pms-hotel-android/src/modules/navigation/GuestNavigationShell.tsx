@@ -1,4 +1,5 @@
 import { type Href, router, usePathname } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import { Pressable, Text, View } from 'react-native';
 
 import {
@@ -8,12 +9,33 @@ import {
   type GuestNavigationTab,
 } from '@/modules/navigation/guestNavigationTabs';
 import { guestNavigationStyles } from '@/modules/navigation/guestNavigationStyles';
+import { tokens } from '@/shared/theme/tokens';
 
 export interface GuestNavigationTabsProps {
   pathname: string;
   tabs?: readonly GuestNavigationTab[];
   onReplace?: (basePath: string) => void;
   onNavigateAway?: (basePath: string) => void;
+}
+
+export interface GuestNavigationDrawerLink {
+  label: string;
+  path: string;
+}
+
+export const guestNavigationDrawerLinks: readonly GuestNavigationDrawerLink[] = [
+  { label: 'Inicio', path: '/account' },
+  { label: 'Mis servicios', path: '/services/requests' },
+  { label: 'Servicios', path: '/services' },
+  { label: 'Valet', path: '/valet' },
+  { label: 'Hotel', path: '/hotel' },
+];
+
+const guestNavigationRootPaths = new Set(['/account', '/services', '/valet', '/hotel']);
+
+/** Guest shell controls are intentionally available only at tab-root routes. */
+export function isGuestRootRoute(pathname: string): boolean {
+  return guestNavigationRootPaths.has(pathname);
 }
 
 function replaceGuestRoute(basePath: string): void {
@@ -57,5 +79,23 @@ export function GuestNavigationTabs({
 
 /** Router-integrated entry point for future authorized V3 feature routes. */
 export function GuestNavigationShell({ onNavigateAway }: Pick<GuestNavigationTabsProps, 'onNavigateAway'> = {}) {
-  return <GuestNavigationTabs onNavigateAway={onNavigateAway} pathname={usePathname()} />;
+  const pathname = usePathname();
+  const isRootRoute = isGuestRootRoute(pathname);
+
+  function openChat(): void {
+    router.push('/chat');
+  }
+
+  return (
+    <>
+      {isRootRoute ? (
+        <Pressable accessibilityLabel="Abrir chat" accessibilityRole="button" onPress={openChat} style={guestNavigationStyles.chatFab} testID="guest-navigation-chat-fab">
+          <View testID="guest-navigation-chat-fab-icon">
+            <SymbolView accessibilityElementsHidden importantForAccessibility="no" name={{ android: 'chat', ios: 'message.fill', web: 'chat' }} size={tokens.layout.controlHeight / 2} style={guestNavigationStyles.chatFabIcon} tintColor={tokens.color.white} />
+          </View>
+        </Pressable>
+      ) : null}
+      <GuestNavigationTabs onNavigateAway={onNavigateAway} pathname={pathname} />
+    </>
+  );
 }

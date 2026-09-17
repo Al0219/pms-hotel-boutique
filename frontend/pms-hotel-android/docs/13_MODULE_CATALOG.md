@@ -4,13 +4,15 @@ All future Android modules are owned by ANDROID-1.
 
 | Module | Cross-app Web domain to review |
 | --- | --- |
-| navigation | Shell Guest V3 transversal; WEB-3 es reviewer principal. Consultar WEB-2 cuando afecte semántica o navegación futura de Cuenta. |
+| navigation | Shell Guest transversal: footbar Inicio · Servicios · Valet · Hotel, Chat flotante y drawer. WEB-3 is reviewer principal. |
+| hotel | Perfil de Hotel frontend/mock en `/hotel`; no es submódulo de Servicios. |
 | auth | auth, account, profile |
 | stay | stays, reservations, rooms |
 | services | concierge, housekeeping |
 | messaging | messaging, concierge |
 | valet | parking-valet |
 | account | account, profile, guests |
+| service-requests | registro de sesión Guest para solicitudes aprobadas |
 | checkout | folio, payments |
 | invoice | folio, receivables |
 | rewards | rewards |
@@ -21,13 +23,21 @@ All future Android modules are owned by ANDROID-1.
 
 These conceptual modules do not authorize Android project code, contracts, or screens before the stack and relevant backlog task are approved.
 
+## Navigation shell — IMP-AND-0114
+
+`src/modules/navigation` owns the shared Guest shell. `/account` is visually **Inicio**, `/services` and its children remain Servicios, `/valet` and its children remain Valet, and `/hotel` is Hotel. Chat is available only through the shell floating action and has no active tab. The drawer contains navigation links only and derives no guest identity or room data.
+
+## Hotel — IMP-AND-0114
+
+Módulo aislado `src/modules/hotel`, ruta `/hotel`. Consume un perfil central frontend/mock de demostración, sin Query, Mutation, `ReservationStay`, `SessionServiceRequest`, finanzas ni Backend. Es una pantalla exclusivamente informativa. Ver `30_HOTEL_INFO_CONTRACT_PROPOSAL.md`.
+
 ## Services / Housekeeping — IMP-AND-0110
 
-Submódulo aislado `src/modules/services/housekeeping`, ruta `/services/housekeeping`. Boundary/mock propio y TanStack Mutation; reutiliza la query pública existente de Stay y el shell V3. IMP-AND-0110 COMPLETADA con QA manual y revisión WEB-3 PASS. Ver `26_HOUSEKEEPING_CONTRACT.md` para el contrato mínimo confirmado y los valores frontend/mock provisionales.
+Submódulo aislado `src/modules/services/housekeeping`, ruta `/services/housekeeping`. Boundary/mock propio y TanStack Mutation; reutiliza la query pública existente de Stay y el shell V3. IMP-AND-0110 COMPLETADA con QA manual y revisión WEB-3 PASS. Ver `26_HOUSEKEEPING_CONTRACT.md`.
 
 ## Services / Room Service — IMP-AND-0111
 
-Submódulo aislado `src/modules/services/room-service`, ruta `/services/room-service`. Query/mock de menú, Mutation de pedido, carrito local con reducer puro y hora de entrega frontend/mock mediante `TimeWheelPicker` compartido en modo libre; reutiliza Stay solo para habitación visual y el shell V3. IMP-AND-0111 COMPLETADA; ver `27_ROOM_SERVICE_CONTRACT_PROPOSAL.md` para el contrato frontend/mock aprobado y sus límites Backend.
+Submódulo aislado `src/modules/services/room-service`, ruta `/services/room-service`. Query/mock de menú, Mutation de pedido, carrito local con reducer puro y hora de entrega frontend/mock mediante `TimeWheelPicker` compartido en modo libre; reutiliza Stay solo para habitación visual y el shell V3. IMP-AND-0111 COMPLETADA; ver `27_ROOM_SERVICE_CONTRACT_PROPOSAL.md`.
 
 ## Session Service Requests — IMP-AND-0112
 

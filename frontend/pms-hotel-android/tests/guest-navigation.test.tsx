@@ -2,27 +2,30 @@ import { fireEvent, render } from '@testing-library/react-native';
 
 import {
   getGuestNavigationTabPressHandler,
+  guestNavigationDrawerLinks,
   GuestNavigationTabs,
   guestNavigationTabs,
   resolveActiveGuestNavigationTab,
 } from '@/modules/navigation';
 
-describe('Guest Navigation Shell V3', () => {
-  it('declares only the four approved V3 destinations in Figma order', () => {
+describe('Guest Navigation Shell', () => {
+  it('declares only Inicio, Servicios, Valet and Hotel in the approved order', () => {
     expect(guestNavigationTabs).toEqual([
+      { id: 'home', label: 'Inicio', basePath: '/account', disabled: false },
       { id: 'services', label: 'Servicios', basePath: '/services', disabled: false },
-      { id: 'chat', label: 'Chat', basePath: '/chat', disabled: false },
       { id: 'valet', label: 'Valet', basePath: '/valet', disabled: false },
-      { id: 'account', label: 'Cuenta', basePath: '/account', disabled: false },
+      { id: 'hotel', label: 'Hotel', basePath: '/hotel', disabled: false },
     ]);
+    expect(guestNavigationDrawerLinks).toHaveLength(5);
   });
 
   it('resolves active tabs from root paths, child paths, and routes outside the shell', () => {
     expect(resolveActiveGuestNavigationTab('/services')).toBe('services');
     expect(resolveActiveGuestNavigationTab('/services/selection')).toBe('services');
-    expect(resolveActiveGuestNavigationTab('/chat/thread')).toBe('chat');
-    expect(resolveActiveGuestNavigationTab('/account')).toBe('account');
-    expect(resolveActiveGuestNavigationTab('/account/preferences')).toBe('account');
+    expect(resolveActiveGuestNavigationTab('/chat/thread')).toBeNull();
+    expect(resolveActiveGuestNavigationTab('/account')).toBe('home');
+    expect(resolveActiveGuestNavigationTab('/account/preferences')).toBe('home');
+    expect(resolveActiveGuestNavigationTab('/hotel')).toBe('hotel');
     expect(resolveActiveGuestNavigationTab('/')).toBeNull();
     expect(resolveActiveGuestNavigationTab('/unknown')).toBeNull();
   });
@@ -33,25 +36,27 @@ describe('Guest Navigation Shell V3', () => {
     const tabs = rendered.getAllByRole('tab');
 
     expect(rendered.getByLabelText('Navegación principal de huésped').props.accessibilityRole).toBe('tablist');
-    expect(tabs.map((tab) => tab.props.accessibilityLabel)).toEqual(['Servicios', 'Chat', 'Valet', 'Cuenta']);
+    expect(tabs.map((tab) => tab.props.accessibilityLabel)).toEqual(['Inicio', 'Servicios', 'Valet', 'Hotel']);
+    expect(rendered.queryByLabelText('Chat')).toBeNull();
+    expect(rendered.queryByLabelText('Cuenta')).toBeNull();
+    expect(rendered.getByLabelText('Inicio').props.accessibilityState).toEqual({ disabled: false, selected: true });
     expect(rendered.getByLabelText('Servicios').props.accessibilityState).toEqual({ disabled: false, selected: false });
-    expect(rendered.getByLabelText('Chat').props.accessibilityState).toEqual({ disabled: false, selected: false });
     expect(rendered.getByLabelText('Valet').props.accessibilityState).toEqual({ disabled: false, selected: false });
-    expect(rendered.getByLabelText('Cuenta').props.accessibilityState).toEqual({ disabled: false, selected: true });
+    expect(rendered.getByLabelText('Hotel').props.accessibilityState).toEqual({ disabled: false, selected: false });
 
     fireEvent.press(rendered.getByLabelText('Servicios'));
     expect(onReplace).toHaveBeenCalledWith('/services');
-    fireEvent.press(rendered.getByLabelText('Cuenta'));
+    fireEvent.press(rendered.getByLabelText('Inicio'));
     expect(onReplace).toHaveBeenCalledTimes(1);
   });
 
-  it('prepares replace navigation for Cuenta and keeps its current route as a no-op', () => {
+  it('prepares replace navigation for Inicio and keeps its current route as a no-op', () => {
     const onReplace = jest.fn();
-    const account = guestNavigationTabs[3];
+    const home = guestNavigationTabs[0];
 
-    expect(getGuestNavigationTabPressHandler(account, '/account', onReplace)).toBeUndefined();
+    expect(getGuestNavigationTabPressHandler(home, '/account', onReplace)).toBeUndefined();
 
-    getGuestNavigationTabPressHandler(account, '/services', onReplace)?.();
+    getGuestNavigationTabPressHandler(home, '/services', onReplace)?.();
     expect(onReplace).toHaveBeenCalledWith('/account');
   });
 });

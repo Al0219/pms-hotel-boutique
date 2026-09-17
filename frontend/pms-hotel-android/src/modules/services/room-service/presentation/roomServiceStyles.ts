@@ -4,12 +4,8 @@ import { tokens } from '@/shared/theme/tokens';
 
 export const roomServiceStyles = StyleSheet.create({
   screen: { backgroundColor: tokens.color.surface, flex: 1 },
-  headerSafeArea: { backgroundColor: tokens.color.surface },
-  header: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: tokens.space.md, paddingTop: tokens.space.xs },
   headerButton: { alignItems: 'center', height: tokens.layout.controlHeight + tokens.space.xs, justifyContent: 'center', width: tokens.layout.controlHeight + tokens.space.xs },
   headerButtonDisabled: { opacity: 0.5 },
-  headerTitle: { color: tokens.color.inkStrong, fontFamily: tokens.typography.family, fontSize: tokens.typography.size.title, fontWeight: '600' },
-  backArrow: { color: tokens.color.inkStrong, fontFamily: tokens.typography.family, fontSize: tokens.typography.size.title + tokens.space.xs / 2 },
   cartIcon: { fontSize: tokens.typography.size.sectionTitle },
   scroll: { flex: 1 },
   content: { gap: tokens.space.md, padding: tokens.layout.screenInset, paddingBottom: tokens.space.xxl },

@@ -1,10 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { NetworkError } from '@/data/remote/http/HttpError';
-import { GuestNavigationShell, useGuestNotice } from '@/modules/navigation';
+import { GuestChildHeader, GuestNavigationShell, useGuestNotice } from '@/modules/navigation';
 import { formatServiceDateLabel, getFirstAvailableServiceDate, getInitialServiceDate, getNearestServiceTime, isServiceDateWithinStay, isServiceWithinStayWindow, parseServiceDate, useSessionServiceRequests } from '@/modules/service-requests';
 import { type HousekeepingService } from '@/modules/services/housekeeping/data/services/HousekeepingService';
 import { type HousekeepingCleaningType, type HousekeepingTimeSlot } from '@/modules/services/housekeeping/domain/HousekeepingRequest';
@@ -146,15 +145,9 @@ export function HousekeepingScreen({ service, stayService, nowMs = Date.now }: H
 
   return (
     <View style={styles.screen} testID="housekeeping-screen">
-      <SafeAreaView edges={['top']} style={housekeepingStyles.backSafeArea}>
-        <View style={housekeepingStyles.backHeader}>
-          <Pressable accessibilityLabel="Volver a servicios" accessibilityRole="button" onPress={returnToServices}
-            style={housekeepingStyles.backButton} testID="housekeeping-back-arrow"><Text style={housekeepingStyles.backArrow}>←</Text></Pressable>
-        </View>
-      </SafeAreaView>
+      <GuestChildHeader backAccessibilityLabel="Volver a servicios" backTestID="housekeeping-back-arrow" onBack={returnToServices} title="Limpieza" />
       <KeyboardAvoidingView style={styles.scroll} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView ref={scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" style={styles.scroll}>
-          <Text accessibilityRole="header" style={styles.title}>Limpieza</Text>
           {submission.isSuccess ? <View testID="housekeeping-submit-success" /> : stay.kind === 'loading' ? (
             <StateCard title="Cargando mi estadía" body="Espera un momento." testID="housekeeping-stay-loading" />
           ) : stay.kind === 'error' || stay.kind === 'offline' ? (

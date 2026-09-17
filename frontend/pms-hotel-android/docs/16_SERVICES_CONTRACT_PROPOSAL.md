@@ -106,7 +106,7 @@ El resultado mock no representa una entidad `ServiceRequest`, persistencia, stat
 
 ## Navegación y presentación
 
-`IMP-AND-0103` debe reutilizar el `GuestNavigationShell` V3 de `IMP-AND-0100`, sin copiar una footbar privada. En `/services`, la navegación visible es `Servicios · Chat · Valet · Cuenta`, con Servicios activo según `usePathname()`. Las rutas no implementadas conservan su semántica disabled aprobada por `DEC-A-004`.
+`IMP-AND-0103` reutiliza `GuestNavigationShell`, sin copiar una footbar privada. En `/services`, la shell vigente muestra Inicio · Servicios · Valet · Hotel, con Servicios activo según `usePathname()`; Chat es una acción flotante. La footbar V3 previa queda como referencia histórica en `04_NAVIGATION.md`.
 
 La UI debe usar los tokens y patrones Android V3 existentes. La excepción visual previa de `IMP-AND-0102` no se modifica ni se reutiliza como navegación de Servicios.
 
