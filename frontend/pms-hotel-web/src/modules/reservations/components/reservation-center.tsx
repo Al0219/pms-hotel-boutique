@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 
 import { HttpNetworkError } from "@/lib/http/errors";
 
 import { useReservationCenter } from "../hooks/use-reservation-center";
 import type { ReservationAlertItem } from "../model/reservation-summary";
 import { ReservationList } from "./reservation-list";
+import { WaitlistConversionPanel } from "./waitlist-conversion-panel";
 import styles from "./reservation-center.module.css";
 
 const ALERT_KINDS: Record<string, string> = {
@@ -51,6 +53,7 @@ function AlertsPanel({ alerts }: Readonly<{ alerts: ReadonlyArray<ReservationAle
 
 export function ReservationCenter({ propertyId, endpoint }: Readonly<ReservationCenterProps>) {
   const { data: center, error, isLoading, refetch } = useReservationCenter(propertyId, endpoint);
+  const [convertingWaitlistId, setConvertingWaitlistId] = useState<string | null>(null);
 
   if (!propertyId) {
     return <section className={styles.page} role="status"><h1>Centro de Reservas</h1><p>La sesión debe proporcionar un scope de propiedad autorizado antes de consultar reservas.</p></section>;
@@ -111,7 +114,15 @@ export function ReservationCenter({ propertyId, endpoint }: Readonly<Reservation
       </div>
 
       <AlertsPanel alerts={center.alerts} />
-      <ReservationList reservations={center.reservations} />
+      {convertingWaitlistId && propertyId && endpoint ? (
+        <WaitlistConversionPanel
+          propertyId={propertyId}
+          endpoint={endpoint}
+          waitlistId={convertingWaitlistId}
+          onClose={() => setConvertingWaitlistId(null)}
+        />
+      ) : null}
+      <ReservationList reservations={center.reservations} onConvert={setConvertingWaitlistId} />
     </div>
   );
 }

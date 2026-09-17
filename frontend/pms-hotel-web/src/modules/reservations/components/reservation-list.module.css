@@ -87,6 +87,22 @@
 .statusNoShow { background: var(--color-system-error-soft); color: var(--color-system-error); }
 .statusDetail { color: var(--color-text-secondary); font-size: var(--font-size-caption); line-height: var(--line-height-caption); margin: var(--space-2) 0 0; }
 
+.convertButton {
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-brand-primary);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-brand);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-caption);
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+}
+.convertButton:hover { background: var(--color-brand-subtle); }
+.convertButton:focus-visible { outline: 3px solid var(--color-brand-accent); outline-offset: 2px; }
+
 .emptyResults { color: var(--color-text-secondary); margin: var(--space-4) 0; }
 
 .pagination { align-items: center; display: flex; flex-wrap: wrap; gap: var(--space-3); justify-content: space-between; }

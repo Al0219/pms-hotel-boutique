@@ -6,6 +6,7 @@
 
 export { ReservationCenter } from "./components/reservation-center";
 export { ReservationDetail } from "./components/reservation-detail";
+export { WaitlistConversionPanel } from "./components/waitlist-conversion-panel";
 export type {
   ReservationDetailData,
   ReservationDetailFinancialSummary,
@@ -23,3 +24,8 @@ export type {
   ReservationListItem,
   ReservationStatus,
 } from "./model/reservation-summary";
+export type {
+  WaitlistAvailability,
+  WaitlistConversionPreview,
+  WaitlistConversionResult,
+} from "./model/waitlist";

@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ReservationListItem } from "../model/reservation-summary";
 import { ReservationList } from "./reservation-list";
@@ -67,6 +67,22 @@ describe("ReservationList", () => {
     expect(screen.getByText("Tarifa estimada Q2,250")).toBeInTheDocument();
     expect(within(screen.getByRole("table")).getByText("Waitlist")).toBeInTheDocument();
     expect(screen.getByText("Sin inventario confirmado")).toBeInTheDocument();
+  });
+
+  it("does not render a convert action without the composition handler", () => {
+    render(<ReservationList reservations={[waitlistReservation()]} />);
+
+    expect(screen.queryByRole("button", { name: "Convertir a reserva" })).not.toBeInTheDocument();
+  });
+
+  it("exposes a convert action on waitlist rows through the provided handler", () => {
+    const onConvert = vi.fn();
+    render(<ReservationList reservations={[waitlistReservation(), reservation()]} onConvert={onConvert} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Convertir a reserva" }));
+
+    expect(onConvert).toHaveBeenCalledWith("WAIT-0007");
+    expect(screen.getAllByRole("button", { name: "Convertir a reserva" })).toHaveLength(1);
   });
 
   it("filters rows by the search query", () => {

@@ -93,9 +93,11 @@ function buildPageNumbers(current: number, total: number): Array<number | "ellip
 
 interface ReservationListProps {
   reservations: ReadonlyArray<ReservationListItem>;
+  /** Usado por el Centro de Reservas para abrir el flujo de conversión de una solicitud WAITLIST. */
+  onConvert?: (reservationId: string) => void;
 }
 
-export function ReservationList({ reservations }: Readonly<ReservationListProps>) {
+export function ReservationList({ reservations, onConvert }: Readonly<ReservationListProps>) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<ReservationStatus | "ALL">("ALL");
   const [page, setPage] = useState(1);
@@ -197,6 +199,11 @@ export function ReservationList({ reservations }: Readonly<ReservationListProps>
                     <td>
                       <span className={`${styles.badge} ${STATUS_BADGE[item.status]}`}>{STATUS_LABELS[item.status]}</span>
                       {item.statusDetail ? <p className={styles.statusDetail}>{item.statusDetail}</p> : null}
+                      {item.status === "WAITLIST" && onConvert ? (
+                        <button className={styles.convertButton} type="button" onClick={() => onConvert(item.id)}>
+                          Convertir a reserva
+                        </button>
+                      ) : null}
                     </td>
                   </tr>
                 ))}
