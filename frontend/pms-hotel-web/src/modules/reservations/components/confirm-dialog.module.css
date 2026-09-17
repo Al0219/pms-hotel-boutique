@@ -1,6 +1,6 @@
 .overlay {
   align-items: center;
-  background: color-mix(in srgb, var(--color-fill-background) 60%, transparent);
+  background: color-mix(in srgb, var(--color-surface-dark) 60%, transparent);
   display: flex;
   inset: 0;
   justify-content: center;
