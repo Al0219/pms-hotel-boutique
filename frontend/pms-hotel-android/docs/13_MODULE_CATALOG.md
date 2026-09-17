@@ -33,7 +33,11 @@ Módulo aislado `src/modules/hotel`, ruta `/hotel`. Consume un perfil central fr
 
 ## Rewards — IMP-AND-0301
 
-Módulo aislado `src/modules/rewards`, ruta hija `/account/rewards`. La entrada está en `ESTANCIA > Rewards` del drawer Guest; no aparece en Account/Inicio ni agrega una tab. La hija usa `GuestChildHeader` sin shell global y Back seguro hacia `/account`. El flujo es DTO local → mapper → domain → `RewardsService`/`MockRewardsService` → TanStack Query → UI. Los valores de nivel, progreso, beneficios y métricas son texto frontend/mock y no representan IDs, saldo, puntos ni moneda Backend. No hay fetch, persistencia, mutation ni Promotions. Las referencias Figma orientan la UI; la arquitectura y contratos aprobados prevalecen ante una implementación literal incompatible. IMP-AND-0301 está `COMPLETADA`; ver `21_REWARDS_CONTRACT_PROPOSAL.md`.
+Módulo aislado `src/modules/rewards`, ruta hija `/account/rewards`. La entrada está en `BENEFICIOS > Rewards` del drawer Guest; no aparece en Account/Inicio ni agrega una tab. La hija usa `GuestChildHeader` sin shell global y Back seguro hacia `/account`. El flujo es DTO local → mapper → domain → `RewardsService`/`MockRewardsService` → TanStack Query → UI. Los valores de nivel, progreso, beneficios y métricas son texto frontend/mock y no representan IDs, saldo, puntos ni moneda Backend. No hay fetch, persistencia, mutation ni Promotions. Las referencias Figma orientan la UI; la arquitectura y contratos aprobados prevalecen ante una implementación literal incompatible. IMP-AND-0301 está `COMPLETADA`; ver `21_REWARDS_CONTRACT_PROPOSAL.md`.
+
+## Promotions — IMP-AND-0302
+
+Módulo aislado `src/modules/promotions`, ruta hija `/account/promotions`. Se abre desde `BENEFICIOS > Promociones` en el drawer Guest y usa `GuestChildHeader`, sin shell global, drawer ni tab propia; Back vuelve de forma segura a `/account`. El flujo DTO local → mapper → domain → `PromotionsService`/`MockPromotionsService` → TanStack Query → UI muestra promociones ya determinadas como aplicables. `Ver detalles` usa estado local de presentación y un modal informativo; no realiza una operación comercial. No hay Backend, fetch, persistencia, mutation, engine de elegibilidad, pricing, stacking, cupón ni aplicación de promoción. IMP-AND-0302 está `COMPLETADA`; ver `22_PROMOTIONS_CONTRACT_PROPOSAL.md`.
 
 ## Checkout / Invoice — IMP-AND-0203
 

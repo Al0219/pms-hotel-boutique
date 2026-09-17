@@ -8,6 +8,7 @@ import { NetworkError } from '@/data/remote/http/HttpError';
 import { AccountStayHubScreen } from '@/modules/account';
 import { CheckoutSessionProvider } from '@/modules/checkout';
 import { GuestNavigationMenuProvider, GuestNoticeProvider, GuestRootHeader } from '@/modules/navigation';
+import { PromotionsScreen } from '@/modules/promotions/presentation/PromotionsScreen';
 import { type RewardsFixtureDto } from '@/modules/rewards/data/dto/RewardsFixtureDto';
 import { mapRewardsFixtureDto } from '@/modules/rewards/data/mappers/mapRewardsFixtureDto';
 import { MockRewardsService } from '@/modules/rewards/data/mocks/MockRewardsService';
@@ -75,6 +76,10 @@ function RewardsRoute() {
   return <RewardsScreen />;
 }
 
+function PromotionsRoute() {
+  return <PromotionsScreen />;
+}
+
 describe('Rewards', () => {
   it('maps the approved presentation-only fixture without parsing values', () => {
     expect(mapRewardsFixtureDto(rewardsFixture)).toEqual({
@@ -139,6 +144,8 @@ describe('Rewards', () => {
     expect(ui.queryByTestId('rewards-tier-silver')).toBeNull();
     expect(ui.queryByText('Mis servicios')).toBeNull();
     expect(ui.queryByText('Ver servicios')).toBeNull();
+    expect(ui.queryByTestId('rewards-promotions-cta')).toBeNull();
+    expect(ui.queryByText('Ver promociones aplicables')).toBeNull();
   });
 
   it('renders a generic error and retries the real query', async () => {
@@ -170,13 +177,14 @@ describe('Rewards', () => {
     expect(getRewards).toHaveBeenCalledTimes(2);
   });
 
-  it('navigates from the Guest drawer to Rewards and always returns to Account', async () => {
+  it('navigates from the Benefits drawer entry to Rewards and returns to Account', async () => {
     const ui = await renderRouter(
       {
         _layout: RewardsTestLayout,
         account: AccountRoute,
         services: ServicesRoute,
         'account/rewards': RewardsRoute,
+        'account/promotions': PromotionsRoute,
       },
       { initialUrl: '/services' },
     );
@@ -191,9 +199,39 @@ describe('Rewards', () => {
     await waitFor(() => expect(ui.getByTestId('rewards-screen')).toBeTruthy());
     expect(ui.queryByTestId('guest-navigation-chat-fab')).toBeNull();
     expect(ui.queryByTestId('guest-navigation-tab-home')).toBeNull();
+    expect(ui.queryByTestId('rewards-promotions-cta')).toBeNull();
 
     await act(async () => {
       fireEvent.press(ui.getByTestId('rewards-back'));
+    });
+    await waitFor(() => expect(ui.getByTestId('account-stay-hub-screen')).toBeTruthy());
+    expect(ui.getByTestId('guest-navigation-tab-home').props.accessibilityState).toEqual({ disabled: false, selected: true });
+  });
+
+  it('opens Promotions directly from the drawer and backs safely to Account', async () => {
+    const ui = await renderRouter(
+      {
+        _layout: RewardsTestLayout,
+        account: AccountRoute,
+        services: ServicesRoute,
+        'account/rewards': RewardsRoute,
+        'account/promotions': PromotionsRoute,
+      },
+      { initialUrl: '/services' },
+    );
+
+    await waitFor(() => expect(ui.getByTestId('guest-root-header')).toBeTruthy());
+    await act(async () => {
+      fireEvent.press(ui.getByTestId('guest-navigation-menu-button'));
+    });
+    await act(async () => {
+      fireEvent.press(ui.getByTestId('guest-navigation-drawer-link-promociones'));
+    });
+    await waitFor(() => expect(ui.getByTestId('promotions-screen')).toBeTruthy());
+    expect(ui.queryByTestId('guest-navigation-tab-home')).toBeNull();
+
+    await act(async () => {
+      fireEvent.press(ui.getByTestId('promotions-back'));
     });
     await waitFor(() => expect(ui.getByTestId('account-stay-hub-screen')).toBeTruthy());
     expect(ui.getByTestId('guest-navigation-tab-home').props.accessibilityState).toEqual({ disabled: false, selected: true });

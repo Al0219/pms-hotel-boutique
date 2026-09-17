@@ -19,8 +19,8 @@ export interface GuestNavigationDrawerLink {
 }
 
 export interface GuestNavigationDrawerSection {
-  id: 'stay' | 'services' | 'hotel';
-  label: 'ESTANCIA' | 'SERVICIOS' | 'HOTEL';
+  id: 'stay' | 'benefits' | 'services' | 'hotel';
+  label: 'ESTANCIA' | 'BENEFICIOS' | 'SERVICIOS' | 'HOTEL';
   links: readonly GuestNavigationDrawerLink[];
 }
 
@@ -31,7 +31,14 @@ export const guestNavigationDrawerSections: readonly GuestNavigationDrawerSectio
     links: [
       { icon: { android: 'home', ios: 'house.fill', web: 'home' }, label: 'Inicio', path: '/account' },
       { icon: { android: 'list', ios: 'list.bullet', web: 'list' }, label: 'Mis servicios', path: '/services/requests' },
+    ],
+  },
+  {
+    id: 'benefits',
+    label: 'BENEFICIOS',
+    links: [
       { icon: { android: 'star', ios: 'star.fill', web: 'star' }, label: 'Rewards', path: '/account/rewards' },
+      { icon: { android: 'local_offer', ios: 'tag.fill', web: 'local_offer' }, label: 'Promociones', path: '/account/promotions' },
     ],
   },
   {
