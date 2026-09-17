@@ -1,76 +1,34 @@
 # 04 — Navigation
 
-Seguir journeys Figma.
+Expo Router es el mecanismo de navegación Guest aprobado. La raíz técnica redirige a `/access`; al vincular la reserva, el flujo usa `router.replace('/account')`.
 
-Expo Router es el mecanismo de navegación aprobado. Sprint 0 contiene solamente `app/_layout.tsx`, `app/index.tsx`, `app/(guest)/_layout.tsx` y `app/(guest)/index.tsx`. La ruta Guest es una pantalla técnica Foundation, no una pantalla funcional ni una reproducción de Figma.
+## Shell Guest vigente
 
-La navegación y back stack de Foundation se prueban con `expo-router/testing-library`, `renderRouter` y un filesystem de rutas in-memory. Las rutas funcionales nacen únicamente con sus tareas READY.
+`GuestNavigationShell` y `GuestNavigationMenuProvider` son la autoridad única para la footbar, la selección activa, el acceso flotante a Chat y el drawer Guest. La decisión vigente, frontend-first, es:
 
-## Autoridad de navegación Guest para nuevas features
+| Orden | Label | Ruta | Regla activa |
+| --- | --- | --- |
+| 1 | Inicio | `/account` | activa para `/account` y sus hijas |
+| 2 | Servicios | `/services` | activa para `/services` y sus hijas |
+| 3 | Valet | `/valet` | activa para `/valet` y sus hijas |
+| 4 | Hotel | `/hotel` | activa para `/hotel` y sus hijas |
 
-La fuente visual canónica `238:132 — Implementation Ready — Android V2 + V3` confirma la footbar `Servicios · Chat · Valet · Cuenta` en Chat (`238:192`), Servicios (`239:132`), Valet (`239:197`) y Cuenta (`240:132`). Las nuevas features derivadas de esa sección deben usar esa referencia visual.
+`/account` conserva su ruta técnica y los retornos de flows de éxito con `router.replace('/account')`; su representación en la shell es **Inicio**. No hay tab visible **Cuenta**.
 
-`IMP-AND-0100 — Android Guest Navigation Shell V3` implementa el shell V3 compartido bajo `DEC-A-004`. Permanece sin montar hasta que una feature V3 autorizada sea su primer consumidor productivo; ningún módulo feature puede copiar una footbar privada.
+Chat permanece disponible en `/chat`, sin tab seleccionada. La shell ofrece un botón flotante **Abrir chat**, de 48 × 48 dp y situado sobre la footbar, únicamente en `/account`, `/services`, `/valet` y `/hotel`. La acción usa `router.push('/chat')` para preservar el historial: Android Back o el gesto del sistema recuperan la ruta real de origen. Un deep link sin historial conserva el comportamiento nativo de Expo Router.
 
-## Política aprobada del shell Guest V3
+Las pantallas raíz `/account`, `/services`, `/valet` y `/hotel` comparten `GuestRootHeader`: título y botón de menú en una fila normal, alineada verticalmente y distribuida entre ambos extremos. Las rutas hijas de Servicios y Chat comparten `GuestChildHeader`, con Back y título en la misma altura visual; no muestran menú ni Chat flotante. `/chat` es una pantalla enfocada: no renderiza `GuestNavigationShell` ni footbar, y su Back usa la pila nativa para recuperar el origen real. El drawer se abre desde la derecha, usa backdrop y X para cerrar, y contiene exactamente Inicio, Mis servicios, Servicios, Valet y Hotel. No incluye Chat.
 
-### Rutas objetivo y destinos no implementados
+## Back stack y accesibilidad
 
-Las rutas objetivo son `/services`, `/chat`, `/valet` y `/account`. Las cuatro existen como features autorizadas. `IMP-AND-0108` implementa además `/access` fuera del shell y la raíz `/` redirige a ese punto de entrada.
+Las tabs y los links del drawer usan `router.replace` y no acumulan destinos principales. Los launchers de una feature usan `router.push`; Back retorna a su raíz. La tab activa es un no-op.
 
-Servicios, Chat, Valet y Cuenta están habilitadas. Una tab disabled no ejecuta navegación, no abre placeholders ni representa una feature disponible.
+La footbar usa `tablist`/`tab`, los controles de menú, drawer y Chat usan `button`, y los estados `selected`/`disabled` se derivan exclusivamente de `usePathname()`. No existe un store de navegación paralelo.
 
-### Selección
+## Referencia V3 histórica
 
-`usePathname()` es la única fuente de verdad. Una tab está activa cuando pathname coincide con su `basePath` o inicia con `basePath + "/"`. No se crea un store global.
+La footbar anterior `Servicios · Chat · Valet · Cuenta`, documentada por referencias Figma históricas de V3, queda **deprecada** como autoridad de navegación. No describe la shell productiva vigente. La migración a Inicio · Servicios · Valet · Hotel, Chat flotante y drawer es una decisión frontend-first de IMP-AND-0114; no atribuye nuevos nodos ni una actualización a Figma.
 
-- `/services` y `/services/*` → Servicios activa;
-- `/chat` y `/chat/*` → Chat activa;
-- `/valet` y `/valet/*` → Valet activa;
-- `/account` y `/account/*` → Cuenta activa.
+## Rutas de Servicios
 
-Las rutas fuera del shell no tienen tab V3 seleccionada. `/access` queda fuera de `GuestNavigationShell`, no muestra footbar ni tabs y, tras una vinculación mock exitosa, usa `router.replace('/account')`. `/account` inicia el contexto Guest vinculado con shell V3.
-
-### Accesibilidad
-
-El shell usa la semántica de navegación/tablist que soporte React Native. Cada destino conserva su label visible, declara `accessibilityRole="tab"` y expone `selected: true` solo cuando está activo. Una tab no disponible expone `disabled: true` y no tiene handler ejecutable. Los targets miden al menos 44 × 44 dp, el orden accesible coincide con el visual y los hijos no duplican anuncios.
-
-### Back stack
-
-Cambiar entre tabs disponibles usa `router.replace(basePath)`: no acumula tabs principales mediante `push` ni conserva stacks independientes. Una ruta hija usa `router.push(childPath)` y Back usa el stack normal para regresar a la raíz correspondiente. En particular, `/services/*` vuelve a `/services` y `/account/*` vuelve a `/account`. Desde una ruta raíz, Android Back conserva el comportamiento estándar de Expo Router/sistema. Tocar la tab activa es un no-op; una tab disabled no navega. Una pantalla fuera del shell no selecciona ninguna tab V3.
-
-### Montaje
-
-`IMP-AND-0100` crea infraestructura reutilizable, pero no envuelve globalmente `(guest)`. Servicios, Chat, Valet y Cuenta son consumidores productivos autorizados; Cuenta se incorporó con `IMP-AND-0109`. Su validación puede usar `expo-router/testing-library`.
-
-## Excepción de navegación — IMP-AND-0102
-
-La Home Guest histórica implementó `31:154 — MOB-02 — Inicio / Mi estadía` como excepción de `IMP-AND-0102`. En aquella tarea sus acciones usaban `/services` como handoff técnico; Servicios pasó posteriormente a ser una feature funcional autorizada por `IMP-AND-0103`.
-
-La footbar V2 `Inicio · Solicitudes · Explorar · Hotel` de esa pantalla fue parte de la excepción aprobada. No convierte V2 en navegación global ni reabre `IMP-AND-0102`; `IMP-AND-0109` migró su capacidad de estadía al Account / Stay Hub V3.
-
-No existe una entrada productiva V1 equivalente: la raíz redirige a `/account`, no agrega Inicio al shell V3 y no conserva un segundo hub de estadía.
-
-## MUST
-- back stack coherente;
-- deep links solo aprobados;
-- auth guards coherentes;
-- offline recovery.
-
-Guest y Staff conservan contextos de navegación y sesión separados.
-
-## MUST NOT
-- saltar estados críticos;
-- crear rutas paralelas inconsistentes con Web/account semantics.
-
-## IMP-AND-0110 — Servicios / Limpieza
-
-`/services/housekeeping` implementa MOB-21 y reutiliza el shell V3 con Servicios activa. El launcher `Limpieza` usa `router.push`; Back desde ese flujo vuelve a `/services`. La acción visible `Volver a servicios`, disponible también en success, usa `router.dismissTo('/services')`. IMP-AND-0110 COMPLETADA; el contrato mínimo y los valores frontend/mock provisionales están en `26_HOUSEKEEPING_CONTRACT.md`.
-
-## IMP-AND-0111 — Servicios / Room Service
-
-`/services/room-service` implementa MOB-22 con Servicios activa. El launcher `Room Service` usa `router.push` y se presenta como card de navegación con chevron, igual que Limpieza. Back y la acción de success `Volver a servicios` usan `router.dismissTo('/services')`. IMP-AND-0111 COMPLETADA; el contrato frontend/mock está en `27_ROOM_SERVICE_CONTRACT_PROPOSAL.md`.
-
-## IMP-AND-0112 — Servicios / Mis solicitudes
-
-`/services/requests` implementa MOB-23 como la lista completa de solicitudes session-only y conserva Servicios activa mediante la regla existente para `/services/*`. Back vuelve a `/services`; la preview `Mis servicios` de Cuenta navega aquí con `router.push`. La ruta reutiliza `GuestNavigationShell` y no introduce una footbar privada. IMP-AND-0112 está IMPLEMENTADA y `EN_QA`; ver `28_SESSION_SERVICE_REQUESTS_PROPOSAL.md`.
+`/services/housekeeping`, `/services/room-service`, `/services/amenities` y `/services/requests` conservan Servicios activa y Back hacia `/services`. Hotel es una sección independiente en `/hotel`; no existe `/services/hotel-info` ni un launcher permanente de Hotel dentro de Servicios.

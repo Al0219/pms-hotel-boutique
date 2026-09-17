@@ -4,7 +4,7 @@
 **Estado:** `COMPLETADA`
 **Owner:** `ANDROID-1`
 **Reviewer:** `WEB-3`; consultar `WEB-2` para la semántica futura de Cuenta.
-**Fuentes:** `31:132 — Reference — Android Early Journey` (histórica) y `238:132 — Implementation Ready — Android V2 + V3` (vigente).
+**Fuentes:** `31:132 — Reference — Android Early Journey` y `238:132 — Implementation Ready — Android V2 + V3` como referencias históricas; la shell vigente se documenta en `04_NAVIGATION.md`.
 
 ## Problema detectado
 
@@ -27,11 +27,11 @@ El freeze Early Journey → V3 queda aprobado. La evidencia final está registra
 
 ## Decisiones congeladas
 
-- La navegación Guest V3 sigue siendo exclusivamente `Servicios · Chat · Valet · Cuenta`.
+- La shell Guest vigente es `Inicio · Servicios · Valet · Hotel`; Chat es una acción flotante fuera de la footbar y el drawer contiene Inicio, Mis servicios, Servicios, Valet y Hotel.
 - No se crea una quinta tab `Estadía` y no se restituye la navegación V1.
 - `MOB-19 — Acceso / Vincular reserva` vive en `/access`, fuera de `GuestNavigationShell`. Tras una vinculación exitosa, el flujo es `/access` → `/account` → **Account / Stay Hub V3**. El shell comienza cuando el huésped entra al contexto Guest vinculado.
 - `IMP-AND-0108` usa exclusivamente código de reserva y correo electrónico. El target de raíz aprobado es `/` → `/access`; la vinculación mock exitosa redirige inmediatamente con `router.replace('/account')`, sin pantalla de success ni persistencia.
-- `MOB-20 — Cuenta / Mi estadía` vive en `/account`. Cuenta permanece activa para `/account` y todas sus rutas hijas. El contenido actual de Stay será la base del **Account / Stay Hub**.
+- `MOB-20 — Cuenta / Mi estadía` vive técnicamente en `/account`. Su representación visible y tab activa es Inicio para `/account` y sus rutas hijas. El contenido actual de Stay será la base del **Account / Stay Hub**.
 - Las rutas `/services/*` mantienen Servicios activa y Back desde una ruta hija vuelve a `/services`. Las rutas `/account/*` mantienen Cuenta activa y Back desde una ruta hija vuelve a `/account`.
 - `IMP-AND-0201` extenderá el Account / Stay Hub creado por `IMP-AND-0109`; no crea otro hub ni duplica `/account`.
 
@@ -40,14 +40,14 @@ El freeze Early Journey → V3 queda aprobado. La evidencia final está registra
 | Histórico, solo referencia | Migración V3 | Ruta | Tab activa | Tarea |
 | --- | --- | --- | --- | --- |
 | `MOB-01` (`31:133`) | `MOB-19 — Acceso / Vincular reserva` | `/access` | Ninguna; fuera del shell | `IMP-AND-0108` |
-| `MOB-02` (`31:154`) | `MOB-20 — Cuenta / Mi estadía` | `/account` | Cuenta | `IMP-AND-0109` |
+| `MOB-02` (`31:154`) | `MOB-20 — Inicio / Mi estadía` | `/account` | Inicio | `IMP-AND-0109` |
 | `MOB-03` (`31:191`) | `MOB-21 — Servicios / Limpieza` | `/services/housekeeping` | Servicios | `IMP-AND-0110` |
 | `MOB-04` (`31:221`) | `MOB-22 — Servicios / Room Service` | `/services/room-service` | Servicios | `IMP-AND-0111` |
 | `MOB-05` (`31:264`) | `MOB-23 — Servicios / Mis solicitudes` | `/services/requests` | Servicios | `IMP-AND-0112` |
 | `MOB-06` (`31:299`) | `MOB-24 — Servicios / Amenidades` | `/services/amenities` | Servicios | `IMP-AND-0113` |
-| `MOB-07` (`31:338`) | `MOB-25 — Servicios / Información del hotel` | `/services/hotel-info` | Servicios | `IMP-AND-0114` |
+| `MOB-07` (`31:338`) | `MOB-25 — Hotel` | `/hotel` | Hotel | `IMP-AND-0114` |
 
-Los identificadores de Figma de esta matriz son únicamente trazabilidad; nunca son identificadores runtime.
+Los identificadores de Figma de esta matriz son únicamente trazabilidad; nunca son identificadores runtime. La referencia histórica no contiene el cambio a Hotel independiente, Chat flotante y drawer: esa migración es una decisión frontend-first de IMP-AND-0114.
 
 ## Ownership y dependencias
 
@@ -86,7 +86,7 @@ UI
 - No se implementan pantallas, rutas, DTOs, mappers, Domain, hooks, mocks funcionales ni tests en este Change Control.
 - No se definen endpoints, HTTP real, autenticación real, Backend, persistencia, secretos, NetInfo, cola offline ni sincronización en segundo plano.
 - No se modifica Figma ni se convierten los frames `31:*` en fuente vigente.
-- `IMP-AND-0110` e `IMP-AND-0111` están COMPLETADAS. `IMP-AND-0112` implementa el registro session-only de MOB-23 y permanece `EN_QA`; no se inicia `IMP-AND-0113..0114`, Sprint 2 ni una feature de Cuenta fuera del alcance aprobado.
+- `IMP-AND-0110` e `IMP-AND-0111` están COMPLETADAS. `IMP-AND-0112` implementa el registro session-only de MOB-23 y permanece `EN_QA`. `IMP-AND-0114` está COMPLETADA: implementa Hotel independiente y migra la shell como decisión frontend-first, con QA manual y revisión WEB-3 PASS.
 
 ## Gates cerrados de `IMP-AND-0107`
 

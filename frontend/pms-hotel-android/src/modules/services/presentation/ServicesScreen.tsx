@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { NetworkError } from '@/data/remote/http/HttpError';
-import { GuestNavigationShell, useGuestNotice } from '@/modules/navigation';
+import { GuestNavigationShell, GuestRootHeader, useGuestNotice } from '@/modules/navigation';
 import { formatServiceDateLabel, useSessionServiceRequests } from '@/modules/service-requests';
 import { type ServicesService } from '@/modules/services/data/services/ServicesService';
 import { type ServiceCatalogItem } from '@/modules/services/domain/models/ServiceCatalog';
@@ -170,6 +170,7 @@ export function ServicesScreen({ service, stayService }: ServicesScreenProps) {
   if (catalogState.kind === 'loading') {
     return (
       <View style={servicesStyles.screen}>
+        <GuestRootHeader title="Servicios" />
         <CatalogLoading />
         <GuestNavigationShell />
       </View>
@@ -179,6 +180,7 @@ export function ServicesScreen({ service, stayService }: ServicesScreenProps) {
   if (catalogState.kind === 'offline') {
     return (
       <View style={servicesStyles.screen}>
+        <GuestRootHeader title="Servicios" />
         <View style={[servicesStyles.content, servicesStyles.screenContent]}>
           <ServicesStateCard
             body="Conéctate a internet para solicitar este servicio."
@@ -196,6 +198,7 @@ export function ServicesScreen({ service, stayService }: ServicesScreenProps) {
   if (catalogState.kind === 'error') {
     return (
       <View style={servicesStyles.screen}>
+        <GuestRootHeader title="Servicios" />
         <View style={[servicesStyles.content, servicesStyles.screenContent]}>
           <ServicesStateCard
             body="Intenta nuevamente."
@@ -222,8 +225,8 @@ export function ServicesScreen({ service, stayService }: ServicesScreenProps) {
 
   return (
     <View style={servicesStyles.screen} testID="services-screen">
+      <GuestRootHeader title="Servicios" />
       <ScrollView contentContainerStyle={servicesStyles.content} style={servicesStyles.scroll}>
-        <Text style={servicesStyles.title}>Servicios</Text>
         <ServiceNavigationCard label="Limpieza" onPress={() => router.push('/services/housekeeping')} testID="services-housekeeping-launcher" />
         <ServiceNavigationCard label="Room Service" onPress={() => router.push('/services/room-service')} testID="services-room-service-launcher" />
         <ServiceNavigationCard label="Amenidades" onPress={() => router.push('/services/amenities')} testID="services-amenities-launcher" />

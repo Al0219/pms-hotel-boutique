@@ -82,12 +82,9 @@ describe('Services', () => {
       disabled: false,
       selected: true,
     }));
-    expect(rendered.getByLabelText('Chat').props.accessibilityState).toEqual(expect.objectContaining({
-      disabled: false,
-      selected: false,
-    }));
+    expect(rendered.queryByLabelText('Chat')).toBeNull();
     expect(rendered.getByLabelText('Valet').props.accessibilityState.disabled).toBe(false);
-    expect(rendered.getByLabelText('Cuenta').props.accessibilityState.disabled).toBe(false);
+    expect(rendered.getByLabelText('Inicio').props.accessibilityState.disabled).toBe(false);
     expect(rendered.getByTestId('services-submit-button').props.accessibilityState.disabled).toBe(true);
   });
 

@@ -3,6 +3,60 @@ import { StyleSheet } from 'react-native';
 import { tokens } from '@/shared/theme/tokens';
 
 export const guestNavigationStyles = StyleSheet.create({
+  rootHeaderSafeArea: {
+    backgroundColor: tokens.color.surface,
+  },
+  rootHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: tokens.layout.screenInset,
+    paddingVertical: tokens.space.sm,
+  },
+  rootHeaderTitle: {
+    color: tokens.color.inkStrong,
+    fontFamily: tokens.typography.family,
+    fontSize: tokens.typography.size.title,
+    fontWeight: '600',
+  },
+  childBackButton: {
+    alignItems: 'center',
+    height: tokens.layout.controlHeight,
+    justifyContent: 'center',
+    width: tokens.layout.controlHeight,
+  },
+  childBackArrow: {
+    color: tokens.color.inkStrong,
+    fontFamily: tokens.typography.family,
+    fontSize: tokens.typography.size.title + tokens.space.xs / 2,
+  },
+  childHeaderTitle: {
+    color: tokens.color.inkStrong,
+    flex: 1,
+    fontFamily: tokens.typography.family,
+    fontSize: tokens.typography.size.title,
+    fontWeight: '600',
+    marginLeft: tokens.space.xs,
+  },
+  childHeaderEndSpacer: {
+    height: tokens.layout.controlHeight,
+    width: tokens.layout.controlHeight,
+  },
+  menuButton: {
+    alignItems: 'center',
+    backgroundColor: tokens.color.white,
+    borderColor: tokens.color.border,
+    borderRadius: tokens.radius.control,
+    borderWidth: 1,
+    height: tokens.layout.controlHeight,
+    justifyContent: 'center',
+    width: tokens.layout.controlHeight,
+  },
+  menuButtonLabel: {
+    color: tokens.color.inkStrong,
+    fontFamily: tokens.typography.family,
+    fontSize: tokens.typography.size.sectionTitle,
+  },
   shell: {
     backgroundColor: tokens.color.white,
     borderColor: tokens.color.border,
@@ -33,6 +87,83 @@ export const guestNavigationStyles = StyleSheet.create({
   },
   tabLabelActive: {
     color: tokens.color.brand,
+    fontWeight: '600',
+  },
+  chatFab: {
+    alignItems: 'center',
+    backgroundColor: tokens.color.brand,
+    borderRadius: tokens.layout.controlHeight / 2,
+    bottom: tokens.layout.guestNavigationHeight + tokens.space.md,
+    height: tokens.layout.controlHeight,
+    justifyContent: 'center',
+    position: 'absolute',
+    right: tokens.layout.screenInset,
+    width: tokens.layout.controlHeight,
+    zIndex: 2,
+  },
+  chatFabIcon: {
+    height: tokens.layout.controlHeight / 2,
+    width: tokens.layout.controlHeight / 2,
+  },
+  drawerModal: {
+    bottom: 0,
+    flex: 1,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    zIndex: 4,
+  },
+  drawerBackdrop: {
+    backgroundColor: tokens.color.black,
+    flex: 1,
+    opacity: 0.68,
+  },
+  drawerBackdropFill: {
+    flex: 1,
+  },
+  drawer: {
+    backgroundColor: tokens.color.surface,
+    bottom: 0,
+    opacity: 1,
+    right: 0,
+    padding: tokens.layout.screenInset,
+    position: 'absolute',
+    top: 0,
+    width: '82%',
+  },
+  drawerHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: tokens.space.lg,
+  },
+  drawerTitle: {
+    color: tokens.color.inkStrong,
+    fontFamily: tokens.typography.family,
+    fontSize: tokens.typography.size.sectionTitle,
+    fontWeight: '600',
+  },
+  drawerCloseButton: {
+    alignItems: 'center',
+    height: tokens.layout.controlHeight,
+    justifyContent: 'center',
+    width: tokens.layout.controlHeight,
+  },
+  drawerCloseLabel: {
+    color: tokens.color.inkStrong,
+    fontFamily: tokens.typography.family,
+    fontSize: tokens.typography.size.title,
+  },
+  drawerLink: {
+    justifyContent: 'center',
+    minHeight: tokens.layout.controlHeight,
+    paddingVertical: tokens.space.xs,
+  },
+  drawerLinkLabel: {
+    color: tokens.color.ink,
+    fontFamily: tokens.typography.family,
+    fontSize: tokens.typography.size.label,
     fontWeight: '600',
   },
 });

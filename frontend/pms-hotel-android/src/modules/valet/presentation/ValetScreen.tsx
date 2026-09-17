@@ -4,7 +4,7 @@ import DateTimePicker, { type DateTimePickerEvent } from '@react-native-communit
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { NetworkError } from '@/data/remote/http/HttpError';
-import { GuestNavigationShell, useGuestNotice } from '@/modules/navigation';
+import { GuestNavigationShell, GuestRootHeader, useGuestNotice } from '@/modules/navigation';
 import { formatServiceDate, formatServiceDateLabel, getFirstAvailableServiceDate, getInitialServiceDate, getNearestServiceTime, isServiceDateWithinStay, isServiceWithinStayWindow, parseServiceDate, useSessionServiceRequests } from '@/modules/service-requests';
 import {
   GoogleMapsLinkingService,
@@ -529,9 +529,9 @@ export function ValetScreen({ clock = deviceClock, mapService = defaultMapServic
     if (!await mapService.openRoute(origin, destination)) setMapError(true);
   }
 
-  if (valetState.kind === 'loading') return <View style={valetStyles.screen}><View style={[valetStyles.content, valetStyles.stateContent]} testID="valet-screen-loading"><Text style={valetStyles.title}>Cargando transporte y valet</Text></View><GuestNavigationShell /></View>;
-  if (valetState.kind === 'offline') return <View style={valetStyles.screen}><View style={[valetStyles.content, valetStyles.stateContent]}><StateCard body="Conéctate a internet para ver transporte y valet." offline onRetry={() => void valetQuery.refetch()} testID="valet-screen-offline" title="Sin conexión" /></View><GuestNavigationShell /></View>;
-  if (valetState.kind === 'error') return <View style={valetStyles.screen}><View style={[valetStyles.content, valetStyles.stateContent]}><StateCard body="Intenta nuevamente." onRetry={() => void valetQuery.refetch()} testID="valet-screen-error" title="No pudimos cargar transporte y valet" /></View><GuestNavigationShell /></View>;
+  if (valetState.kind === 'loading') return <View style={valetStyles.screen}><GuestRootHeader title="Valet" /><View style={[valetStyles.content, valetStyles.stateContent]} testID="valet-screen-loading"><Text style={valetStyles.title}>Cargando transporte y valet</Text></View><GuestNavigationShell /></View>;
+  if (valetState.kind === 'offline') return <View style={valetStyles.screen}><GuestRootHeader title="Valet" /><View style={[valetStyles.content, valetStyles.stateContent]}><StateCard body="Conéctate a internet para ver transporte y valet." offline onRetry={() => void valetQuery.refetch()} testID="valet-screen-offline" title="Sin conexión" /></View><GuestNavigationShell /></View>;
+  if (valetState.kind === 'error') return <View style={valetStyles.screen}><GuestRootHeader title="Valet" /><View style={[valetStyles.content, valetStyles.stateContent]}><StateCard body="Intenta nuevamente." onRetry={() => void valetQuery.refetch()} testID="valet-screen-error" title="No pudimos cargar transporte y valet" /></View><GuestNavigationShell /></View>;
   if (!screen || !hotel || !destination || valetState.kind === 'empty') return null;
   const vehicle = vehicles.find((item) => item.sessionVehicleId === activeVehicleKey) ?? null;
   const vehicleOffline = vehicleRequest.isError && vehicleRequest.error instanceof NetworkError;
@@ -539,8 +539,8 @@ export function ValetScreen({ clock = deviceClock, mapService = defaultMapServic
 
 
   return <View style={valetStyles.screen} testID="valet-screen">
+    <GuestRootHeader title="Valet" />
     <ScrollView contentContainerStyle={valetStyles.content} style={valetStyles.scroll}>
-      <Text style={valetStyles.title}>Valet</Text>
       <Text style={valetStyles.subtitle}>Mis vehículos y transporte durante tu estadía</Text>
       <View style={valetStyles.card} testID="valet-vehicles-section"><Text style={valetStyles.cardHeading}>Mis vehículos</Text>{vehicles.length === 0 ? <Text style={valetStyles.mutedText}>Aún no tienes vehículos registrados.</Text> : vehicles.map((item) => <View key={item.sessionVehicleId} style={valetStyles.detailList}><Text style={valetStyles.bodyText}>{vehicleDisplay(item)}</Text><Text style={valetStyles.mutedText}>{formatVehiclePlate(item.platePrefix, item.plateBody)} · {vehicleStatusText(item.status)}</Text><Pressable accessibilityLabel={`Editar ${vehicleDisplay(item)}`} accessibilityRole="button" onPress={() => openEditVehicle(item.sessionVehicleId)} style={valetStyles.secondaryButton} testID={`valet-edit-${item.sessionVehicleId}`}><Text style={valetStyles.secondaryButtonLabel}>Editar vehículo</Text></Pressable>{item.status === 'WITH_GUEST' ? <Pressable accessibilityRole="button" onPress={() => setVehicleStatus(item.sessionVehicleId, 'PARKED')} style={valetStyles.secondaryButton} testID={`valet-return-${item.sessionVehicleId}`}><Text style={valetStyles.secondaryButtonLabel}>Entregar al valet</Text></Pressable> : null}</View>)}<Pressable accessibilityRole="button" onPress={openCreateVehicle} style={valetStyles.secondaryButton} testID="valet-register-vehicle"><Text style={valetStyles.secondaryButtonLabel}>Registrar vehículo</Text></Pressable></View>
       <Text style={valetStyles.cardHeading}>Servicios</Text>

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { accountStayHubStyles } from '@/modules/account/presentation/accountStayHubStyles';
-import { GuestNavigationShell, useGuestNotice } from '@/modules/navigation';
+import { GuestNavigationShell, GuestRootHeader, useGuestNotice } from '@/modules/navigation';
 import { ConfirmationModal } from '@/shared/components';
 import { filterServiceRequests, SessionServiceRequestCard, sessionServiceRequestEditPath, useCompleteSessionServiceRequest, useSessionServiceRequests } from '@/modules/service-requests';
 import { type StayService } from '@/modules/stay/data/services/StayService';
@@ -73,6 +73,7 @@ export function AccountStayHubScreen({ service }: AccountStayHubScreenProps) {
   if (remoteState.kind === 'loading') {
     return (
       <View style={accountStayHubStyles.screen}>
+        <GuestRootHeader title="Inicio" />
         <AccountStayLoading />
         <GuestNavigationShell />
       </View>
@@ -82,6 +83,7 @@ export function AccountStayHubScreen({ service }: AccountStayHubScreenProps) {
   if (remoteState.kind === 'offline') {
     return (
       <View style={accountStayHubStyles.screen}>
+        <GuestRootHeader title="Inicio" />
         <View style={[accountStayHubStyles.content, accountStayHubStyles.stateContent]}>
           <AccountStateCard
             body="Conéctate y reintenta para recuperar tu estadía."
@@ -99,6 +101,7 @@ export function AccountStayHubScreen({ service }: AccountStayHubScreenProps) {
   if (remoteState.kind === 'error') {
     return (
       <View style={accountStayHubStyles.screen}>
+        <GuestRootHeader title="Inicio" />
         <View style={[accountStayHubStyles.content, accountStayHubStyles.stateContent]}>
           <AccountStateCard
             body="Reintenta para recuperar los datos de tu estadía."
@@ -121,8 +124,9 @@ export function AccountStayHubScreen({ service }: AccountStayHubScreenProps) {
 
   return (
     <View style={accountStayHubStyles.screen} testID="account-stay-hub-screen">
+      <GuestRootHeader title="Inicio" />
       <ScrollView contentContainerStyle={accountStayHubStyles.content} style={accountStayHubStyles.scroll}>
-        <Text style={accountStayHubStyles.title}>Mi estadía</Text>
+        <Text accessibilityRole="header" style={accountStayHubStyles.sectionTitle}>Mi estadía</Text>
         <Text style={accountStayHubStyles.subtitle}>Tu reserva vinculada</Text>
         <View style={accountStayHubStyles.stayCard}>
           <Text style={accountStayHubStyles.stayCardEyebrow}>{roomText}</Text>

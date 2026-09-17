@@ -346,6 +346,8 @@ describe('Session service requests — IMP-AND-0112', () => {
     await fireEvent.press(ui.getByTestId('account-session-requests-all'));
     await waitFor(() => expect(ui.getByTestId('session-service-requests-screen')).toBeTruthy());
     expect(ui.getByTestId('pathname').props.children).toBe('/services/requests');
+    expect(ui.queryByText('Volver')).toBeNull();
+    expect(ui.getByRole('button', { name: 'Volver a servicios' })).toBeTruthy();
     expect(ui.getByRole('tab', { name: 'Servicios' }).props.accessibilityState.selected).toBe(true);
     await fireEvent.press(ui.getByTestId('session-service-requests-back'));
     await waitFor(() => expect(ui.getByTestId('pathname').props.children).toBe('/services'));

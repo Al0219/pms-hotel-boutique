@@ -1,9 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { GuestNavigationShell } from '@/modules/navigation';
+import { GuestChildHeader, GuestNavigationShell } from '@/modules/navigation';
 import { filterServiceRequests, serviceRequestFilters, type ServiceRequestFilter } from '@/modules/service-requests/domain/serviceRequestPresentation';
 import { SessionServiceRequestCard, sessionServiceRequestEditPath } from '@/modules/service-requests/presentation/SessionServiceRequestCard';
 import { useCompleteSessionServiceRequest } from '@/modules/service-requests/presentation/useCompleteSessionServiceRequest';
@@ -52,11 +50,8 @@ export function SessionServiceRequestsScreen() {
   }
 
   return <View style={styles.screen} testID="session-service-requests-screen">
-    <SafeAreaView edges={['top']}>
-      <View style={styles.content}><Pressable accessibilityLabel="Volver a servicios" accessibilityRole="button" onPress={returnToServices} style={styles.backButton} testID="session-service-requests-back"><Text style={styles.backButtonLabel}>Volver</Text></Pressable></View>
-    </SafeAreaView>
+    <GuestChildHeader backAccessibilityLabel="Volver a servicios" backTestID="session-service-requests-back" onBack={returnToServices} title="Mis servicios" />
     <ScrollView contentContainerStyle={styles.content} style={styles.scroll}>
-      <Text accessibilityRole="header" style={styles.screenTitle}>Mis servicios</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterList} testID="session-service-request-filters">
         {serviceRequestFilters.map((option) => <Pressable accessibilityRole="radio" accessibilityState={{ selected: filter === option.value }} key={option.value} onPress={() => setFilter(option.value)} style={[styles.filterChip, filter === option.value && styles.filterChipSelected]} testID={`session-service-request-filter-${option.value}`}><Text style={styles.filterLabel}>{option.label}</Text></Pressable>)}
       </ScrollView>
