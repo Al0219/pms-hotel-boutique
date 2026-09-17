@@ -3,288 +3,89 @@
 ## Checkout / Folio / Invoice
 
 **Tarea:** `IMP-AND-0203 — Checkout e invoice`  
-**Estado:** `APPROVED`  
-**Autoridad visual:**  
-- `240:132 — MOB-12 — Mi cuenta / cargos`
-- `240:193 — MOB-13 — Check-out digital`
-- `240:252 — MOB-14 — Factura`
-- `334:1838 — MOB-14 — Factura / PDF generado`
-- `334:1865 — MOB-14 — Factura / Correo enviado`
+**Estado del contrato:** `APPROVED`
+**Implementación:** `COMPLETADA`
+**DoR:** `PASS`
+**QA automática:** `PASS`
+**QA manual:** `PASS`
+**WEB-4:** `PASS`
 
-**Reviewer:** `WEB-4`  
-**DoR objetivo:** `Checkout/Folio frontend/mock contract approved`
+La autoridad visual continúa siendo MOB-12, MOB-13 y MOB-14 de Figma. Las rutas Expo y las reglas de sesión de este documento son decisiones frontend-first; no se atribuyen a Figma.
 
----
+## Runtime de sesión
 
-## 1. Regla central
-
-Todo el flujo es una **representación frontend simulada** hasta integración Backend/fiscal.
-
-Los textos `DTE`, `FEL`, `CERTIFICADA`, saldos, cargos y factura existen porque Figma los muestra, pero esta implementación dummy:
-
-- no certifica documentos;
-- no genera validez fiscal real;
-- no procesa pagos;
-- no persiste Folio;
-- no envía correo real;
-- no define API fiscal.
-
----
-
-## 2. Contrato propuesto
-
-```ts
-export interface FolioItemFixtureDto {
-  fixtureKey: string;
-  label: string;
-  priceText: string;
-}
-
-export interface FolioFixtureDto {
-  totalStayText: string;
-  paidGuaranteeText: string;
-  pendingBalanceText: string;
-  items: FolioItemFixtureDto[];
-  totalText: string;
-}
-
-export interface CheckoutStayFixtureDto {
-  roomDisplayText: string;
-  stayDatesText: string;
-  expectedDepartureText: string;
-}
-
-export interface CheckoutCheckFixtureDto {
-  fixtureKey: string;
-  label: string;
-  valueText: string;
-}
-
-export interface CheckoutFixtureDto {
-  stay: CheckoutStayFixtureDto;
-  checks: CheckoutCheckFixtureDto[];
-  departureNoteText: string;
-}
-
-export interface SubmitCheckoutFixtureInput {
-  departureNoteText: string;
-}
-
-export interface SubmitCheckoutFixtureResult {
-  completed: true;
-}
-
-export interface InvoiceFixtureDto {
-  documentTypeText: string;
-  referenceText: string;
-  totalText: string;
-  statusText: string;
-  dateText: string;
-}
-
-export interface GenerateInvoicePdfFixtureResult {
-  fileDisplayText: string;
-}
-
-export interface SendInvoiceEmailFixtureResult {
-  confirmationText: string;
-}
-```
-
-`completed: true` representa únicamente success de la mutation mock, no check-out operativo Backend.
-
----
-
-## 3. Dummy data Figma
-
-### Folio
+Checkout lee el `ReservationStay` por su boundary público y las solicitudes de la sesión Guest. El flujo vigente es:
 
 ```text
-Total estadía · Q 3,920
-Pagado/garantía · Q 2,400
-Saldo pendiente · Q 1,520
-
-Alojamiento · 3 noches   Q 3,150
-Room service             Q 280
-Minibar                  Q 110
-Traslado aeropuerto      Q 280
-Desayuno habitación      Q 100
-Total                    Q 3,920
+módulo origen
+→ builder del origen
+→ SessionServiceRequest.billingSnapshot
+→ CheckoutSessionReadModel vivo
+→ confirmación final + mutation mock exitosa
+→ CheckoutSessionSnapshot congelado
+→ Invoice
 ```
 
-`priceText` permanece presentación; no amount/currency/tax.
+`CheckoutSessionSnapshot` copia contenido, entradas, líneas y `checkoutTotal`. Una actualización o eliminación posterior de `SessionServiceRequest` puede afectar solo al read model vivo; Invoice no recalcula ni cambia el snapshot.
 
-### Checkout
+## Importe estructurado y total
 
-```text
-Habitación 203 · Suite Terraza
-28–31 ago · 3 noches
-Salida prevista · 11:00
+`SessionBillingSnapshot` puede incluir `amountMinor`, `currency: 'GTQ'` y `amountNature`.
 
-Folio revisado      ✓
-Saldo pendiente     Q 0
-Minibar reportado   ✓
-Llave / acceso      Digital
-Vehículo valet      Solicitado
+- Room Service construye líneas, cantidades, `priceText`, `totalText` y el importe confirmado desde su menú y carrito origen.
+- Late Checkout construye precio de presentación e importe confirmado desde su catálogo origen.
+- Transfer conserva el importe que ya calcula su origen con `amountNature: 'ESTIMATED'`.
+- `CheckoutSessionReadModel`, fuera de la UI, calcula `checkoutTotal` con todos los importes estructurados GTQ cobrables, incluidos los estimados.
+- Transfer se muestra como `Tarifa estimada`, conserva su metadata `ESTIMATED` y participa en `checkoutTotal`.
+- Sin cargos cobrables, el total preparado es `Q0.00`.
 
-Todo estuvo excelente.
-```
+No se parsea `priceText` para obtener dinero. Los DTOs históricos de Figma siguen siendo solo fixtures de presentación y no participan del folio runtime.
 
-### Invoice
+## Ventana local de servicios
 
-```text
-DTE · Factura electrónica
-FEL-0842 · HB-2026-08421
-Total · Q 3,920
-CERTIFICADA
-Fecha · 31 ago · 10:48
-```
+Todo scheduler Guest con fecha usa `ReservationStay.arrival` y `ReservationStay.departure` como fechas locales de calendario. La ventana inclusiva es `max(arrival, today) → departure`; antes de arrival, después de departure o con una estancia vencida no existe fecha seleccionable. Los horarios del día actual mantienen su lead time; las fechas futuras usan sus horarios normales.
 
-Resultados visuales:
+Limpieza, Room Service, Amenidades, Valet/vehículo y Transfer consumen esta regla compartida. Late Checkout no ofrece un calendario libre: solo corresponde a `departure` y sigue siendo singleton de sesión. Valet y Transfer permanecen disponibles tras Checkout únicamente dentro de esa misma ventana, incluido departure si el horario aplica.
 
-```text
-PDF generado · FEL-0842.pdf
-Enviada al correo registrado de María López
-```
+## Check-out y estado de estancia
 
----
+El check-out normal solo se habilita cuando la fecha local actual es igual o posterior a `ReservationStay.departure`. No se usa la hora como gate: el día de salida permite terminar temprano. Antes de esa fecha muestra cuándo estará disponible; si falta departure, muestra un estado neutral y no permite confirmar. La salida anticipada queda fuera de esta tarea.
 
-## 4. Domain
+Al pulsar `Check-out` se abre una confirmación final. Solo `Finalizar estancia` ejecuta `CheckoutService.submitCheckout`; cancelar no muta ni crea snapshot. Pending conserva la protección contra doble envío.
 
-El Domain puede mantener exactamente los conceptos de presentación:
+Para esta sesión frontend, `CheckoutSessionSnapshot != null` equivale a estancia finalizada. En ese estado:
 
-```ts
-export interface FolioItem {
-  key: string;
-  label: string;
-  priceText: string;
-}
+- `/account/checkout` muestra `Check-out completado` y permite `Ver factura`; no crea un segundo snapshot.
+- `/account` cambia el launcher a `Ver factura`.
+- Servicios bloquea la creación de Room Service, Limpieza, Amenidades y Late Checkout, incluido acceso directo a esas pantallas.
+- Solicitudes existentes e historial siguen visibles.
+- Valet, Transfer, Chat, Hotel, Factura y Mis servicios continúan disponibles.
 
-export interface Folio {
-  totalStayText: string;
-  paidGuaranteeText: string;
-  pendingBalanceText: string;
-  items: FolioItem[];
-  totalText: string;
-}
+Late Checkout es singleton de sesión: mientras exista cualquier `SessionServiceRequest` `LATE_CHECKOUT`, sin importar su lifecycle, no se crea otro. Al eliminarlo mediante el lifecycle existente vuelve a habilitarse. Esta regla no se aplica a los demás kinds de solicitud.
 
-export interface CheckoutCheck {
-  key: string;
-  label: string;
-  valueText: string;
-}
-```
+## Navegación
 
-No convertir textos en contabilidad estructurada en esta fase.
+| Ruta | Rol |
+| --- | --- |
+| `/account` | raíz Inicio; launcher Check-out o Ver factura según el snapshot |
+| `/account/checkout` | hija de Account, `GuestChildHeader`, confirmación final o estado completado |
+| `/account/invoice` | hija de Account; consume solo el snapshot congelado |
 
----
+El éxito de la mutation session-only usa `router.replace('/account/invoice')`. Back desde Checkout o Invoice retorna de forma segura a `/account`. Las hijas no muestran footbar, drawer ni FAB Chat.
 
-## 5. Query / Mutation
+## Límites técnicos vigentes
 
-Lectura:
+El boundary continúa siendo frontend/mock: no existe Backend, pago, persistencia, cambio de `ReservationStay`, liberación de habitación, factura fiscal/FEL/SAT, almacenamiento de PDF ni proveedor de correo. Las acciones PDF y correo mantienen resultado de sesión sin archivo ni envío real; la UI Guest usa copy neutral (`Generar PDF`, `PDF generado`, `Enviar por correo`, `Correo enviado`).
 
-- Folio query;
-- Checkout query;
-- Invoice query.
+## Cobertura requerida
 
-Estados:
-
-- loading;
-- data;
-- generic error;
-- offline `NetworkError`.
-
-Mutations:
-
-- submit checkout;
-- generate mock PDF result;
-- send mock email result.
-
-Reglas:
-
-- pending bloquea double submit;
-- no optimistic success;
-- retry manual;
-- sin cola offline.
-
----
-
-## 6. Navegación
-
-Flujo visual esperado:
-
-```text
-Cuenta
-→ Check-out
-→ Factura
-→ acciones PDF / correo
-→ Continuar
-```
-
-Todo consume Guest Navigation V3.
-
-No se crea footbar privada.
-
----
-
-## 7. Exclusiones
-
-No crear:
-
-```text
-amount
-currency
-tax
-taxLines
-paymentId
-folioId
-invoiceId Backend
-fiscalUUID
-SAT authorization
-certificate
-signature
-email delivery provider
-PDF URL Backend
-checkout timestamp real
-```
-
-Tampoco:
-
-- pago real;
-- certificación FEL real;
-- envío de correo real;
-- persistencia;
-- corrección fiscal real.
-
----
-
-## 8. Pruebas requeridas
-
-- Folio dummy exacto;
-- priceText no parseado;
-- Checkout checks visibles;
-- note editable;
-- pending/double submit;
-- checkout success;
-- query error/offline;
-- invoice dummy visible;
-- PDF mock success;
-- email mock success;
-- retry manual;
-- no fetch/UI DTO;
-- GuestNavigationShell;
-- Cuenta activa;
-- regresión Account/Profile.
-
----
-
-## 9. Aprobación
-
-La aprobación acepta expresamente que todos los conceptos fiscales/financieros son **simulados y de presentación** hasta Backend/fiscal real.
-
-Como resultado de esta aprobación:
-
-```text
-IMP-AND-0203
-PENDIENTE → READY
-```
+- builders de Room Service, Late Checkout y Transfer con importe estructurado;
+- total con Room Service, Late Checkout y Transfer estimado; total cero solo sin cargos cobrables;
+- snapshot congelado;
+- singleton/delete-re-enable de Late Checkout;
+- fecha antes, durante y después de departure;
+- confirmación, cancelación y doble submit;
+- gates post-checkout en launchers y rutas directas;
+- reentrada a Checkout e Invoice;
+- auditoría estática y manual de copy visible Guest;
+- regresión de Account, Servicios, Stay y navegación.

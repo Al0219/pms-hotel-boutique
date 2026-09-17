@@ -22,3 +22,5 @@ export type {
 } from './domain/models/RoomServiceMenu';
 export type { RoomServiceRequest } from './domain/models/RoomServiceRequest';
 export { RoomServiceScreen } from './presentation/RoomServiceScreen';
+
+export { buildRoomServiceSessionRequestInput } from './domain/buildRoomServiceSessionRequestInput';

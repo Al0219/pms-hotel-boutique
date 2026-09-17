@@ -34,3 +34,5 @@ export { ValetScreen } from '@/modules/valet/presentation/ValetScreen';
 export type { AddSessionVehicleInput, SessionVehicle, SessionVehicleStatus, VehiclePlatePrefix } from '@/modules/valet/session/SessionVehicle';
 export { initialSessionVehiclesState, SessionVehiclesProvider, sessionVehiclesReducer, useOptionalSessionVehicles, useSessionVehicles } from '@/modules/valet/session/SessionVehiclesProvider';
 export { formatVehiclePlate, hasDuplicateVehiclePlate, normalizePlateForComparison, sanitizeVehiclePlateBodyInput, validateRequiredVehicleText, validateVehiclePlateBody, vehicleInputLimits, vehiclePlatePrefixes } from '@/modules/valet/session/vehicleValidation';
+
+export { buildTransferSessionRequestInput } from '@/modules/valet/domain/buildTransferSessionRequestInput';

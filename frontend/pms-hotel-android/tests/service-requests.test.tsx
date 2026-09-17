@@ -15,6 +15,7 @@ import {
   formatServiceDate,
   getNearestServiceTime,
   getFirstAvailableServiceDate,
+  getStayServiceDateWindow,
   getStayCheckoutDateTimeMs,
   getServiceRequestCompletionEligibleAt,
   getServiceDateTimeMs,
@@ -144,35 +145,46 @@ describe('Session service requests — IMP-AND-0112', () => {
     expect(getNearestServiceTime('2026-09-16', ['08:00', '13:37'], now, '13:37')).toBe('13:37');
   });
 
-  it('keeps every guest-selected service date inside the inclusive checkout boundary', () => {
+  it('keeps every guest-selected service date inside the inclusive reservation boundary', () => {
     const now = new Date(2026, 8, 15, 13, 7).getTime();
-    expect(isServiceDateWithinStay('2026-09-15', now, '2026-09-18')).toBe(true);
-    expect(isServiceDateWithinStay('2026-09-18', now, '2026-09-18')).toBe(true);
-    expect(isServiceDateWithinStay('2026-09-19', now, '2026-09-18')).toBe(false);
-    expect(getFirstAvailableServiceDate(new Date(2026, 8, 18, 14, 31).getTime(), ['09:00–10:00', '10:00–11:00', '11:00–12:00', '14:00–15:00'], '2026-09-18')).toBeNull();
-    expect(getFirstAvailableServiceDate(new Date(2026, 8, 18, 23, 31).getTime(), ['00:00', '13:37'], '2026-09-18')).toBeNull();
+    const arrival = '2026-09-14';
+    expect(isServiceDateWithinStay('2026-09-15', now, arrival, '2026-09-18')).toBe(true);
+    expect(isServiceDateWithinStay('2026-09-18', now, arrival, '2026-09-18')).toBe(true);
+    expect(isServiceDateWithinStay('2026-09-19', now, arrival, '2026-09-18')).toBe(false);
+    expect(getFirstAvailableServiceDate(new Date(2026, 8, 18, 14, 31).getTime(), ['09:00–10:00', '10:00–11:00', '11:00–12:00', '14:00–15:00'], arrival, '2026-09-18')).toBeNull();
+    expect(getFirstAvailableServiceDate(new Date(2026, 8, 18, 23, 31).getTime(), ['00:00', '13:37'], arrival, '2026-09-18')).toBeNull();
+  });
+
+  it('derives the inclusive local scheduling window from arrival, today, and departure', () => {
+    const arrival = '2026-09-20';
+    const departure = '2026-09-24';
+    expect(getStayServiceDateWindow(arrival, departure, new Date(2026, 8, 18, 9).getTime())).toEqual({ minimumDate: arrival, maximumDate: departure });
+    expect(getStayServiceDateWindow(arrival, departure, new Date(2026, 8, 22, 9).getTime())).toEqual({ minimumDate: '2026-09-22', maximumDate: departure });
+    expect(getStayServiceDateWindow(arrival, departure, new Date(2026, 8, 24, 9).getTime())).toEqual({ minimumDate: departure, maximumDate: departure });
+    expect(getStayServiceDateWindow(arrival, departure, new Date(2026, 8, 25, 9).getTime())).toBeNull();
   });
 
   it('uses the approved frontend/mock normal checkout policy for point services and slot ends', () => {
     const now = new Date(2026, 8, 17, 8, 0).getTime();
+    const arrival = '2026-09-14';
     const departure = '2026-09-18';
     expect(hotelStayPolicy.standardCheckoutTime).toBe('12:00');
     expect(getStayCheckoutDateTimeMs(departure)).toBe(new Date(2026, 8, 18, 12, 0).getTime());
-    expect(isServiceWithinStayWindow({ departure, nowMs: now, serviceDate: '2026-09-17', startTime: '20:00' })).toBe(true);
-    expect(isServiceWithinStayWindow({ departure, nowMs: now, serviceDate: departure, startTime: '11:59' })).toBe(true);
-    expect(isServiceWithinStayWindow({ departure, nowMs: now, serviceDate: departure, startTime: '12:00' })).toBe(true);
-    expect(isServiceWithinStayWindow({ departure, nowMs: now, serviceDate: departure, startTime: '12:01' })).toBe(false);
-    expect(isServiceWithinStayWindow({ departure, nowMs: now, serviceDate: '2026-09-19', startTime: '08:00' })).toBe(false);
-    expect(isServiceWithinStayWindow({ departure, nowMs: now, serviceDate: departure, startTime: '09:00–10:00' })).toBe(true);
-    expect(isServiceWithinStayWindow({ departure, nowMs: now, serviceDate: departure, startTime: '10:00–11:00' })).toBe(true);
-    expect(isServiceWithinStayWindow({ departure, nowMs: now, serviceDate: departure, startTime: '11:00–12:00' })).toBe(true);
-    expect(isServiceWithinStayWindow({ departure, nowMs: now, serviceDate: departure, startTime: '14:00–15:00' })).toBe(false);
+    expect(isServiceWithinStayWindow({ arrival, departure, nowMs: now, serviceDate: '2026-09-17', startTime: '20:00' })).toBe(true);
+    expect(isServiceWithinStayWindow({ arrival, departure, nowMs: now, serviceDate: departure, startTime: '11:59' })).toBe(true);
+    expect(isServiceWithinStayWindow({ arrival, departure, nowMs: now, serviceDate: departure, startTime: '12:00' })).toBe(true);
+    expect(isServiceWithinStayWindow({ arrival, departure, nowMs: now, serviceDate: departure, startTime: '12:01' })).toBe(false);
+    expect(isServiceWithinStayWindow({ arrival, departure, nowMs: now, serviceDate: '2026-09-19', startTime: '08:00' })).toBe(false);
+    expect(isServiceWithinStayWindow({ arrival, departure, nowMs: now, serviceDate: departure, startTime: '09:00–10:00' })).toBe(true);
+    expect(isServiceWithinStayWindow({ arrival, departure, nowMs: now, serviceDate: departure, startTime: '10:00–11:00' })).toBe(true);
+    expect(isServiceWithinStayWindow({ arrival, departure, nowMs: now, serviceDate: departure, startTime: '11:00–12:00' })).toBe(true);
+    expect(isServiceWithinStayWindow({ arrival, departure, nowMs: now, serviceDate: departure, startTime: '14:00–15:00' })).toBe(false);
   });
 
   it('has no new service time when the thirty-minute minimum exceeds checkout', () => {
     const now = new Date(2026, 8, 18, 11, 31).getTime();
-    expect(getFirstAvailableServiceDate(now, ['11:00–12:00', '14:00–15:00'], '2026-09-18')).toBeNull();
-    expect(getFirstAvailableServiceDate(now, ['11:59', '12:00', '12:01'], '2026-09-18')).toBeNull();
+    expect(getFirstAvailableServiceDate(now, ['11:00–12:00', '14:00–15:00'], '2026-09-14', '2026-09-18')).toBeNull();
+    expect(getFirstAvailableServiceDate(now, ['11:59', '12:00', '12:01'], '2026-09-14', '2026-09-18')).toBeNull();
   });
 
   it('keeps the approved late checkout exception at 14:00 apart from normal checkout', () => {

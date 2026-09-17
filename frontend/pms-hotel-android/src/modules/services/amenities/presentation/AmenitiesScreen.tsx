@@ -3,8 +3,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { NetworkError } from '@/data/remote/http/HttpError';
+import { useCheckoutStatus } from '@/modules/checkout';
 import { GuestChildHeader, GuestNavigationShell, useGuestNotice } from '@/modules/navigation';
-import { formatServiceDate, formatServiceDateLabel, getFirstAvailableServiceDate, getNearestServiceTime, isServiceDateWithinStay, isServiceWithinStayWindow, parseServiceDate, useSessionServiceRequests } from '@/modules/service-requests';
+import { formatServiceDate, formatServiceDateLabel, getFirstAvailableServiceDate, getNearestServiceTime, getStayServiceDateWindow, isServiceDateWithinStay, isServiceWithinStayWindow, parseServiceDate, useSessionServiceRequests } from '@/modules/service-requests';
 import { amenitiesCatalogFixture } from '@/modules/services/amenities/data/mocks/amenitiesCatalogFixture';
 import { type AmenitiesService } from '@/modules/services/amenities/data/services/AmenitiesService';
 import {
@@ -45,6 +46,7 @@ export function AmenitiesScreen({ service, stayService, nowMs = Date.now }: Amen
   const stay = deriveRemoteState(stayQuery, () => false);
   const submit = useSubmitAmenities(service);
   const { addRequest, requests, updateRequest } = useSessionServiceRequests();
+  const { isCheckedOut } = useCheckoutStatus();
   const { showServiceRequestSuccess } = useGuestNotice();
   const { editRequestId, returnTo } = useLocalSearchParams<{ editRequestId?: string; returnTo?: string }>();
   const [items, setItems] = useState<readonly AmenitiesRequestItem[]>([]);
@@ -72,21 +74,24 @@ export function AmenitiesScreen({ service, stayService, nowMs = Date.now }: Amen
   }, [edited]);
   useEffect(() => {
     if (stay.kind !== 'success') return;
-    const firstDate = getFirstAvailableServiceDate(nowMs(), times, stay.data.departure);
-    const nextTime = isServiceDateWithinStay(serviceDate, nowMs(), stay.data.departure)
-      ? getNearestServiceTime(serviceDate, times, nowMs(), deliveryTime, stay.data.departure) : null;
+    const firstDate = getFirstAvailableServiceDate(nowMs(), times, stay.data.arrival, stay.data.departure);
+    const nextTime = isServiceDateWithinStay(serviceDate, nowMs(), stay.data.arrival, stay.data.departure)
+      ? getNearestServiceTime(serviceDate, times, nowMs(), deliveryTime, stay.data.arrival, stay.data.departure) : null;
     if (nextTime) { if (nextTime !== deliveryTime) { const timer = setTimeout(() => setDeliveryTime(nextTime), 0); return () => clearTimeout(timer); } return; }
-    if (firstDate) { const timer = setTimeout(() => { setServiceDate(firstDate); setDeliveryTime(getNearestServiceTime(firstDate, times, nowMs(), undefined, stay.data.departure)); }, 0); return () => clearTimeout(timer); }
+    if (firstDate) { const timer = setTimeout(() => { setServiceDate(firstDate); setDeliveryTime(getNearestServiceTime(firstDate, times, nowMs(), undefined, stay.data.arrival, stay.data.departure)); }, 0); return () => clearTimeout(timer); }
   }, [deliveryTime, nowMs, serviceDate, stay]);
 
-  const allowed = stay.kind === 'success' && deliveryTime !== null && isServiceWithinStayWindow({ departure: stay.data.departure, nowMs: nowMs(), serviceDate, startTime: deliveryTime });
-  const noAvailability = stay.kind === 'success' && getFirstAvailableServiceDate(nowMs(), times, stay.data.departure) === null;
+  const allowed = stay.kind === 'success' && deliveryTime !== null && isServiceWithinStayWindow({ arrival: stay.data.arrival, departure: stay.data.departure, nowMs: nowMs(), serviceDate, startTime: deliveryTime });
+  const stayDateWindow = stay.kind === 'success' ? getStayServiceDateWindow(stay.data.arrival, stay.data.departure, nowMs()) : null;
+  const noAvailability = stay.kind === 'success' && getFirstAvailableServiceDate(nowMs(), times, stay.data.arrival, stay.data.departure) === null;
   const pending = submit.isPending;
   const offline = submit.isError && submit.error instanceof NetworkError;
   const genericError = submit.isError && !offline;
   const returnFromEdit = () => router.dismissTo(returnTo === 'account' ? '/account' : returnTo === 'requests' ? '/services/requests' : '/services');
   const changeQuantity = (key: string, next: number) => setItems((current) => updateAmenitiesQuantity(current, key, next));
   const isDirty = items.length > 0 && (!edited || initialEditDraft !== JSON.stringify({ items, notes, serviceDate, deliveryTime }));
+
+  if (isCheckedOut) return <View style={styles.screen} testID="amenities-stay-completed"><GuestChildHeader backAccessibilityLabel="Volver" backTestID="amenities-back" onBack={() => router.dismissTo('/services')} title="Amenidades" /><View style={styles.content}><StateCard body="Los servicios de estancia ya no están disponibles." testID="amenities-creation-blocked" title="Estancia finalizada" /></View><GuestNavigationShell /></View>;
 
   function resetCreate() {
     setItems([]); setNotes(''); setScheduleError(false); setStep('CATALOG');
@@ -103,7 +108,7 @@ export function AmenitiesScreen({ service, stayService, nowMs = Date.now }: Amen
     pendingExit.current = null;
     action?.();
   }
-  function selectDate(value: string) { setDatePickerVisible(false); setServiceDate(value); setDeliveryTime(stay.kind === 'success' ? getNearestServiceTime(value, times, nowMs(), deliveryTime, stay.data.departure) : null); }
+  function selectDate(value: string) { setDatePickerVisible(false); setServiceDate(value); setDeliveryTime(stay.kind === 'success' ? getNearestServiceTime(value, times, nowMs(), deliveryTime, stay.data.arrival, stay.data.departure) : null); }
   function send() {
     if (stay.kind !== 'success' || !areAmenitiesRequestItemsValid(items) || !deliveryTime || !allowed || pending || submit.isSuccess || inFlight.current) { if (items.length > 0 && !allowed) setScheduleError(true); return; }
     const trimmedNotes = notes.trim(); inFlight.current = true; setScheduleError(false);
@@ -126,8 +131,8 @@ export function AmenitiesScreen({ service, stayService, nowMs = Date.now }: Amen
         {step === 'SCHEDULE' ? <><Text style={styles.section}>Programar entrega</Text><Text style={styles.body}>{totalQuantity(items)} {totalQuantity(items) === 1 ? 'artículo' : 'artículos'}</Text><Text style={styles.label}>Fecha</Text><Pressable accessibilityRole="button" onPress={() => setDatePickerVisible(true)} style={styles.picker} testID="amenities-date-selector"><Text>{formatServiceDateLabel(serviceDate)}</Text></Pressable><Text style={styles.label}>Hora</Text><Pressable accessibilityRole="button" onPress={() => setTimePickerVisible(true)} style={styles.picker} testID="amenities-time-selector"><Text>{deliveryTime ?? 'Seleccionar hora'}</Text></Pressable>{noAvailability ? <StateCard body="No hay horarios disponibles durante tu estadía." testID="amenities-no-availability" title="Sin disponibilidad" /> : scheduleError ? <StateCard body="Selecciona una hora con al menos 30 minutos de anticipación." testID="amenities-schedule-error" title="Hora no disponible" /> : null}{genericError || offline ? <StateCard action={send} body={offline ? 'Conéctate a internet y reintenta.' : 'Intenta nuevamente.'} offline={offline} testID={offline ? 'amenities-submit-offline' : 'amenities-submit-error'} title={offline ? 'Sin conexión' : 'No pudimos enviar tu solicitud'} /> : null}<Button disabled={!areAmenitiesRequestItemsValid(items) || !allowed || pending || noAvailability} label={pending ? 'Solicitando...' : genericError || offline ? 'Reintentar' : 'Confirmar solicitud'} onPress={send} testID="amenities-submit" /></> : null}
       </> : null}
     </ScrollView>
-    <ServiceDatePicker maximumDate={stay.kind === 'success' ? parseServiceDate(stay.data.departure) ?? undefined : undefined} minimumDate={new Date(nowMs())} onCancel={() => setDatePickerVisible(false)} onConfirm={selectDate} testID="amenities-date-picker" value={serviceDate} visible={datePickerVisible} />
-    <TimeWheelPicker isValueDisabled={(value) => stay.kind !== 'success' || !isServiceWithinStayWindow({ departure: stay.data.departure, nowMs: nowMs(), serviceDate, startTime: value })} mode="time" onCancel={() => setTimePickerVisible(false)} onConfirm={(value) => { setTimePickerVisible(false); if (stay.kind === 'success' && isServiceWithinStayWindow({ departure: stay.data.departure, nowMs: nowMs(), serviceDate, startTime: value })) { setDeliveryTime(value); setScheduleError(false); } }} testID="amenities-time-picker" title="Elegir hora de entrega" value={deliveryTime ?? '00:00'} visible={timePickerVisible} />
+    <ServiceDatePicker maximumDate={stayDateWindow ? parseServiceDate(stayDateWindow.maximumDate) ?? undefined : undefined} minimumDate={stayDateWindow ? parseServiceDate(stayDateWindow.minimumDate) ?? new Date(nowMs()) : new Date(nowMs())} onCancel={() => setDatePickerVisible(false)} onConfirm={selectDate} testID="amenities-date-picker" value={serviceDate} visible={datePickerVisible && stayDateWindow !== null} />
+    <TimeWheelPicker isValueDisabled={(value) => stay.kind !== 'success' || !isServiceWithinStayWindow({ arrival: stay.data.arrival, departure: stay.data.departure, nowMs: nowMs(), serviceDate, startTime: value })} mode="time" onCancel={() => setTimePickerVisible(false)} onConfirm={(value) => { setTimePickerVisible(false); if (stay.kind === 'success' && isServiceWithinStayWindow({ arrival: stay.data.arrival, departure: stay.data.departure, nowMs: nowMs(), serviceDate, startTime: value })) { setDeliveryTime(value); setScheduleError(false); } }} testID="amenities-time-picker" title="Elegir hora de entrega" value={deliveryTime ?? '00:00'} visible={timePickerVisible} />
     <ConfirmationModal body={`¿Quieres quitar ${amenitiesCatalogFixture.find((item) => item.fixtureKey === pendingRemoval)?.name ?? ''} del carrito?`} confirmLabel="Eliminar" destructive onCancel={() => setPendingRemoval(null)} onConfirm={() => { if (pendingRemoval) changeQuantity(pendingRemoval, 0); setPendingRemoval(null); }} testID="amenities-cart-remove-modal" title="Eliminar del carrito" visible={pendingRemoval !== null} />
     <ConfirmationModal body={edited ? 'Los cambios que no hayas guardado se perderán.' : 'Los productos del carrito se eliminarán si sales de esta pantalla.'} confirmLabel="Salir" onCancel={() => setDiscardVisible(false)} onConfirm={discardAndExit} testID="amenities-discard-modal" title={edited ? '¿Descartar cambios?' : '¿Salir del servicio?'} visible={discardVisible} />
     <GuestNavigationShell onNavigateAway={(basePath) => requestExit(() => router.replace(basePath))} />

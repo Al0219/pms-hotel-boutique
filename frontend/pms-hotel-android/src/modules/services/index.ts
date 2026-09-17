@@ -15,3 +15,5 @@ export type {
   ServicesCatalogContext,
 } from '@/modules/services/domain/models/ServiceCatalog';
 export { ServicesScreen } from '@/modules/services/presentation/ServicesScreen';
+
+export { buildLateCheckoutSessionRequestInput } from '@/modules/services/domain/buildLateCheckoutSessionRequestInput';

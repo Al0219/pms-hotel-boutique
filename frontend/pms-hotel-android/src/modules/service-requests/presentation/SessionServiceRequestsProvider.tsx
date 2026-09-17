@@ -27,6 +27,7 @@ export function sessionServiceRequestsReducer(state: SessionServiceRequestsState
       ...action.request,
       sessionRequestId: request.sessionRequestId,
       createdAtMs: request.createdAtMs,
+      billingSnapshot: action.request.billingSnapshot ?? request.billingSnapshot,
     } : request),
   };
   if (action.dedupeKey && state.dedupeKeys.includes(action.dedupeKey)) return state;

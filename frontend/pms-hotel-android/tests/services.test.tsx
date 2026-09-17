@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { act, renderRouter } from 'expo-router/testing-library';
-import { Text } from 'react-native';
+import { Pressable, Text } from 'react-native';
 
 import { NetworkError } from '@/data/remote/http/HttpError';
 import {
@@ -28,13 +28,19 @@ function RequestProbe() {
   return <Text testID="session-service-requests-probe">{JSON.stringify(requests)}</Text>;
 }
 
+function LateCheckoutRemovalControl() {
+  const { removeRequest, requests } = useSessionServiceRequests();
+  const lateCheckout = requests.find((request) => request.kind === 'LATE_CHECKOUT');
+  return lateCheckout ? <Pressable onPress={() => removeRequest(lateCheckout.sessionRequestId)} testID="late-checkout-removal-control"><Text>Eliminar</Text></Pressable> : null;
+}
+
 async function renderServices(service: MockServicesService) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { gcTime: 0, retry: false }, mutations: { retry: false } },
   });
 
   return render(
-    <QueryClientProvider client={queryClient}><SessionServiceRequestsProvider><RequestProbe /><ServicesScreen service={service} /></SessionServiceRequestsProvider></QueryClientProvider>,
+    <QueryClientProvider client={queryClient}><SessionServiceRequestsProvider><RequestProbe /><LateCheckoutRemovalControl /><ServicesScreen service={service} /></SessionServiceRequestsProvider></QueryClientProvider>,
   );
 }
 
@@ -142,6 +148,28 @@ describe('Services', () => {
     expect(JSON.parse(lateCheckout.getByTestId('session-service-requests-probe').props.children)).toEqual([
       expect.objectContaining({ kind: 'LATE_CHECKOUT', origin: 'SERVICES', status: 'REQUESTED', title: 'Late check-out', summary: expect.stringContaining('Hasta 14:00'), details: { type: 'LATE_CHECKOUT', serviceDate: '2026-09-18', checkoutUntil: '14:00' } }),
     ]);
+  });
+
+  it('allows only one Late check-out until the existing request is removed', async () => {
+    const submitRequest = jest.fn<Promise<{ serviceFixtureKey: string }>, [{ serviceFixtureKey: string }]>(async ({ serviceFixtureKey }) => ({ serviceFixtureKey }));
+    const rendered = await renderServices(new MockServicesService({ submitRequest }));
+
+    await selectLateCheckOut(rendered);
+    await fireEvent.press(rendered.getByTestId('services-submit-button'));
+    await waitFor(() => expect(JSON.parse(rendered.getByTestId('session-service-requests-probe').props.children)).toHaveLength(1));
+
+    await fireEvent.press(rendered.getByTestId('service-card-late-check-out'));
+    await waitFor(() => expect(rendered.getByTestId('services-late-checkout-already-requested')).toBeTruthy());
+    expect(rendered.getByTestId('services-submit-button').props.accessibilityState.disabled).toBe(true);
+    expect(submitRequest).toHaveBeenCalledTimes(1);
+
+    await fireEvent.press(rendered.getByTestId('late-checkout-removal-control'));
+    await waitFor(() => expect(JSON.parse(rendered.getByTestId('session-service-requests-probe').props.children)).toHaveLength(0));
+    await waitFor(() => expect(rendered.getByTestId('services-submit-button').props.accessibilityState.disabled).toBe(false));
+
+    await fireEvent.press(rendered.getByTestId('services-submit-button'));
+    await waitFor(() => expect(JSON.parse(rendered.getByTestId('session-service-requests-probe').props.children)).toHaveLength(1));
+    expect(submitRequest).toHaveBeenCalledTimes(2);
   });
 
   it('shows generic submit error and retries the same selected fixture through a new mutation', async () => {
