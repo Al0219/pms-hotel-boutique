@@ -5,11 +5,11 @@ import Link from "next/link";
 import styles from "./profile-page.module.css";
 
 export function ProfilePage() {
-  const [firstName, setFirstName] = useState("Alan");
-  const [lastName, setLastName] = useState("Palacios");
-  const [email, setEmail] = useState("alan@email.com");
-  const [phone, setPhone] = useState("+502 5555 5555");
-  const [country, setCountry] = useState("Guatemala");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [country, setCountry] = useState("");
   const [language, setLanguage] = useState("Español");
 
   // Preferencias de estancia
@@ -65,6 +65,7 @@ export function ProfilePage() {
                   autoComplete="given-name"
                   id="first-name"
                   onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="Ej. Juan"
                   required
                   type="text"
                   value={firstName}
@@ -76,6 +77,7 @@ export function ProfilePage() {
                   autoComplete="family-name"
                   id="last-name"
                   onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Ej. Pérez"
                   required
                   type="text"
                   value={lastName}
@@ -90,6 +92,7 @@ export function ProfilePage() {
                   autoComplete="email"
                   id="email"
                   onChange={(e) => setEmail(e.target.value)}
+                  placeholder="tu@correo.com"
                   required
                   type="email"
                   value={email}
@@ -101,6 +104,7 @@ export function ProfilePage() {
                   autoComplete="tel"
                   id="phone"
                   onChange={(e) => setPhone(e.target.value)}
+                  placeholder="Ej. +502 0000 0000"
                   required
                   type="tel"
                   value={phone}
@@ -114,6 +118,7 @@ export function ProfilePage() {
                 <input
                   id="country"
                   onChange={(e) => setCountry(e.target.value)}
+                  placeholder="Ej. Guatemala"
                   type="text"
                   value={country}
                 />
