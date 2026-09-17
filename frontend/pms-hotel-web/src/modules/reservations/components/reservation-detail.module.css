@@ -56,6 +56,22 @@
 .stayRoom { font-weight: var(--font-weight-semibold); margin: 0; }
 .stayMeta { color: var(--color-text-secondary); font-size: var(--font-size-caption); line-height: var(--line-height-caption); margin: var(--space-2) 0 0; }
 
+.stayAction {
+  background: none;
+  border: 0;
+  color: var(--color-text-brand);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-label-md);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-label-md);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  text-decoration: underline;
+}
+.stayAction:hover { color: var(--color-brand-primary); }
+.stayAction:focus-visible { outline: 3px solid var(--color-brand-accent); outline-offset: 2px; }
+
 .financeLines { list-style: none; margin: 0 0 var(--space-4); padding: 0; }
 .financeLines li {
   align-items: baseline;

@@ -7,12 +7,13 @@ import { ReservationDetail } from "./reservation-detail";
 
 afterEach(() => cleanup());
 
-const { useReservationDetailMock, useCancellationPreviewMock, useApplyCancellationMock, useNoShowPreviewMock, useApplyNoShowMock } = vi.hoisted(() => ({
+const { useReservationDetailMock, useCancellationPreviewMock, useApplyCancellationMock, useNoShowPreviewMock, useApplyNoShowMock, RoomMoveMock } = vi.hoisted(() => ({
   useReservationDetailMock: vi.fn(),
   useCancellationPreviewMock: vi.fn(),
   useApplyCancellationMock: vi.fn(),
   useNoShowPreviewMock: vi.fn(),
   useApplyNoShowMock: vi.fn(),
+  RoomMoveMock: vi.fn(),
 }));
 
 vi.mock("../hooks/use-reservation-detail", () => ({ useReservationDetail: useReservationDetailMock }));
@@ -26,6 +27,8 @@ vi.mock("../hooks/use-reservation-no-show", () => ({
   useNoShowPreview: useNoShowPreviewMock,
   useApplyNoShow: useApplyNoShowMock,
 }));
+
+vi.mock("@/modules/stays", () => ({ RoomMove: RoomMoveMock }));
 
 function detailData() {
   return {
@@ -240,5 +243,40 @@ describe("ReservationDetail", () => {
 
     expect(screen.getByRole("heading", { name: "Marcar no-show" })).toBeInTheDocument();
     expect(within(screen.getByRole("region", { name: "Marcar no-show" })).getByText("Política aplicable")).toBeInTheDocument();
+  });
+
+  it("renders the room move action per active stay and opens the stays RoomMove flow", () => {
+    useReservationDetailMock.mockReturnValue({ data: detailData(), error: null, isLoading: false, refetch: vi.fn() });
+
+    RoomMoveMock.mockReset();
+    RoomMoveMock.mockImplementation(() => <div data-testid="room-move" />);
+
+    render(
+      <ReservationDetail propertyId="GT-HB-01" endpoint="http://pms.test/contract/reservations" reservationId="HB-2026-08421" />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Cambiar habitación" }));
+
+    expect(screen.getByTestId("room-move")).toBeInTheDocument();
+    expect(RoomMoveMock).toHaveBeenCalledTimes(1);
+    expect(RoomMoveMock.mock.calls[0][0]).toMatchObject({
+      propertyId: "GT-HB-01",
+      endpoint: "http://pms.test/contract/reservations",
+      reservationId: "HB-2026-08421",
+      stayId: "STAY-001",
+      onClose: expect.any(Function),
+    });
+  });
+
+  it("does not offer the room move action for a non-moveable travel state", () => {
+    const data = detailData();
+    data.stays[0].travelState = "CHECKED_OUT";
+    useReservationDetailMock.mockReturnValue({ data, error: null, isLoading: false, refetch: vi.fn() });
+
+    render(
+      <ReservationDetail propertyId="GT-HB-01" endpoint="http://pms.test/contract/reservations" reservationId="HB-2026-08421" />,
+    );
+
+    expect(screen.queryByRole("button", { name: "Cambiar habitación" })).not.toBeInTheDocument();
   });
 });

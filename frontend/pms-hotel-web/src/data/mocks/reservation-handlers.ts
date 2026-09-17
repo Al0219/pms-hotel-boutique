@@ -13,6 +13,7 @@ import type {
 import type { NoShowApplyDto, NoShowPreviewDto } from "@/modules/reservations/dtos/reservation-no-show.dto";
 import type { ReservationDetailDto } from "@/modules/reservations/dtos/reservation-detail.dto";
 import type { ReservationCenterDto, ReservationListItemDto } from "@/modules/reservations/dtos/reservation-list.dto";
+import type { RoomMoveApplyDto, RoomMovePreviewDto } from "@/modules/stays/dtos/room-move.dto";
 
 const RESERVATIONS_ENDPOINT = "http://pms.test/contract/reservations";
 
@@ -301,6 +302,60 @@ const noShowPreviews: Record<string, NoShowPreviewDto> = {
   },
 };
 
+const roomMovePreviews: Record<string, RoomMovePreviewDto> = {
+  "HB-2026-08421": {
+    reservation_id: "HB-2026-08421",
+    stay_id: "STAY-2026-08421-A",
+    guest_name: "María Fernández",
+    current_room: { room_id: "ROOM-203", room_label: "203", room_type: "Deluxe King" },
+    candidates: [
+      {
+        room_id: "ROOM-101",
+        room_label: "101",
+        room_type: "Deluxe King",
+        is_compatible: true,
+        compatibility_note: "mismo room type y capacidad",
+        availability_state: "AVAILABLE",
+        availability_note: "limpia y verificada",
+      },
+      {
+        room_id: "ROOM-106",
+        room_label: "106",
+        room_type: "Stándard Doble",
+        is_compatible: false,
+        compatibility_note: "diferente room type: no aplica upgrade",
+        availability_state: "AVAILABLE",
+        availability_note: null,
+      },
+      {
+        room_id: "ROOM-204",
+        room_label: "204",
+        room_type: "Deluxe King",
+        is_compatible: true,
+        compatibility_note: "mismo room type y capacidad",
+        availability_state: "OCCUPIED",
+        availability_note: null,
+      },
+    ],
+    finance_summary: {
+      total_amount: "3480",
+      paid_amount: "1160",
+      balance_amount: "2320",
+      currency: "GTQ",
+      total_count: 5,
+      paid_count: 2,
+    },
+    hk_impact: {
+      from_room_state: "POR LIMPIAR",
+      to_room_state: "OCUPADA",
+      note: "Housekeeping recibe la transición; ReservationStay cambia room_id y conserva historial.",
+    },
+    folio_note: "Mismo folio y cargos · no se crea un segundo folio.",
+    can_move: true,
+    reason: null,
+  },
+};
+
 export const reservationHandlers = [
   http.get(RESERVATIONS_ENDPOINT, ({ request }) => {
     const propertyId = new URL(request.url).searchParams.get("propertyId") ?? "GT-HB-01";
@@ -359,6 +414,59 @@ export const reservationHandlers = [
       marked_at: new Date().toISOString(),
       allowed_charge: "470",
       message: "No-show: cargo Q470 · ATS +1/noche · AuditTrail RESERVATION_NO_SHOW",
+    };
+
+    return HttpResponse.json(result);
+  }),
+  http.get(`${RESERVATIONS_ENDPOINT}/:reservationId/room-move-preview`, ({ params, request }) => {
+    const reservationId = String(params.reservationId);
+    const stayId = new URL(request.url).searchParams.get("stayId");
+
+    const preview = roomMovePreviews[reservationId];
+
+    if (!preview || preview.stay_id !== stayId) {
+      return HttpResponse.text(null, { status: 404 });
+    }
+
+    return HttpResponse.json(preview);
+  }),
+  http.post(`${RESERVATIONS_ENDPOINT}/:reservationId/room-move`, async ({ params, request }) => {
+    const reservationId = String(params.reservationId);
+    const body = (await request.json()) as {
+      stay_id: string;
+      target_room_id: string;
+      reason?: string | null;
+    };
+
+    const preview = roomMovePreviews[reservationId];
+    const target = preview?.candidates.find((candidate) => candidate.room_id === body.target_room_id);
+
+    if (!preview || preview.stay_id !== body.stay_id) {
+      return HttpResponse.text(null, { status: 404 });
+    }
+
+    if (!target || target.availability_state !== "AVAILABLE") {
+      return HttpResponse.json(
+        {
+          error_code: "ROOM_MOVE_TARGET_UNAVAILABLE",
+          message: "La habitación objetivo ya no está disponible. Revalida y elige otra.",
+        },
+        { status: 409 },
+      );
+    }
+
+    const result: RoomMoveApplyDto = {
+      reservation_id: reservationId,
+      stay_id: body.stay_id,
+      status: "ROOM_MOVED",
+      from_room_id: preview.current_room.room_id,
+      to_room_id: target.room_id,
+      moved_at: new Date().toISOString(),
+      hk_transition: "203 → POR LIMPIAR · 101 → OCUPADA",
+      audit_summary: "ROOM_MOVED 203→101 · ReservationStay actualizado · Folio y cargos conservados",
+      message: body.reason
+        ? `HK: 203→POR LIMPIAR · 101→OCUPADA · Inventario: asignación 203→101 · ATS neto sin cambio · AuditTrail ROOM_MOVED · Motivo: ${body.reason}`
+        : "HK: 203→POR LIMPIAR · 101→OCUPADA · Inventario: asignación 203→101 · ATS neto sin cambio · AuditTrail ROOM_MOVED",
     };
 
     return HttpResponse.json(result);
