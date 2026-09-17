@@ -38,6 +38,10 @@ function RewardsRoute() {
   return <View testID="rewards-route"><Text>Rewards</Text></View>;
 }
 
+function PromotionsRoute() {
+  return <View testID="promotions-route"><Text>Promociones</Text></View>;
+}
+
 describe('Guest Navigation Shell', () => {
   it('declares only Inicio, Servicios, Valet and Hotel in the approved tab order', () => {
     expect(guestNavigationTabs).toEqual([
@@ -46,8 +50,8 @@ describe('Guest Navigation Shell', () => {
       { id: 'valet', icon: { android: 'directions_car', ios: 'car.fill', web: 'directions_car' }, label: 'Valet', basePath: '/valet', disabled: false },
       { id: 'hotel', icon: { android: 'apartment', ios: 'building.2.fill', web: 'apartment' }, label: 'Hotel', basePath: '/hotel', disabled: false },
     ]);
-    expect(guestNavigationDrawerLinks.map((link) => link.label)).toEqual(['Inicio', 'Mis servicios', 'Rewards', 'Servicios', 'Valet', 'Hotel']);
-    expect(guestNavigationDrawerSections.map((section) => section.label)).toEqual(['ESTANCIA', 'SERVICIOS', 'HOTEL']);
+    expect(guestNavigationDrawerLinks.map((link) => link.label)).toEqual(['Inicio', 'Mis servicios', 'Rewards', 'Promociones', 'Servicios', 'Valet', 'Hotel']);
+    expect(guestNavigationDrawerSections.map((section) => section.label)).toEqual(['ESTANCIA', 'BENEFICIOS', 'SERVICIOS', 'HOTEL']);
   });
 
   it('resolves active tabs from root paths, child paths, and routes outside the shell', () => {
@@ -73,6 +77,7 @@ describe('Guest Navigation Shell', () => {
     expect(rendered.getByTestId('guest-navigation-tab-icon-valet')).toBeTruthy();
     expect(rendered.getByTestId('guest-navigation-tab-icon-hotel')).toBeTruthy();
     expect(rendered.queryByLabelText('Rewards')).toBeNull();
+    expect(rendered.queryByLabelText('Promociones')).toBeNull();
     expect(rendered.getByLabelText('Inicio').props.accessibilityState).toEqual({ disabled: false, selected: true });
     expect(rendered.getByLabelText('Servicios').props.accessibilityState).toEqual({ disabled: false, selected: false });
 
@@ -95,7 +100,7 @@ describe('Guest Navigation Shell', () => {
     });
   });
 
-  it('renders the grouped drawer with Rewards and selects the active root', async () => {
+  it('renders the grouped drawer with Benefits and selects the active root', async () => {
     const rendered = await renderRouter(
       {
         _layout: DrawerLayout,
@@ -104,6 +109,7 @@ describe('Guest Navigation Shell', () => {
         valet: ValetRoute,
         hotel: HotelRoute,
         'account/rewards': RewardsRoute,
+        'account/promotions': PromotionsRoute,
       },
       { initialUrl: '/services' },
     );
@@ -115,17 +121,42 @@ describe('Guest Navigation Shell', () => {
     expect(rendered.getByText('Menú')).toBeTruthy();
     expect(rendered.getByText('Navega por tu estancia')).toBeTruthy();
     expect(rendered.getByText('ESTANCIA')).toBeTruthy();
+    expect(rendered.getByText('BENEFICIOS')).toBeTruthy();
     expect(rendered.getByText('SERVICIOS')).toBeTruthy();
     expect(rendered.getByText('HOTEL')).toBeTruthy();
     expect(rendered.getByTestId('guest-navigation-drawer-link-inicio')).toBeTruthy();
     expect(rendered.getByTestId('guest-navigation-drawer-link-mis-servicios')).toBeTruthy();
     expect(rendered.getByTestId('guest-navigation-drawer-link-rewards')).toBeTruthy();
+    expect(rendered.getByTestId('guest-navigation-drawer-link-promociones')).toBeTruthy();
     expect(rendered.getByTestId('guest-navigation-drawer-link-servicios').props.accessibilityState).toEqual({ selected: true });
     expect(rendered.getByTestId('guest-navigation-drawer-link-valet').props.accessibilityState).toEqual({ selected: false });
     await act(async () => {
       fireEvent.press(rendered.getByTestId('guest-navigation-drawer-close'));
     });
     await waitFor(() => expect(rendered.queryByTestId('guest-navigation-drawer-panel')).toBeNull());
+  });
+
+  it('navigates directly from the Benefits drawer entry to Promotions', async () => {
+    const rendered = await renderRouter(
+      {
+        _layout: DrawerLayout,
+        account: AccountRoute,
+        services: ServicesRoute,
+        valet: ValetRoute,
+        hotel: HotelRoute,
+        'account/rewards': RewardsRoute,
+        'account/promotions': PromotionsRoute,
+      },
+      { initialUrl: '/account' },
+    );
+
+    await act(async () => {
+      fireEvent.press(rendered.getByTestId('guest-navigation-menu-button'));
+    });
+    await act(async () => {
+      fireEvent.press(rendered.getByTestId('guest-navigation-drawer-link-promociones'));
+    });
+    await waitFor(() => expect(rendered.getByTestId('promotions-route')).toBeTruthy());
   });
 
   it('prepares replace navigation for Inicio and keeps its current route as a no-op', () => {

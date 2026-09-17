@@ -142,7 +142,7 @@ Dentro de Rewards:
 
 La implementación frontend-first usa `/account/rewards` como hija de Inicio/Cuenta. Muestra `GuestChildHeader`, sin footbar, menú, drawer ni FAB Chat; Back retorna de forma segura a `/account`. La entrada de Rewards se limita al drawer Guest y no deriva datos de perfil o estadía para su presentación.
 
-`Ver promociones aplicables` no se presenta todavía: `/account/promotions` no existe y `IMP-AND-0302` no forma parte de esta entrega. Esta omisión conserva la intención de enlazar Rewards con Promotions sin crear una pantalla o ruta no autorizada.
+`Ver promociones aplicables` no forma parte de Rewards. Promotions tiene su propia entrada en `BENEFICIOS > Promociones` del drawer Guest, mantiene la ruta hija `/account/promotions` y queda fuera del alcance funcional de Rewards.
 
 Las referencias Figma indicadas arriba orientan composición, jerarquía y estados; la navegación vigente, el contrato aprobado y la usabilidad frontend-first tienen prioridad ante una implementación literal incompatible.
 

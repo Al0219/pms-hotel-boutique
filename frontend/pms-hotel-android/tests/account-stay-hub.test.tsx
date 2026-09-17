@@ -37,6 +37,7 @@ describe('Account / Stay Hub V3', () => {
 
     expect(rendered.getByText('Mi estadía')).toBeTruthy();
     expect(rendered.queryByTestId('account-rewards-launcher')).toBeNull();
+    expect(rendered.queryByTestId('account-promotions-launcher')).toBeNull();
     expect(rendered.getByText('Habitación 204')).toBeTruthy();
     expect(rendered.getByText('Deluxe King')).toBeTruthy();
     expect(rendered.getByText('HB-2026-004281')).toBeTruthy();
