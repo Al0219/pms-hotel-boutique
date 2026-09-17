@@ -3,8 +3,8 @@
 import { useState } from "react";
 
 import { HttpNetworkError } from "@/lib/http/errors";
+import { ConfirmDialog } from "@/shared/components";
 
-import { ConfirmDialog } from "./confirm-dialog";
 import { useApplyNoShow, useNoShowPreview } from "../hooks/use-reservation-no-show";
 import type { NoShowPreview } from "../model/reservation-no-show";
 

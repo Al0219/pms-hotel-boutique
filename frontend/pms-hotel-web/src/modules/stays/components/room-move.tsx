@@ -3,8 +3,8 @@
 import { useState } from "react";
 
 import { HttpNetworkError } from "@/lib/http/errors";
+import { ConfirmDialog } from "@/shared/components";
 
-import { ConfirmDialog } from "./confirm-dialog";
 import { useApplyRoomMove, useRoomMovePreview } from "../hooks/use-room-move";
 import type { RoomMoveCandidate, RoomMovePreview } from "../model/room-move";
 

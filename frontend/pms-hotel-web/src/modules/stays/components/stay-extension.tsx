@@ -3,8 +3,8 @@
 import { useState } from "react";
 
 import { HttpNetworkError } from "@/lib/http/errors";
+import { ConfirmDialog } from "@/shared/components";
 
-import { ConfirmDialog } from "./confirm-dialog";
 import { useApplyStayExtension, useExtensionPreview } from "../hooks/use-stay-extension";
 
 import styles from "./stay-extension.module.css";

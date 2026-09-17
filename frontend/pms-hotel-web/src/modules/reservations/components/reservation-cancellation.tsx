@@ -3,8 +3,8 @@
 import { useState } from "react";
 
 import { HttpNetworkError } from "@/lib/http/errors";
+import { ConfirmDialog } from "@/shared/components";
 
-import { ConfirmDialog } from "./confirm-dialog";
 import { useApplyCancellation, useCancellationPreview } from "../hooks/use-reservation-cancellation";
 import type { CancellationPreview } from "../model/reservation-cancellation";
 
@@ -154,6 +154,7 @@ export function ReservationCancellation({ propertyId, endpoint, reservationId, o
           title="Confirmar cancelación"
           destructive
           busy={apply.isPending}
+          busyLabel="Cancelando…"
           confirmLabel="Confirmar cancelación"
           body={
             <>

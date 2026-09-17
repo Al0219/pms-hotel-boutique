@@ -14,6 +14,7 @@ function renderDialog(overrides: Record<string, unknown> = {}) {
       title="Confirmar cancelación"
       body={<p><strong>HB-2026-08421</strong> pasará a CANCELADA.</p>}
       confirmLabel="Confirmar cancelación"
+      busyLabel="Cancelando…"
       destructive
       onConfirm={onConfirm}
       onCancel={onCancel}
@@ -43,7 +44,7 @@ describe("ConfirmDialog", () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
-  it("keeps the dialog open on backdrop click but confirms from the panel", () => {
+  it("calls onCancel from the backdrop while not busy", () => {
     const { onCancel } = renderDialog();
 
     fireEvent.mouseDown(screen.getByRole("dialog").parentElement as Element);
