@@ -7,6 +7,7 @@
 export { ReservationCenter } from "./components/reservation-center";
 export { ReservationDetail } from "./components/reservation-detail";
 export { ReservationCancellation } from "./components/reservation-cancellation";
+export { ReservationNoShow } from "./components/reservation-no-show";
 export { WaitlistConversionPanel } from "./components/waitlist-conversion-panel";
 export type {
   ReservationDetailData,
@@ -26,6 +27,7 @@ export type {
   ReservationStatus,
 } from "./model/reservation-summary";
 export type { CancellationPreview, CancellationResult } from "./model/reservation-cancellation";
+export type { NoShowPreview, NoShowResult } from "./model/reservation-no-show";
 export type {
   WaitlistAvailability,
   WaitlistConversionPreview,

@@ -1,6 +1,7 @@
 import { httpRequest } from "@/lib/http/client";
 
 import type { CancellationApplyDto, CancellationPreviewDto } from "../dtos/reservation-cancellation.dto";
+import type { NoShowApplyDto, NoShowPreviewDto } from "../dtos/reservation-no-show.dto";
 import type { ReservationDetailDto } from "../dtos/reservation-detail.dto";
 import type { ReservationCenterDto } from "../dtos/reservation-list.dto";
 
@@ -112,6 +113,57 @@ export async function applyCancellation({
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ propertyId, reservationId, reason }),
+    signal,
+  });
+}
+
+export interface ReservationNoShowRequest {
+  /** Approved by Backend; the module intentionally has no default endpoint. */
+  endpoint: string;
+  /** Resolved from an authorized staff session before this request is made. */
+  propertyId: string;
+  reservationId: string;
+  signal?: AbortSignal;
+}
+
+/**
+ * Proyecta la política (cargo permitido/liberación) sin ejecutar nada.
+ * El UI no habilita la acción de no-show sin un preview válido.
+ */
+export async function previewNoShow({
+  endpoint,
+  propertyId,
+  reservationId,
+  signal,
+}: ReservationNoShowRequest): Promise<NoShowPreviewDto> {
+  const searchParams = new URLSearchParams({ propertyId });
+  const separator = endpoint.includes("?") ? "&" : "?";
+  const base = endpoint.endsWith("/") ? endpoint.slice(0, -1) : endpoint;
+
+  return httpRequest<NoShowPreviewDto>({
+    path: `${base}/${encodeURIComponent(reservationId)}/no-show-preview${separator}${searchParams.toString()}`,
+    signal,
+  });
+}
+
+/**
+ * Confirma el no-show. Backend es la única fuente de verdad del resultado NO_SHOW.
+ */
+export async function applyNoShow({
+  endpoint,
+  propertyId,
+  reservationId,
+  signal,
+}: ReservationNoShowRequest): Promise<NoShowApplyDto> {
+  const searchParams = new URLSearchParams({ propertyId });
+  const separator = endpoint.includes("?") ? "&" : "?";
+  const base = endpoint.endsWith("/") ? endpoint.slice(0, -1) : endpoint;
+
+  return httpRequest<NoShowApplyDto>({
+    path: `${base}/${encodeURIComponent(reservationId)}/no-show${separator}${searchParams.toString()}`,
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ propertyId, reservationId }),
     signal,
   });
 }

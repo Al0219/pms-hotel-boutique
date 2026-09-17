@@ -7,10 +7,12 @@ import { ReservationDetail } from "./reservation-detail";
 
 afterEach(() => cleanup());
 
-const { useReservationDetailMock, useCancellationPreviewMock, useApplyCancellationMock } = vi.hoisted(() => ({
+const { useReservationDetailMock, useCancellationPreviewMock, useApplyCancellationMock, useNoShowPreviewMock, useApplyNoShowMock } = vi.hoisted(() => ({
   useReservationDetailMock: vi.fn(),
   useCancellationPreviewMock: vi.fn(),
   useApplyCancellationMock: vi.fn(),
+  useNoShowPreviewMock: vi.fn(),
+  useApplyNoShowMock: vi.fn(),
 }));
 
 vi.mock("../hooks/use-reservation-detail", () => ({ useReservationDetail: useReservationDetailMock }));
@@ -18,6 +20,11 @@ vi.mock("../hooks/use-reservation-detail", () => ({ useReservationDetail: useRes
 vi.mock("../hooks/use-reservation-cancellation", () => ({
   useCancellationPreview: useCancellationPreviewMock,
   useApplyCancellation: useApplyCancellationMock,
+}));
+
+vi.mock("../hooks/use-reservation-no-show", () => ({
+  useNoShowPreview: useNoShowPreviewMock,
+  useApplyNoShow: useApplyNoShowMock,
 }));
 
 function detailData() {
@@ -195,5 +202,43 @@ describe("ReservationDetail", () => {
 
     expect(screen.getByText("No-show")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Cancelar reserva" })).not.toBeInTheDocument();
+  });
+
+  it("opens the no-show flow from the detail header for a NO_SHOW_PENDING reservation", () => {
+    const data = detailData();
+    data.status = "NO_SHOW_PENDING";
+    useReservationDetailMock.mockReturnValue({ data, error: null, isLoading: false, refetch: vi.fn() });
+    useNoShowPreviewMock.mockReturnValue({
+      data: {
+        reservationId: "HB-2026-08112",
+        policySummary: "No-show: cargo de una noche + impuestos.",
+        cutoffAt: new Date(2026, 7, 27, 18, 0),
+        allowedCharge: 470,
+        releaseNote: "Estándar Doble 101 · 27–29 ago",
+        canMarkNoShow: true,
+        reason: null,
+      },
+      error: null,
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+    useApplyNoShowMock.mockReturnValue({
+      data: undefined,
+      error: null,
+      isError: false,
+      isPending: false,
+      isSuccess: false,
+      mutate: vi.fn(),
+      reset: vi.fn(),
+    });
+
+    render(
+      <ReservationDetail propertyId="GT-HB-01" endpoint="http://pms.test/contract/reservations" reservationId="HB-2026-08112" />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Marcar no-show" }));
+
+    expect(screen.getByRole("heading", { name: "Marcar no-show" })).toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "Marcar no-show" })).getByText("Política aplicable")).toBeInTheDocument();
   });
 });

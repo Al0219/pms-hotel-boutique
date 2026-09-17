@@ -10,6 +10,7 @@ import type {
   CancellationApplyDto,
   CancellationPreviewDto,
 } from "@/modules/reservations/dtos/reservation-cancellation.dto";
+import type { NoShowApplyDto, NoShowPreviewDto } from "@/modules/reservations/dtos/reservation-no-show.dto";
 import type { ReservationDetailDto } from "@/modules/reservations/dtos/reservation-detail.dto";
 import type { ReservationCenterDto, ReservationListItemDto } from "@/modules/reservations/dtos/reservation-list.dto";
 
@@ -188,6 +189,39 @@ const reservationDetails: Record<string, ReservationDetailDto> = {
     rate_per_night: "1160",
     lines: [{ label: "Habitación · 3 noches", amount: "3480" }],
   },
+  "HB-2026-08112": {
+    reservation_id: "HB-2026-08112",
+    property_id: "GT-HB-01",
+    status: "NO_SHOW_PENDING",
+    created_at: "2026-08-25",
+    source: { label: "Expedia", reference: "EXP-77410" },
+    policy_label: "No-show: cargo de una noche + impuestos",
+    guest: {
+      primary_name: "Ana Lucía Ríos",
+      phone: "+502 5555 0177",
+      adults: 2,
+      children: null,
+    },
+    stays: [
+      {
+        stay_id: "STAY-2026-08112-A",
+        room_id: "ROOM-101",
+        room_label: "101",
+        room_type: "Estándar Doble",
+        check_in: "2026-08-27",
+        check_out: "2026-08-29",
+        nights: 2,
+        travel_state: "RESERVED",
+      },
+    ],
+    notes: null,
+    currency: "GTQ",
+    total_amount: "1880",
+    paid_amount: "470",
+    finance_state: "DEPOSIT",
+    rate_per_night: "940",
+    lines: [{ label: "Habitación · 2 noches", amount: "1880" }],
+  },
   "HB-2026-08055": {
     reservation_id: "HB-2026-08055",
     property_id: "GT-HB-01",
@@ -246,6 +280,27 @@ const cancellationPreviews: Record<string, CancellationPreviewDto> = {
   },
 };
 
+const noShowPreviews: Record<string, NoShowPreviewDto> = {
+  "HB-2026-08112": {
+    reservation_id: "HB-2026-08112",
+    policy_summary: "No-show: cargo de una noche + impuestos.",
+    cutoff_at: "2026-08-27T18:00:00.000Z",
+    allowed_charge: "470",
+    release_note: "Estándar Doble 101 · 27–29 ago.",
+    can_mark_no_show: true,
+    reason: null,
+  },
+  "HB-2026-08421": {
+    reservation_id: "HB-2026-08421",
+    policy_summary: "No-show: cargo de una noche + impuestos.",
+    cutoff_at: null,
+    allowed_charge: "0",
+    release_note: null,
+    can_mark_no_show: false,
+    reason: "La reserva no está pendiente de no-show.",
+  },
+};
+
 export const reservationHandlers = [
   http.get(RESERVATIONS_ENDPOINT, ({ request }) => {
     const propertyId = new URL(request.url).searchParams.get("propertyId") ?? "GT-HB-01";
@@ -282,6 +337,28 @@ export const reservationHandlers = [
       message: body.reason
         ? `Penalty Charge Q1,160 · Refund Q2,320 · ATS +1/noche · Motivo: ${body.reason}`
         : "Penalty Charge Q1,160 · Refund Q2,320 · ATS +1/noche",
+    };
+
+    return HttpResponse.json(result);
+  }),
+  http.get(`${RESERVATIONS_ENDPOINT}/:reservationId/no-show-preview`, ({ params }) => {
+    const preview = noShowPreviews[String(params.reservationId)];
+
+    if (!preview) {
+      return HttpResponse.text(null, { status: 404 });
+    }
+
+    return HttpResponse.json(preview);
+  }),
+  http.post(`${RESERVATIONS_ENDPOINT}/:reservationId/no-show`, async ({ params }) => {
+    const reservationId = String(params.reservationId);
+
+    const result: NoShowApplyDto = {
+      reservation_id: reservationId,
+      status: "NO_SHOW",
+      marked_at: new Date().toISOString(),
+      allowed_charge: "470",
+      message: "No-show: cargo Q470 · ATS +1/noche · AuditTrail RESERVATION_NO_SHOW",
     };
 
     return HttpResponse.json(result);

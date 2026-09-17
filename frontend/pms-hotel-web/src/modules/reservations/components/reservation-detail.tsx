@@ -8,6 +8,7 @@ import { useReservationDetail } from "../hooks/use-reservation-detail";
 import type { ReservationDetailData, ReservationStayDetail, StayTravelState } from "../model/reservation-detail";
 import type { ReservationStatus } from "../model/reservation-summary";
 import { ReservationCancellation } from "./reservation-cancellation";
+import { ReservationNoShow } from "./reservation-no-show";
 
 import styles from "./reservation-detail.module.css";
 
@@ -107,6 +108,7 @@ interface ReservationDetailProps {
 export function ReservationDetail({ propertyId, endpoint, reservationId }: Readonly<ReservationDetailProps>) {
   const { data: detail, error, isLoading, refetch } = useReservationDetail(propertyId, endpoint, reservationId);
   const [cancelling, setCancelling] = useState(false);
+  const [markingNoShow, setMarkingNoShow] = useState(false);
 
   const title = reservationId ? `Reserva ${reservationId}` : "Detalle de reserva";
 
@@ -147,6 +149,7 @@ export function ReservationDetail({ propertyId, endpoint, reservationId }: Reado
   const singleRoom = detail.stays.length === 1;
   const reference = detail.source.reference ? ` · ${detail.source.reference}` : "";
   const cancellable = detail.status === "CONFIRMED" || detail.status === "PENDING";
+  const noShowPending = detail.status === "NO_SHOW_PENDING";
 
   return (
     <div className={styles.page}>
@@ -167,6 +170,16 @@ export function ReservationDetail({ propertyId, endpoint, reservationId }: Reado
               Cancelar reserva
             </button>
           ) : null}
+          {noShowPending ? (
+            <button
+              className={styles.cancelAction}
+              type="button"
+              onClick={() => setMarkingNoShow(true)}
+              disabled={markingNoShow}
+            >
+              Marcar no-show
+            </button>
+          ) : null}
         </div>
       </header>
 
@@ -176,6 +189,15 @@ export function ReservationDetail({ propertyId, endpoint, reservationId }: Reado
           endpoint={endpoint}
           reservationId={reservationId}
           onClose={() => setCancelling(false)}
+        />
+      ) : null}
+
+      {markingNoShow && propertyId && endpoint && reservationId ? (
+        <ReservationNoShow
+          propertyId={propertyId}
+          endpoint={endpoint}
+          reservationId={reservationId}
+          onClose={() => setMarkingNoShow(false)}
         />
       ) : null}
 

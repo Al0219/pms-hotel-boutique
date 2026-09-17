@@ -12,6 +12,8 @@ interface ConfirmDialogProps {
   destructive?: boolean;
   /** Deshabilita acciones y evita el cierre por ESC/backdrop durante el submit. */
   busy?: boolean;
+  /** Etiqueta del botón de confirmación mientras sube el submit. */
+  busyLabel?: string;
   /** Gating por validación del contenido (p.ej. campo obligatorio). */
   confirmDisabled?: boolean;
   onConfirm: () => void;
@@ -22,7 +24,7 @@ interface ConfirmDialogProps {
  * Mientras la variante shared (IMP-WEB-S302) no esté autorizada, este diálogo es
  * la implementación local del módulo reservations. No es public API.
  */
-export function ConfirmDialog({ title, body, confirmLabel, destructive = false, busy = false, confirmDisabled = false, onConfirm, onCancel }: Readonly<ConfirmDialogProps>) {
+export function ConfirmDialog({ title, body, confirmLabel, destructive = false, busy = false, busyLabel = "Cancelando…", confirmDisabled = false, onConfirm, onCancel }: Readonly<ConfirmDialogProps>) {
   const titleId = `confirm-dialog-${useId()}`;
   const confirmRef = useRef<HTMLButtonElement>(null);
 
@@ -64,7 +66,7 @@ export function ConfirmDialog({ title, body, confirmLabel, destructive = false, 
             onClick={onConfirm}
             disabled={busy || confirmDisabled}
           >
-            {busy ? "Cancelando…" : confirmLabel}
+            {busy ? busyLabel : confirmLabel}
           </button>
         </footer>
       </div>
