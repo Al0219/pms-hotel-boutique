@@ -36,10 +36,10 @@ La reejecución global de Sprint 1 Android cerró con **PASS** tras completarse 
 
 ## Decisiones congeladas
 
-- La shell Guest vigente es `Inicio · Servicios · Valet · Hotel`; Chat es una acción flotante fuera de la footbar y el drawer contiene Inicio, Mis servicios, Servicios, Valet y Hotel.
+- La shell Guest vigente es `Inicio · Servicios · Valet · Hotel`; Chat es una acción flotante fuera de la footbar y el drawer contiene primero Perfil, seguido de Inicio, Mis servicios, Rewards, Promociones, Servicios, Valet y Hotel.
 - No se crea una quinta tab `Estadía` y no se restituye la navegación V1.
-- `MOB-19 — Acceso / Vincular reserva` vive en `/access`, fuera de `GuestNavigationShell`. Tras una vinculación exitosa, el flujo es `/access` → `/account` → **Account / Stay Hub V3**. El shell comienza cuando el huésped entra al contexto Guest vinculado.
-- `IMP-AND-0108` usa exclusivamente código de reserva y correo electrónico. El target de raíz aprobado es `/` → `/access`; la vinculación mock exitosa redirige inmediatamente con `router.replace('/account')`, sin pantalla de success ni persistencia.
+- `MOB-19 — Acceder a una estadía` vive en `/access`, fuera de `GuestNavigationShell`. Tras un acceso temporal exitoso, el flujo es `/access` → `/account` → **Account / Stay Hub V3**. No equivale a login de cuenta; su evolución a contexto activo se define en `32_AUTH_RESERVATION_CONTEXT_CHANGE_CONTROL.md`.
+- `IMP-AND-0108` usa exclusivamente código de reserva y correo electrónico. El target de raíz aprobado es `/` → `/access`; el acceso temporal mock exitoso redirige inmediatamente con `router.replace('/account')`, sin pantalla de success ni persistencia.
 - `MOB-20 — Cuenta / Mi estadía` vive técnicamente en `/account`. Su representación visible y tab activa es Inicio para `/account` y sus rutas hijas. El contenido actual de Stay será la base del **Account / Stay Hub**.
 - Las rutas `/services/*` mantienen Servicios activa y Back desde una ruta hija vuelve a `/services`. Las rutas `/account/*` mantienen Cuenta activa y Back desde una ruta hija vuelve a `/account`.
 - `IMP-AND-0201` extenderá el Account / Stay Hub creado por `IMP-AND-0109`; no crea otro hub ni duplica `/account`.
@@ -48,7 +48,7 @@ La reejecución global de Sprint 1 Android cerró con **PASS** tras completarse 
 
 | Histórico, solo referencia | Migración V3 | Ruta | Tab activa | Tarea |
 | --- | --- | --- | --- | --- |
-| `MOB-01` (`31:133`) | `MOB-19 — Acceso / Vincular reserva` | `/access` | Ninguna; fuera del shell | `IMP-AND-0108` |
+| `MOB-01` (`31:133`) | `MOB-19 — Acceder a una estadía` | `/access` | Ninguna; fuera del shell | `IMP-AND-0108` |
 | `MOB-02` (`31:154`) | `MOB-20 — Inicio / Mi estadía` | `/account` | Inicio | `IMP-AND-0109` |
 | `MOB-03` (`31:191`) | `MOB-21 — Servicios / Limpieza` | `/services/housekeeping` | Servicios | `IMP-AND-0110` |
 | `MOB-04` (`31:221`) | `MOB-22 — Servicios / Room Service` | `/services/room-service` | Servicios | `IMP-AND-0111` |
