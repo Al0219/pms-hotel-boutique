@@ -12,7 +12,7 @@ function AuditSidebar() {
     <div className={styles.brand}>Hotel Boutique<span>ADMINISTRACIÓN</span></div>
     <nav aria-label="Módulos de Gerencia">
       <Link href="/multi-property" prefetch={false}>Dashboard</Link>
-      {navigation.map(label => <button key={label} type="button"
+      {navigation.map(label => label === "Roles / Permisos" ? <Link key={label} href="/seguridad/roles">{label}</Link> : <button key={label} type="button"
         className={label === "Auditoría" ? styles.active : undefined}
         aria-current={label === "Auditoría" ? "page" : undefined}
         onClick={() => {
