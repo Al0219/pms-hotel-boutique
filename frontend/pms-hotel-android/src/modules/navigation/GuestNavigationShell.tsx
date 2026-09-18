@@ -24,6 +24,12 @@ export interface GuestNavigationDrawerSection {
   links: readonly GuestNavigationDrawerLink[];
 }
 
+export const guestNavigationDrawerPrimaryLink: GuestNavigationDrawerLink = {
+  icon: { android: 'person', ios: 'person.fill', web: 'person' },
+  label: 'Perfil',
+  path: '/account/profile',
+};
+
 export const guestNavigationDrawerSections: readonly GuestNavigationDrawerSection[] = [
   {
     id: 'stay',
@@ -56,7 +62,7 @@ export const guestNavigationDrawerSections: readonly GuestNavigationDrawerSectio
   },
 ];
 
-export const guestNavigationDrawerLinks = guestNavigationDrawerSections.flatMap((section) => section.links);
+export const guestNavigationDrawerLinks = [guestNavigationDrawerPrimaryLink, ...guestNavigationDrawerSections.flatMap((section) => section.links)];
 
 const guestNavigationRootPaths = new Set(['/account', '/services', '/valet', '/hotel']);
 

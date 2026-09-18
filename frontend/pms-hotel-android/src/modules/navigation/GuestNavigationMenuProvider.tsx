@@ -4,7 +4,7 @@ import { createContext, type PropsWithChildren, useCallback, useContext, useMemo
 import { Modal, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { guestNavigationDrawerSections, type GuestNavigationDrawerLink } from '@/modules/navigation/GuestNavigationShell';
+import { guestNavigationDrawerPrimaryLink, guestNavigationDrawerSections, type GuestNavigationDrawerLink } from '@/modules/navigation/GuestNavigationShell';
 import { guestNavigationStyles } from '@/modules/navigation/guestNavigationStyles';
 import { tokens } from '@/shared/theme/tokens';
 
@@ -22,6 +22,24 @@ function isDrawerLinkActive(link: GuestNavigationDrawerLink, pathname: string): 
   }
 
   return pathname === link.path || pathname.startsWith(`${link.path}/`);
+}
+
+function DrawerLink({ link, onPress, pathname }: { link: GuestNavigationDrawerLink; onPress: (path: string) => void; pathname: string }) {
+  const active = isDrawerLinkActive(link, pathname);
+
+  return (
+    <Pressable
+      accessibilityLabel={link.label}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      onPress={() => onPress(link.path)}
+      style={({ pressed }) => [guestNavigationStyles.drawerLink, active && guestNavigationStyles.drawerLinkActive, pressed && guestNavigationStyles.drawerItemPressed]}
+      testID={drawerLinkTestID(link)}
+    >
+      <SymbolView accessibilityElementsHidden name={link.icon} size={tokens.typography.size.sectionTitle} tintColor={active ? tokens.color.brand : tokens.color.muted} />
+      <Text style={[guestNavigationStyles.drawerLinkLabel, active && guestNavigationStyles.drawerLinkLabelActive]}>{link.label}</Text>
+    </Pressable>
+  );
 }
 
 /** Owns the Guest drawer once for the guest route tree. */
@@ -55,26 +73,13 @@ export function GuestNavigationMenuProvider({ children }: PropsWithChildren) {
               </Pressable>
             </View>
             <View style={guestNavigationStyles.drawerSections}>
+              <View style={guestNavigationStyles.drawerSection}>
+                <DrawerLink link={guestNavigationDrawerPrimaryLink} onPress={navigateFromDrawer} pathname={pathname} />
+              </View>
               {guestNavigationDrawerSections.map((section) => (
                 <View key={section.id} style={guestNavigationStyles.drawerSection}>
                   <Text style={guestNavigationStyles.drawerSectionTitle}>{section.label}</Text>
-                  {section.links.map((link) => {
-                    const active = isDrawerLinkActive(link, pathname);
-                    return (
-                      <Pressable
-                        accessibilityLabel={link.label}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: active }}
-                        key={link.path}
-                        onPress={() => navigateFromDrawer(link.path)}
-                        style={({ pressed }) => [guestNavigationStyles.drawerLink, active && guestNavigationStyles.drawerLinkActive, pressed && guestNavigationStyles.drawerItemPressed]}
-                        testID={drawerLinkTestID(link)}
-                      >
-                        <SymbolView accessibilityElementsHidden name={link.icon} size={tokens.typography.size.sectionTitle} tintColor={active ? tokens.color.brand : tokens.color.muted} />
-                        <Text style={[guestNavigationStyles.drawerLinkLabel, active && guestNavigationStyles.drawerLinkLabelActive]}>{link.label}</Text>
-                      </Pressable>
-                    );
-                  })}
+                  {section.links.map((link) => <DrawerLink key={link.path} link={link} onPress={navigateFromDrawer} pathname={pathname} />)}
                 </View>
               ))}
             </View>
