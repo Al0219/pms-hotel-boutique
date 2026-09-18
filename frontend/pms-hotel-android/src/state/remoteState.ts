@@ -22,6 +22,8 @@ export function deriveRemoteState<T>(
     return { kind: 'loading' };
   }
 
+  // Errors have precedence over the screen's empty-data policy. A callback
+  // such as `() => false` therefore cannot mask a simulated offline state.
   if (query.isError && query.error instanceof NetworkError) {
     return { kind: 'offline', error: query.error };
   }

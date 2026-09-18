@@ -4,3 +4,9 @@ export { Modal } from "./modal";
 export type { ModalProps } from "./modal";
 export { ConfirmDialog } from "./confirm-dialog";
 export type { ConfirmDialogProps } from "./confirm-dialog";
+export { StatusBadge } from "./status-badge";
+export type {
+  StatusBadgeProps,
+  StatusBadgeSize,
+  StatusBadgeVariant,
+} from "./status-badge";

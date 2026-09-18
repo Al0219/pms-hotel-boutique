@@ -13,27 +13,32 @@ export function Providers({ children }: Readonly<{ children: React.ReactNode }>)
       mutations: { retry: false },
     },
   }));
-  const [mocksReady, setMocksReady] = useState(() => !getPublicEnvironment().useMockApi);
+  const [mockReady, setMockReady] = useState(() => {
+    // In SSR or when mock API is disabled, render immediately
+    if (typeof window === "undefined" || !getPublicEnvironment().useMockApi) {
+      return true;
+    }
+    return false;
+  });
 
   useEffect(() => {
-    if (mocksReady) {
-      return;
-    }
-
-    let active = true;
-
-    void enableMocking().then(() => {
-      if (active) {
-        setMocksReady(true);
+    let mounted = true;
+    async function init() {
+      if (getPublicEnvironment().useMockApi) {
+        await enableMocking();
       }
-    });
+      if (mounted) {
+        setMockReady(true);
+      }
+    }
+    void init();
 
     return () => {
-      active = false;
+      mounted = false;
     };
-  }, [mocksReady]);
+  }, []);
 
-  if (!mocksReady) {
+  if (!mockReady) {
     return null;
   }
 

@@ -1,0 +1,58 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-weight: 600;
+  line-height: 1;
+  border-radius: var(--radius-sm, 6px);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sizeSm {
+  padding: 3px 8px;
+  font-size: 0.75rem;
+}
+
+.sizeMd {
+  padding: 4px 10px;
+  font-size: 0.8125rem;
+}
+
+.variantSuccess {
+  background-color: var(--color-system-success-soft, #E5F1E9);
+  color: var(--color-system-success, #4F7A63);
+  border: 1px solid rgba(79, 122, 99, 0.2);
+}
+
+.variantWarning {
+  background-color: var(--color-system-warning-soft, #F7ECD8);
+  color: var(--color-system-warning, #A8732A);
+  border: 1px solid rgba(168, 115, 42, 0.2);
+}
+
+.variantError {
+  background-color: var(--color-system-error-soft, #F5E3E3);
+  color: var(--color-system-error, #A85454);
+  border: 1px solid rgba(168, 84, 84, 0.2);
+}
+
+.variantInfo {
+  background-color: var(--color-system-info-soft, #E4EEF4);
+  color: var(--color-system-info, #55778F);
+  border: 1px solid rgba(85, 119, 143, 0.2);
+}
+
+.variantService {
+  background-color: var(--color-system-service-soft, #ECE8F3);
+  color: var(--color-system-service, #766B91);
+  border: 1px solid rgba(118, 107, 145, 0.2);
+}
+
+.variantNeutral {
+  background-color: var(--pms-color-neutral-100, #F1F0EC);
+  color: var(--pms-color-neutral-700, #4A4E49);
+  border: 1px solid rgba(138, 143, 137, 0.2);
+}

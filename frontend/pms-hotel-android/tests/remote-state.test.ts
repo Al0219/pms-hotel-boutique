@@ -17,12 +17,14 @@ describe('deriveRemoteState', () => {
     ).toBe('success');
   });
 
-  it('derives offline only from a simulated network error', () => {
-    const state = deriveRemoteState<undefined>(
-      { data: undefined, error: new NetworkError(), isError: true, isPending: false },
-      () => false,
+  it('derives offline before evaluating a screen empty-data policy', () => {
+    const isEmpty = jest.fn(() => false);
+    const state = deriveRemoteState<string[]>(
+      { data: ['ignored'], error: new NetworkError(), isError: true, isPending: false },
+      isEmpty,
     );
 
     expect(state.kind).toBe('offline');
+    expect(isEmpty).not.toHaveBeenCalled();
   });
 });
