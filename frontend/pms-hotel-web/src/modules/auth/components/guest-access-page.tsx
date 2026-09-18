@@ -12,6 +12,9 @@ export function GuestAccessPage() {
   const [message] = useState<string | null>(null);
 
   const guest = () => window.history.back();
+  const handleRecoveryClick = () => {
+    // TODO: Abrir un modal o redirigir al flujo de recuperación cuando esté implementado.
+  };
   const send = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmitting(true);
@@ -23,7 +26,7 @@ export function GuestAccessPage() {
 
   if (step === "review") {
     return (
-      <section className={styles.page}>
+      <section key={step} className={styles.page}>
         <button className={styles.back} onClick={() => setStep("email")} type="button">← Cambiar correo</button>
         <div className={styles.content}>
           <p className={styles.eyebrow}>ENLACE ENVIADO</p>
@@ -41,7 +44,7 @@ export function GuestAccessPage() {
 
   if (step === "emailDone") {
     return (
-      <section className={styles.page}>
+      <section key={step} className={styles.page}>
         <button className={styles.back} onClick={() => setStep("options")} type="button">← Volver a opciones</button>
         <div className={styles.content}>
           <p className={styles.eyebrow}>ACCESO VERIFICADO</p>
@@ -62,7 +65,7 @@ export function GuestAccessPage() {
 
   if (step === "google") {
     return (
-      <section className={styles.page} aria-labelledby="google-title">
+      <section key={step} className={styles.page} aria-labelledby="google-title">
         <button className={styles.back} onClick={() => setStep("options")} type="button">← Volver a opciones</button>
         <div className={styles.content}>
           <p className={styles.eyebrow}>GOOGLE IDENTITY SERVICES</p>
@@ -77,7 +80,7 @@ export function GuestAccessPage() {
 
   if (step === "accountLinked") {
     return (
-      <section className={styles.page}>
+      <section key={step} className={styles.page}>
         <button className={styles.back} onClick={() => setStep("options")} type="button">← Volver a opciones</button>
         <div className={styles.content}>
           <p className={styles.eyebrow}>AUTENTICACIÓN COMPLETADA</p>
@@ -98,7 +101,7 @@ export function GuestAccessPage() {
 
   if (step === "link") {
     return (
-      <section className={styles.page}>
+      <section key={step} className={styles.page}>
         <button className={styles.back} onClick={() => setStep("accountLinked")} type="button">← Volver a mi cuenta</button>
         <div className={styles.content}>
           <p className={styles.eyebrow}>SEGURIDAD DE CUENTA</p>
@@ -121,7 +124,7 @@ export function GuestAccessPage() {
 
   if (step === "reservationLinked") {
     return (
-      <section className={styles.page}>
+      <section key={step} className={styles.page}>
         <div className={styles.content}>
           <p className={styles.eyebrow}>VERIFICACIÓN COMPLETADA</p>
           <h1>Reserva vinculada</h1>
@@ -141,7 +144,7 @@ export function GuestAccessPage() {
 
   if (step === "email") {
     return (
-      <section className={styles.page} aria-labelledby="email-title">
+      <section key={step} className={styles.page} aria-labelledby="email-title">
         <button className={styles.back} onClick={() => setStep("options")} type="button">← Volver a opciones</button>
         <div className={styles.content}>
           <p className={styles.eyebrow}>ALTERNATIVA A GOOGLE</p>
@@ -150,6 +153,7 @@ export function GuestAccessPage() {
           <form className={styles.card} onSubmit={send}>
             <label htmlFor="guest-email">Correo electrónico</label>
             <input autoComplete="email" id="guest-email" onChange={e => setEmail(e.target.value)} placeholder="alan@email.com" required type="email" value={email} />
+            <button className={styles.recovery} onClick={handleRecoveryClick} type="button">¿Problemas para acceder? / Recuperar cuenta</button>
             <p>Por seguridad, la respuesta no revela información sensible sobre la cuenta.</p>
             <button className={styles.primary} disabled={submitting} type="submit">{submitting ? "Enviando enlace…" : "Enviar enlace de acceso"}</button>
           </form>
@@ -160,7 +164,7 @@ export function GuestAccessPage() {
   }
 
   return (
-    <section className={styles.page} aria-labelledby="access-title">
+    <section key={step} className={styles.page} aria-labelledby="access-title">
       <button className={styles.back} onClick={guest} type="button">← Volver al inicio</button>
       <div className={styles.content}>
         <h1 id="access-title">Accede a tu cuenta</h1>
