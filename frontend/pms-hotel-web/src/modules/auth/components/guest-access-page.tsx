@@ -1,17 +1,179 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import styles from "./guest-access-page.module.css";
+
 type AccessStep = "options" | "email" | "review" | "emailDone" | "google" | "accountLinked" | "link" | "reservationLinked";
+
 export function GuestAccessPage() {
- const [step,setStep]=useState<AccessStep>("options"),[email,setEmail]=useState(""),[submitting,setSubmitting]=useState(false),[message,setMessage]=useState<string|null>(null);
- const guest=()=>window.history.back();
- const send=(e:React.FormEvent<HTMLFormElement>)=>{e.preventDefault();setSubmitting(true);window.setTimeout(()=>{setSubmitting(false);setStep("review");},250);};
- if(step==="review") return <section className={styles.page}><button className={styles.back} onClick={()=>setStep("email")} type="button">← Cambiar correo</button><div className={styles.content}><p className={styles.eyebrow}>ENLACE ENVIADO</p><h1>Revisa tu correo</h1><p>Si el correo corresponde a una cuenta habilitada, recibirás instrucciones para continuar. No compartas el enlace ni el código.</p><div className={styles.card}>Enviado a<strong>{email || "a***@email.com"}</strong><p>El enlace expira en 15 minutos y solo puede utilizarse una vez.</p></div><button className={styles.primary} onClick={()=>setStep("emailDone")} type="button">Simular enlace verificado</button></div></section>;
- if(step==="emailDone") return <section className={styles.page}><button className={styles.back} onClick={()=>setStep("options")} type="button">← Volver a opciones</button><div className={styles.content}><p className={styles.eyebrow}>ACCESO VERIFICADO</p><h1>Acceso por correo completado</h1><p>El enlace de un solo uso fue validado y la sesión de huésped quedó iniciada en el PMS.</p><div className={styles.card}><h2>Alan Palacios</h2><p>{email || "alan@email.com"}</p><p>Cuenta PMS <strong>Activa</strong></p><p>Método de acceso <strong>Enlace de un solo uso</strong></p></div><button className={styles.primary} type="button">Ir a mi cuenta</button><button className={styles.secondary} onClick={guest} type="button">Continuar reservando</button></div></section>;
- if(step==="google") return <section className={styles.page} aria-labelledby="google-title"><button className={styles.back} onClick={()=>setStep("options")} type="button">← Volver a opciones</button><div className={styles.content}><p className={styles.eyebrow}>GOOGLE IDENTITY SERVICES</p><h1 id="google-title">Continuar con Google</h1><p>La autenticación se delegará a Google Identity Services. Al finalizar, volverás al PMS como huésped.</p><div className={styles.notice}>En producción, Google devuelve al huésped mediante callback/redirect. No se guardan tokens en este navegador.</div><button className={styles.primary} onClick={()=>setStep("accountLinked")} type="button">Continuar retorno al PMS</button></div></section>;
- if(step==="accountLinked") return <section className={styles.page}><button className={styles.back} onClick={()=>setStep("options")} type="button">← Volver a opciones</button><div className={styles.content}><p className={styles.eyebrow}>AUTENTICACIÓN COMPLETADA</p><h1>Cuenta vinculada</h1><p>Tu identidad externa quedó asociada a tu cuenta de huésped.</p><div className={styles.card}><h2>Alan Palacios</h2><p>alan@email.com</p><p>Cuenta PMS <strong>Activa</strong></p><p>Identidad externa <strong>Google conectado</strong></p></div><button className={styles.primary} type="button">Ir a mi cuenta</button><button className={styles.secondary} onClick={()=>setStep("link")} type="button">Vincular reserva existente</button></div></section>;
- if(step==="link") return <section className={styles.page}><button className={styles.back} onClick={()=>setStep("accountLinked")} type="button">← Volver a mi cuenta</button><div className={styles.content}><p className={styles.eyebrow}>SEGURIDAD DE CUENTA</p><h1>Vincular una reserva existente</h1><p>Usa datos de la reserva que solo el responsable debería conocer.</p><form className={styles.card} onSubmit={e=>{e.preventDefault();setStep("reservationLinked");}}><h2>Verifica la reserva</h2><label htmlFor="code">Código de reserva *</label><input id="code" defaultValue="HB-2026-07214" required/><label htmlFor="lastName">Apellido del responsable *</label><input id="lastName" defaultValue="Palacios" required/><label htmlFor="arrival">Fecha de llegada *</label><input id="arrival" required type="date"/><button className={styles.primary} type="submit">Verificar y vincular</button></form></div></section>;
- if(step==="reservationLinked") return <section className={styles.page}><div className={styles.content}><p className={styles.eyebrow}>VERIFICACIÓN COMPLETADA</p><h1>Reserva vinculada</h1><p>El código, apellido y fecha de llegada coincidieron. La reserva ya forma parte de tu cuenta PMS.</p><div className={styles.card}><p>Reserva</p><h2>HB-2026-07214</h2><p>Responsable: Alan Palacios</p><p>Evento ACCOUNT_RESERVATION_LINKED registrado sin guardar datos sensibles de verificación.</p></div><button className={styles.primary} type="button">Volver a mi cuenta</button><button className={styles.secondary} onClick={()=>setStep("link")} type="button">Vincular otra reserva</button></div></section>;
- if(step==="email") return <section className={styles.page} aria-labelledby="email-title"><button className={styles.back} onClick={()=>setStep("options")} type="button">← Volver a opciones</button><div className={styles.content}><p className={styles.eyebrow}>ALTERNATIVA A GOOGLE</p><h1 id="email-title">Accede con tu correo</h1><p>Te enviaremos un enlace de un solo uso. No necesitas contraseña.</p><form className={styles.card} onSubmit={send}><label htmlFor="guest-email">Correo electrónico</label><input autoComplete="email" id="guest-email" onChange={e=>setEmail(e.target.value)} placeholder="alan@email.com" required type="email" value={email}/><p>Por seguridad, la respuesta no revela información sensible sobre la cuenta.</p><button className={styles.primary} disabled={submitting} type="submit">{submitting?"Enviando enlace…":"Enviar enlace de acceso"}</button></form>{message&&<p className={styles.status} role="status">{message}</p>}</div></section>;
- return <section className={styles.page} aria-labelledby="access-title"><button className={styles.back} onClick={guest} type="button">← Volver al inicio</button><div className={styles.content}><h1 id="access-title">Accede a tu cuenta</h1><p>Consulta tus reservas, beneficios y preferencias. Iniciar sesión es opcional: puedes buscar y reservar habitaciones sin crear una cuenta.</p><div className={styles.card}><h2>Elige cómo continuar</h2><p>Tu cuenta es opcional. Puedes reservar sin iniciar sesión.</p><button className={styles.google} onClick={()=>setStep("google")} type="button"><span aria-hidden="true">G</span>Continuar con Google</button><button className={styles.primary} onClick={()=>setStep("email")} type="button">Continuar con correo</button><button className={styles.secondary} onClick={guest} type="button">Continuar como invitado</button><small>Al iniciar sesión podrás consultar reservas, beneficios y preferencias. La reserva pública funciona también sin cuenta.</small></div></div></section>;
+  const [step, setStep] = useState<AccessStep>("options");
+  const [email, setEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [message] = useState<string | null>(null);
+
+  const guest = () => window.history.back();
+  const send = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSubmitting(true);
+    window.setTimeout(() => {
+      setSubmitting(false);
+      setStep("review");
+    }, 250);
+  };
+
+  if (step === "review") {
+    return (
+      <section className={styles.page}>
+        <button className={styles.back} onClick={() => setStep("email")} type="button">← Cambiar correo</button>
+        <div className={styles.content}>
+          <p className={styles.eyebrow}>ENLACE ENVIADO</p>
+          <h1>Revisa tu correo</h1>
+          <p>Si el correo corresponde a una cuenta habilitada, recibirás instrucciones para continuar. No compartas el enlace ni el código.</p>
+          <div className={styles.card}>
+            Enviado a<strong>{email || "a***@email.com"}</strong>
+            <p>El enlace expira en 15 minutos y solo puede utilizarse una vez.</p>
+          </div>
+          <button className={styles.primary} onClick={() => setStep("emailDone")} type="button">Simular enlace verificado</button>
+        </div>
+      </section>
+    );
+  }
+
+  if (step === "emailDone") {
+    return (
+      <section className={styles.page}>
+        <button className={styles.back} onClick={() => setStep("options")} type="button">← Volver a opciones</button>
+        <div className={styles.content}>
+          <p className={styles.eyebrow}>ACCESO VERIFICADO</p>
+          <h1>Acceso por correo completado</h1>
+          <p>El enlace de un solo uso fue validado y la sesión de huésped quedó iniciada en el PMS.</p>
+          <div className={styles.card}>
+            <h2>Alan Palacios</h2>
+            <p>{email || "alan@email.com"}</p>
+            <p>Cuenta PMS <strong>Activa</strong></p>
+            <p>Método de acceso <strong>Enlace de un solo uso</strong></p>
+          </div>
+          <Link className={styles.primary} href="/cuenta">Ir a mi cuenta</Link>
+          <button className={styles.secondary} onClick={guest} type="button">Continuar reservando</button>
+        </div>
+      </section>
+    );
+  }
+
+  if (step === "google") {
+    return (
+      <section className={styles.page} aria-labelledby="google-title">
+        <button className={styles.back} onClick={() => setStep("options")} type="button">← Volver a opciones</button>
+        <div className={styles.content}>
+          <p className={styles.eyebrow}>GOOGLE IDENTITY SERVICES</p>
+          <h1 id="google-title">Continuar con Google</h1>
+          <p>La autenticación se delegará a Google Identity Services. Al finalizar, volverás al PMS como huésped.</p>
+          <div className={styles.notice}>En producción, Google devuelve al huésped mediante callback/redirect. No se guardan tokens en este navegador.</div>
+          <button className={styles.primary} onClick={() => setStep("accountLinked")} type="button">Continuar retorno al PMS</button>
+        </div>
+      </section>
+    );
+  }
+
+  if (step === "accountLinked") {
+    return (
+      <section className={styles.page}>
+        <button className={styles.back} onClick={() => setStep("options")} type="button">← Volver a opciones</button>
+        <div className={styles.content}>
+          <p className={styles.eyebrow}>AUTENTICACIÓN COMPLETADA</p>
+          <h1>Cuenta vinculada</h1>
+          <p>Tu identidad externa quedó asociada a tu cuenta de huésped.</p>
+          <div className={styles.card}>
+            <h2>Alan Palacios</h2>
+            <p>alan@email.com</p>
+            <p>Cuenta PMS <strong>Activa</strong></p>
+            <p>Identidad externa <strong>Google conectado</strong></p>
+          </div>
+          <Link className={styles.primary} href="/cuenta">Ir a mi cuenta</Link>
+          <button className={styles.secondary} onClick={() => setStep("link")} type="button">Vincular reserva existente</button>
+        </div>
+      </section>
+    );
+  }
+
+  if (step === "link") {
+    return (
+      <section className={styles.page}>
+        <button className={styles.back} onClick={() => setStep("accountLinked")} type="button">← Volver a mi cuenta</button>
+        <div className={styles.content}>
+          <p className={styles.eyebrow}>SEGURIDAD DE CUENTA</p>
+          <h1>Vincular una reserva existente</h1>
+          <p>Usa datos de la reserva que solo el responsable debería conocer.</p>
+          <form className={styles.card} onSubmit={e => { e.preventDefault(); setStep("reservationLinked"); }}>
+            <h2>Verifica la reserva</h2>
+            <label htmlFor="code">Código de reserva *</label>
+            <input id="code" defaultValue="HB-2026-07214" required />
+            <label htmlFor="lastName">Apellido del responsable *</label>
+            <input id="lastName" defaultValue="Palacios" required />
+            <label htmlFor="arrival">Fecha de llegada *</label>
+            <input id="arrival" required type="date" />
+            <button className={styles.primary} type="submit">Verificar y vincular</button>
+          </form>
+        </div>
+      </section>
+    );
+  }
+
+  if (step === "reservationLinked") {
+    return (
+      <section className={styles.page}>
+        <div className={styles.content}>
+          <p className={styles.eyebrow}>VERIFICACIÓN COMPLETADA</p>
+          <h1>Reserva vinculada</h1>
+          <p>El código, apellido y fecha de llegada coincidieron. La reserva ya forma parte de tu cuenta PMS.</p>
+          <div className={styles.card}>
+            <p>Reserva</p>
+            <h2>HB-2026-07214</h2>
+            <p>Responsable: Alan Palacios</p>
+            <p>Evento ACCOUNT_RESERVATION_LINKED registrado sin guardar datos sensibles de verificación.</p>
+          </div>
+          <Link className={styles.primary} href="/cuenta">Volver a mi cuenta</Link>
+          <button className={styles.secondary} onClick={() => setStep("link")} type="button">Vincular otra reserva</button>
+        </div>
+      </section>
+    );
+  }
+
+  if (step === "email") {
+    return (
+      <section className={styles.page} aria-labelledby="email-title">
+        <button className={styles.back} onClick={() => setStep("options")} type="button">← Volver a opciones</button>
+        <div className={styles.content}>
+          <p className={styles.eyebrow}>ALTERNATIVA A GOOGLE</p>
+          <h1 id="email-title">Accede con tu correo</h1>
+          <p>Te enviaremos un enlace de un solo uso. No necesitas contraseña.</p>
+          <form className={styles.card} onSubmit={send}>
+            <label htmlFor="guest-email">Correo electrónico</label>
+            <input autoComplete="email" id="guest-email" onChange={e => setEmail(e.target.value)} placeholder="alan@email.com" required type="email" value={email} />
+            <p>Por seguridad, la respuesta no revela información sensible sobre la cuenta.</p>
+            <button className={styles.primary} disabled={submitting} type="submit">{submitting ? "Enviando enlace…" : "Enviar enlace de acceso"}</button>
+          </form>
+          {message && <p className={styles.status} role="status">{message}</p>}
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className={styles.page} aria-labelledby="access-title">
+      <button className={styles.back} onClick={guest} type="button">← Volver al inicio</button>
+      <div className={styles.content}>
+        <h1 id="access-title">Accede a tu cuenta</h1>
+        <p>Consulta tus reservas, beneficios y preferencias. Iniciar sesión es opcional: puedes buscar y reservar habitaciones sin crear una cuenta.</p>
+        <div className={styles.card}>
+          <h2>Elige cómo continuar</h2>
+          <p>Tu cuenta es opcional. Puedes reservar sin iniciar sesión.</p>
+          <button className={styles.google} onClick={() => setStep("google")} type="button"><span aria-hidden="true">G</span>Continuar con Google</button>
+          <button className={styles.primary} onClick={() => setStep("email")} type="button">Continuar con correo</button>
+          <button className={styles.secondary} onClick={guest} type="button">Continuar como invitado</button>
+          <small>Al iniciar sesión podrás consultar reservas, beneficios y preferencias. La reserva pública funciona también sin cuenta.</small>
+        </div>
+      </div>
+    </section>
+  );
 }

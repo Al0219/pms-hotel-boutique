@@ -1,6 +1,6 @@
 # APPROVED FRONTEND DATA/MOCK CONTRACT — IMP-AND-0108
 
-## Access / Vincular reserva
+## Acceder a una estadía
 
 **Tarea:** `IMP-AND-0108 — MOB-19 — Access / Vincular reserva`
 **Estado del contrato:** `APPROVED`
@@ -66,6 +66,8 @@ Las validaciones locales required/formato sí pueden ser específicas porque no 
 El estado visual de `1841:476` se conserva, pero la decisión QA/producto sustituye su copy user-facing por el copy genérico anterior para evitar enumeración. Figma deberá sincronizar ese copy antes del cierre final. QA-AND-0108-01 se resuelve con `KeyboardAvoidingView` (`height` en Android), `ScrollView` desplazable y scroll al foco derivado del layout, sin offsets fijos ni librerías nuevas.
 
 ## Routing y límites
+
+La semántica de este flujo es acceso temporal a una estadía concreta mediante reserva + correo; no es autenticación principal de cuenta. La evolución hacia `ActiveReservationContext` se define en `32_AUTH_RESERVATION_CONTEXT_CHANGE_CONTROL.md` y no altera todavía el contract runtime.
 
 En esta fase frontend/mock, `/` dirige a `/access`. `/access` está fuera de `GuestNavigationShell`, no muestra footbar ni tabs. Un éxito de mutation ejecuta `router.replace('/account')`; no existe modal, toast obligatorio, pantalla de success ni spinner adicional post-success.
 

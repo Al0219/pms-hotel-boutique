@@ -27,6 +27,10 @@ These conceptual modules do not authorize Android project code, contracts, or sc
 
 Submódulo contractual `src/modules/account/profile`, bajo Account. Separa `GuestAccount` de `GuestProfile`; el fixture frontend/mock, mapper, service boundary y hooks Query/Mutation preparan lectura y actualización session-only de preferencias y Marketing SMS. No crea UI, ruta, launcher, navegación ni persistencia. IMP-AND-0201 está `COMPLETADA`; ver `19_ACCOUNT_PROFILE_CONTRACT_PROPOSAL.md`.
 
+## Profile UI canónica — IMP-AND-0202
+
+`IMP-AND-0202` es la única implementación productiva de Profile y está `EN_PROGRESO`. Pertenece a Account, reutiliza la foundation de `src/modules/account/profile` y tendrá la ruta hija `/account/profile`, con la primera acción `Perfil` del drawer y Back estable hacia `/account`. `IMP-AND-0303` queda absorbida: no crea UI, ruta, domain, service, Query/Mutation ni otra fuente de verdad. Las decisiones están en `31_ACCOUNT_PROFILE_CHANGE_CONTROL.md` y `32_AUTH_RESERVATION_CONTEXT_CHANGE_CONTROL.md`.
+
 ## Navigation shell — IMP-AND-0114
 
 `src/modules/navigation` owns the shared Guest shell. `/account` is visually **Inicio**, `/services` and its children remain Servicios, `/valet` and its children remain Valet, and `/hotel` is Hotel. Chat is available only through the shell floating action and has no active tab. The drawer contains navigation links only and derives no guest identity or room data.

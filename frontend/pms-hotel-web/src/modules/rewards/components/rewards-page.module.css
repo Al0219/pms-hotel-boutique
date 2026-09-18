@@ -1,0 +1,187 @@
+.page {
+  min-height: 100vh;
+  padding-bottom: var(--space-16);
+  background-color: var(--color-surface-page);
+}
+
+.header {
+  align-items: center;
+  border-bottom: 1px solid var(--color-border-default);
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-5) 6vw;
+  background-color: var(--color-surface-card);
+}
+
+.brand {
+  color: var(--color-text-primary);
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-h3);
+  text-decoration: none;
+  font-weight: 400;
+}
+
+.header nav {
+  display: flex;
+  gap: var(--space-6);
+  align-items: center;
+}
+
+.header nav a {
+  color: var(--color-text-primary);
+  font-size: var(--font-size-label-md);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.activeNav {
+  font-weight: 600 !important;
+  color: var(--color-text-brand) !important;
+}
+
+.container {
+  margin: 0 auto;
+  max-width: 1040px;
+  padding: var(--space-8) var(--space-6) 0;
+}
+
+.backLink {
+  color: var(--color-text-primary);
+  text-decoration: none;
+  font-size: var(--font-size-body-md);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+  font-weight: 500;
+}
+
+.backLink:hover {
+  color: var(--color-text-brand);
+}
+
+.eyebrow {
+  font-size: var(--font-size-caption);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  margin: 0 0 var(--space-2);
+}
+
+.title {
+  font-family: var(--font-family-display);
+  font-size: clamp(32px, 4vw, var(--font-size-h1));
+  font-weight: 400;
+  line-height: var(--line-height-h1);
+  margin: 0 0 var(--space-3);
+  color: var(--color-text-primary);
+}
+
+.subtitle {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-body-lg);
+  line-height: var(--line-height-body-lg);
+  margin: 0 0 var(--space-8);
+  max-width: 720px;
+}
+
+.tierCard {
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-8);
+  margin-bottom: var(--space-8);
+}
+
+.tierHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-4);
+}
+
+.tierBadge {
+  background: var(--color-brand-accent-soft);
+  color: var(--color-system-warning);
+  font-weight: 700;
+  font-size: var(--font-size-h3);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+}
+
+.progressLabel {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-body-md);
+}
+
+.progressBarBg {
+  background: var(--color-surface-subtle);
+  border-radius: var(--radius-sm);
+  height: 12px;
+  width: 100%;
+  overflow: hidden;
+  margin-bottom: var(--space-3);
+}
+
+.progressBarFill {
+  background: var(--color-brand-primary);
+  height: 100%;
+  border-radius: var(--radius-sm);
+  transition: width 0.4s ease;
+}
+
+.progressText {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-caption);
+  display: block;
+}
+
+.benefitsTitle {
+  font-size: var(--font-size-h3);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-4);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6);
+}
+
+.benefitCard {
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-card);
+}
+
+.benefitCard h3 {
+  font-size: var(--font-size-body-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-2);
+}
+
+.benefitCard p {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-body-md);
+  line-height: var(--line-height-body-md);
+  margin: 0;
+}
+
+.note {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-caption);
+  margin-top: var(--space-8);
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

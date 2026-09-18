@@ -1,6 +1,6 @@
 # 04 — Navigation
 
-Expo Router es el mecanismo de navegación Guest aprobado. La raíz técnica redirige a `/access`; al vincular la reserva, el flujo usa `router.replace('/account')`.
+Expo Router es el mecanismo de navegación Guest aprobado. La raíz técnica redirige a `/access`; el flujo actual de acceso temporal a una estadía usa `router.replace('/account')`. La separación futura Cuenta/Reserva/Contexto activo se congela en `32_AUTH_RESERVATION_CONTEXT_CHANGE_CONTROL.md`.
 
 ## Shell Guest vigente
 
@@ -17,7 +17,7 @@ Expo Router es el mecanismo de navegación Guest aprobado. La raíz técnica red
 
 Chat permanece disponible en `/chat`, sin tab seleccionada. La shell ofrece un botón flotante **Abrir chat**, de 48 × 48 dp y situado sobre la footbar, únicamente en `/account`, `/services`, `/valet` y `/hotel`. La acción usa `router.push('/chat')` para preservar el historial: Android Back o el gesto del sistema recuperan la ruta real de origen. Un deep link sin historial conserva el comportamiento nativo de Expo Router.
 
-Las pantallas raíz `/account`, `/services`, `/valet` y `/hotel` comparten `GuestRootHeader`: título y botón de menú en una fila normal, alineada verticalmente y distribuida entre ambos extremos. Las rutas hijas de Servicios, Cuenta y Chat comparten `GuestChildHeader`, con Back y título en la misma altura visual; no muestran menú ni Chat flotante. `/chat` es una pantalla enfocada: no renderiza `GuestNavigationShell` ni footbar, y su Back usa la pila nativa para recuperar el origen real. El drawer se abre desde la derecha, usa backdrop y X para cerrar, y presenta una superficie con iconos, feedback pressed y selección accesible. Su jerarquía vigente es `ESTANCIA: Inicio, Mis servicios`; `BENEFICIOS: Rewards, Promociones`; `SERVICIOS: Servicios, Valet`; `HOTEL: Hotel`. No incluye Chat. Rewards y Promociones son rutas hijas de Cuenta abiertas desde BENEFICIOS, sin entrada en la footbar.
+Las pantallas raíz `/account`, `/services`, `/valet` y `/hotel` comparten `GuestRootHeader`: título y botón de menú en una fila normal, alineada verticalmente y distribuida entre ambos extremos. Las rutas hijas de Servicios, Cuenta y Chat comparten `GuestChildHeader`, con Back y título en la misma altura visual; no muestran menú ni Chat flotante. `/chat` es una pantalla enfocada: no renderiza `GuestNavigationShell` ni footbar, y su Back usa la pila nativa para recuperar el origen real. El drawer se abre desde la derecha, usa backdrop y X para cerrar, y presenta una superficie con iconos, feedback pressed y selección accesible. Su jerarquía vigente inicia con la acción `Perfil`, antes de headings; después presenta `ESTANCIA: Inicio, Mis servicios`; `BENEFICIOS: Rewards, Promociones`; `SERVICIOS: Servicios, Valet`; `HOTEL: Hotel`. No incluye Chat. Perfil, Rewards y Promociones son rutas hijas de Cuenta; Perfil se abre exclusivamente desde la primera acción del drawer y Rewards/Promociones desde BENEFICIOS, sin entrada en la footbar.
 
 ## Rutas de Cuenta
 
@@ -30,6 +30,7 @@ Las rutas de Checkout/Invoice son decisiones frontend-first. Las referencias Fig
 | `/account/invoice` | hija de Account | Muestra `GuestChildHeader` con título `Factura`, Back `Volver` hacia `/account` y no muestra shell global, footbar, hamburger, drawer ni FAB Chat. |
 | `/account/rewards` | hija de Account | Se abre desde `BENEFICIOS > Rewards` en el drawer Guest. Muestra `GuestChildHeader` con título `Rewards`, Back `Volver a mi cuenta` hacia `/account` y no muestra shell global, footbar, hamburger, drawer ni FAB Chat. La tab Inicio se resuelve para el prefijo `/account/*`. |
 | `/account/promotions` | hija de Account | Se abre desde `BENEFICIOS > Promociones` en el drawer Guest. Muestra `GuestChildHeader` con título `Promociones`, Back `Volver a mi cuenta` hacia `/account` y no muestra shell global, footbar, hamburger, drawer ni FAB Chat. Promotions no agrega una tab; su entrada es exclusiva del drawer. |
+| `/account/profile` | hija focused de Account | Autorizada por `31_ACCOUNT_PROFILE_CHANGE_CONTROL.md` y ajustada por `32_AUTH_RESERVATION_CONTEXT_CHANGE_CONTROL.md`. Se abre exclusivamente desde la primera acción `Perfil` del drawer Guest. Muestra `GuestChildHeader`, no muestra shell global, footbar, hamburger, drawer ni FAB Chat y Back usa `router.dismissTo('/account')`. No agrega una tab ni un launcher adicional en `/account`. |
 
 El lifecycle session-backed es `Account → Checkout live session read model → confirmación final → CheckoutSessionSnapshot congelado → Invoice`. Al resolver la mutation mock de Check-out, la app usa `router.replace('/account/invoice')`; la pantalla completada no queda navegable en la pila. Back desde Check-out antes del submit y Back desde Factura retornan de forma estable a `/account`; en entrada directa se usa el mismo destino seguro, sin depender del historial previo. No se crea una tab, footbar privada ni una raíz financiera adicional.
 
