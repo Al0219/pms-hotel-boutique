@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import styles from "./multi-property.module.css";
 
 export function Sidebar() {
@@ -26,6 +27,13 @@ export function Sidebar() {
       
       <nav className={styles.sidebarNav}>
         {navItems.map((item, idx) => {
+          if (item.label === "Auditoría") {
+            return (
+              <Link key={item.label} href="/seguridad/auditoria" className={styles.sidebarNavItem}>
+                {item.label}
+              </Link>
+            );
+          }
           if (item.active) {
             return (
               <div key={idx} className={styles.sidebarNavItemActive}>
