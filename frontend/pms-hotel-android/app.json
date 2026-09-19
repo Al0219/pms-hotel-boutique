@@ -2,6 +2,7 @@
   "expo": {
     "name": "PMS Hotel Boutique",
     "slug": "pms-hotel-boutique",
+    "scheme": "pmshotelboutique",
     "version": "1.0.0",
     "platforms": [
       "android"
@@ -10,6 +11,9 @@
       "expo-router",
       "expo-status-bar",
       "@react-native-community/datetimepicker"
-    ]
+    ],
+    "android": {
+      "package": "com.anonymous.pmshotelboutique"
+    }
   }
 }
