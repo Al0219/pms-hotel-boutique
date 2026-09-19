@@ -2,5 +2,6 @@ import { setupWorker } from "msw/browser";
 
 import { handlers } from "./handlers";
 import { reservationHandlers } from "./reservation-handlers";
+import { web3Handlers } from "./web3-handlers";
 
-export const mockWorker = setupWorker(...handlers, ...reservationHandlers);
+export const mockWorker = setupWorker(...handlers, ...reservationHandlers, ...web3Handlers);
