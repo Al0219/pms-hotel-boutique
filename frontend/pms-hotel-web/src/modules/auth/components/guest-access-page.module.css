@@ -4,6 +4,8 @@
   padding: var(--space-6) max(7vw, var(--space-6)) var(--space-16);
 }
 .back { background: transparent; border: 0; color: var(--color-text-brand); cursor: pointer; font: inherit; padding: var(--space-2) 0; }
+.sessionBar { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-4); padding: var(--space-3) max(7vw, var(--space-6)); }
+.sessionBar button:focus-visible { outline: 3px solid var(--access-focus, var(--color-text-brand)); outline-offset: 3px; }
 .content {
   margin: clamp(48px, 9vw, 112px) auto 0;
   max-width: 640px;
