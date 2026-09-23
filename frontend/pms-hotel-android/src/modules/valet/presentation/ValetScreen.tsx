@@ -1,16 +1,19 @@
-import { useRef, useState } from 'react';
+import { buildTransferSessionRequestInput } from '@/modules/valet/domain/buildTransferSessionRequestInput';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { NetworkError } from '@/data/remote/http/HttpError';
-import { GuestNavigationShell } from '@/modules/navigation';
+import { GuestNavigationShell, GuestRootHeader, useGuestNotice } from '@/modules/navigation';
+import { formatServiceDate, formatServiceDateLabel, getFirstAvailableServiceDate, getInitialServiceDate, getNearestServiceTime, getStayServiceDateWindow, isServiceDateWithinStay, isServiceWithinStayWindow, parseServiceDate, useSessionServiceRequests } from '@/modules/service-requests';
 import {
   GoogleMapsLinkingService,
   type ExternalMapService,
 } from '@/modules/valet/data/services/GoogleMapsLinkingService';
 import { type TransferRouteService } from '@/modules/valet/data/services/TransferRouteService';
 import { type ValetService } from '@/modules/valet/data/services/ValetService';
-import { type TransferPlace, type ValetVehicle } from '@/modules/valet/domain/models/ValetScreen';
+import { type TransferPlace } from '@/modules/valet/domain/models/ValetScreen';
 import { deviceClock, type Clock } from '@/modules/valet/domain/services/Clock';
 import { calculateTransferFare } from '@/modules/valet/domain/services/TransferFareCalculator';
 import {
@@ -25,21 +28,35 @@ import { useReserveTransfer } from '@/modules/valet/presentation/hooks/useReserv
 import { useTransferRouteEstimate } from '@/modules/valet/presentation/hooks/useTransferRouteEstimate';
 import { useValetScreen } from '@/modules/valet/presentation/hooks/useValetScreen';
 import { valetStyles } from '@/modules/valet/presentation/valetStyles';
+import { useSessionVehicles } from '@/modules/valet/session/SessionVehiclesProvider';
+import { type SessionVehicle } from '@/modules/valet/session/SessionVehicle';
+import { formatVehiclePlate, hasDuplicateVehiclePlate, sanitizeVehiclePlateBodyInput, validateRequiredVehicleText, validateVehiclePlateBody, vehicleInputLimits, vehiclePlatePrefixes } from '@/modules/valet/session/vehicleValidation';
 import { deriveRemoteState } from '@/state/remoteState';
+import { ServiceDatePicker, TimeWheelPicker } from '@/shared/components';
+import { type StayService } from '@/modules/stay';
+import { useCurrentStay } from '@/modules/stay/presentation/hooks/useCurrentStay';
 
 const defaultMapService = new GoogleMapsLinkingService();
+const allDayTimes = Array.from({ length: 24 * 60 }, (_, index) => `${String(Math.floor(index / 60)).padStart(2, '0')}:${String(index % 60).padStart(2, '0')}`);
 
 export interface ValetScreenProps {
   service?: ValetService;
   routeService?: TransferRouteService;
   mapService?: ExternalMapService;
   clock?: Clock;
+  stayService?: StayService;
 }
 
 type SelectorTarget = 'destination' | 'pickup' | null;
 
-function vehicleDisplay(vehicle: ValetVehicle): string {
-  return `${vehicle.displayText} · ${vehicle.colorText}`;
+function vehicleDisplay(vehicle: SessionVehicle): string {
+  return `${vehicle.make} ${vehicle.model}${vehicle.color ? ` · ${vehicle.color}` : ''}`;
+}
+
+function vehicleStatusText(status: SessionVehicle['status']): string { return status === 'PARKED' ? 'En parqueo' : 'Conmigo'; }
+
+function format24Hour(value: Date): string {
+  return `${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}`;
 }
 
 function StateCard({
@@ -69,45 +86,111 @@ function StateCard({
 function VehicleModal({
   activeKey,
   onClose,
+  onOpenTimePicker,
   onSelect,
+  onSubmit,
+  onOpenDatePicker,
+  noAvailability,
+  requestedTime,
+  requestedTimeAllowed,
+  scheduleError,
+  serviceDate,
+  submitting,
   vehicles,
   visible,
 }: {
   activeKey: string;
   onClose: () => void;
+  onOpenTimePicker: () => void;
   onSelect: (key: string) => void;
-  vehicles: readonly ValetVehicle[];
+  onSubmit: () => void;
+  onOpenDatePicker: () => void;
+  noAvailability: boolean;
+  requestedTime: string | null;
+  requestedTimeAllowed: boolean;
+  scheduleError: boolean;
+  serviceDate: string;
+  submitting: boolean;
+  vehicles: readonly SessionVehicle[];
   visible: boolean;
 }) {
-  const active = vehicles.find((vehicle) => vehicle.key === activeKey);
+  const active = vehicles.find((vehicle) => vehicle.sessionVehicleId === activeKey);
 
   return (
     <Modal animationType="slide" onRequestClose={onClose} transparent visible={visible}>
       <View style={valetStyles.modalBackdrop}>
         <View accessibilityViewIsModal style={valetStyles.modalSheet} testID="valet-vehicle-modal">
-          <Text style={valetStyles.cardHeading}>Mi vehículo</Text>
-          {active ? <View style={valetStyles.detailList}>
+          <Text style={valetStyles.cardHeading}>Solicitar mi vehículo</Text>
+          {active ? <View style={valetStyles.detailList} testID="valet-vehicle-configuration">
             <Text style={valetStyles.bodyText}>{vehicleDisplay(active)}</Text>
-            <Text style={valetStyles.mutedText}>Placa: {active.plateText}</Text>
-            <Text style={valetStyles.mutedText}>{active.registrationText}</Text>
-            <Text style={valetStyles.mutedText}>{active.parkingDetailText}</Text>
-            <Text style={valetStyles.mutedText}>Tiempo estimado: {active.estimatedDeliveryText}</Text>
+            <Text style={valetStyles.mutedText}>Placa: {formatVehiclePlate(active.platePrefix, active.plateBody)}</Text>
+            <Text style={valetStyles.mutedText}>{vehicleStatusText(active.status)}</Text>
+            <Pressable accessibilityRole="button" onPress={() => onSelect('')} style={valetStyles.secondaryButton} testID="valet-change-vehicle"><Text style={valetStyles.secondaryButtonLabel}>Cambiar vehículo</Text></Pressable>
+            <Text style={valetStyles.inputLabel}>Fecha</Text><Pressable accessibilityLabel={`Seleccionar fecha del servicio: ${formatServiceDateLabel(serviceDate)}`} accessibilityRole="button" onPress={onOpenDatePicker} style={valetStyles.dateTimeButton} testID="valet-request-date-selector"><Text style={valetStyles.bodyText}>{formatServiceDateLabel(serviceDate)}</Text></Pressable>
+            <Text style={valetStyles.inputLabel}>Hora</Text><Pressable accessibilityRole="button" onPress={onOpenTimePicker} style={valetStyles.dateTimeButton} testID="valet-request-time-picker"><Text style={valetStyles.bodyText}>{requestedTime ?? 'Seleccionar hora'}</Text></Pressable>
+            {noAvailability ? <StateCard body="No hay horarios disponibles durante tu estadía." testID="valet-request-no-availability" title="Sin disponibilidad" /> : scheduleError || (requestedTime !== null && !requestedTimeAllowed) ? <StateCard body="Selecciona una hora con al menos 30 minutos de anticipación." testID="valet-request-schedule-error" title="Hora no disponible" /> : null}
+            <Pressable accessibilityRole="button" accessibilityState={{ disabled: !requestedTime || !requestedTimeAllowed || submitting || active.status !== 'PARKED' }} disabled={!requestedTime || !requestedTimeAllowed || submitting || active.status !== 'PARKED'} onPress={onSubmit} style={[valetStyles.button, (!requestedTime || !requestedTimeAllowed || submitting || active.status !== 'PARKED') && valetStyles.buttonDisabled]} testID="valet-request-button"><Text style={valetStyles.buttonLabel}>{submitting ? 'Solicitando...' : 'Solicitar vehículo'}</Text></Pressable>
           </View> : null}
-          <Text style={valetStyles.actionHeading}>Vehículos disponibles</Text>
-          {vehicles.map((vehicle) => <Pressable
+          {!active ? <><Text style={valetStyles.actionHeading}>Selecciona un vehículo</Text>{vehicles.map((vehicle) => <Pressable
             accessibilityRole="button"
-            accessibilityState={{ selected: vehicle.key === activeKey }}
-            key={vehicle.key}
-            onPress={() => onSelect(vehicle.key)}
-            style={[valetStyles.vehicleOption, vehicle.key === activeKey && valetStyles.vehicleOptionSelected]}
-            testID={`valet-vehicle-option-${vehicle.key}`}
-          ><Text style={valetStyles.bodyText}>{vehicleDisplay(vehicle)}</Text></Pressable>)}
+            accessibilityState={{ disabled: vehicle.status !== 'PARKED', selected: vehicle.sessionVehicleId === activeKey }} disabled={vehicle.status !== 'PARKED'}
+            key={vehicle.sessionVehicleId}
+            onPress={() => onSelect(vehicle.sessionVehicleId)}
+            style={[valetStyles.vehicleOption, vehicle.sessionVehicleId === activeKey && valetStyles.vehicleOptionSelected]}
+            testID={`valet-session-vehicle-option-${vehicle.sessionVehicleId}`}
+          ><Text style={valetStyles.bodyText}>{vehicleDisplay(vehicle)} · {formatVehiclePlate(vehicle.platePrefix, vehicle.plateBody)}</Text><Text style={valetStyles.mutedText}>{vehicleStatusText(vehicle.status)}</Text></Pressable>)}</> : null}
           <Pressable accessibilityRole="button" onPress={onClose} style={valetStyles.secondaryButton}><Text style={valetStyles.secondaryButtonLabel}>Cerrar</Text></Pressable>
         </View>
       </View>
     </Modal>
   );
 }
+
+type VehicleFormField = 'make' | 'model' | 'licensePlate';
+type VehicleFormErrors = Partial<Record<VehicleFormField, string>>;
+
+interface RegisterVehicleModalHandle { loadDraft: (vehicle: SessionVehicle) => void; resetDraft: () => void; }
+
+const RegisterVehicleModal = forwardRef<RegisterVehicleModalHandle, { editing: boolean; onClose: () => void; onRegister: (input: { make: string; model: string; platePrefix: SessionVehicle['platePrefix']; plateBody: string; color: string; status: SessionVehicle['status'] }) => boolean; vehicles: readonly SessionVehicle[]; visible: boolean }>(function RegisterVehicleModal({ editing, onClose, onRegister, vehicles, visible }, ref) {
+  const [make, setMake] = useState(''); const [model, setModel] = useState(''); const [platePrefix, setPlatePrefix] = useState<SessionVehicle['platePrefix']>('P'); const [plateBody, setPlateBody] = useState(''); const [prefixPickerVisible, setPrefixPickerVisible] = useState(false); const [color, setColor] = useState(''); const [status, setStatus] = useState<SessionVehicle['status']>('PARKED'); const [errors, setErrors] = useState<VehicleFormErrors>({});
+  const setFieldError = (field: VehicleFormField, error?: string) => setErrors((current) => ({ ...current, [field]: error }));
+  const resetFieldError = (field: VehicleFormField) => { if (errors[field]) setFieldError(field); };
+  function resetDraft() {
+    setMake(''); setModel(''); setPlatePrefix('P'); setPlateBody(''); setPrefixPickerVisible(false); setColor(''); setStatus('PARKED'); setErrors({});
+  }
+  function loadDraft(vehicle: SessionVehicle) {
+    setMake(vehicle.make); setModel(vehicle.model); setPlatePrefix(vehicle.platePrefix); setPlateBody(vehicle.plateBody); setPrefixPickerVisible(false); setColor(vehicle.color ?? ''); setStatus(vehicle.status); setErrors({});
+  }
+  useImperativeHandle(ref, () => ({ loadDraft, resetDraft }), []);
+  function registerVehicle() {
+    const normalizedBody = plateBody.trim().toLocaleUpperCase();
+    const nextErrors: VehicleFormErrors = {
+      make: validateRequiredVehicleText(make, 'Marca') ?? undefined,
+      model: validateRequiredVehicleText(model, 'Modelo') ?? undefined,
+      licensePlate: validateVehiclePlateBody(normalizedBody) ?? undefined,
+    };
+    if (!nextErrors.licensePlate && hasDuplicateVehiclePlate(vehicles, platePrefix, normalizedBody)) nextErrors.licensePlate = 'Este vehículo ya está registrado.';
+    setErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) return;
+    if (onRegister({ make: make.trim(), model: model.trim(), platePrefix, plateBody: normalizedBody, color: color.trim(), status })) { resetDraft(); onClose(); }
+    else setFieldError('licensePlate', 'Este vehículo ya está registrado.');
+  }
+  return <Modal animationType="slide" onRequestClose={onClose} transparent visible={visible}><View style={valetStyles.modalBackdrop}><ScrollView contentContainerStyle={valetStyles.modalScroll}><View accessibilityViewIsModal style={valetStyles.modalSheet} testID="register-vehicle-modal">
+    <Text accessibilityRole="header" style={valetStyles.cardHeading}>{editing ? 'Editar vehículo' : 'Registrar vehículo'}</Text>
+    <Text style={valetStyles.inputLabel}>Marca</Text><TextInput accessibilityHint={errors.make} accessibilityLabel="Marca" maxLength={vehicleInputLimits.make} onChangeText={(value) => { setMake(value); resetFieldError('make'); }} style={[valetStyles.locationInput, errors.make && valetStyles.inputInvalid]} testID="register-vehicle-make" value={make} />
+    {errors.make ? <Text accessibilityLiveRegion="polite" style={valetStyles.fieldError}>{errors.make}</Text> : null}
+    <Text style={valetStyles.inputLabel}>Modelo</Text><TextInput accessibilityHint={errors.model} accessibilityLabel="Modelo" maxLength={vehicleInputLimits.model} onChangeText={(value) => { setModel(value); resetFieldError('model'); }} style={[valetStyles.locationInput, errors.model && valetStyles.inputInvalid]} testID="register-vehicle-model" value={model} />
+    {errors.model ? <Text accessibilityLiveRegion="polite" style={valetStyles.fieldError}>{errors.model}</Text> : null}
+    <Text style={valetStyles.inputLabel}>Placa</Text><View style={valetStyles.plateRow}><Pressable accessibilityLabel="Seleccionar tipo de placa" accessibilityRole="button" onPress={() => setPrefixPickerVisible(true)} style={valetStyles.platePrefix} testID="register-vehicle-plate-prefix"><Text style={valetStyles.bodyText}>{platePrefix} ▼</Text></Pressable><TextInput accessibilityHint={errors.licensePlate ?? 'Ingresa 2 o 3 números seguidos de 3 letras.'} accessibilityLabel="Número y serie de placa" autoCapitalize="characters" maxLength={vehicleInputLimits.plateBody} onBlur={() => { const error = validateVehiclePlateBody(plateBody); if (plateBody.trim()) setFieldError('licensePlate', error ?? undefined); }} onChangeText={(value) => { setPlateBody(sanitizeVehiclePlateBodyInput(value)); resetFieldError('licensePlate'); }} style={[valetStyles.locationInput, errors.licensePlate && valetStyles.inputInvalid]} testID="register-vehicle-license-plate" value={plateBody} /></View>
+    {errors.licensePlate ? <Text accessibilityLiveRegion="polite" style={valetStyles.fieldError} testID="register-vehicle-license-plate-error">{errors.licensePlate}</Text> : null}
+    <Text style={valetStyles.inputLabel}>Color (opcional)</Text><TextInput accessibilityLabel="Color (opcional)" maxLength={vehicleInputLimits.color} onChangeText={setColor} style={valetStyles.locationInput} testID="register-vehicle-color" value={color} />
+    <Text style={valetStyles.inputLabel}>Ubicación actual</Text><View style={valetStyles.stepper}>
+      {(['PARKED', 'WITH_GUEST'] as const).map((option) => <Pressable accessibilityRole="radio" accessibilityState={{ selected: status === option }} key={option} onPress={() => setStatus(option)} style={[valetStyles.vehicleOption, status === option && valetStyles.vehicleOptionSelected]} testID={`register-vehicle-status-${option}`}><Text style={valetStyles.secondaryButtonLabel}>{vehicleStatusText(option)}</Text></Pressable>)}
+    </View>
+    <Pressable accessibilityRole="button" onPress={registerVehicle} style={valetStyles.button} testID="register-vehicle-submit"><Text style={valetStyles.buttonLabel}>{editing ? 'Guardar vehículo' : 'Registrar vehículo'}</Text></Pressable>
+    <Pressable accessibilityRole="button" onPress={onClose} style={valetStyles.secondaryButton}><Text style={valetStyles.secondaryButtonLabel}>Cancelar</Text></Pressable>
+  <Modal animationType="fade" onRequestClose={() => setPrefixPickerVisible(false)} transparent visible={prefixPickerVisible}><View style={valetStyles.prefixPickerBackdrop}><View accessibilityViewIsModal style={valetStyles.prefixPickerSheet} testID="register-vehicle-prefix-picker"><Text style={valetStyles.cardHeading}>Tipo de placa</Text><ScrollView contentContainerStyle={valetStyles.prefixPickerOptions} showsVerticalScrollIndicator><>{vehiclePlatePrefixes.map((prefix) => <Pressable accessibilityRole="radio" accessibilityState={{ selected: prefix === platePrefix }} key={prefix} onPress={() => { setPlatePrefix(prefix); setPrefixPickerVisible(false); }} style={[valetStyles.vehicleOption, prefix === platePrefix && valetStyles.vehicleOptionSelected]} testID={`register-vehicle-prefix-${prefix}`}><Text style={valetStyles.bodyText}>{prefix}</Text></Pressable>)}</></ScrollView></View></View></Modal></View></ScrollView></View></Modal>;
+});
 
 function PlaceSelector({
   onClose,
@@ -155,7 +238,7 @@ function PlaceField({ label, onSelect, place, testID }: {
   return <>
     <Text style={valetStyles.inputLabel}>{label}</Text>
     <View style={valetStyles.locationField}>
-      <TextInput accessibilityLabel={label} editable={false} placeholder={label === 'Punto de recogida' ? 'Selecciona dónde deseas que te recojan' : 'Selecciona destino'} style={valetStyles.locationInput} value={place?.displayText ?? ''} />
+      <TextInput accessibilityLabel={label} editable={false} maxLength={100} placeholder={label === 'Punto de recogida' ? 'Selecciona dónde deseas que te recojan' : 'Selecciona destino'} style={valetStyles.locationInput} value={place?.displayText ?? ''} />
       <Pressable accessibilityHint={`Selecciona ${label.toLowerCase()}.`} accessibilityLabel={`Seleccionar ${label.toLowerCase()}`} accessibilityRole="button" onPress={onSelect} style={valetStyles.locationButton} testID={testID}><Text style={valetStyles.locationIcon}>📍</Text></Pressable>
     </View>
   </>;
@@ -175,6 +258,7 @@ function TransferModal({
   onReserve,
   onRetryRoute,
   onReset,
+  noAvailability,
   origin,
   passengers,
   pickup,
@@ -198,6 +282,7 @@ function TransferModal({
   onReserve: () => void;
   onRetryRoute: () => void;
   onReset: () => void;
+  noAvailability: boolean;
   origin: TransferPlace | null;
   passengers: number;
   pickup: TransferPlace | null;
@@ -239,7 +324,7 @@ function TransferModal({
               <Pressable accessibilityLabel="Seleccionar fecha del traslado" accessibilityRole="button" onPress={onOpenDatePicker} style={valetStyles.dateTimeButton} testID="transfer-date-picker-button"><Text style={valetStyles.bodyText}>📅 {dateText}</Text></Pressable>
               <Text style={valetStyles.inputLabel}>Hora</Text>
               <Pressable accessibilityLabel="Seleccionar hora del traslado" accessibilityRole="button" onPress={onOpenTimePicker} style={valetStyles.dateTimeButton} testID="transfer-time-picker-button"><Text style={valetStyles.bodyText}>🕒 {timeText}</Text></Pressable>
-              {scheduleInvalid ? <Text accessibilityLiveRegion="polite" style={valetStyles.validationText} testID="transfer-schedule-error">Selecciona una hora con al menos 30 min de anticipación.</Text> : null}
+              {noAvailability ? <StateCard body="No hay horarios disponibles durante tu estadía." testID="transfer-no-availability" title="Sin disponibilidad" /> : scheduleInvalid ? <Text accessibilityLiveRegion="polite" style={valetStyles.validationText} testID="transfer-schedule-error">Selecciona una hora con al menos 30 min de anticipación.</Text> : null}
               <Text style={valetStyles.inputLabel}>Pasajeros</Text>
               <View style={valetStyles.stepper}>
                 <Pressable accessibilityLabel="Reducir pasajeros" accessibilityRole="button" disabled={passengers <= 1} onPress={() => onPassengers(passengers - 1)} style={valetStyles.stepperButton} testID="transfer-passengers-decrement"><Text style={valetStyles.stepperLabel}>−</Text></Pressable>
@@ -269,24 +354,41 @@ function TransferModal({
   );
 }
 
-export function ValetScreen({ clock = deviceClock, mapService = defaultMapService, routeService, service }: ValetScreenProps) {
+export function ValetScreen({ clock = deviceClock, mapService = defaultMapService, routeService, service, stayService }: ValetScreenProps) {
   const valetQuery = useValetScreen(service);
   const valetState = deriveRemoteState(valetQuery, () => false);
+  const stay = deriveRemoteState(useCurrentStay(stayService), () => false);
   const [activeVehicleKey, setActiveVehicleKey] = useState<string | null>(null);
   const [vehicleModalVisible, setVehicleModalVisible] = useState(false);
+  const [registerVehicleVisible, setRegisterVehicleVisible] = useState(false);
+  const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
+  const [vehicleTimePickerVisible, setVehicleTimePickerVisible] = useState(false);
+  const [vehicleDatePickerVisible, setVehicleDatePickerVisible] = useState(false);
+  const [vehicleServiceDate, setVehicleServiceDate] = useState(() => getInitialServiceDate(clock.getNow().getTime(), allDayTimes));
+  const [requestedTime, setRequestedTime] = useState<string | null>(() => getNearestServiceTime(getInitialServiceDate(clock.getNow().getTime(), allDayTimes), allDayTimes, clock.getNow().getTime()));
+  const [vehicleScheduleError, setVehicleScheduleError] = useState(false);
+  const [, setTimeCheckVersion] = useState(0);
   const [transferModalVisible, setTransferModalVisible] = useState(false);
   const [selectorTarget, setSelectorTarget] = useState<SelectorTarget>(null);
   const [destinationKey, setDestinationKey] = useState<string | null>(null);
   const [pickupKey, setPickupKey] = useState<string | null>(null);
   const [scheduledAt, setScheduledAt] = useState(() => getMinimumTransferDateTime(clock.getNow()));
-  const [pickerMode, setPickerMode] = useState<'date' | 'time' | null>(null);
+  const [datePickerVisible, setDatePickerVisible] = useState(false);
+  const [timePickerVisible, setTimePickerVisible] = useState(false);
   const [showScheduleFeedback, setShowScheduleFeedback] = useState(false);
   const [passengers, setPassengers] = useState(2);
   const [mapError, setMapError] = useState(false);
+  const [ignoredTransferEditRequestId, setIgnoredTransferEditRequestId] = useState<string | null>(null);
   const vehicleRequest = useRequestValetVehicle(service);
   const transferReservation = useReserveTransfer(service);
+  const { addRequest, requests, updateRequest } = useSessionServiceRequests();
+  const { showServiceRequestSuccess } = useGuestNotice();
+  const { editRequestId } = useLocalSearchParams<{ editRequestId?: string }>();
+  const { addVehicle, setVehicleStatus, updateVehicle, vehicles } = useSessionVehicles();
   const vehicleInFlight = useRef(false);
   const transferInFlight = useRef(false);
+  const editLoaded = useRef<string | null>(null);
+  const registerVehicleForm = useRef<RegisterVehicleModalHandle>(null);
   const screen = valetState.kind === 'success' ? valetState.data : null;
   const hotel = screen?.places.find((place) => place.type === 'HOTEL') ?? null;
   const destination = screen?.places.find((place) => place.key === (destinationKey ?? screen.transfer.defaultDestinationKey)) ?? null;
@@ -294,25 +396,129 @@ export function ValetScreen({ clock = deviceClock, mapService = defaultMapServic
   const origin = destination?.type === 'HOTEL' ? pickup : hotel;
   const route = useTransferRouteEstimate(origin?.key ?? null, destination?.key ?? null, routeService);
   const fare = route.data ? calculateTransferFare(route.data) : null;
-  const scheduleIsValid = isTransferScheduleValid({ now: clock.getNow(), scheduledAt });
+  const arrival = stay.kind === 'success' ? stay.data.arrival : null;
+  const departure = stay.kind === 'success' ? stay.data.departure : null;
+  const stayDateWindow = arrival !== null && departure !== null ? getStayServiceDateWindow(arrival, departure, clock.getNow().getTime()) : null;
+  const transferWithinStay = arrival !== null && departure !== null && isServiceWithinStayWindow({ arrival, departure, nowMs: clock.getNow().getTime(), serviceDate: formatServiceDate(scheduledAt), startTime: format24Hour(scheduledAt) });
+  const transferNoAvailability = arrival !== null && departure !== null && getFirstAvailableServiceDate(clock.getNow().getTime(), allDayTimes, arrival, departure) === null;
+  const scheduleIsValid = transferWithinStay && isTransferScheduleValid({ now: clock.getNow(), scheduledAt });
   const scheduleInvalid = showScheduleFeedback && !scheduleIsValid;
   const dateText = scheduledAt.toLocaleDateString();
-  const timeText = scheduledAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const timeText = format24Hour(scheduledAt);
+  const editedRequest = typeof editRequestId === 'string' && editRequestId !== ignoredTransferEditRequestId ? requests.find((request) => request.sessionRequestId === editRequestId) : undefined;
+  useEffect(() => {
+    if (!editedRequest || editLoaded.current === editedRequest.sessionRequestId) return;
+    editLoaded.current = editedRequest.sessionRequestId;
+    const timer = setTimeout(() => {
+    if (editedRequest.details?.type === 'VEHICLE_REQUEST') { setActiveVehicleKey(editedRequest.details.sessionVehicleId); if (editedRequest.details.serviceDate) setVehicleServiceDate(editedRequest.details.serviceDate); setRequestedTime(editedRequest.details.requestedTime); }
+      if (editedRequest.details?.type === 'TRANSFER') { setDestinationKey(editedRequest.details.destinationKey); setPickupKey(editedRequest.details.pickupKey ?? null); setScheduledAt(new Date(editedRequest.details.scheduledAtMs)); setPassengers(editedRequest.details.passengers); setTransferModalVisible(true); }
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [editedRequest]);
+
+  useEffect(() => {
+    if (!arrival || !departure) return;
+    const firstAvailable = getFirstAvailableServiceDate(clock.getNow().getTime(), allDayTimes, arrival, departure);
+    const nearest = isServiceDateWithinStay(vehicleServiceDate, clock.getNow().getTime(), arrival, departure)
+      ? getNearestServiceTime(vehicleServiceDate, allDayTimes, clock.getNow().getTime(), requestedTime, arrival, departure)
+      : null;
+    if (nearest) return;
+    const timer = setTimeout(() => {
+      if (firstAvailable) {
+        setVehicleServiceDate(firstAvailable);
+        setRequestedTime(getNearestServiceTime(firstAvailable, allDayTimes, clock.getNow().getTime(), undefined, arrival, departure));
+      } else if (!isServiceDateWithinStay(vehicleServiceDate, clock.getNow().getTime(), arrival, departure)) setVehicleServiceDate(departure);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [arrival, clock, departure, requestedTime, vehicleServiceDate]);
+
+  useEffect(() => {
+    if (!stayDateWindow) return;
+    const selectedDate = formatServiceDate(scheduledAt);
+    const boundedDate = selectedDate < stayDateWindow.minimumDate
+      ? stayDateWindow.minimumDate
+      : selectedDate > stayDateWindow.maximumDate ? stayDateWindow.maximumDate : null;
+    if (!boundedDate) return;
+    const parsedDate = parseServiceDate(boundedDate);
+    if (!parsedDate) return;
+    const timer = setTimeout(() => setScheduledAt((current) => replaceTransferDate(current, parsedDate)), 0);
+    return () => clearTimeout(timer);
+  }, [scheduledAt, stayDateWindow]);
+
+  useEffect(() => {
+    const interval = setInterval(() => setTimeCheckVersion((current) => current + 1), 30_000);
+    return () => clearInterval(interval);
+  }, []);
+
 
   function submitVehicle() {
     if (!screen || vehicleRequest.isPending || vehicleInFlight.current) return;
+    const selectedVehicle = vehicles.find((item) => item.sessionVehicleId === activeVehicleKey);
+    if (!selectedVehicle || selectedVehicle.status !== 'PARKED' || !requestedTime) return;
+    if (!arrival || !departure || !isServiceWithinStayWindow({ arrival, departure, nowMs: clock.getNow().getTime(), serviceDate: vehicleServiceDate, startTime: requestedTime })) {
+      setVehicleScheduleError(true);
+      return;
+    }
+    setVehicleScheduleError(false);
     vehicleInFlight.current = true;
-    vehicleRequest.mutate(activeVehicleKey ?? screen.activeVehicleKey, { onSettled: () => { vehicleInFlight.current = false; } });
+    vehicleRequest.mutate(screen.activeVehicleKey, {
+      onSuccess: () => {
+        const input = { kind: 'VEHICLE_REQUEST' as const, origin: 'VALET' as const, status: 'REQUESTED' as const, summary: `${formatServiceDateLabel(vehicleServiceDate)} · ${requestedTime} · ${vehicleDisplay(selectedVehicle)}`, title: 'Solicitar mi vehículo', details: { type: 'VEHICLE_REQUEST' as const, serviceDate: vehicleServiceDate, sessionVehicleId: selectedVehicle.sessionVehicleId, requestedTime } };
+        if (editedRequest?.kind === 'VEHICLE_REQUEST') updateRequest(editedRequest.sessionRequestId, input); else addRequest(input); showServiceRequestSuccess(editedRequest ? 'UPDATED' : 'CREATED'); router.replace('/account');
+      },
+      onSettled: () => { vehicleInFlight.current = false; },
+    });
   }
 
   function submitTransfer() {
-    if (!isTransferScheduleValid({ now: clock.getNow(), scheduledAt })) {
+    if (!transferWithinStay || !isTransferScheduleValid({ now: clock.getNow(), scheduledAt })) {
       setShowScheduleFeedback(true);
       return;
     }
     if (!destination || !route.data || !fare || (destination.type === 'HOTEL' && !pickup) || transferReservation.isPending || transferInFlight.current) return;
     transferInFlight.current = true;
-    transferReservation.mutate({ destinationType: destination.type, destinationPlace: destination, pickupPlace: destination.type === 'HOTEL' ? pickup : null, dateText, timeText, passengers, routeEstimate: route.data, fareEstimate: fare }, { onSettled: () => { transferInFlight.current = false; } });
+    transferReservation.mutate({ destinationType: destination.type, destinationPlace: destination, pickupPlace: destination.type === 'HOTEL' ? pickup : null, dateText, timeText, passengers, routeEstimate: route.data, fareEstimate: fare }, {
+      onSuccess: () => {
+        const input = buildTransferSessionRequestInput({ destinationKey: destination.key, ...(pickup ? { pickupKey: pickup.key } : {}), scheduledAtMs: scheduledAt.getTime(), passengers, estimatedAmount: fare.estimatedPrice, fareText: fare.estimatedPriceText, summary: `${destination.displayText} · ${dateText} · ${timeText}` });
+        if (editedRequest?.kind === 'TRANSFER') updateRequest(editedRequest.sessionRequestId, input); else addRequest(input); resetTransferDraft(); setTransferModalVisible(false); showServiceRequestSuccess(editedRequest ? 'UPDATED' : 'CREATED'); router.replace('/account');
+      },
+      onSettled: () => { transferInFlight.current = false; },
+    });
+  }
+
+  function openCreateVehicle() {
+    setEditingVehicleId(null);
+    registerVehicleForm.current?.resetDraft();
+    setRegisterVehicleVisible(true);
+  }
+
+  function openEditVehicle(sessionVehicleId: string) {
+    const vehicle = vehicles.find((item) => item.sessionVehicleId === sessionVehicleId);
+    if (!vehicle) return;
+    setEditingVehicleId(sessionVehicleId);
+    registerVehicleForm.current?.loadDraft(vehicle);
+    setRegisterVehicleVisible(true);
+  }
+
+  function resetTransferDraft() {
+    setDestinationKey(null);
+    setPickupKey(null);
+    setScheduledAt(getMinimumTransferDateTime(clock.getNow()));
+    setDatePickerVisible(false);
+    setTimePickerVisible(false);
+    setSelectorTarget(null);
+    setShowScheduleFeedback(false);
+    setPassengers(screen?.transfer.defaultPassengers ?? 2);
+    setMapError(false);
+    transferReservation.reset();
+    transferInFlight.current = false;
+    editLoaded.current = null;
+  }
+
+  function openCreateTransfer() {
+    setIgnoredTransferEditRequestId(typeof editRequestId === 'string' ? editRequestId : null);
+    resetTransferDraft();
+    setTransferModalVisible(true);
   }
 
   function updateSchedule(nextValue: Date) {
@@ -320,11 +526,17 @@ export function ValetScreen({ clock = deviceClock, mapService = defaultMapServic
     setShowScheduleFeedback(true);
   }
 
-  function onPickerChange(event: DateTimePickerEvent, selectedValue?: Date) {
-    const mode = pickerMode;
-    setPickerMode(null);
-    if (event.type === 'dismissed' || !selectedValue || !mode) return;
-    updateSchedule(mode === 'date' ? replaceTransferDate(scheduledAt, selectedValue) : replaceTransferTime(scheduledAt, selectedValue));
+  function onDatePickerChange(event: DateTimePickerEvent, selectedValue?: Date) {
+    setDatePickerVisible(false);
+    if (event.type === 'dismissed' || !selectedValue) return;
+    updateSchedule(replaceTransferDate(scheduledAt, selectedValue));
+  }
+
+  function onTimeWheelConfirm(value: string) {
+    const [hours, minutes] = value.split(':').map(Number);
+    if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return;
+    updateSchedule(replaceTransferTime(scheduledAt, new Date(2000, 0, 1, hours, minutes)));
+    setTimePickerVisible(false);
   }
 
   async function openExternalMap() {
@@ -333,33 +545,35 @@ export function ValetScreen({ clock = deviceClock, mapService = defaultMapServic
     if (!await mapService.openRoute(origin, destination)) setMapError(true);
   }
 
-  if (valetState.kind === 'loading') return <View style={valetStyles.screen}><View style={[valetStyles.content, valetStyles.stateContent]} testID="valet-screen-loading"><Text style={valetStyles.title}>Cargando transporte y valet</Text></View><GuestNavigationShell /></View>;
-  if (valetState.kind === 'offline') return <View style={valetStyles.screen}><View style={[valetStyles.content, valetStyles.stateContent]}><StateCard body="Conéctate a internet para ver transporte y valet." offline onRetry={() => void valetQuery.refetch()} testID="valet-screen-offline" title="Sin conexión" /></View><GuestNavigationShell /></View>;
-  if (valetState.kind === 'error') return <View style={valetStyles.screen}><View style={[valetStyles.content, valetStyles.stateContent]}><StateCard body="Intenta nuevamente." onRetry={() => void valetQuery.refetch()} testID="valet-screen-error" title="No pudimos cargar transporte y valet" /></View><GuestNavigationShell /></View>;
+  if (valetState.kind === 'loading') return <View style={valetStyles.screen}><GuestRootHeader title="Valet" /><View style={[valetStyles.content, valetStyles.stateContent]} testID="valet-screen-loading"><Text style={valetStyles.title}>Cargando transporte y valet</Text></View><GuestNavigationShell /></View>;
+  if (valetState.kind === 'offline') return <View style={valetStyles.screen}><GuestRootHeader title="Valet" /><View style={[valetStyles.content, valetStyles.stateContent]}><StateCard body="Conéctate a internet para ver transporte y valet." offline onRetry={() => void valetQuery.refetch()} testID="valet-screen-offline" title="Sin conexión" /></View><GuestNavigationShell /></View>;
+  if (valetState.kind === 'error') return <View style={valetStyles.screen}><GuestRootHeader title="Valet" /><View style={[valetStyles.content, valetStyles.stateContent]}><StateCard body="Intenta nuevamente." onRetry={() => void valetQuery.refetch()} testID="valet-screen-error" title="No pudimos cargar transporte y valet" /></View><GuestNavigationShell /></View>;
   if (!screen || !hotel || !destination || valetState.kind === 'empty') return null;
-  const vehicle = screen.vehicles.find((item) => item.key === (activeVehicleKey ?? screen.activeVehicleKey));
-  if (!vehicle) return null;
+  const vehicle = vehicles.find((item) => item.sessionVehicleId === activeVehicleKey) ?? null;
   const vehicleOffline = vehicleRequest.isError && vehicleRequest.error instanceof NetworkError;
   const vehicleError = vehicleRequest.isError && !vehicleOffline;
 
-  if (vehicleRequest.isSuccess) return <View style={valetStyles.screen} testID="valet-request-success-screen"><ScrollView contentContainerStyle={[valetStyles.content, valetStyles.successContent]} style={valetStyles.scroll}><StateCard body="Tu vehículo está siendo preparado." success testID="valet-request-success" title="✓ Solicitud enviada" /><Text style={valetStyles.bodyText}>{vehicleDisplay(vehicle)}</Text><Text style={valetStyles.mutedText}>Tiempo estimado · {vehicle.estimatedDeliveryText}</Text><Text style={valetStyles.mutedText}>Solicitud {vehicleRequest.data.requestReferenceText}</Text></ScrollView><GuestNavigationShell /></View>;
 
   return <View style={valetStyles.screen} testID="valet-screen">
+    <GuestRootHeader title="Valet" />
     <ScrollView contentContainerStyle={valetStyles.content} style={valetStyles.scroll}>
-      <Text style={valetStyles.title}>Transporte y valet</Text>
-      <Text style={valetStyles.subtitle}>Movilidad durante tu estadía</Text>
-      <Pressable accessibilityRole="button" onPress={() => setVehicleModalVisible(true)} style={valetStyles.card} testID="valet-vehicle-card"><Text style={valetStyles.cardHeading}>Mi vehículo</Text><Text style={valetStyles.bodyText}>{vehicleDisplay(vehicle)}</Text><Text style={valetStyles.mutedText}>{vehicle.registrationText}</Text><Text style={valetStyles.bodyText}>{vehicle.parkingDetailText}</Text></Pressable>
-      <View style={[valetStyles.card, valetStyles.etaCard]}><Text style={valetStyles.actionHeading}>Solicitar mi vehículo</Text><Text style={valetStyles.mutedText}>Tiempo estimado de entrega: {vehicle.estimatedDeliveryText}</Text></View>
-      <Pressable accessibilityRole="button" onPress={() => setTransferModalVisible(true)} style={valetStyles.card} testID="valet-transfer-card"><Text style={valetStyles.cardHeading}>Traslado</Text><Text style={valetStyles.bodyText}>{destination.displayText}</Text><Text style={valetStyles.bodyText}>{dateText} · {timeText}</Text><Text style={valetStyles.bodyText}>Hasta {passengers} pasajeros</Text>{fare ? <Text style={valetStyles.actionHeading}>Estimado {fare.estimatedPriceText}</Text> : <Text style={valetStyles.mutedText}>Selecciona una ubicación para calcular la tarifa.</Text>}</Pressable>
+      <Text style={valetStyles.subtitle}>Mis vehículos y transporte durante tu estadía</Text>
+      <View style={valetStyles.card} testID="valet-vehicles-section"><Text style={valetStyles.cardHeading}>Mis vehículos</Text>{vehicles.length === 0 ? <Text style={valetStyles.mutedText}>Aún no tienes vehículos registrados.</Text> : vehicles.map((item) => <View key={item.sessionVehicleId} style={valetStyles.detailList}><Text style={valetStyles.bodyText}>{vehicleDisplay(item)}</Text><Text style={valetStyles.mutedText}>{formatVehiclePlate(item.platePrefix, item.plateBody)} · {vehicleStatusText(item.status)}</Text><Pressable accessibilityLabel={`Editar ${vehicleDisplay(item)}`} accessibilityRole="button" onPress={() => openEditVehicle(item.sessionVehicleId)} style={valetStyles.secondaryButton} testID={`valet-edit-${item.sessionVehicleId}`}><Text style={valetStyles.secondaryButtonLabel}>Editar vehículo</Text></Pressable>{item.status === 'WITH_GUEST' ? <Pressable accessibilityRole="button" onPress={() => setVehicleStatus(item.sessionVehicleId, 'PARKED')} style={valetStyles.secondaryButton} testID={`valet-return-${item.sessionVehicleId}`}><Text style={valetStyles.secondaryButtonLabel}>Entregar al valet</Text></Pressable> : null}</View>)}<Pressable accessibilityRole="button" onPress={openCreateVehicle} style={valetStyles.secondaryButton} testID="valet-register-vehicle"><Text style={valetStyles.secondaryButtonLabel}>Registrar vehículo</Text></Pressable></View>
+      <Text style={valetStyles.cardHeading}>Servicios</Text>
+      <Pressable accessibilityRole="button" onPress={() => vehicles.length ? setVehicleModalVisible(true) : openCreateVehicle()} style={valetStyles.card} testID="valet-vehicle-card"><Text style={valetStyles.cardHeading}>Solicitar mi vehículo</Text><Text style={valetStyles.mutedText}>{vehicles.length ? 'Selecciona un vehículo en parqueo.' : 'Registra un vehículo antes de solicitarlo.'}</Text></Pressable>
+      <Pressable accessibilityRole="button" onPress={openCreateTransfer} style={valetStyles.card} testID="valet-transfer-card"><Text style={valetStyles.cardHeading}>Solicitar traslado</Text><Text style={valetStyles.bodyText}>{destination.displayText}</Text><Text style={valetStyles.bodyText}>{dateText} · {timeText}</Text></Pressable>
       <Text style={valetStyles.mutedText}>{screen.folioNoticeText}</Text>
       {vehicleOffline ? <StateCard body="Conéctate a internet para solicitar tu vehículo." offline onRetry={submitVehicle} testID="valet-request-offline" title="Sin conexión" /> : null}
       {vehicleError ? <StateCard body="Intenta nuevamente." onRetry={submitVehicle} testID="valet-request-error" title="No pudimos solicitar tu vehículo" /> : null}
-      {!vehicleOffline && !vehicleError ? <Pressable accessibilityRole="button" accessibilityState={{ disabled: vehicleRequest.isPending }} disabled={vehicleRequest.isPending} onPress={submitVehicle} style={[valetStyles.button, vehicleRequest.isPending && valetStyles.buttonDisabled]} testID="valet-request-button"><Text style={valetStyles.buttonLabel}>{vehicleRequest.isPending ? 'Solicitando...' : 'Solicitar ahora'}</Text></Pressable> : null}
     </ScrollView>
     <GuestNavigationShell />
-    <VehicleModal activeKey={vehicle.key} onClose={() => setVehicleModalVisible(false)} onSelect={(key) => { setActiveVehicleKey(key); setVehicleModalVisible(false); }} vehicles={screen.vehicles} visible={vehicleModalVisible} />
-    <TransferModal dateText={dateText} destination={destination} fare={fare} mapError={mapError} onClose={() => setTransferModalVisible(false)} onOpenDatePicker={() => setPickerMode('date')} onOpenMap={() => { void openExternalMap(); }} onOpenSelector={setSelectorTarget} onOpenTimePicker={() => setPickerMode('time')} onPassengers={(value) => setPassengers(Math.max(1, Math.min(3, value)))} onReserve={submitTransfer} onRetryRoute={() => void route.refetch()} onReset={() => { transferReservation.reset(); transferInFlight.current = false; setMapError(false); }} origin={origin} passengers={passengers} pickup={pickup} reservation={transferReservation} route={route} scheduleInvalid={scheduleInvalid} scheduleIsValid={scheduleIsValid} timeText={timeText} visible={transferModalVisible} />
+    <VehicleModal activeKey={vehicle?.sessionVehicleId ?? ''} noAvailability={stayDateWindow === null || getFirstAvailableServiceDate(clock.getNow().getTime(), allDayTimes, arrival!, departure!) === null} onClose={() => setVehicleModalVisible(false)} onOpenDatePicker={() => setVehicleDatePickerVisible(true)} onOpenTimePicker={() => { setVehicleScheduleError(false); setVehicleTimePickerVisible(true); }} onSelect={setActiveVehicleKey} onSubmit={submitVehicle} requestedTime={requestedTime} requestedTimeAllowed={arrival !== null && departure !== null && requestedTime !== null && isServiceWithinStayWindow({ arrival, departure, nowMs: clock.getNow().getTime(), serviceDate: vehicleServiceDate, startTime: requestedTime })} scheduleError={vehicleScheduleError} serviceDate={vehicleServiceDate} submitting={vehicleRequest.isPending} vehicles={vehicles} visible={vehicleModalVisible} />
+    <RegisterVehicleModal editing={editingVehicleId !== null} ref={registerVehicleForm} onClose={() => { setEditingVehicleId(null); setRegisterVehicleVisible(false); }} onRegister={(input) => editingVehicleId ? updateVehicle(editingVehicleId, input) : addVehicle(input)} vehicles={editingVehicleId ? vehicles.filter((vehicle) => vehicle.sessionVehicleId !== editingVehicleId) : vehicles} visible={registerVehicleVisible} />
+    <TransferModal dateText={dateText} destination={destination} fare={fare} mapError={mapError} noAvailability={transferNoAvailability} onClose={() => setTransferModalVisible(false)} onOpenDatePicker={() => setDatePickerVisible(true)} onOpenMap={() => { void openExternalMap(); }} onOpenSelector={setSelectorTarget} onOpenTimePicker={() => setTimePickerVisible(true)} onPassengers={(value) => setPassengers(Math.max(1, Math.min(3, value)))} onReserve={submitTransfer} onRetryRoute={() => void route.refetch()} onReset={() => { setIgnoredTransferEditRequestId(typeof editRequestId === 'string' ? editRequestId : null); resetTransferDraft(); }} origin={origin} passengers={passengers} pickup={pickup} reservation={transferReservation} route={route} scheduleInvalid={scheduleInvalid} scheduleIsValid={scheduleIsValid} timeText={timeText} visible={transferModalVisible} />
     <PlaceSelector onClose={() => setSelectorTarget(null)} onSelect={(place) => { setMapError(false); if (selectorTarget === 'destination') { setDestinationKey(place.key); setPickupKey(null); } else { setPickupKey(place.key); } setSelectorTarget(null); }} places={screen.places} selectedKey={selectorTarget === 'pickup' ? pickup?.key ?? null : destination.key} target={selectorTarget} visible={selectorTarget !== null} />
-    {pickerMode ? <DateTimePicker display="default" minimumDate={pickerMode === 'date' ? startOfTransferDay(clock.getNow()) : undefined} mode={pickerMode} onChange={onPickerChange} testID={`transfer-${pickerMode}-picker`} value={scheduledAt} /> : null}
+    {datePickerVisible && stayDateWindow ? <DateTimePicker display="default" maximumDate={parseServiceDate(stayDateWindow.maximumDate) ?? undefined} minimumDate={parseServiceDate(stayDateWindow.minimumDate) ?? startOfTransferDay(clock.getNow())} mode="date" onChange={onDatePickerChange} testID="transfer-date-picker" value={scheduledAt} /> : null}
+    <TimeWheelPicker isValueDisabled={(value) => arrival === null || departure === null || !isServiceWithinStayWindow({ arrival, departure, nowMs: clock.getNow().getTime(), serviceDate: formatServiceDate(scheduledAt), startTime: value })} mode="time" onCancel={() => setTimePickerVisible(false)} onConfirm={(value) => { if (arrival !== null && departure !== null && isServiceWithinStayWindow({ arrival, departure, nowMs: clock.getNow().getTime(), serviceDate: formatServiceDate(scheduledAt), startTime: value })) onTimeWheelConfirm(value); }} testID="transfer-time-picker" title="Elegir hora" value={timeText} visible={timePickerVisible} />
+    <ServiceDatePicker maximumDate={stayDateWindow ? parseServiceDate(stayDateWindow.maximumDate) ?? undefined : undefined} minimumDate={stayDateWindow ? parseServiceDate(stayDateWindow.minimumDate) ?? startOfTransferDay(clock.getNow()) : startOfTransferDay(clock.getNow())} onCancel={() => setVehicleDatePickerVisible(false)} onConfirm={(nextDate) => { setVehicleDatePickerVisible(false); setVehicleServiceDate(nextDate); setRequestedTime(arrival && departure ? getNearestServiceTime(nextDate, allDayTimes, clock.getNow().getTime(), requestedTime, arrival, departure) : null); }} testID="valet-request-date-picker" value={vehicleServiceDate} visible={vehicleDatePickerVisible && stayDateWindow !== null} />
+    <TimeWheelPicker isValueDisabled={(value) => arrival === null || departure === null || !isServiceWithinStayWindow({ arrival, departure, nowMs: clock.getNow().getTime(), serviceDate: vehicleServiceDate, startTime: value })} mode="time" onCancel={() => setVehicleTimePickerVisible(false)} onConfirm={(value) => { if (arrival !== null && departure !== null && isServiceWithinStayWindow({ arrival, departure, nowMs: clock.getNow().getTime(), serviceDate: vehicleServiceDate, startTime: value })) { setVehicleScheduleError(false); setRequestedTime(value); } setVehicleTimePickerVisible(false); }} testID="valet-request-time-picker-wheel" title="Elegir hora de solicitud" value={requestedTime ?? '00:00'} visible={vehicleTimePickerVisible} />
   </View>;
 }

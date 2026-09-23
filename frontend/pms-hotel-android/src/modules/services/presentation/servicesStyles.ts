@@ -15,10 +15,6 @@ export const servicesStyles = StyleSheet.create({
   screenContent: {
     flex: 1,
   },
-  successContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
   scroll: {
     flex: 1,
   },
@@ -38,6 +34,22 @@ export const servicesStyles = StyleSheet.create({
     borderWidth: 1,
     gap: tokens.space.xs,
     padding: tokens.space.md,
+  },
+  serviceNavigationCard: {
+    alignItems: 'center',
+    backgroundColor: tokens.color.white,
+    borderColor: tokens.color.border,
+    borderRadius: tokens.radius.card,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    minHeight: tokens.layout.buttonHeight,
+    padding: tokens.space.md,
+  },
+  navigationChevron: {
+    color: tokens.color.muted,
+    fontFamily: tokens.typography.family,
+    fontSize: tokens.typography.size.title,
   },
   serviceCardSelected: {
     backgroundColor: tokens.color.surfaceAccent,
@@ -122,5 +134,37 @@ export const servicesStyles = StyleSheet.create({
     backgroundColor: tokens.color.border,
     borderRadius: tokens.radius.control,
     height: tokens.layout.controlHeight,
+  },
+  overlayBackdrop: {
+    alignItems: 'center',
+    backgroundColor: tokens.color.surfaceMuted,
+    flex: 1,
+    justifyContent: 'center',
+    padding: tokens.layout.screenInset,
+  },
+  successOverlayCard: {
+    backgroundColor: tokens.color.white,
+    borderColor: tokens.color.border,
+    borderRadius: tokens.radius.card,
+    borderWidth: 1,
+    gap: tokens.space.md,
+    padding: tokens.space.lg,
+    width: '100%',
+  },
+  successOverlayHeading: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  closeButton: {
+    alignItems: 'center',
+    height: tokens.layout.controlHeight,
+    justifyContent: 'center',
+    width: tokens.layout.controlHeight,
+  },
+  closeButtonLabel: {
+    color: tokens.color.inkStrong,
+    fontFamily: tokens.typography.family,
+    fontSize: tokens.typography.size.title,
   },
 });

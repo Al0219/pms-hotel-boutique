@@ -423,7 +423,7 @@ Reglas:
 - success → limpiar composer;
 - error/offline → conservar composer para retry.
 
-No se define límite máximo de caracteres porque Figma/backlog no proporciona uno.
+El composer limita la entrada frontend a 1000 caracteres para proteger la UI local. El envío conserva la regla existente de omitir drafts cuyo `trim()` queda vacío; este límite no altera el contrato Backend ni metadata estructurada `serviceAssignment`.
 
 ---
 

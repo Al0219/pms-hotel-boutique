@@ -131,6 +131,24 @@ export const valetStyles = StyleSheet.create({
     gap: tokens.space.md,
     padding: tokens.layout.screenInset,
   },
+  prefixPickerBackdrop: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    flex: 1,
+    justifyContent: 'center',
+    padding: tokens.layout.screenInset,
+  },
+  prefixPickerSheet: {
+    backgroundColor: tokens.color.surface,
+    borderRadius: tokens.radius.card,
+    gap: tokens.space.sm,
+    maxHeight: 360,
+    padding: tokens.space.md,
+    width: '82%',
+  },
+  prefixPickerOptions: {
+    gap: tokens.space.xs,
+  },
   detailList: {
     gap: tokens.space.xs,
   },
@@ -208,6 +226,8 @@ export const valetStyles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
   },
+  plateRow: { flexDirection: 'row', gap: tokens.space.sm },
+  platePrefix: { alignItems: 'center', backgroundColor: tokens.color.surfaceAccent, borderColor: tokens.color.border, borderRadius: tokens.radius.control, borderWidth: 1, justifyContent: 'center', minWidth: tokens.layout.buttonHeight, paddingHorizontal: tokens.space.sm },
   locationInput: {
     backgroundColor: tokens.color.white,
     borderColor: tokens.color.border,
@@ -219,6 +239,14 @@ export const valetStyles = StyleSheet.create({
     fontFamily: tokens.typography.family,
     height: tokens.layout.controlHeight,
     paddingHorizontal: tokens.space.sm,
+  },
+  inputInvalid: {
+    borderColor: tokens.color.pendingText,
+  },
+  fieldError: {
+    color: tokens.color.pendingText,
+    fontFamily: tokens.typography.family,
+    fontSize: tokens.typography.size.caption,
   },
   locationButton: {
     alignItems: 'center',

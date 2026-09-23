@@ -1,85 +1,171 @@
-import { fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { Slot } from 'expo-router';
 import { renderRouter } from 'expo-router/testing-library';
+import { Text, View } from 'react-native';
 
 import {
   getGuestNavigationTabPressHandler,
-  GuestNavigationShell,
+  guestNavigationDrawerLinks,
+  guestNavigationDrawerSections,
+  GuestNavigationMenuProvider,
   GuestNavigationTabs,
+  GuestRootHeader,
   guestNavigationTabs,
   resolveActiveGuestNavigationTab,
 } from '@/modules/navigation';
 
-describe('Guest Navigation Shell V3', () => {
-  it('declares only the four approved V3 destinations in Figma order', () => {
+function DrawerLayout() {
+  return <GuestNavigationMenuProvider><Slot /></GuestNavigationMenuProvider>;
+}
+
+function AccountRoute() {
+  return <View><GuestRootHeader title="Inicio" /><Text>Inicio</Text></View>;
+}
+
+function ServicesRoute() {
+  return <View><GuestRootHeader title="Servicios" /><Text>Servicios</Text></View>;
+}
+
+function ValetRoute() {
+  return <View><GuestRootHeader title="Valet" /><Text>Valet</Text></View>;
+}
+
+function HotelRoute() {
+  return <View><GuestRootHeader title="Hotel" /><Text>Hotel</Text></View>;
+}
+
+function RewardsRoute() {
+  return <View testID="rewards-route"><Text>Rewards</Text></View>;
+}
+
+function PromotionsRoute() {
+  return <View testID="promotions-route"><Text>Promociones</Text></View>;
+}
+
+describe('Guest Navigation Shell', () => {
+  it('declares only Inicio, Servicios, Valet and Hotel in the approved tab order', () => {
     expect(guestNavigationTabs).toEqual([
-      { id: 'services', label: 'Servicios', basePath: '/services', disabled: false },
-      { id: 'chat', label: 'Chat', basePath: '/chat', disabled: false },
-      { id: 'valet', label: 'Valet', basePath: '/valet', disabled: false },
-      { id: 'account', label: 'Cuenta', basePath: '/account', disabled: true },
+      { id: 'home', icon: { android: 'home', ios: 'house.fill', web: 'home' }, label: 'Inicio', basePath: '/account', disabled: false },
+      { id: 'services', icon: { android: 'room_service', ios: 'bell.fill', web: 'room_service' }, label: 'Servicios', basePath: '/services', disabled: false },
+      { id: 'valet', icon: { android: 'directions_car', ios: 'car.fill', web: 'directions_car' }, label: 'Valet', basePath: '/valet', disabled: false },
+      { id: 'hotel', icon: { android: 'apartment', ios: 'building.2.fill', web: 'apartment' }, label: 'Hotel', basePath: '/hotel', disabled: false },
     ]);
+    expect(guestNavigationDrawerLinks.map((link) => link.label)).toEqual(['Inicio', 'Mis servicios', 'Rewards', 'Promociones', 'Servicios', 'Valet', 'Hotel']);
+    expect(guestNavigationDrawerSections.map((section) => section.label)).toEqual(['ESTANCIA', 'BENEFICIOS', 'SERVICIOS', 'HOTEL']);
   });
 
   it('resolves active tabs from root paths, child paths, and routes outside the shell', () => {
     expect(resolveActiveGuestNavigationTab('/services')).toBe('services');
     expect(resolveActiveGuestNavigationTab('/services/selection')).toBe('services');
-    expect(resolveActiveGuestNavigationTab('/chat/thread')).toBe('chat');
+    expect(resolveActiveGuestNavigationTab('/chat/thread')).toBeNull();
+    expect(resolveActiveGuestNavigationTab('/account')).toBe('home');
+    expect(resolveActiveGuestNavigationTab('/account/rewards')).toBe('home');
+    expect(resolveActiveGuestNavigationTab('/hotel')).toBe('hotel');
     expect(resolveActiveGuestNavigationTab('/')).toBeNull();
     expect(resolveActiveGuestNavigationTab('/unknown')).toBeNull();
   });
 
-  it('renders Services, Chat and Valet enabled, with only Cuenta unfinished', async () => {
+  it('renders the four enabled V3 tabs and navigates only from a non-active tab', async () => {
     const onReplace = jest.fn();
-    const rendered = await render(<GuestNavigationTabs onReplace={onReplace} pathname="/services" />);
+    const rendered = await render(<GuestNavigationTabs onReplace={onReplace} pathname="/account" />);
     const tabs = rendered.getAllByRole('tab');
 
     expect(rendered.getByLabelText('Navegación principal de huésped').props.accessibilityRole).toBe('tablist');
-    expect(tabs.map((tab) => tab.props.accessibilityLabel)).toEqual(['Servicios', 'Chat', 'Valet', 'Cuenta']);
-    expect(rendered.getByLabelText('Servicios').props.accessibilityState).toEqual({ disabled: false, selected: true });
-    expect(rendered.getByLabelText('Chat').props.accessibilityState).toEqual({ disabled: false, selected: false });
-    expect(rendered.getByLabelText('Valet').props.accessibilityState).toEqual({ disabled: false, selected: false });
-    expect(rendered.getByLabelText('Cuenta').props.accessibilityState).toEqual({ disabled: true, selected: false });
+    expect(tabs.map((tab) => tab.props.accessibilityLabel)).toEqual(['Inicio', 'Servicios', 'Valet', 'Hotel']);
+    expect(rendered.getByTestId('guest-navigation-tab-icon-home')).toBeTruthy();
+    expect(rendered.getByTestId('guest-navigation-tab-icon-services')).toBeTruthy();
+    expect(rendered.getByTestId('guest-navigation-tab-icon-valet')).toBeTruthy();
+    expect(rendered.getByTestId('guest-navigation-tab-icon-hotel')).toBeTruthy();
+    expect(rendered.queryByLabelText('Rewards')).toBeNull();
+    expect(rendered.queryByLabelText('Promociones')).toBeNull();
+    expect(rendered.getByLabelText('Inicio').props.accessibilityState).toEqual({ disabled: false, selected: true });
+    expect(rendered.getByLabelText('Servicios').props.accessibilityState).toEqual({ disabled: false, selected: false });
 
-    for (const tab of guestNavigationTabs.filter((tab) => tab.disabled)) {
-      const tabControl = rendered.getByTestId(`guest-navigation-tab-${tab.id}`);
-
-      expect(tabControl.props.onPress).toBeUndefined();
-      fireEvent.press(tabControl);
-    }
-
-    fireEvent.press(rendered.getByLabelText('Chat'));
-    expect(onReplace).toHaveBeenCalledWith('/chat');
-  });
-
-  it('renders an enabled normal tab only when a future feature configuration permits it', async () => {
-    const onReplace = jest.fn();
-    const tabs = [{ ...guestNavigationTabs[0], disabled: false }, ...guestNavigationTabs.slice(1)];
-    const rendered = await render(<GuestNavigationTabs onReplace={onReplace} pathname="/" tabs={tabs} />);
-    const servicesTab = rendered.getByLabelText('Servicios');
-
-    expect(servicesTab.props.accessibilityState).toEqual({ disabled: false, selected: false });
-    fireEvent.press(servicesTab);
+    fireEvent.press(rendered.getByLabelText('Servicios'));
     expect(onReplace).toHaveBeenCalledWith('/services');
+    fireEvent.press(rendered.getByLabelText('Inicio'));
+    expect(onReplace).toHaveBeenCalledTimes(1);
   });
 
-  it('prepares replace navigation for a future enabled tab and keeps a current tab as a no-op', () => {
-    const onReplace = jest.fn();
-    const enabledServices = { ...guestNavigationTabs[0], disabled: false };
+  it.each([
+    ['/account', 'home'],
+    ['/services', 'services'],
+    ['/valet', 'valet'],
+    ['/hotel', 'hotel'],
+  ] as const)('marks %s with its matching tab selected', async (pathname, active) => {
+    const rendered = await render(<GuestNavigationTabs pathname={pathname} />);
 
-    expect(getGuestNavigationTabPressHandler(enabledServices, '/services', onReplace)).toBeUndefined();
-
-    getGuestNavigationTabPressHandler(enabledServices, '/chat', onReplace)?.();
-    expect(onReplace).toHaveBeenCalledWith('/services');
+    guestNavigationTabs.forEach((tab) => {
+      expect(rendered.getByTestId(`guest-navigation-tab-${tab.id}`).props.accessibilityState).toEqual({ disabled: false, selected: tab.id === active });
+    });
   });
 
-  it('derives selected state from Expo Router pathname without requiring a feature route in the app tree', async () => {
+  it('renders the grouped drawer with Benefits and selects the active root', async () => {
     const rendered = await renderRouter(
       {
-        'technical-shell/index': GuestNavigationShell,
+        _layout: DrawerLayout,
+        account: AccountRoute,
+        services: ServicesRoute,
+        valet: ValetRoute,
+        hotel: HotelRoute,
+        'account/rewards': RewardsRoute,
+        'account/promotions': PromotionsRoute,
       },
-      { initialUrl: '/technical-shell' },
+      { initialUrl: '/services' },
     );
 
-    expect(rendered.getByLabelText('Servicios').props.accessibilityState).toEqual({ disabled: false, selected: false });
-    expect(rendered.getByLabelText('Chat').props.accessibilityState).toEqual({ disabled: false, selected: false });
+    await act(async () => {
+      fireEvent.press(rendered.getByTestId('guest-navigation-menu-button'));
+    });
+    await waitFor(() => expect(rendered.getByTestId('guest-navigation-drawer-panel')).toBeTruthy());
+    expect(rendered.getByText('Menú')).toBeTruthy();
+    expect(rendered.getByText('Navega por tu estancia')).toBeTruthy();
+    expect(rendered.getByText('ESTANCIA')).toBeTruthy();
+    expect(rendered.getByText('BENEFICIOS')).toBeTruthy();
+    expect(rendered.getByText('SERVICIOS')).toBeTruthy();
+    expect(rendered.getByText('HOTEL')).toBeTruthy();
+    expect(rendered.getByTestId('guest-navigation-drawer-link-inicio')).toBeTruthy();
+    expect(rendered.getByTestId('guest-navigation-drawer-link-mis-servicios')).toBeTruthy();
+    expect(rendered.getByTestId('guest-navigation-drawer-link-rewards')).toBeTruthy();
+    expect(rendered.getByTestId('guest-navigation-drawer-link-promociones')).toBeTruthy();
+    expect(rendered.getByTestId('guest-navigation-drawer-link-servicios').props.accessibilityState).toEqual({ selected: true });
+    expect(rendered.getByTestId('guest-navigation-drawer-link-valet').props.accessibilityState).toEqual({ selected: false });
+    await act(async () => {
+      fireEvent.press(rendered.getByTestId('guest-navigation-drawer-close'));
+    });
+    await waitFor(() => expect(rendered.queryByTestId('guest-navigation-drawer-panel')).toBeNull());
+  });
+
+  it('navigates directly from the Benefits drawer entry to Promotions', async () => {
+    const rendered = await renderRouter(
+      {
+        _layout: DrawerLayout,
+        account: AccountRoute,
+        services: ServicesRoute,
+        valet: ValetRoute,
+        hotel: HotelRoute,
+        'account/rewards': RewardsRoute,
+        'account/promotions': PromotionsRoute,
+      },
+      { initialUrl: '/account' },
+    );
+
+    await act(async () => {
+      fireEvent.press(rendered.getByTestId('guest-navigation-menu-button'));
+    });
+    await act(async () => {
+      fireEvent.press(rendered.getByTestId('guest-navigation-drawer-link-promociones'));
+    });
+    await waitFor(() => expect(rendered.getByTestId('promotions-route')).toBeTruthy());
+  });
+
+  it('prepares replace navigation for Inicio and keeps its current route as a no-op', () => {
+    const onReplace = jest.fn();
+    const home = guestNavigationTabs[0];
+
+    expect(getGuestNavigationTabPressHandler(home, '/account', onReplace)).toBeUndefined();
+
+    getGuestNavigationTabPressHandler(home, '/services', onReplace)?.();
+    expect(onReplace).toHaveBeenCalledWith('/account');
   });
 });

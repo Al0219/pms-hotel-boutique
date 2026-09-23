@@ -5,8 +5,7 @@ import { tokens } from '@/shared/theme/tokens';
 export const chatStyles = StyleSheet.create({
   screen: { backgroundColor: tokens.color.surface, flex: 1 },
   conversationBody: { flex: 1 },
-  header: { gap: tokens.space.xs, paddingHorizontal: tokens.layout.screenInset, paddingTop: tokens.layout.screenInset },
-  title: { color: tokens.color.inkStrong, fontFamily: tokens.typography.family, fontSize: tokens.typography.size.title, fontWeight: '600' },
+  contextHeader: { paddingHorizontal: tokens.layout.screenInset, paddingTop: tokens.space.xs },
   context: { color: tokens.color.muted, fontFamily: tokens.typography.family, fontSize: tokens.typography.size.bodyMedium },
   messages: { flex: 1 },
   messagesContent: { gap: tokens.space.sm, padding: tokens.layout.screenInset },
@@ -15,6 +14,7 @@ export const chatStyles = StyleSheet.create({
   guestBubble: { alignSelf: 'flex-end', backgroundColor: tokens.color.surfaceAccent },
   bubbleAuthor: { color: tokens.color.muted, fontFamily: tokens.typography.family, fontSize: tokens.typography.size.caption, fontWeight: '600' },
   bubbleText: { color: tokens.color.ink, fontFamily: tokens.typography.family, fontSize: tokens.typography.size.bodyMedium },
+  composerSafeArea: { backgroundColor: tokens.color.white },
   composer: { backgroundColor: tokens.color.white, borderColor: tokens.color.border, borderTopWidth: 1, gap: tokens.space.sm, padding: tokens.space.md },
   composerRow: { alignItems: 'center', flexDirection: 'row', gap: tokens.space.sm },
   input: { borderColor: tokens.color.border, borderRadius: tokens.radius.control, borderWidth: 1, color: tokens.color.ink, flex: 1, fontFamily: tokens.typography.family, fontSize: tokens.typography.size.bodyMedium, minHeight: tokens.layout.controlHeight, paddingHorizontal: tokens.space.sm },

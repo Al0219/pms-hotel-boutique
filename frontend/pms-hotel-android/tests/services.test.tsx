@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
-import { router } from 'expo-router';
 import { act, renderRouter } from 'expo-router/testing-library';
+import { Pressable, Text } from 'react-native';
 
 import { NetworkError } from '@/data/remote/http/HttpError';
 import {
@@ -10,9 +10,7 @@ import {
   ServicesScreen,
 } from '@/modules/services';
 import { servicesCatalogFixture } from '@/modules/services/data/mocks/servicesCatalogFixture';
-import { currentStayFixture } from '@/modules/stay/data/mocks/currentStayFixture';
-import { MockStayService } from '@/modules/stay/data/mocks/MockStayService';
-import { StayHomeScreen } from '@/modules/stay/presentation/StayHomeScreen';
+import { SessionServiceRequestsProvider, useSessionServiceRequests } from '@/modules/service-requests';
 
 declare const require: (moduleName: string) => { readFileSync(path: string, encoding: string): string };
 
@@ -25,21 +23,30 @@ function createDeferred<T>() {
   return { promise, resolve: resolve! };
 }
 
+function RequestProbe() {
+  const { requests } = useSessionServiceRequests();
+  return <Text testID="session-service-requests-probe">{JSON.stringify(requests)}</Text>;
+}
+
+function LateCheckoutRemovalControl() {
+  const { removeRequest, requests } = useSessionServiceRequests();
+  const lateCheckout = requests.find((request) => request.kind === 'LATE_CHECKOUT');
+  return lateCheckout ? <Pressable onPress={() => removeRequest(lateCheckout.sessionRequestId)} testID="late-checkout-removal-control"><Text>Eliminar</Text></Pressable> : null;
+}
+
 async function renderServices(service: MockServicesService) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { gcTime: 0, retry: false }, mutations: { retry: false } },
   });
 
   return render(
-    <QueryClientProvider client={queryClient}>
-      <ServicesScreen service={service} />
-    </QueryClientProvider>,
+    <QueryClientProvider client={queryClient}><SessionServiceRequestsProvider><RequestProbe /><LateCheckoutRemovalControl /><ServicesScreen service={service} /></SessionServiceRequestsProvider></QueryClientProvider>,
   );
 }
 
-async function selectBreakfast(rendered: Awaited<ReturnType<typeof render>>) {
+async function selectLateCheckOut(rendered: Awaited<ReturnType<typeof render>>) {
   await waitFor(() => expect(rendered.getByTestId('services-screen')).toBeTruthy());
-  await fireEvent.press(rendered.getByTestId('service-card-breakfast-in-room'));
+  await fireEvent.press(rendered.getByTestId('service-card-late-check-out'));
   await waitFor(() => expect(rendered.getByTestId('services-selection')).toBeTruthy());
 }
 
@@ -51,14 +58,17 @@ describe('Services', () => {
     });
   });
 
-  it('renders the four approved services and the V3 shell with Services active', async () => {
+  it('contains no Special Decoration fixture or producer', () => {
+    expect(servicesCatalogFixture.items).toEqual([expect.objectContaining({ fixtureKey: 'late-check-out', lateCheckoutUntil: '14:00' })]);
+    expect(JSON.stringify(servicesCatalogFixture)).not.toContain('special-decoration');
+  });
+
+  it('renders Late check-out, dedicated-flow launchers, and V3 shell with Services active', async () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { gcTime: 0, retry: false }, mutations: { retry: false } },
     });
     const ServicesRoute = () => (
-      <QueryClientProvider client={queryClient}>
-        <ServicesScreen service={new MockServicesService()} />
-      </QueryClientProvider>
+      <QueryClientProvider client={queryClient}><SessionServiceRequestsProvider><ServicesScreen service={new MockServicesService()} /></SessionServiceRequestsProvider></QueryClientProvider>
     );
     const rendered = await renderRouter({ services: ServicesRoute }, { initialUrl: '/services' });
 
@@ -67,65 +77,37 @@ describe('Services', () => {
     expect(rendered.getByText('Late check-out')).toBeTruthy();
     expect(rendered.getByText('Hasta las 14:00')).toBeTruthy();
     expect(rendered.getByText('Q 180')).toBeTruthy();
-    expect(rendered.getByText('Desayuno en habitación')).toBeTruthy();
-    expect(rendered.getByText('Traslado aeropuerto')).toBeTruthy();
-    expect(rendered.getByText('Decoración especial')).toBeTruthy();
+    expect(rendered.queryByText('Decoración especial')).toBeNull();
+    expect(rendered.queryByText('Desayuno en habitación')).toBeNull();
+    expect(rendered.queryByText('Traslado aeropuerto')).toBeNull();
+    expect(rendered.getByRole('button', { name: 'Limpieza' })).toBeTruthy();
+    expect(rendered.getByRole('button', { name: 'Room Service' })).toBeTruthy();
+    expect(rendered.getByTestId('services-housekeeping-launcher-chevron')).toBeTruthy();
+    expect(rendered.getByTestId('services-room-service-launcher-chevron')).toBeTruthy();
     expect(rendered.getByLabelText('Servicios').props.accessibilityState).toEqual(expect.objectContaining({
       disabled: false,
       selected: true,
     }));
-    expect(rendered.getByLabelText('Chat').props.accessibilityState).toEqual(expect.objectContaining({
-      disabled: false,
-      selected: false,
-    }));
+    expect(rendered.queryByLabelText('Chat')).toBeNull();
     expect(rendered.getByLabelText('Valet').props.accessibilityState.disabled).toBe(false);
-    expect(rendered.getByLabelText('Cuenta').props.accessibilityState.disabled).toBe(true);
+    expect(rendered.getByLabelText('Inicio').props.accessibilityState.disabled).toBe(false);
     expect(rendered.getByTestId('services-submit-button').props.accessibilityState.disabled).toBe(true);
   });
 
-  it('keeps the approved Home → Services → Back journey without changing Stay Home', async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { gcTime: 0, retry: false }, mutations: { retry: false } },
-    });
-    const StayRoute = () => (
-      <QueryClientProvider client={queryClient}>
-        <StayHomeScreen service={new MockStayService({ kind: 'success', dto: currentStayFixture })} />
-      </QueryClientProvider>
-    );
-    const ServicesRoute = () => (
-      <QueryClientProvider client={queryClient}>
-        <ServicesScreen service={new MockServicesService()} />
-      </QueryClientProvider>
-    );
-    const rendered = await renderRouter(
-      { index: StayRoute, services: ServicesRoute },
-      { initialUrl: '/' },
-    );
-
-    await waitFor(() => expect(rendered.getByLabelText('Limpieza')).toBeTruthy());
-    await fireEvent.press(rendered.getByLabelText('Limpieza'));
-    await waitFor(() => expect(rendered.getByTestId('services-screen')).toBeTruthy());
-
-    await act(async () => {
-      router.back();
-    });
-    await waitFor(() => expect(rendered.getByTestId('stay-home-screen')).toBeTruthy());
-  });
-
-  it('keeps exactly one inline selection and enables submit only after selection', async () => {
+  it('uses the hotel-defined Late check-out schedule without guest date or time controls', async () => {
     const rendered = await renderServices(new MockServicesService());
 
-    await selectBreakfast(rendered);
+    await selectLateCheckOut(rendered);
 
     expect(rendered.getByTestId('services-selection').props.children).toBeTruthy();
-    expect(rendered.getAllByText('Desayuno en habitación').length).toBe(2);
-    expect(rendered.getAllByText('Para 2 personas').length).toBe(2);
-    expect(rendered.getAllByText('Q 145').length).toBe(2);
+    expect(rendered.getAllByText('Late check-out').length).toBe(2);
+    expect(rendered.getAllByText('Hasta las 14:00').length).toBe(2);
+    expect(rendered.getAllByText('Q 180').length).toBe(2);
     expect(rendered.getByTestId('services-submit-button').props.accessibilityState.disabled).toBe(false);
 
-    await fireEvent.press(rendered.getByTestId('service-card-airport-transfer'));
-    expect(rendered.getAllByText('Traslado aeropuerto').length).toBe(2);
-    expect(rendered.queryAllByText('Desayuno en habitación').length).toBe(1);
+    expect(rendered.getByTestId('services-late-checkout-schedule').props.children).toContain('Hasta 14:00');
+    expect(rendered.queryByTestId('services-date-selector')).toBeNull();
+    expect(rendered.queryByTestId('services-time-selector')).toBeNull();
   });
 
   it('shows submitting, disables the CTA, and prevents concurrent duplicate submission', async () => {
@@ -133,7 +115,7 @@ describe('Services', () => {
     const submitRequest = jest.fn(() => deferred.promise);
     const rendered = await renderServices(new MockServicesService({ submitRequest }));
 
-    await selectBreakfast(rendered);
+    await selectLateCheckOut(rendered);
     const submitButton = rendered.getByTestId('services-submit-button');
     await fireEvent.press(submitButton);
     await fireEvent.press(submitButton);
@@ -144,33 +126,60 @@ describe('Services', () => {
     expect(submitRequest).toHaveBeenCalledTimes(1);
 
     await act(async () => {
-      deferred.resolve({ serviceFixtureKey: 'breakfast-in-room' });
+      deferred.resolve({ serviceFixtureKey: 'late-check-out' });
     });
-    await waitFor(() => expect(rendered.getByTestId('services-submit-success')).toBeTruthy());
+    await waitFor(() => expect(rendered.getByTestId('session-service-requests-probe')).toBeTruthy());
   });
 
-  it('shows success only after the mock mutation and returns to the base catalog', async () => {
+  it('routes successful Late check-out requests to Account instead of a local success screen', async () => {
     const rendered = await renderServices(new MockServicesService());
-
-    await selectBreakfast(rendered);
+    await selectLateCheckOut(rendered);
     await fireEvent.press(rendered.getByTestId('services-submit-button'));
-    await waitFor(() => expect(rendered.getByText('Servicio solicitado')).toBeTruthy());
-    expect(rendered.getByText('Recibimos tu solicitud.')).toBeTruthy();
+    await waitFor(() => expect(JSON.parse(rendered.getByTestId('session-service-requests-probe').props.children)).toHaveLength(1));
+    expect(rendered.queryByText('Servicio solicitado')).toBeNull();
+  });
 
-    await fireEvent.press(rendered.getByText('Volver a servicios'));
-    await waitFor(() => expect(rendered.getByTestId('services-screen')).toBeTruthy());
-    expect(rendered.queryByTestId('services-selection')).toBeNull();
+  it('records only successful inline services with their approved presentation data', async () => {
+    const submitRequest = jest.fn<Promise<{ serviceFixtureKey: string }>, [{ serviceFixtureKey: string }]>(async ({ serviceFixtureKey }) => ({ serviceFixtureKey }));
+    const lateCheckout = await renderServices(new MockServicesService({ submitRequest }));
+    await selectLateCheckOut(lateCheckout);
+    await fireEvent.press(lateCheckout.getByTestId('services-submit-button'));
+    await waitFor(() => expect(lateCheckout.getByTestId('session-service-requests-probe')).toBeTruthy());
+    expect(JSON.parse(lateCheckout.getByTestId('session-service-requests-probe').props.children)).toEqual([
+      expect.objectContaining({ kind: 'LATE_CHECKOUT', origin: 'SERVICES', status: 'REQUESTED', title: 'Late check-out', summary: expect.stringContaining('Hasta 14:00'), details: { type: 'LATE_CHECKOUT', serviceDate: '2026-09-18', checkoutUntil: '14:00' } }),
+    ]);
+  });
+
+  it('allows only one Late check-out until the existing request is removed', async () => {
+    const submitRequest = jest.fn<Promise<{ serviceFixtureKey: string }>, [{ serviceFixtureKey: string }]>(async ({ serviceFixtureKey }) => ({ serviceFixtureKey }));
+    const rendered = await renderServices(new MockServicesService({ submitRequest }));
+
+    await selectLateCheckOut(rendered);
+    await fireEvent.press(rendered.getByTestId('services-submit-button'));
+    await waitFor(() => expect(JSON.parse(rendered.getByTestId('session-service-requests-probe').props.children)).toHaveLength(1));
+
+    await fireEvent.press(rendered.getByTestId('service-card-late-check-out'));
+    await waitFor(() => expect(rendered.getByTestId('services-late-checkout-already-requested')).toBeTruthy());
     expect(rendered.getByTestId('services-submit-button').props.accessibilityState.disabled).toBe(true);
+    expect(submitRequest).toHaveBeenCalledTimes(1);
+
+    await fireEvent.press(rendered.getByTestId('late-checkout-removal-control'));
+    await waitFor(() => expect(JSON.parse(rendered.getByTestId('session-service-requests-probe').props.children)).toHaveLength(0));
+    await waitFor(() => expect(rendered.getByTestId('services-submit-button').props.accessibilityState.disabled).toBe(false));
+
+    await fireEvent.press(rendered.getByTestId('services-submit-button'));
+    await waitFor(() => expect(JSON.parse(rendered.getByTestId('session-service-requests-probe').props.children)).toHaveLength(1));
+    expect(submitRequest).toHaveBeenCalledTimes(2);
   });
 
   it('shows generic submit error and retries the same selected fixture through a new mutation', async () => {
     const submitRequest = jest
       .fn<Promise<{ serviceFixtureKey: string }>, [{ serviceFixtureKey: string }]>()
       .mockRejectedValueOnce(new Error('mock failure'))
-      .mockResolvedValueOnce({ serviceFixtureKey: 'breakfast-in-room' });
+      .mockResolvedValueOnce({ serviceFixtureKey: 'late-check-out' });
     const rendered = await renderServices(new MockServicesService({ submitRequest }));
 
-    await selectBreakfast(rendered);
+    await selectLateCheckOut(rendered);
     await fireEvent.press(rendered.getByTestId('services-submit-button'));
     await waitFor(() => expect(rendered.getByTestId('services-submit-error')).toBeTruthy());
     expect(rendered.getByText('No pudimos enviar tu solicitud')).toBeTruthy();
@@ -179,19 +188,19 @@ describe('Services', () => {
     expect(rendered.queryByTestId('services-submit-button')).toBeNull();
 
     await fireEvent.press(rendered.getByText('Reintentar'));
-    await waitFor(() => expect(rendered.getByTestId('services-submit-success')).toBeTruthy());
+    await waitFor(() => expect(rendered.getByTestId('session-service-requests-probe')).toBeTruthy());
     expect(submitRequest).toHaveBeenCalledTimes(2);
-    expect(submitRequest).toHaveBeenLastCalledWith({ serviceFixtureKey: 'breakfast-in-room' });
+    expect(submitRequest).toHaveBeenLastCalledWith({ serviceFixtureKey: 'late-check-out' });
   });
 
   it('distinguishes NetworkError submit offline and retries without queuing work', async () => {
     const submitRequest = jest
       .fn<Promise<{ serviceFixtureKey: string }>, [{ serviceFixtureKey: string }]>()
       .mockRejectedValueOnce(new NetworkError())
-      .mockResolvedValueOnce({ serviceFixtureKey: 'breakfast-in-room' });
+      .mockResolvedValueOnce({ serviceFixtureKey: 'late-check-out' });
     const rendered = await renderServices(new MockServicesService({ submitRequest }));
 
-    await selectBreakfast(rendered);
+    await selectLateCheckOut(rendered);
     await fireEvent.press(rendered.getByTestId('services-submit-button'));
     await waitFor(() => expect(rendered.getByTestId('services-submit-offline')).toBeTruthy());
     expect(rendered.getByText('Sin conexión')).toBeTruthy();
@@ -200,7 +209,7 @@ describe('Services', () => {
     expect(rendered.queryByTestId('services-submit-button')).toBeNull();
 
     await fireEvent.press(rendered.getByText('Reintentar'));
-    await waitFor(() => expect(rendered.getByTestId('services-submit-success')).toBeTruthy());
+    await waitFor(() => expect(rendered.getByTestId('session-service-requests-probe')).toBeTruthy());
     expect(submitRequest).toHaveBeenCalledTimes(2);
   });
 
@@ -229,13 +238,15 @@ describe('Services', () => {
     expect(offline.getByText('Sin conexión')).toBeTruthy();
   });
 
-  it('centers only the Services success content while preserving the shared footbar composition', () => {
+  it('uses a local Services success overlay while preserving the shared footbar composition', () => {
     const fs = require('fs');
     const stylesSource = fs.readFileSync('src/modules/services/presentation/servicesStyles.ts', 'utf8');
     const screenSource = fs.readFileSync('src/modules/services/presentation/ServicesScreen.tsx', 'utf8');
 
-    expect(stylesSource).toMatch(/successContent:[\s\S]*flexGrow: 1,[\s\S]*justifyContent: 'center'/);
-    expect(screenSource).toContain('servicesStyles.successContent');
+    expect(stylesSource).toContain('overlayBackdrop');
+    expect(stylesSource).toContain('successOverlayCard');
+    expect(screenSource).toContain('successOverlayVisible');
+    expect(screenSource).not.toContain("router.push('/services/success')");
     expect(screenSource).toContain('<GuestNavigationShell />');
     expect(screenSource).toContain('servicesStyles.screen');
   });

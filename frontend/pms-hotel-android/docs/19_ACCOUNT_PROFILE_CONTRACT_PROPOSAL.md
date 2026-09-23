@@ -13,7 +13,11 @@
 - `1163:512 — MOB-V3 — Perfil / Offline`
 
 **Reviewer:** `WEB-2`  
-**DoR objetivo:** Sprint 0 completada + `Account/Profile frontend/mock contract approved`
+**DoR:** `PASS — Sprint 0, Account / Stay Hub y contrato frontend/mock aprobados`
+**Implementación:** `COMPLETADA`
+**QA automatizada:** `PASS — lint, typecheck, 231 tests, Expo Doctor 21/21, export Android y Metro /status`
+**QA manual:** `PASS — inspección contractual y comportamiento mock/session controlado`
+**WEB-2:** `PASS — revisión contractual de implementación`
 
 ---
 
@@ -501,21 +505,21 @@ No asumir persistencia real.
 
 ---
 
+## 13.1 Implementación contractual
+
+La implementación vive en `src/modules/account/profile/`: DTO, mapper puro, Domain, `AccountProfileService`, `MockAccountProfileService` y hooks TanStack Query/Mutation. El fixture aprobado permanece en `src/data/mocks/account/`. El mock conserva cambios autorizados solo en memoria durante la sesión; el éxito de Mutation sincroniza la query con `setQueryData`, sin actualización optimista.
+
+No se crea pantalla, formulario, ruta ni entry point en `IMP-AND-0201`.
+
 ## 14. Navegación
 
 La UI final pertenece al dominio de `Cuenta`.
 
-Rutas concretas se definirán al implementar `IMP-AND-0202/0303`, pero deben consumir Guest Navigation V3.
+La ruta y el entry point canónicos están definidos por `31_ACCOUNT_PROFILE_CHANGE_CONTROL.md` y `32_AUTH_RESERVATION_CONTEXT_CHANGE_CONTROL.md`: `IMP-AND-0202` implementará `/account/profile` desde la primera acción Perfil del drawer, e `IMP-AND-0303` queda absorbida. La UI debe consumir Guest Navigation V3.
 
-Cuando Account/Profile esté disponible:
+Para `/account` y sus hijas, incluida la ruta canónica `/account/profile`, la shell vigente mantiene **Inicio** como tab activa. No crear una footbar privada ni una tab Cuenta adicional; ver `04_NAVIGATION.md` y `31_ACCOUNT_PROFILE_CHANGE_CONTROL.md`.
 
-```text
-Cuenta = selected
-```
-
-No crear una footbar privada.
-
-`IMP-AND-0201` por sí misma crea contratos, no habilita todavía la tab Cuenta.
+`IMP-AND-0201` por sí misma creó contratos; no creó ruta, entry point ni UI de Profile.
 
 ---
 
@@ -655,4 +659,4 @@ IMP-AND-0201
 PENDIENTE → READY
 ```
 
-La implementación de UI final continuará posteriormente en `IMP-AND-0202` / `IMP-AND-0303`.
+La implementación de UI final canónica corresponde a `IMP-AND-0202` en `/account/profile`. `IMP-AND-0303` queda absorbida y no implementa una segunda UI. Ver `31_ACCOUNT_PROFILE_CHANGE_CONTROL.md`.

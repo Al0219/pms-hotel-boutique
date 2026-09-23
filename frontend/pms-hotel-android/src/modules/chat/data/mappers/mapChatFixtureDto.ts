@@ -5,12 +5,14 @@ import {
   type ChatConversation,
   type ChatMessage,
   type ChatMessageAuthor,
+  type ChatServiceAssignment,
 } from '@/modules/chat/domain/models/ChatConversation';
 import {
   type ChatConversationFixtureDto,
   type ChatFixtureContextDto,
   type ChatMessageAuthorFixture,
   type ChatMessageFixtureDto,
+  type ChatServiceAssignmentFixtureDto,
   type SendChatMessageFixtureResult,
 } from '@/modules/chat/data/dtos/ChatFixtureDto';
 
@@ -22,6 +24,16 @@ function requireNonBlankString(value: string, field: string): string {
   }
 
   return requiredValue;
+}
+
+function mapServiceAssignment(dto: ChatServiceAssignmentFixtureDto | undefined, field: string): ChatServiceAssignment | undefined {
+  if (!dto) return undefined;
+
+  return {
+    assignmentKey: requireNonBlankString(dto.assignmentKey, `${field}.assignmentKey`),
+    summary: dto.summary === undefined ? undefined : requireNonBlankString(dto.summary, `${field}.summary`),
+    title: requireNonBlankString(dto.title, `${field}.title`),
+  };
 }
 
 function mapAuthor(author: ChatMessageAuthorFixture, field: string): ChatMessageAuthor {
@@ -43,10 +55,13 @@ function mapContext(dto: ChatFixtureContextDto): ChatContext {
 export function mapChatMessageFixtureDto(dto: ChatMessageFixtureDto, index = 0): ChatMessage {
   const message = requireDtoField(dto, `chat.messages[${index}]`);
 
+  const field = `chat.messages[${index}]`;
+
   return {
     key: requireNonBlankString(message.fixtureKey, `chat.messages[${index}].fixtureKey`),
     author: mapAuthor(requireDtoField(message.author, `chat.messages[${index}].author`), `chat.messages[${index}].author`),
     text: requireNonBlankString(message.text, `chat.messages[${index}].text`),
+    ...(message.serviceAssignment ? { serviceAssignment: mapServiceAssignment(message.serviceAssignment, field) } : {}),
   };
 }
 

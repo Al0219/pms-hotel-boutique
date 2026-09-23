@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { router } from 'expo-router';
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -9,6 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { NetworkError } from '@/data/remote/http/HttpError';
 import { type ChatService } from '@/modules/chat/data/services/ChatService';
@@ -16,7 +18,8 @@ import { type ChatMessage } from '@/modules/chat/domain/models/ChatConversation'
 import { useChatConversation } from '@/modules/chat/presentation/hooks/useChatConversation';
 import { useSendChatMessage } from '@/modules/chat/presentation/hooks/useSendChatMessage';
 import { chatStyles } from '@/modules/chat/presentation/chatStyles';
-import { GuestNavigationShell } from '@/modules/navigation';
+import { GuestChildHeader } from '@/modules/navigation';
+import { useSessionServiceRequests } from '@/modules/service-requests';
 import { deriveRemoteState } from '@/state/remoteState';
 
 export interface ChatScreenProps {
@@ -62,7 +65,7 @@ function ChatBubble({ message }: { message: ChatMessage }) {
 function ChatLoading() {
   return (
     <View style={chatStyles.stateContent} testID="chat-conversation-loading">
-      <Text style={chatStyles.title}>Cargando conversación</Text>
+      <Text style={chatStyles.stateTitle}>Cargando conversación</Text>
       <View style={chatStyles.skeleton} />
       <View style={chatStyles.skeleton} />
       <View style={chatStyles.skeleton} />
@@ -75,11 +78,29 @@ export function ChatScreen({ service }: ChatScreenProps) {
   const conversationQuery = useChatConversation(service);
   const conversationState = deriveRemoteState(conversationQuery, () => false);
   const submission = useSendChatMessage(service);
+  const { addRequest } = useSessionServiceRequests();
   const [draftText, setDraftText] = useState('');
-  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const submissionInFlight = useRef(false);
   const messageKeyAwaitingScroll = useRef<string | null>(null);
   const messagesScrollViewRef = useRef<ScrollView>(null);
+  const conversationMessages = conversationState.kind === 'success' ? conversationState.data.messages : null;
+
+  useEffect(() => {
+    if (!conversationMessages) return;
+
+    conversationMessages.forEach((message) => {
+      if (message.author !== 'reception' || !message.serviceAssignment) return;
+
+      addRequest({
+        dedupeKey: message.serviceAssignment.assignmentKey,
+        kind: 'HOTEL_ASSIGNED',
+        origin: 'CHAT',
+        status: 'ASSIGNED',
+        summary: message.serviceAssignment.summary,
+        title: message.serviceAssignment.title,
+      });
+    });
+  }, [addRequest, conversationMessages]);
 
   const scrollToLastMessage = useCallback(() => {
     requestAnimationFrame(() => {
@@ -89,14 +110,10 @@ export function ChatScreen({ service }: ChatScreenProps) {
 
   useEffect(() => {
     const keyboardDidShow = Keyboard.addListener('keyboardDidShow', () => {
-      setKeyboardVisible(true);
       scrollToLastMessage();
     });
-    const keyboardDidHide = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
-
     return () => {
       keyboardDidShow.remove();
-      keyboardDidHide.remove();
     };
   }, [scrollToLastMessage]);
 
@@ -135,8 +152,8 @@ export function ChatScreen({ service }: ChatScreenProps) {
   if (conversationState.kind === 'loading') {
     return (
       <View style={chatStyles.screen}>
+        <GuestChildHeader onBack={() => router.back()} title="Chat con el hotel" />
         <ChatLoading />
-        <GuestNavigationShell />
       </View>
     );
   }
@@ -144,6 +161,7 @@ export function ChatScreen({ service }: ChatScreenProps) {
   if (conversationState.kind === 'offline') {
     return (
       <View style={chatStyles.screen}>
+        <GuestChildHeader onBack={() => router.back()} title="Chat con el hotel" />
         <View style={chatStyles.stateContent}>
           <ChatStateCard
             body="Conéctate a internet para ver la conversación."
@@ -153,7 +171,6 @@ export function ChatScreen({ service }: ChatScreenProps) {
             title="Sin conexión"
           />
         </View>
-        <GuestNavigationShell />
       </View>
     );
   }
@@ -161,6 +178,7 @@ export function ChatScreen({ service }: ChatScreenProps) {
   if (conversationState.kind === 'error') {
     return (
       <View style={chatStyles.screen}>
+        <GuestChildHeader onBack={() => router.back()} title="Chat con el hotel" />
         <View style={chatStyles.stateContent}>
           <ChatStateCard
             body="Intenta nuevamente."
@@ -169,7 +187,6 @@ export function ChatScreen({ service }: ChatScreenProps) {
             title="No pudimos cargar la conversación"
           />
         </View>
-        <GuestNavigationShell />
       </View>
     );
   }
@@ -187,9 +204,9 @@ export function ChatScreen({ service }: ChatScreenProps) {
       style={chatStyles.screen}
       testID="chat-screen"
     >
+      <GuestChildHeader onBack={() => router.back()} title="Chat con el hotel" />
       <View style={chatStyles.conversationBody}>
-        <View style={chatStyles.header}>
-          <Text style={chatStyles.title}>Chat con el hotel</Text>
+        <View style={chatStyles.contextHeader}>
           <Text style={chatStyles.context}>
             Recepción · {conversationState.data.context.guestDisplayName} · {conversationState.data.context.stayReferenceText}
           </Text>
@@ -204,6 +221,7 @@ export function ChatScreen({ service }: ChatScreenProps) {
           {conversationState.data.messages.map((message) => <ChatBubble key={message.key} message={message} />)}
         </ScrollView>
 
+        <SafeAreaView edges={['bottom']} style={chatStyles.composerSafeArea}>
         <View style={chatStyles.composer}>
           {isSubmitError ? (
             <ChatStateCard
@@ -240,6 +258,7 @@ export function ChatScreen({ service }: ChatScreenProps) {
             <TextInput
               accessibilityLabel="Mensaje para Recepción"
               editable={!submission.isPending}
+              maxLength={1000}
               onChangeText={setDraftText}
               placeholder="Escribe un mensaje…"
               style={chatStyles.input}
@@ -248,8 +267,8 @@ export function ChatScreen({ service }: ChatScreenProps) {
             />
           </View>
         </View>
+        </SafeAreaView>
       </View>
-      {!isKeyboardVisible ? <GuestNavigationShell /> : null}
     </KeyboardAvoidingView>
   );
 }

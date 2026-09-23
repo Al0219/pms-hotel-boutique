@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { renderRouter } from 'expo-router/testing-library';
-import { Keyboard } from 'react-native';
+import { router } from 'expo-router';
+import { Keyboard, Text } from 'react-native';
 
 import { NetworkError } from '@/data/remote/http/HttpError';
 import {
@@ -10,6 +11,8 @@ import {
   MockChatService,
 } from '@/modules/chat';
 import { chatConversationFixture } from '@/data/mocks/chat/chatConversationFixture';
+import { GuestChildHeader } from '@/modules/navigation';
+import { SessionServiceRequestsProvider, useSessionServiceRequests } from '@/modules/service-requests';
 
 declare const require: (moduleName: string) => { readFileSync(path: string, encoding: string): string };
 
@@ -28,13 +31,16 @@ function createQueryClient() {
   });
 }
 
+function RequestProbe() {
+  const { requests } = useSessionServiceRequests();
+  return <Text testID="session-service-requests-probe">{JSON.stringify(requests)}</Text>;
+}
+
 async function renderChat(service: MockChatService) {
   const queryClient = createQueryClient();
 
   return render(
-    <QueryClientProvider client={queryClient}>
-      <ChatScreen service={service} />
-    </QueryClientProvider>,
+    <QueryClientProvider client={queryClient}><SessionServiceRequestsProvider><RequestProbe /><ChatScreen service={service} /></SessionServiceRequestsProvider></QueryClientProvider>,
   );
 }
 
@@ -55,9 +61,35 @@ describe('Chat con Recepción', () => {
         { key: 'chat-message-guest-01', author: 'guest', text: 'Necesito un taxi mañana a las 6:00.' },
         { key: 'chat-message-reception-02', author: 'reception', text: 'Claro. ¿Destino Aeropuerto La Aurora?' },
         { key: 'chat-message-guest-02', author: 'guest', text: 'Sí, por favor.' },
-        { key: 'chat-message-reception-03', author: 'reception', text: 'Listo. Solicitud #4832 creada · salida 06:00.' },
+        {
+          key: 'chat-message-reception-03',
+          author: 'reception',
+          text: 'Listo. Solicitud #4832 creada · salida 06:00.',
+          serviceAssignment: {
+            assignmentKey: 'chat-assignment-transfer-01',
+            title: 'Traslado al aeropuerto',
+            summary: 'Asignado por Recepción',
+          },
+        },
       ],
     });
+  });
+
+  it('registers only structured hotel assignments once and leaves normal messages out of session requests', async () => {
+    const assigned = await renderChat(new MockChatService());
+    await waitFor(() => expect(JSON.parse(assigned.getByTestId('session-service-requests-probe').props.children)).toHaveLength(1));
+    expect(JSON.parse(assigned.getByTestId('session-service-requests-probe').props.children)).toEqual([
+      expect.objectContaining({ kind: 'HOTEL_ASSIGNED', origin: 'CHAT', status: 'ASSIGNED', title: 'Traslado al aeropuerto', summary: 'Asignado por Recepción' }),
+    ]);
+
+    const normalOnly = await renderChat(new MockChatService({
+      getConversation: async () => ({
+        ...chatConversationFixture,
+        messages: chatConversationFixture.messages.map(({ serviceAssignment: _serviceAssignment, ...message }) => message),
+      }),
+    }));
+    await waitForChat(normalOnly);
+    expect(normalOnly.getByTestId('session-service-requests-probe').props.children).toBe('[]');
   });
 
   it('keeps the presentation layer independent from fixture DTOs, datasets, and direct network calls', () => {
@@ -69,6 +101,9 @@ describe('Chat con Recepción', () => {
     expect(screenSource).toContain('useSendChatMessage');
     expect(screenSource).toContain("Keyboard.addListener('keyboardDidShow'");
     expect(screenSource).toContain('scrollToEnd');
+    expect(screenSource).toContain('GuestChildHeader');
+    expect(screenSource).not.toContain('GuestNavigationShell');
+    expect(screenSource).not.toContain('GuestRootHeader');
   });
 
   it('requests a deferred scroll to the last message when Android keyboard opens', async () => {
@@ -93,12 +128,10 @@ describe('Chat con Recepción', () => {
     expect(scrollFrameSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('renders approved context, initial thread, accessible left send arrow, and Chat as active', async () => {
+  it('renders approved context, initial thread, accessible left send arrow, and no selected tab', async () => {
     const queryClient = createQueryClient();
     const ChatRoute = () => (
-      <QueryClientProvider client={queryClient}>
-        <ChatScreen service={new MockChatService()} />
-      </QueryClientProvider>
+      <QueryClientProvider client={queryClient}><SessionServiceRequestsProvider><ChatScreen service={new MockChatService()} /></SessionServiceRequestsProvider></QueryClientProvider>
     );
     const rendered = await renderRouter({ chat: ChatRoute }, { initialUrl: '/chat' });
 
@@ -116,10 +149,32 @@ describe('Chat con Recepción', () => {
     const composerRow = rendered.getByTestId('chat-composer-row');
     expect(composerRow.props.children[0].props.testID).toBe('chat-send-button');
     expect(composerRow.props.children[1].props.testID).toBe('chat-composer-input');
-    expect(rendered.getByLabelText('Chat').props.accessibilityState).toEqual({ disabled: false, selected: true });
-    expect(rendered.getByLabelText('Servicios').props.accessibilityState).toEqual({ disabled: false, selected: false });
-    expect(rendered.getByLabelText('Valet').props.accessibilityState.disabled).toBe(false);
-    expect(rendered.getByLabelText('Cuenta').props.accessibilityState.disabled).toBe(true);
+    expect(rendered.getByTestId('chat-composer-input').props.maxLength).toBe(1000);
+    expect(rendered.getByTestId('guest-child-header')).toBeTruthy();
+    expect(rendered.getByLabelText('Volver')).toBeTruthy();
+    expect(rendered.queryByLabelText('Inicio')).toBeNull();
+    expect(rendered.queryByLabelText('Servicios')).toBeNull();
+    expect(rendered.queryByLabelText('Valet')).toBeNull();
+    expect(rendered.queryByLabelText('Hotel')).toBeNull();
+    expect(rendered.queryByLabelText('Abrir menú')).toBeNull();
+    expect(rendered.queryByLabelText('Abrir chat')).toBeNull();
+    expect(rendered.queryByTestId('guest-navigation-chat-fab')).toBeNull();
+    expect(rendered.queryByLabelText('Navegación principal de huésped')).toBeNull();
+  });
+
+  it('uses the shared child header and delegates its Back action to the navigation stack', async () => {
+    const onBack = jest.fn();
+    const header = await render(<GuestChildHeader onBack={onBack} title="Encabezado secundario" />);
+    await fireEvent.press(header.getByLabelText('Volver'));
+    expect(onBack).toHaveBeenCalledTimes(1);
+    expect(header.getByText('Encabezado secundario')).toBeTruthy();
+    expect(header.queryByLabelText('Abrir menú')).toBeNull();
+
+    const backSpy = jest.spyOn(router, 'back').mockImplementation(() => undefined);
+    const rendered = await renderChat(new MockChatService());
+    await waitForChat(rendered);
+    await fireEvent.press(rendered.getByLabelText('Volver'));
+    expect(backSpy).toHaveBeenCalledTimes(1);
   });
 
   it('does not send empty or whitespace drafts and trims a valid message before mutation', async () => {
