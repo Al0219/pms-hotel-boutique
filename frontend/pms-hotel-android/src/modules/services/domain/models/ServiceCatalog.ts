@@ -9,6 +9,8 @@ export interface ServiceCatalogItem {
   label: string;
   detailText: string;
   priceText: string;
+  priceAmount?: number;
+  lateCheckoutUntil?: string;
 }
 
 export interface ServicesCatalog {

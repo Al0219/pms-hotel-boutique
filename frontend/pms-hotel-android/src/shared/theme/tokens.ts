@@ -11,6 +11,7 @@ export const tokens = {
     border: '#E2E1DC',
     pendingSurface: '#F7ECD8',
     pendingText: '#A8732A',
+    destructive: '#B3261E',
     white: '#FFFFFF',
     black: '#000000',
   },

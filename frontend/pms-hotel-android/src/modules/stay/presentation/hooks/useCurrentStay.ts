@@ -1,17 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { mapReservationStayDto } from '@/modules/stay/data/mappers/mapReservationStayDto';
-import { currentStayFixture } from '@/modules/stay/data/mocks/currentStayFixture';
 import { MockStayService } from '@/modules/stay/data/mocks/MockStayService';
 import { type StayService } from '@/modules/stay/data/services/StayService';
 import { type ReservationStay } from '@/modules/stay/domain/models/ReservationStay';
 
 export const currentStayQueryKey = ['stay', 'current'] as const;
 
-const defaultStayService: StayService = new MockStayService({
-  kind: 'success',
-  dto: currentStayFixture,
-});
+const defaultStayService: StayService = new MockStayService();
 
 async function loadCurrentStay(service: StayService): Promise<ReservationStay> {
   return mapReservationStayDto(await service.getCurrentStay());

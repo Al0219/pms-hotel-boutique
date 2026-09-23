@@ -1,4 +1,5 @@
 import { type ReservationStayDto } from '@/modules/stay/data/dtos/ReservationStayDto';
+import { currentStayFixture } from '@/modules/stay/data/mocks/currentStayFixture';
 import { type StayService } from '@/modules/stay/data/services/StayService';
 
 export type MockStayServiceScenario =
@@ -7,7 +8,12 @@ export type MockStayServiceScenario =
 
 /** Technical remote mock. It deliberately does not declare an HTTP endpoint. */
 export class MockStayService implements StayService {
-  public constructor(private readonly scenario: MockStayServiceScenario) {}
+  public constructor(
+    private readonly scenario: MockStayServiceScenario = {
+      kind: 'success',
+      dto: currentStayFixture,
+    },
+  ) {}
 
   public async getCurrentStay(): Promise<ReservationStayDto> {
     if (this.scenario.kind === 'error') {

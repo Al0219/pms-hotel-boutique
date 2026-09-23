@@ -1,3 +1,5 @@
+export * from './button';
+export * from './input';
 export { DataTable } from "./data-table";
 export type { DataTableColumn, DataTableProps } from "./data-table";
 export { Modal } from "./modal";
