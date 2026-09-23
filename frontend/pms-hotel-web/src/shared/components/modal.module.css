@@ -1,0 +1,32 @@
+.overlay {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-surface-dark) 60%, transparent);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: var(--space-6);
+  position: fixed;
+  z-index: 20;
+}
+
+.dialog {
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  max-width: 480px;
+  padding: var(--space-6);
+  width: 100%;
+}
+
+.header h2 { font-size: var(--font-size-h3); font-weight: var(--font-weight-semibold); line-height: var(--line-height-h3); margin: 0; }
+
+.body { border-top: 1px solid var(--color-border-default); color: var(--color-text-secondary); font-size: var(--font-size-label-md); line-height: var(--line-height-label-md); margin-top: var(--space-5); padding-top: var(--space-5); }
+.body strong { color: var(--color-text-primary); }
+
+.actions { display: flex; flex-wrap: wrap; gap: var(--space-3); justify-content: flex-end; margin-top: var(--space-6); }
+
+@media (max-width: 720px) {
+  .actions { justify-content: stretch; }
+  .actions > * { flex: 1; }
+}
