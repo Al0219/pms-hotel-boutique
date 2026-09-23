@@ -1,4 +1,5 @@
 import { DomainMappingError } from "@/lib/errors/domain-mapping-error";
+import { optionalText, parseAmount, parseDay, requiredNumber, requiredText } from "@/lib/mapper";
 
 import type {
   WaitlistAvailabilityDto,
@@ -7,58 +8,11 @@ import type {
 } from "../dtos/waitlist.dto";
 import type { WaitlistAvailability, WaitlistConversionPreview, WaitlistConversionResult } from "../model/waitlist";
 
-function requiredText(value: string, errorCode: string): string {
-  const normalizedValue = value?.trim();
-
-  if (!normalizedValue) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return normalizedValue;
-}
-
-function optionalText(value: string | null): string | null {
-  const normalizedValue = value?.trim();
-  return normalizedValue || null;
-}
-
-function requiredNumber(value: number, errorCode: string): number {
-  if (!Number.isFinite(value) || value < 0) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return value;
-}
-
-function parseAmount(value: string, errorCode: string): number {
-  const amount = Number(value);
-
-  if (!Number.isFinite(amount) || amount < 0) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return amount;
-}
-
-function parseDate(value: string, errorCode: string): Date {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  const date = new Date(`${value}T00:00:00`);
-
-  if (Number.isNaN(date.getTime())) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return date;
-}
-
 function mapAvailability(dto: WaitlistAvailabilityDto): WaitlistAvailability {
   return {
     roomType: requiredText(dto.room_type, "INVALID_WAITLIST_AVAILABILITY_ROOM_TYPE"),
-    availableFrom: parseDate(dto.available_from, "INVALID_WAITLIST_AVAILABILITY_FROM"),
-    availableUntil: parseDate(dto.available_until, "INVALID_WAITLIST_AVAILABILITY_UNTIL"),
+    availableFrom: parseDay(dto.available_from, "INVALID_WAITLIST_AVAILABILITY_FROM"),
+    availableUntil: parseDay(dto.available_until, "INVALID_WAITLIST_AVAILABILITY_UNTIL"),
     ratePlan: requiredText(dto.rate_plan, "INVALID_WAITLIST_AVAILABILITY_RATE_PLAN"),
     ratePerNight: parseAmount(dto.rate_per_night, "INVALID_WAITLIST_AVAILABILITY_RATE"),
     totalEstimated: parseAmount(dto.total_estimated, "INVALID_WAITLIST_AVAILABILITY_TOTAL"),
@@ -72,8 +26,8 @@ export function mapWaitlistConversionPreview(dto: WaitlistConversionPreviewDto):
     guestName: requiredText(dto.guest_name, "INVALID_WAITLIST_GUEST_NAME"),
     sourceLabel: requiredText(dto.source_label, "INVALID_WAITLIST_SOURCE_LABEL"),
     roomTypeLabel: requiredText(dto.room_type_label, "INVALID_WAITLIST_ROOM_TYPE"),
-    checkIn: parseDate(dto.check_in, "INVALID_WAITLIST_CHECK_IN"),
-    checkOut: parseDate(dto.check_out, "INVALID_WAITLIST_CHECK_OUT"),
+    checkIn: parseDay(dto.check_in, "INVALID_WAITLIST_CHECK_IN"),
+    checkOut: parseDay(dto.check_out, "INVALID_WAITLIST_CHECK_OUT"),
     nights: requiredNumber(dto.nights, "INVALID_WAITLIST_NIGHTS"),
     adults: requiredNumber(dto.adults, "INVALID_WAITLIST_ADULTS"),
     priority: requiredNumber(dto.priority, "INVALID_WAITLIST_PRIORITY"),

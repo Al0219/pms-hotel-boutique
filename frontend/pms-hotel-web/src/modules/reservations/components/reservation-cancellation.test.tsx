@@ -52,7 +52,7 @@ function renderPanel(apply = applyResult()) {
   const onClose = vi.fn();
   useApplyCancellationMock.mockReturnValue(apply);
 
-  const view = render(<ReservationCancellation propertyId="GT-HB-01" endpoint="http://pms.test/contract/reservations" reservationId="HB-2026-08421" onClose={onClose} />);
+  const view = render(<ReservationCancellation propertyId="GT-HB-01" endpoint="http://pms.test/contract/reservations" reservationId="HB-2026-08421" currency="GTQ" onClose={onClose} />);
 
   return { onClose };
 }

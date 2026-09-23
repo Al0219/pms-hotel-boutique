@@ -1,4 +1,5 @@
 import { DomainMappingError } from "@/lib/errors/domain-mapping-error";
+import { optionalText, parseAmount, parseDay, requiredNumber, requiredText } from "@/lib/mapper";
 
 import type {
   ReservationAlertItemDto,
@@ -13,53 +14,6 @@ import type {
   ReservationFinancialSummary,
   ReservationListItem,
 } from "../model/reservation-summary";
-
-function requiredText(value: string, errorCode: string): string {
-  const normalizedValue = value?.trim();
-
-  if (!normalizedValue) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return normalizedValue;
-}
-
-function optionalText(value: string | null): string | null {
-  const normalizedValue = value?.trim();
-  return normalizedValue || null;
-}
-
-function requiredNumber(value: number, errorCode: string): number {
-  if (!Number.isFinite(value) || value < 0) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return value;
-}
-
-function parseAmount(value: string, errorCode: string): number {
-  const amount = Number(value);
-
-  if (!Number.isFinite(amount) || amount < 0) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return amount;
-}
-
-function parseDate(value: string, errorCode: string): Date {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  const date = new Date(`${value}T00:00:00`);
-
-  if (Number.isNaN(date.getTime())) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return date;
-}
 
 function mapFinance(dto: ReservationListItemDto): ReservationFinancialSummary {
   return {
@@ -77,8 +31,8 @@ export function mapReservationListItem(dto: ReservationListItemDto): Reservation
     sourceLabel: requiredText(dto.source_label, "INVALID_RESERVATION_SOURCE_LABEL"),
     sourceReference: optionalText(dto.source_reference),
     roomLabel: optionalText(dto.room_label),
-    stayStart: parseDate(dto.stay_start, "INVALID_RESERVATION_STAY_START"),
-    stayEnd: parseDate(dto.stay_end, "INVALID_RESERVATION_STAY_END"),
+    stayStart: parseDay(dto.stay_start, "INVALID_RESERVATION_STAY_START"),
+    stayEnd: parseDay(dto.stay_end, "INVALID_RESERVATION_STAY_END"),
     nights: requiredNumber(dto.nights, "INVALID_RESERVATION_NIGHTS"),
     adults: requiredNumber(dto.adults, "INVALID_RESERVATION_ADULTS"),
     roomCount: dto.room_count === null ? null : requiredNumber(dto.room_count, "INVALID_RESERVATION_ROOM_COUNT"),

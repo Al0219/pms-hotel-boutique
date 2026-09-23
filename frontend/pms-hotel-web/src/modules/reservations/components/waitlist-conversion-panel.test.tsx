@@ -65,7 +65,7 @@ function renderPanel(conversion = conversionResult()) {
   const onClose = vi.fn();
   useConfirmWaitlistConversionMock.mockReturnValue(conversion);
 
-  const view = render(<WaitlistConversionPanel propertyId="GT-HB-01" endpoint="http://pms.test/contract/reservations" waitlistId="WAIT-0007" onClose={onClose} />);
+  const view = render(<WaitlistConversionPanel propertyId="GT-HB-01" endpoint="http://pms.test/contract/reservations" waitlistId="WAIT-0007" currency="GTQ" onClose={onClose} />);
 
   return { onClose };
 }

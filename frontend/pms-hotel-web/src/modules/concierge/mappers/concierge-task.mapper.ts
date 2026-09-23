@@ -1,22 +1,8 @@
 import { DomainMappingError } from "@/lib/errors/domain-mapping-error";
+import { optionalText, requiredText } from "@/lib/mapper";
 
 import type { ConciergeTaskDto } from "../dtos/concierge-task.dto";
 import { isConciergeTaskStatus, type ConciergeTask } from "../model/concierge-task";
-
-function requiredText(value: string, errorCode: string): string {
-  const normalizedValue = value.trim();
-
-  if (!normalizedValue) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return normalizedValue;
-}
-
-function optionalText(value: string | null): string | null {
-  const normalizedValue = value?.trim();
-  return normalizedValue || null;
-}
 
 export function mapConciergeTask(dto: ConciergeTaskDto): ConciergeTask {
   const status = dto.status.trim();

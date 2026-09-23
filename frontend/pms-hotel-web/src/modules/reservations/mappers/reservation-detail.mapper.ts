@@ -1,4 +1,5 @@
 import { DomainMappingError } from "@/lib/errors/domain-mapping-error";
+import { optionalText, parseAmount, parseDay, requiredNumber, requiredText } from "@/lib/mapper";
 
 import type {
   ReservationDetailDto,
@@ -8,61 +9,14 @@ import type {
 } from "../dtos/reservation-detail.dto";
 import type { ReservationDetailFinancialSummary, ReservationDetailData, ReservationFinanceLine, ReservationGuestSummary, ReservationStayDetail } from "../model/reservation-detail";
 
-function requiredText(value: string, errorCode: string): string {
-  const normalizedValue = value?.trim();
-
-  if (!normalizedValue) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return normalizedValue;
-}
-
-function optionalText(value: string | null): string | null {
-  const normalizedValue = value?.trim();
-  return normalizedValue || null;
-}
-
-function requiredNumber(value: number, errorCode: string): number {
-  if (!Number.isFinite(value) || value < 0) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return value;
-}
-
-function parseAmount(value: string, errorCode: string): number {
-  const amount = Number(value);
-
-  if (!Number.isFinite(amount) || amount < 0) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return amount;
-}
-
-function parseDate(value: string, errorCode: string): Date {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  const date = new Date(`${value}T00:00:00`);
-
-  if (Number.isNaN(date.getTime())) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return date;
-}
-
 function mapStay(dto: ReservationStayDetailDto): ReservationStayDetail {
   return {
     id: requiredText(dto.stay_id, "INVALID_RESERVATION_STAY_ID"),
     roomId: requiredText(dto.room_id, "INVALID_RESERVATION_STAY_ROOM_ID"),
     roomLabel: requiredText(dto.room_label, "INVALID_RESERVATION_STAY_ROOM_LABEL"),
     roomType: requiredText(dto.room_type, "INVALID_RESERVATION_STAY_ROOM_TYPE"),
-    checkIn: parseDate(dto.check_in, "INVALID_RESERVATION_STAY_CHECK_IN"),
-    checkOut: parseDate(dto.check_out, "INVALID_RESERVATION_STAY_CHECK_OUT"),
+    checkIn: parseDay(dto.check_in, "INVALID_RESERVATION_STAY_CHECK_IN"),
+    checkOut: parseDay(dto.check_out, "INVALID_RESERVATION_STAY_CHECK_OUT"),
     nights: requiredNumber(dto.nights, "INVALID_RESERVATION_STAY_NIGHTS"),
     travelState: requiredText(dto.travel_state, "INVALID_RESERVATION_STAY_TRAVEL_STATE") as ReservationStayDetail["travelState"],
   };
@@ -103,7 +57,7 @@ export function mapReservationDetail(dto: ReservationDetailDto): ReservationDeta
     id: requiredText(dto.reservation_id, "INVALID_RESERVATION_ID"),
     propertyId: requiredText(dto.property_id, "INVALID_RESERVATION_PROPERTY_ID"),
     status: requiredText(dto.status, "INVALID_RESERVATION_STATUS") as ReservationDetailData["status"],
-    createdAt: parseDate(dto.created_at, "INVALID_RESERVATION_CREATED_AT"),
+    createdAt: parseDay(dto.created_at, "INVALID_RESERVATION_CREATED_AT"),
     source: {
       label: requiredText(dto.source.label, "INVALID_RESERVATION_SOURCE_LABEL"),
       reference: optionalText(dto.source.reference),

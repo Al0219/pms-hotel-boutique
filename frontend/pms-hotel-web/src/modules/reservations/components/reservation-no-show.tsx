@@ -15,6 +15,7 @@ interface ReservationNoShowProps {
   propertyId: string;
   endpoint: string;
   reservationId: string;
+  currency: string;
   onClose: () => void;
 }
 
@@ -51,12 +52,11 @@ function ChargeBlock({ preview, currency }: Readonly<{ preview: NoShowPreview; c
   );
 }
 
-export function ReservationNoShow({ propertyId, endpoint, reservationId, onClose }: Readonly<ReservationNoShowProps>) {
+export function ReservationNoShow({ propertyId, endpoint, reservationId, currency, onClose }: Readonly<ReservationNoShowProps>) {
   const [confirming, setConfirming] = useState(false);
   const preview = useNoShowPreview(propertyId, endpoint, reservationId, true);
   const apply = useApplyNoShow(propertyId, endpoint, reservationId);
 
-  const currency = "GTQ";
   const showDialog = confirming && !apply.isError;
 
   return (

@@ -1,17 +1,8 @@
 import { DomainMappingError } from "@/lib/errors/domain-mapping-error";
+import { requiredText } from "@/lib/mapper";
 
 import type { RoomCleaningDto } from "../dtos/room-cleaning.dto";
 import { isRoomCleaningStatus, type RoomCleaning } from "../model/room-cleaning";
-
-function requiredText(value: string, errorCode: string): string {
-  const normalizedValue = value.trim();
-
-  if (!normalizedValue) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return normalizedValue;
-}
 
 export function mapRoomCleaning(dto: RoomCleaningDto): RoomCleaning {
   const status = dto.cleaning_status.trim();

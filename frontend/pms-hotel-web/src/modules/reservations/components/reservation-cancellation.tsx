@@ -15,6 +15,7 @@ interface ReservationCancellationProps {
   propertyId: string;
   endpoint: string;
   reservationId: string;
+  currency: string;
   onClose: () => void;
 }
 
@@ -55,13 +56,12 @@ function FinancialBlock({ preview, currency }: Readonly<{ preview: CancellationP
   );
 }
 
-export function ReservationCancellation({ propertyId, endpoint, reservationId, onClose }: Readonly<ReservationCancellationProps>) {
+export function ReservationCancellation({ propertyId, endpoint, reservationId, currency, onClose }: Readonly<ReservationCancellationProps>) {
   const [confirming, setConfirming] = useState(false);
   const [reason, setReason] = useState("");
   const preview = useCancellationPreview(propertyId, endpoint, reservationId, true);
   const apply = useApplyCancellation(propertyId, endpoint, reservationId);
 
-  const currency = "GTQ";
   const showDialog = confirming && !apply.isError;
 
   return (

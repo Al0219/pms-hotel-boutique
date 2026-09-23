@@ -1,22 +1,7 @@
-import { DomainMappingError } from "@/lib/errors/domain-mapping-error";
+import { optionalText, requiredText } from "@/lib/mapper";
 
 import type { AgencyDto } from "../dtos/agency.dto";
 import type { Agency } from "../model/agency";
-
-function requiredText(value: string, errorCode: string): string {
-  const normalizedValue = value.trim();
-
-  if (!normalizedValue) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return normalizedValue;
-}
-
-function optionalText(value: string | null): string | null {
-  const normalizedValue = value?.trim();
-  return normalizedValue || null;
-}
 
 export function mapAgency(dto: AgencyDto): Agency {
   return {

@@ -211,6 +211,7 @@ export function ReservationDetail({ propertyId, endpoint, reservationId }: Reado
           propertyId={propertyId}
           endpoint={endpoint}
           reservationId={reservationId}
+          currency={detail.currency}
           onClose={() => setCancelling(false)}
         />
       ) : null}
@@ -220,6 +221,7 @@ export function ReservationDetail({ propertyId, endpoint, reservationId }: Reado
           propertyId={propertyId}
           endpoint={endpoint}
           reservationId={reservationId}
+          currency={detail.currency}
           onClose={() => setMarkingNoShow(false)}
         />
       ) : null}

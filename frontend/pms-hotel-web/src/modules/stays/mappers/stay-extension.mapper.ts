@@ -1,73 +1,11 @@
 import { DomainMappingError } from "@/lib/errors/domain-mapping-error";
+import { optionalText, parseAmount, parseCount, parseDay, parseDateTime, requiredText } from "@/lib/mapper";
 
 import type {
   StayExtensionApplyDto,
   StayExtensionPreviewDto,
 } from "../dtos/stay-extension.dto";
 import type { StayExtensionPreview, StayExtensionResult } from "../model/stay-extension";
-
-function requiredText(value: string, errorCode: string): string {
-  const normalizedValue = value?.trim();
-
-  if (!normalizedValue) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return normalizedValue;
-}
-
-function optionalText(value: string | null): string | null {
-  const normalizedValue = value?.trim();
-  return normalizedValue || null;
-}
-
-function parseAmount(value: string, errorCode: string): number {
-  const amount = Number(value);
-
-  if (!Number.isFinite(amount) || amount < 0) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return amount;
-}
-
-function parseCount(value: number, errorCode: string): number {
-  if (!Number.isInteger(value) || value < 0) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return value;
-}
-
-/** Fecha de día ("YYYY-MM-DD") según viene por HTTP en este contrato. */
-function parseDay(value: string, errorCode: string): Date {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  const date = new Date(`${value}T00:00:00`);
-
-  if (Number.isNaN(date.getTime())) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return date;
-}
-
-/** Fecha-hora ISO (contiene "T") para marcas de tiempo de auditoría. */
-function parseDateTime(value: string, errorCode: string): Date {
-  if (!/^\d{4}-\d{2}-\d{2}T/.test(value)) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return date;
-}
 
 export function mapStayExtensionPreview(dto: StayExtensionPreviewDto): StayExtensionPreview {
   const currentStay = dto.current_stay;

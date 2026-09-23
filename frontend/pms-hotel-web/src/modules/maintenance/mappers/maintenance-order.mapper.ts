@@ -1,4 +1,5 @@
 import { DomainMappingError } from "@/lib/errors/domain-mapping-error";
+import { optionalText, requiredText } from "@/lib/mapper";
 
 import type { MaintenanceOrderDto, MaintenanceOrderEventDto } from "../dtos/maintenance-order.dto";
 import {
@@ -7,21 +8,6 @@ import {
   type MaintenanceOrder,
   type MaintenanceOrderEvent,
 } from "../model/maintenance-order";
-
-function requiredText(value: string, errorCode: string): string {
-  const normalizedValue = value.trim();
-
-  if (!normalizedValue) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return normalizedValue;
-}
-
-function optionalText(value: string | null): string | null {
-  const normalizedValue = value?.trim();
-  return normalizedValue || null;
-}
 
 function mapEvent(dto: MaintenanceOrderEventDto): MaintenanceOrderEvent {
   const status = dto.status.trim();

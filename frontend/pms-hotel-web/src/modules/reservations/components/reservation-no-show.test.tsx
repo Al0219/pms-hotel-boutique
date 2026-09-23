@@ -51,7 +51,7 @@ function renderPanel(apply = applyResult()) {
   const onClose = vi.fn();
   useApplyNoShowMock.mockReturnValue(apply);
 
-  const view = render(<ReservationNoShow propertyId="GT-HB-01" endpoint="http://pms.test/contract/reservations" reservationId="HB-2026-08112" onClose={onClose} />);
+  const view = render(<ReservationNoShow propertyId="GT-HB-01" endpoint="http://pms.test/contract/reservations" reservationId="HB-2026-08112" currency="GTQ" onClose={onClose} />);
 
   return { onClose };
 }

@@ -1,23 +1,9 @@
 import { DomainMappingError } from "@/lib/errors/domain-mapping-error";
+import { optionalText, requiredText } from "@/lib/mapper";
 
 import type { IntegrationDto } from "../dtos/integration.dto";
 import type { Integration } from "../model/integration";
 import { isIntegrationCategory, isIntegrationHealth } from "../model/integration-taxonomy";
-
-function requiredText(value: string, errorCode: string): string {
-  const normalizedValue = value.trim();
-
-  if (!normalizedValue) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return normalizedValue;
-}
-
-function optionalText(value: string | null): string | null {
-  const normalizedValue = value?.trim();
-  return normalizedValue || null;
-}
 
 function mapCapabilities(values: string[]): ReadonlyArray<string> {
   return values.map((capability) => capability.trim()).filter((capability) => capability.length > 0);

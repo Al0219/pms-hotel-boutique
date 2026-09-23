@@ -119,6 +119,7 @@ export function ReservationCenter({ propertyId, endpoint }: Readonly<Reservation
           propertyId={propertyId}
           endpoint={endpoint}
           waitlistId={convertingWaitlistId}
+          currency={center.reservations.find((r) => r.id === convertingWaitlistId)?.currency ?? "GTQ"}
           onClose={() => setConvertingWaitlistId(null)}
         />
       ) : null}

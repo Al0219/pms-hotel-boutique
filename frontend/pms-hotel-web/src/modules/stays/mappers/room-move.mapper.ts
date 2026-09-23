@@ -1,54 +1,8 @@
 import { DomainMappingError } from "@/lib/errors/domain-mapping-error";
+import { optionalText, parseAmount, parseCount, parseDateTime, requiredText } from "@/lib/mapper";
 
 import type { RoomMoveApplyDto, RoomMoveCandidateDto, RoomMovePreviewDto } from "../dtos/room-move.dto";
 import type { RoomMoveCandidate, RoomMovePreview, RoomMoveResult } from "../model/room-move";
-
-function requiredText(value: string, errorCode: string): string {
-  const normalizedValue = value?.trim();
-
-  if (!normalizedValue) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return normalizedValue;
-}
-
-function optionalText(value: string | null): string | null {
-  const normalizedValue = value?.trim();
-  return normalizedValue || null;
-}
-
-function parseAmount(value: string, errorCode: string): number {
-  const amount = Number(value);
-
-  if (!Number.isFinite(amount) || amount < 0) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return amount;
-}
-
-function parseCount(value: number, errorCode: string): number {
-  if (!Number.isInteger(value) || value < 0) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return value;
-}
-
-function parseDate(value: string, errorCode: string): Date {
-  if (!/^\d{4}-\d{2}-\d{2}T/.test(value)) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    throw new DomainMappingError(errorCode);
-  }
-
-  return date;
-}
 
 function mapCandidate(dto: RoomMoveCandidateDto): RoomMoveCandidate {
   return {
@@ -107,7 +61,7 @@ export function mapRoomMoveApply(dto: RoomMoveApplyDto): RoomMoveResult {
     status,
     fromRoomId: requiredText(dto.from_room_id, "INVALID_ROOM_MOVE_FROM_ROOM_ID"),
     toRoomId: requiredText(dto.to_room_id, "INVALID_ROOM_MOVE_TO_ROOM_ID"),
-    movedAt: parseDate(dto.moved_at, "INVALID_ROOM_MOVED_AT"),
+    movedAt: parseDateTime(dto.moved_at, "INVALID_ROOM_MOVED_AT"),
     hkTransition: requiredText(dto.hk_transition, "INVALID_ROOM_MOVE_HK_TRANSITION"),
     auditSummary: requiredText(dto.audit_summary, "INVALID_ROOM_MOVE_AUDIT_SUMMARY"),
     message: requiredText(dto.message, "INVALID_ROOM_MOVE_MESSAGE"),

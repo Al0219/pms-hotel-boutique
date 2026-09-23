@@ -12,6 +12,7 @@ interface WaitlistConversionPanelProps {
   propertyId: string;
   endpoint: string;
   waitlistId: string;
+  currency: string;
   onClose: () => void;
 }
 
@@ -28,7 +29,7 @@ function pluralize(count: number, singular: string, plural: string): string {
   return `${count} ${count === 1 ? singular : plural}`;
 }
 
-function EntrySummary({ preview }: Readonly<{ preview: WaitlistConversionPreview }>) {
+function EntrySummary({ preview, currency }: Readonly<{ preview: WaitlistConversionPreview; currency: string }>) {
   return (
     <dl className={styles.entrySummary}>
       <div className={styles.entryRow}>
@@ -55,13 +56,13 @@ function EntrySummary({ preview }: Readonly<{ preview: WaitlistConversionPreview
       </div>
       <div className={styles.entryRow}>
         <dt>Tarifa estimada original</dt>
-        <dd>{formatMoney(preview.originalEstimatedAmount, "GTQ")} · se conservan fechas, ocupación y origen</dd>
+        <dd>{formatMoney(preview.originalEstimatedAmount, currency)} · se conservan fechas, ocupación y origen</dd>
       </div>
     </dl>
   );
 }
 
-function AvailabilityBlock({ preview, onRevalidate }: Readonly<{ preview: WaitlistConversionPreview; onRevalidate: () => void }>) {
+function AvailabilityBlock({ preview, currency, onRevalidate }: Readonly<{ preview: WaitlistConversionPreview; currency: string; onRevalidate: () => void }>) {
   if (!preview.availability) {
     return (
       <div className={styles.availabilityNotFound}>
@@ -81,15 +82,15 @@ function AvailabilityBlock({ preview, onRevalidate }: Readonly<{ preview: Waitli
         {availability.roomType} disponible · {formatShortDate(availability.availableFrom)} – {formatShortDate(availability.availableUntil)}
       </p>
       <p>
-        {availability.ratePlan} · {formatMoney(availability.ratePerNight, "GTQ")} / noche
+        {availability.ratePlan} · {formatMoney(availability.ratePerNight, currency)} / noche
       </p>
       {availability.note ? <p className={styles.muted}>{availability.note}</p> : null}
-      <p className={styles.total}><span>Total estimado</span><strong>{formatMoney(availability.totalEstimated, "GTQ")}</strong></p>
+      <p className={styles.total}><span>Total estimado</span><strong>{formatMoney(availability.totalEstimated, currency)}</strong></p>
     </div>
   );
 }
 
-export function WaitlistConversionPanel({ propertyId, endpoint, waitlistId, onClose }: Readonly<WaitlistConversionPanelProps>) {
+export function WaitlistConversionPanel({ propertyId, endpoint, waitlistId, currency, onClose }: Readonly<WaitlistConversionPanelProps>) {
   const preview = useWaitlistConversionPreview(propertyId, endpoint, waitlistId);
   const conversion = useConfirmWaitlistConversion(propertyId, endpoint, waitlistId);
 
@@ -122,8 +123,8 @@ export function WaitlistConversionPanel({ propertyId, endpoint, waitlistId, onCl
 
           {!preview.isLoading && !preview.error && preview.data ? (
             <>
-              <EntrySummary preview={preview.data} />
-              <AvailabilityBlock preview={preview.data} onRevalidate={() => void preview.refetch()} />
+              <EntrySummary preview={preview.data} currency={currency} />
+              <AvailabilityBlock preview={preview.data} currency={currency} onRevalidate={() => void preview.refetch()} />
             </>
           ) : null}
 
