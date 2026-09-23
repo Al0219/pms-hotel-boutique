@@ -78,7 +78,7 @@ Sigue `PENDIENTE`. `GuestAuthSession`, `LinkedReservations` y `ActiveReservation
 
 ### IMP-AND-0202 — Cuenta/Perfil
 
-Profile sigue siendo válido y reutiliza la foundation de `IMP-AND-0201`. Vuelve a `EN_PROGRESO` para incorporar exclusivamente estos ajustes antes de nueva QA:
+Profile sigue siendo válido y reutiliza la foundation de `IMP-AND-0201`. `IMP-AND-0202` implementó exclusivamente estos ajustes y está `COMPLETADA`: QA automática, QA manual y WEB-2 PASS.
 
 1. **Drawer:** `Perfil` es la primera acción, antes de cualquier heading. Luego: `ESTANCIA` (Inicio, Mis servicios), `BENEFICIOS` (Rewards, Promociones), `SERVICIOS` (Servicios, Valet) y `HOTEL` (Hotel).
 2. **Confirmación dirty:** aparece sobre Profile con backdrop transparente o ligeramente atenuado; Profile permanece visible detrás. No se usa fondo negro u opaco. `Continuar editando` conserva exactamente el borrador; `Descartar cambios` vuelve a `/account` sin guardar.

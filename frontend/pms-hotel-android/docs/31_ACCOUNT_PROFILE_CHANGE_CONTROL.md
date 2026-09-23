@@ -19,7 +19,7 @@ La causa es el solapamiento explícito en el backlog: 0202 exige display/edit de
 
 ## Alcance canónico de IMP-AND-0202
 
-0202 consume exclusivamente la foundation de 0201: `useAccountProfile`, `useUpdateAccountProfile`, `GuestAccount` y `GuestProfile`. Implementará la visualización read-only de nombre, correo y teléfono; preferencias editables de Profile; Marketing SMS; loading, data, error, offline, retry, edición, dirty state, submit, pending, success y errores de mutation.
+0202 consume exclusivamente la foundation de 0201: `useAccountProfile`, `useUpdateAccountProfile`, `GuestAccount` y `GuestProfile`. Implementa la visualización read-only de nombre, correo y teléfono; preferencias editables de Profile; Marketing SMS; loading, data, error, offline, retry, edición, dirty state, submit, pending, success y errores de mutation.
 
 La identidad/contacto sigue read-only. No se amplía la mutation, no hay actualización optimista y no se afirma guardado remoto ni persistencia permanente. El mock session-only permite una UX frontend-first sin Backend.
 
@@ -37,7 +37,7 @@ La salida con cambios sin guardar requiere una confirmación de descarte o conti
 
 ## Impacto de backlog
 
-- `IMP-AND-0202`: `EN_PROGRESO`; DoR PASS. Los ajustes de `32_AUTH_RESERVATION_CONTEXT_CHANGE_CONTROL.md` dejan QA automática, manual y WEB-2 pendientes.
+- `IMP-AND-0202`: `COMPLETADA`; DoR, QA automática, QA manual y WEB-2 PASS. Los ajustes de `32_AUTH_RESERVATION_CONTEXT_CHANGE_CONTROL.md` están implementados.
 - `IMP-AND-0303`: conserva el estado canónico `PENDIENTE` con la nota **ABSORBIDA POR IMP-AND-0202 — NO IMPLEMENTAR**; la absorción no crea una implementación separada.
 - `IMP-AND-0304`: sustituye la dependencia `IMP-AND-0303` por `IMP-AND-0202`; sigue PENDIENTE hasta que 0202 complete.
 - `IMP-AND-0204`: conserva las dependencias `IMP-AND-0202, IMP-AND-0203`.
