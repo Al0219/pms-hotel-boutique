@@ -15,4 +15,6 @@ export interface RewardsProgramDTO {
   target_nights: number;
   next_tier: string;
   benefits: RewardBenefitDTO[];
+  points_balance?: number | null;
+  ledger?: { id: string; type: "EARN" | "REDEEM" | "EXPIRE" | "REVERSE"; points: number; date: string; description: string; reservation_id: string | null }[];
 }

@@ -12,4 +12,6 @@ export interface RewardsProgram {
   targetNights: number;
   nextTier: string;
   benefits: RewardBenefit[];
+  pointsBalance: number | null;
+  ledger: { id: string; type: "EARN" | "REDEEM" | "EXPIRE" | "REVERSE"; points: number; date: string; description: string; reservationId: string | null }[] | null;
 }

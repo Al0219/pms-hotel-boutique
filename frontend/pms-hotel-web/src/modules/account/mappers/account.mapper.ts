@@ -12,6 +12,7 @@ function requiredText(value: string | undefined | null, code: string): string {
 export function mapAccountSummary(dto: AccountSummaryDTO): AccountSummary {
   return {
     accountId: requiredText(dto.account_id, "INVALID_ACCOUNT_ID"),
+    profileId: dto.profile_id == null ? null : requiredText(dto.profile_id, "INVALID_PROFILE_ID"),
     guestName: requiredText(dto.guest_name, "INVALID_GUEST_NAME"),
     email: requiredText(dto.email, "INVALID_GUEST_EMAIL"),
     accessMethod: dto.access_method || "Enlace de un solo uso",

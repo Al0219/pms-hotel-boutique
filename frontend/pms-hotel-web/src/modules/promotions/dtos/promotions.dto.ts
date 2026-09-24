@@ -8,4 +8,10 @@ export interface PromotionDTO {
   description: string;
   is_eligible: boolean;
   conditions: string;
+  valid_from?: string | null;
+  valid_until?: string | null;
+  status_label?: string;
+  eligibility_reason?: string | null;
+  combinable?: boolean | null;
+  combination_reason?: string | null;
 }

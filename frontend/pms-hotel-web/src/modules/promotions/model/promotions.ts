@@ -5,4 +5,10 @@ export interface Promotion {
   description: string;
   isEligible: boolean;
   conditions: string;
+  validFrom: string | null;
+  validUntil: string | null;
+  statusLabel: string | null;
+  eligibilityReason: string | null;
+  combinable: boolean | null;
+  combinationReason: string | null;
 }

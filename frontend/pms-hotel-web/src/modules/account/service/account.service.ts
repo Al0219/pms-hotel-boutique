@@ -1,7 +1,8 @@
+import type { GuestReservationListDTO } from "../dtos/guest-reservation.dto";
 import { getPublicEnvironment } from "@/lib/env";
 import { httpRequest } from "@/lib/http/client";
 
-import type { AccountSummaryDTO, StayHistoryItemDTO } from "../dtos/account.dto";
+import type { AccountSummaryDTO } from "../dtos/account.dto";
 
 /** PROVISIONAL endpoint for account summary data */
 export function getAccountSummary(accountId: string, signal?: AbortSignal): Promise<AccountSummaryDTO> {
@@ -9,6 +10,6 @@ export function getAccountSummary(accountId: string, signal?: AbortSignal): Prom
 }
 
 /** PROVISIONAL endpoint for guest stay history */
-export function getStayHistory(accountId: string, signal?: AbortSignal): Promise<StayHistoryItemDTO[]> {
-  return httpRequest<StayHistoryItemDTO[]>({ path: `/account/history?accountId=${encodeURIComponent(accountId)}`, signal });
+export function getStayHistory(accountId: string, signal?: AbortSignal): Promise<GuestReservationListDTO> {
+  return httpRequest<GuestReservationListDTO>({ baseUrl: getPublicEnvironment().useMockApi ? "http://pms.test" : undefined, path: `/account/history?accountId=${encodeURIComponent(accountId)}`, signal });
 }

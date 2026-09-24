@@ -16,12 +16,12 @@ export function AccountDashboardPage() {
   </section>;
 
   const cards = [
-    { href: "/mis-reservas", category: "PRÓXIMAS RESERVAS", title: summary.upcomingStay ? "Próxima estancia" : "No tienes próximas estadías", description: summary.upcomingStay ? `${summary.upcomingStay.reservationCode} · ${summary.upcomingStay.roomsCount} habitaciones · ${summary.upcomingStay.datesLabel}. ${summary.upcomingStay.summaryText}` : "Cuando reserves, tus próximas estancias aparecerán aquí." },
+    { href: "/cuenta/reservas", category: "PRÓXIMAS RESERVAS", title: summary.upcomingStay ? "Próxima estancia" : "No tienes próximas estadías", description: summary.upcomingStay ? `${summary.upcomingStay.reservationCode} · ${summary.upcomingStay.roomsCount} habitaciones · ${summary.upcomingStay.datesLabel}. ${summary.upcomingStay.summaryText}` : "Cuando reserves, tus próximas estancias aparecerán aquí." },
     { href: "/cuenta/perfil", category: "PERFIL Y PREFERENCIAS", title: `${summary.profile.name} · ${summary.profile.preferredLanguage}`, description: summary.profile.description },
     { href: "/cuenta/facturas", category: "FACTURAS", title: `${summary.invoices.availableDocumentsCount} documentos disponibles`, description: summary.invoices.description },
     { href: "/cuenta/rewards", category: "REWARDS", title: `${summary.rewards.tierName} · ${summary.rewards.currentNights}/${summary.rewards.targetNights} hacia ${summary.rewards.nextTierName}`, description: `${summary.rewards.activeBenefitsCount} beneficios activos · ${summary.rewards.description}` },
-    { href: "/cuenta/mensajes", category: "MENSAJES", title: `${summary.messages.unreadCount} mensajes sin leer`, description: summary.messages.description },
-    { href: "/cuenta/promociones", category: "PROMOCIONES", title: `${summary.promotions.eligibleOffersCount} ofertas elegibles · ${summary.promotions.featuredOfferTitle}`, description: summary.promotions.description },
+    { href: "/cuenta/perfil#preferencias", category: "CONFIGURACIÓN", title: "Preferencias de estancia", description: "Configura idioma y preferencias de tu perfil." },
+    { href: "/cuenta/promociones", category: "PROMOCIONES", title: summary.promotions.eligibleOffersCount ? `${summary.promotions.eligibleOffersCount} ofertas elegibles · ${summary.promotions.featuredOfferTitle}` : "Sin ofertas elegibles", description: summary.promotions.description },
   ];
 
   return <section className={styles.page}>
@@ -29,7 +29,7 @@ export function AccountDashboardPage() {
       <Link className={styles.brand} href="/">Hotel Boutique</Link>
       <nav aria-label="Navegación principal">
         <Link href="/">Buscar disponibilidad</Link>
-        <Link href="/mis-reservas">Mis reservas</Link>
+        <Link href="/cuenta/reservas">Mis reservas</Link>
         <Link className={styles.activeNav} href="/cuenta">Mi cuenta</Link>
       </nav>
     </header>
@@ -37,13 +37,13 @@ export function AccountDashboardPage() {
       <section className={styles.intro}>
         <div className={styles.introContent}>
           <h1>Mi cuenta</h1>
-          <p>Hola, {summary.guestName}. Consulta tus reservas, facturas, rewards, mensajes y promociones desde un solo lugar.</p>
+          <p>Hola, {summary.guestName}. Consulta tus reservas, facturas, rewards y promociones desde un solo lugar.</p>
           <span className={styles.statusTag}>
             {summary.isActive ? "Cuenta activa" : "Cuenta inactiva"} · {account.externalIdentities.some(identity => identity.provider === "GOOGLE") ? "Google conectado" : "Acceso por correo"} · {account.email} · {summary.linkedReservationsCount} reservas vinculadas
           </span>
         </div>
         <div className={styles.actions}>
-          <Link className={styles.btnPrimary} href="/cuenta/historial">Historial</Link>
+          <Link className={styles.btnPrimary} href="/cuenta/reservas">Historial</Link>
           <Link className={styles.btnSecondary} href="/">Buscar disponibilidad</Link>
         </div>
       </section>
