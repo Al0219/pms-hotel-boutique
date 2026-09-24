@@ -28,13 +28,13 @@ May consume intentional public APIs from: account, profile, security.
 
 ## MUST NOT
 
-- Implement a feature, API contract, DTO, mapper, service, hook, or UI in this Structure Freeze.
+- Extend beyond the approved frontend/mock scope without authorization.
 - Deep-import another module's internals.
 - Redefine business semantics owned by another module.
 
 ## Expected internal structure
 
-When a READY task requires it, this module may grow to:
+Implemented layers for the explicitly authorized task IMP-WEB-0904:
 
 ```text
 dtos/
@@ -46,7 +46,7 @@ components/
 index.ts
 ```
 
-Do not create these folders before then.
+These layers implement the Private 07 mock contract approved by the user on 2026-09-24.
 
 ## Public API
 
@@ -54,7 +54,17 @@ Cross-module dependencies use `@/modules/privacy`, never paths such as `@/module
 
 ## Backlog
 
-The canonical `docs/Backlog_Implementacion_PMS_V1.xlsx` governs WEB-2's future tasks for this module. This shell does not mark any task completed.
+The canonical `docs/Backlog_Implementacion_PMS_V1.xlsx` retains its recorded states; this implementation does not modify the workbook.
+
+## Private 07 implementation
+
+- Routes: /seguridad/privacidad.
+- Public UI API: PrivacyPage.
+- Contract: `../../../docs/32_PRIVATE_07_MOCK_CONTRACT_PROPOSAL.md`.
+- Flow: Service / DTO / Mapper / Domain / TanStack Query / UI; MSW owns fixture persistence.
+- Only fictitious data is stored under versioned `pms:private-07:*` keys, separate from Guest Auth.
+- No Backend authentication, permission enforcement, real MFA or actual DSR processing.
+- Tests: mapper cases and `src/test/private-07.test.tsx` journeys.
 
 ## Figma / Documentation
 

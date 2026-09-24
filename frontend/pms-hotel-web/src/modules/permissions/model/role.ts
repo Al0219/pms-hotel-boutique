@@ -1,9 +1,5 @@
-/** Local presentation data; these identifiers do not enforce backend authorization. */
+/** Local presentation data; these identifiers do not enforce Backend authorization. */
 export interface RolePreview {
-  id: string;
-  name: string;
-  users: number;
-  description?: string;
-  properties?: readonly string[];
-  permissions?: readonly string[];
+  id: string; name: string; users: number; description: string | null;
+  properties: string[]; permissions: string[]; configured: boolean;
 }

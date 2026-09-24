@@ -1,5 +1,3 @@
-/**
- * Public API for the security module.
- * Export only intentionally public Domain Models, hooks and components.
- * Do not expose DTOs, mappers or service internals without an approved reason.
- */
+export { SecurityFrame, DemoLoadState, DemoFeedback } from "./components/security-frame";
+export { SessionsPage } from "./components/sessions-page";
+export { MfaPage } from "./components/mfa-page";
