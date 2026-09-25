@@ -193,6 +193,7 @@ describe('Rewards', () => {
     await act(async () => {
       fireEvent.press(ui.getByTestId('guest-navigation-menu-button'));
     });
+    await act(async () => { fireEvent.press(ui.getByTestId('guest-navigation-drawer-section-benefits')); });
     await act(async () => {
       fireEvent.press(ui.getByTestId('guest-navigation-drawer-link-rewards'));
     });
@@ -224,6 +225,7 @@ describe('Rewards', () => {
     await act(async () => {
       fireEvent.press(ui.getByTestId('guest-navigation-menu-button'));
     });
+    await act(async () => { fireEvent.press(ui.getByTestId('guest-navigation-drawer-section-benefits')); });
     await act(async () => {
       fireEvent.press(ui.getByTestId('guest-navigation-drawer-link-promociones'));
     });

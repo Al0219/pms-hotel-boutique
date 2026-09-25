@@ -13,3 +13,4 @@ export { GuestNoticeProvider, useGuestNotice, type GuestServiceNotice } from '@/
 export { GuestNavigationMenuProvider, useGuestNavigationMenu } from '@/modules/navigation/GuestNavigationMenuProvider';
 export { GuestRootHeader } from '@/modules/navigation/GuestRootHeader';
 export { GuestChildHeader } from '@/modules/navigation/GuestChildHeader';
+export { guestFeatureIcons, type GuestFeatureIcon } from '@/modules/navigation/guestFeatureIcons';

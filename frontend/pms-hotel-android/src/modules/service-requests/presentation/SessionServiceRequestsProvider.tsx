@@ -1,7 +1,8 @@
 import { createContext, type PropsWithChildren, useCallback, useContext, useMemo, useReducer, useRef } from 'react';
 
 import { type AddSessionServiceRequestInput, type SessionServiceRequest } from '@/modules/service-requests/domain/SessionServiceRequest';
-import { canCompleteServiceRequest, canModifyServiceRequest } from '@/modules/service-requests/domain/serviceRequestPresentation';
+import { canCancelLateCheckoutRequest, canCompleteServiceRequest, canModifyServiceRequest } from '@/modules/service-requests/domain/serviceRequestPresentation';
+import { useAppClock } from '@/shared/time';
 
 interface SessionServiceRequestsState {
   requests: readonly SessionServiceRequest[];
@@ -49,36 +50,38 @@ interface SessionServiceRequestsContextValue {
 const SessionServiceRequestsContext = createContext<SessionServiceRequestsContextValue | null>(null);
 
 /** One in-memory registry for all Guest feature routes; it intentionally has no persistence. */
-export function SessionServiceRequestsProvider({ children }: PropsWithChildren) {
+export function SessionServiceRequestsProvider({ children, nowMs }: PropsWithChildren<{ nowMs?: () => number }>) {
+  const appClock = useAppClock();
+  const getNowMs = nowMs ?? appClock.nowMs;
   const [state, dispatch] = useReducer(sessionServiceRequestsReducer, initialSessionServiceRequestsState);
   const sequence = useRef(0);
   const lastCreatedAtMs = useRef(0);
 
   const addRequest = useCallback((input: AddSessionServiceRequestInput) => {
     sequence.current += 1;
-    const createdAtMs = Math.max(Date.now(), lastCreatedAtMs.current + 1);
+    const createdAtMs = Math.max(getNowMs(), lastCreatedAtMs.current + 1);
     lastCreatedAtMs.current = createdAtMs;
     const { dedupeKey, ...requestInput } = input;
     dispatch({ type: 'ADD_REQUEST', dedupeKey, request: { ...requestInput, createdAtMs, sessionRequestId: `session-request-${sequence.current}` } });
-  }, []);
+  }, [getNowMs]);
   const updateRequest = useCallback((sessionRequestId: string, input: Omit<AddSessionServiceRequestInput, 'dedupeKey'>) => {
     const existing = state.requests.find((request) => request.sessionRequestId === sessionRequestId);
-    if (!existing || !canModifyServiceRequest(existing, Date.now())) return false;
+    if (!existing || !canModifyServiceRequest(existing, getNowMs())) return false;
     dispatch({ type: 'UPDATE_REQUEST', sessionRequestId, request: input });
     return true;
-  }, [state.requests]);
+  }, [getNowMs, state.requests]);
   const removeRequest = useCallback((sessionRequestId: string) => {
     const existing = state.requests.find((request) => request.sessionRequestId === sessionRequestId);
-    if (!existing || !canModifyServiceRequest(existing, Date.now())) return false;
+    if (!existing || (existing.kind === 'LATE_CHECKOUT' ? !canCancelLateCheckoutRequest(existing, getNowMs(), state.requests) : !canModifyServiceRequest(existing, getNowMs()))) return false;
     dispatch({ type: 'REMOVE_REQUEST', sessionRequestId });
     return true;
-  }, [state.requests]);
+  }, [getNowMs, state.requests]);
   const completeRequest = useCallback((sessionRequestId: string) => {
     const existing = state.requests.find((request) => request.sessionRequestId === sessionRequestId);
-    if (!existing || !canCompleteServiceRequest(existing, Date.now())) return false;
+    if (!existing || !canCompleteServiceRequest(existing, getNowMs())) return false;
     dispatch({ type: 'COMPLETE_REQUEST', sessionRequestId });
     return true;
-  }, [state.requests]);
+  }, [getNowMs, state.requests]);
 
   const value = useMemo(() => ({ addRequest, completeRequest, removeRequest, requests: state.requests, updateRequest }), [addRequest, completeRequest, removeRequest, state.requests, updateRequest]);
 

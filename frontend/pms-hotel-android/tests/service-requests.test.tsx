@@ -8,6 +8,7 @@ import { Pressable, Text, View } from 'react-native';
 import AccountRoute from '../app/(guest)/account';
 import RequestsRoute from '../app/(guest)/services/requests';
 import { AccountStayHubScreen } from '@/modules/account';
+import { CheckoutSessionProvider, useCheckoutSession } from '@/modules/checkout';
 import {
   canModifyServiceRequest,
   canCompleteServiceRequest,
@@ -37,6 +38,8 @@ import {
   type SessionServiceRequest,
 } from '@/modules/service-requests';
 import { MockStayService } from '@/modules/stay';
+import { GuestNavigationMenuProvider } from '@/modules/navigation';
+import { AppClockProvider, useAppClock } from '@/shared/time';
 
 const sampleRequest: AddSessionServiceRequestInput = {
   kind: 'HOUSEKEEPING', origin: 'SERVICES', status: 'REQUESTED', summary: 'Limpieza completa · 10:00–11:00', title: 'Limpieza',
@@ -62,7 +65,78 @@ function RemoveRequestButton({ sessionRequestId }: { sessionRequestId: string })
   return <Pressable onPress={() => removeRequest(sessionRequestId)} testID={`remove-${sessionRequestId}`} />;
 }
 
+const activeNowMs = new Date(2026, 8, 11, 10, 0).getTime();
+const checkoutDueNowMs = new Date(2026, 8, 18, 12, 0).getTime();
+function LateCheckoutSeed({ checkoutUntil }: { checkoutUntil: string }) {
+  return <SeedRequests requests={[{ kind: 'LATE_CHECKOUT', origin: 'SERVICES', status: 'REQUESTED', title: 'Late check-out', details: { type: 'LATE_CHECKOUT', serviceDate: '2026-09-18', checkoutUntil } }]} />;
+}
+function CheckedOutSeed() {
+  const { createSnapshot } = useCheckoutSession();
+  const seeded = useRef(false);
+  useEffect(() => {
+    if (seeded.current) return;
+    seeded.current = true;
+    createSnapshot({ checks: [], departureNoteText: '', expectedDepartureText: '', roomDisplayText: 'Habitación 204', stayDatesText: '' }, { checkoutTotal: { amountMinor: 0, currency: 'GTQ', text: 'Total · Q0.00' }, items: [], paidGuaranteeText: '', pendingBalanceText: '', totalStayText: 'Sin cargos registrados en esta sesión', totalText: 'Total · Q0.00' });
+  }, [createSnapshot]);
+  return null;
+}
+function SetCheckoutDueClock() {
+  const { setCustomDate } = useAppClock();
+  return <Pressable onPress={() => setCustomDate(new Date(checkoutDueNowMs))} testID="set-checkout-due-clock" />;
+}
+async function renderRequestsScreen({ requests = [] as readonly AddSessionServiceRequestInput[], nowMs = () => activeNowMs, lateCheckoutUntil, checkedOut = false }: { requests?: readonly AddSessionServiceRequestInput[]; nowMs?: () => number; lateCheckoutUntil?: string; checkedOut?: boolean } = {}) {
+  const content = <>{lateCheckoutUntil ? <LateCheckoutSeed checkoutUntil={lateCheckoutUntil} /> : null}<SeedRequests requests={requests} /><SessionServiceRequestsScreen nowMs={nowMs} /></>;
+  const guestContent = checkedOut ? <CheckoutSessionProvider><CheckedOutSeed />{content}</CheckoutSessionProvider> : content;
+  return render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { gcTime: 0, retry: false }, mutations: { gcTime: 0, retry: false } } })}><SessionServiceRequestsProvider nowMs={nowMs}>{guestContent}</SessionServiceRequestsProvider></QueryClientProvider>);
+}
+
 describe('Session service requests — IMP-AND-0112', () => {
+  it('reacts to an AppClock transition without remounting and closes mutable controls', async () => {
+    const request: AddSessionServiceRequestInput = { kind: 'HOTEL_ASSIGNED', origin: 'CHAT', status: 'ASSIGNED', title: 'Servicio reactivo', details: { type: 'HOTEL_ASSIGNED' } };
+    const ui = await render(<AppClockProvider initialCustomDate={new Date(2026, 8, 18, 11, 59)} initialMode="CUSTOM"><QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { gcTime: 0, retry: false } } })}><SessionServiceRequestsProvider><SetCheckoutDueClock /><SeedRequests requests={[request]} /><SessionServiceRequestsScreen /></SessionServiceRequestsProvider></QueryClientProvider></AppClockProvider>);
+    await waitFor(() => expect(ui.getByLabelText('Editar Servicio reactivo')).toBeTruthy());
+    await fireEvent.press(ui.getByTestId('set-checkout-due-clock'));
+    await waitFor(() => expect(ui.queryByLabelText('Editar Servicio reactivo')).toBeNull());
+    expect(ui.getByText('Servicio reactivo')).toBeTruthy();
+    ui.unmount();
+  });
+
+  it('keeps cards, filters, and completed details available while checkout is due', async () => {
+    const completed: AddSessionServiceRequestInput = { kind: 'ROOM_SERVICE', origin: 'SERVICES', status: 'COMPLETED', title: 'Pedido completado', summary: 'Servicio entregado', details: { type: 'ROOM_SERVICE', serviceDate: '2026-09-18', deliveryTime: '10:00', items: [] } };
+    const active: AddSessionServiceRequestInput = { kind: 'HOTEL_ASSIGNED', origin: 'CHAT', status: 'ASSIGNED', title: 'Servicio activo', details: { type: 'HOTEL_ASSIGNED' } };
+    const ui = await renderRequestsScreen({ nowMs: () => checkoutDueNowMs, requests: [completed, active] });
+    await waitFor(() => expect(ui.getByText('Servicio activo')).toBeTruthy());
+    expect(ui.getByTestId('session-service-request-filters')).toBeTruthy();
+    await waitFor(() => expect(ui.queryByLabelText('Editar Servicio activo')).toBeNull());
+    expect(ui.queryByTestId('complete-session-service-request-session-request-1')).toBeNull();
+    expect(ui.queryByTestId('remove-session-service-request-cutoff-session-request-1')).toBeNull();
+    await fireEvent.press(ui.getByTestId('session-service-request-filter-COMPLETED'));
+    await fireEvent.press(ui.getByTestId('session-service-request-session-request-1'));
+    expect(ui.getByTestId('session-service-request-details-session-request-1')).toBeTruthy();
+    ui.unmount();
+  });
+
+  it('keeps an expired Late checkout visible but non-cancelable in checkout due', async () => {
+    const ui = await renderRequestsScreen({ nowMs: () => new Date(2026, 8, 18, 14, 0).getTime(), lateCheckoutUntil: '14:00' });
+    await waitFor(() => expect(ui.getByText('Late check-out')).toBeTruthy());
+    expect(ui.queryByLabelText('Editar Late check-out')).toBeNull();
+    await waitFor(() => expect(ui.queryByTestId('complete-session-service-request-session-request-1')).toBeNull());
+    await waitFor(() => expect(ui.queryByTestId('remove-session-service-request-cutoff-session-request-1')).toBeNull());
+    ui.unmount();
+  });
+
+  it('keeps completed history and details read-only after a checkout snapshot', async () => {
+    const completed: AddSessionServiceRequestInput = { kind: 'AMENITIES', origin: 'SERVICES', status: 'COMPLETED', title: 'Amenidades completadas', details: { type: 'AMENITIES', serviceDate: '2026-09-11', deliveryTime: '11:00', items: [] } };
+    const active: AddSessionServiceRequestInput = { kind: 'HOTEL_ASSIGNED', origin: 'CHAT', status: 'ASSIGNED', title: 'Servicio no modificable', details: { type: 'HOTEL_ASSIGNED' } };
+    const ui = await renderRequestsScreen({ checkedOut: true, requests: [completed, active] });
+    await waitFor(() => expect(ui.getByText('Servicio no modificable')).toBeTruthy());
+    await waitFor(() => expect(ui.queryByLabelText('Editar Servicio no modificable')).toBeNull());
+    await fireEvent.press(ui.getByTestId('session-service-request-filter-COMPLETED'));
+    await fireEvent.press(ui.getByTestId('session-service-request-session-request-1'));
+    expect(ui.getByTestId('session-service-request-details-session-request-1')).toBeTruthy();
+    ui.unmount();
+  });
+
   it('starts empty, keeps newest first, supports types/origins, and dedupes local events', () => {
     const older = { ...sampleRequest, createdAtMs: 10, sessionRequestId: 'session-request-1' };
     const newer = { kind: 'HOTEL_ASSIGNED' as const, origin: 'CHAT' as const, status: 'ASSIGNED' as const, title: 'Traslado al aeropuerto', createdAtMs: 20, sessionRequestId: 'session-request-2' };
@@ -187,11 +261,11 @@ describe('Session service requests — IMP-AND-0112', () => {
     expect(getFirstAvailableServiceDate(now, ['11:59', '12:00', '12:01'], '2026-09-14', '2026-09-18')).toBeNull();
   });
 
-  it('keeps the approved late checkout exception at 14:00 apart from normal checkout', () => {
+  it('never makes late checkout completable', () => {
     const late = { ...sampleRequest, kind: 'LATE_CHECKOUT' as const, sessionRequestId: 'late-checkout', createdAtMs: 0, details: { type: 'LATE_CHECKOUT' as const, serviceDate: '2026-09-18', checkoutUntil: '14:00' } };
-    expect(getServiceRequestCompletionEligibleAt(late)).toBe(new Date(2026, 8, 18, 14, 0).getTime());
+    expect(getServiceRequestCompletionEligibleAt(late)).toBeNull();
     expect(canCompleteServiceRequest(late, new Date(2026, 8, 18, 12, 0).getTime())).toBe(false);
-    expect(canCompleteServiceRequest(late, new Date(2026, 8, 18, 14, 0).getTime())).toBe(true);
+    expect(canCompleteServiceRequest(late, new Date(2026, 8, 18, 14, 0).getTime())).toBe(false);
   });
 
   it('enables completion only at the configured service moment, using slot end for housekeeping', () => {
@@ -212,7 +286,7 @@ describe('Session service requests — IMP-AND-0112', () => {
     expect(getServiceRequestCompletionEligibleAt(housekeeping)).toBe(new Date(2026, 8, 16, 12, 0).getTime());
     expect(canCompleteServiceRequest(housekeeping, new Date(2026, 8, 16, 12, 0).getTime())).toBe(true);
     expect(canCompleteServiceRequest(late, new Date(2026, 8, 16, 13, 59).getTime())).toBe(false);
-    expect(canCompleteServiceRequest(late, new Date(2026, 8, 16, 14, 0).getTime())).toBe(true);
+    expect(canCompleteServiceRequest(late, new Date(2026, 8, 16, 14, 0).getTime())).toBe(false);
     expect(getServiceRequestCompletionEligibleAt(assigned)).toBeNull();
   });
 
@@ -286,7 +360,7 @@ describe('Session service requests — IMP-AND-0112', () => {
   it('hides completed requests from the Account preview and canonical active list', async () => {
     const completed = { ...sampleRequest, status: 'COMPLETED' as const, title: 'Servicio completado' };
     const requests = [completed, { ...sampleRequest, title: 'Servicio activo' }];
-    const list = await render(<SessionServiceRequestsProvider><SeedRequests requests={requests} /><SessionServiceRequestsScreen /></SessionServiceRequestsProvider>);
+    const list = await render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><SessionServiceRequestsProvider><SeedRequests requests={requests} /><SessionServiceRequestsScreen nowMs={() => activeNowMs} /></SessionServiceRequestsProvider></QueryClientProvider>);
     await waitFor(() => expect(list.getByText('Servicio activo')).toBeTruthy());
     expect(list.queryByText('Servicio completado')).toBeNull();
     await list.unmount();
@@ -297,14 +371,14 @@ describe('Session service requests — IMP-AND-0112', () => {
   });
 
   it('renders empty and complete canonical list with frontend status labels', async () => {
-    const empty = await render(<SessionServiceRequestsProvider><SessionServiceRequestsScreen /></SessionServiceRequestsProvider>);
+    const empty = await render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><SessionServiceRequestsProvider><SessionServiceRequestsScreen nowMs={() => activeNowMs} /></SessionServiceRequestsProvider></QueryClientProvider>);
     expect(empty.getByText('No tienes servicios activos.')).toBeTruthy();
 
     const populated = await render(
-      <SessionServiceRequestsProvider>
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><SessionServiceRequestsProvider>
         <SeedRequests requests={[sampleRequest, { kind: 'HOTEL_ASSIGNED', origin: 'CHAT', status: 'ASSIGNED', title: 'Traslado al aeropuerto', summary: 'Asignado por Recepción' }]} />
-        <SessionServiceRequestsScreen />
-      </SessionServiceRequestsProvider>,
+        <SessionServiceRequestsScreen nowMs={() => activeNowMs} />
+      </SessionServiceRequestsProvider></QueryClientProvider>,
     );
     await waitFor(() => expect(populated.getByText('Limpieza')).toBeTruthy());
     expect(populated.getByText('Solicitado')).toBeTruthy();
@@ -348,7 +422,7 @@ describe('Session service requests — IMP-AND-0112', () => {
   it('navigates from Account preview to the canonical route, keeps Servicios active, and returns to Services', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { gcTime: 0, retry: false } } });
     const ui = await renderRouter({
-      _layout: () => <QueryClientProvider client={queryClient}><SessionServiceRequestsProvider><SeedRequests requests={[sampleRequest]} /><PathProbe /><Slot /></SessionServiceRequestsProvider></QueryClientProvider>,
+      _layout: () => <QueryClientProvider client={queryClient}><GuestNavigationMenuProvider><SessionServiceRequestsProvider><SeedRequests requests={[sampleRequest]} /><PathProbe /><Slot /></SessionServiceRequestsProvider></GuestNavigationMenuProvider></QueryClientProvider>,
       account: AccountRoute,
       services: () => <Text testID="services-root">Servicios root</Text>,
       'services/requests': RequestsRoute,
@@ -360,6 +434,11 @@ describe('Session service requests — IMP-AND-0112', () => {
     expect(ui.getByTestId('pathname').props.children).toBe('/services/requests');
     expect(ui.queryByText('Volver')).toBeNull();
     expect(ui.getByRole('button', { name: 'Volver a servicios' })).toBeTruthy();
+    expect(ui.getByTestId('guest-child-header-menu')).toBeTruthy();
+    await fireEvent.press(ui.getByTestId('guest-child-header-menu'));
+    await waitFor(() => expect(ui.getByTestId('guest-navigation-drawer-panel')).toBeTruthy());
+    await fireEvent.press(ui.getByTestId('guest-navigation-drawer-close'));
+    await waitFor(() => expect(ui.queryByTestId('guest-navigation-drawer-panel')).toBeNull());
     expect(ui.getByRole('tab', { name: 'Servicios' }).props.accessibilityState.selected).toBe(true);
     await fireEvent.press(ui.getByTestId('session-service-requests-back'));
     await waitFor(() => expect(ui.getByTestId('pathname').props.children).toBe('/services'));

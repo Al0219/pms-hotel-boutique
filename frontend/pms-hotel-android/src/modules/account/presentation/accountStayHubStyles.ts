@@ -101,6 +101,8 @@ export const accountStayHubStyles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: tokens.color.brand,
     borderRadius: tokens.radius.control,
+    flexDirection: 'row',
+    gap: tokens.space.xs,
     height: tokens.layout.buttonHeight,
     justifyContent: 'center',
     paddingHorizontal: tokens.space.md,

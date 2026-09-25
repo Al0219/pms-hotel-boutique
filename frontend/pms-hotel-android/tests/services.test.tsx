@@ -34,13 +34,14 @@ function LateCheckoutRemovalControl() {
   return lateCheckout ? <Pressable onPress={() => removeRequest(lateCheckout.sessionRequestId)} testID="late-checkout-removal-control"><Text>Eliminar</Text></Pressable> : null;
 }
 
-async function renderServices(service: MockServicesService) {
+const inStayNowMs = new Date(2026, 8, 11, 10, 0).getTime();
+async function renderServices(service: MockServicesService, nowMs: () => number = () => inStayNowMs) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { gcTime: 0, retry: false }, mutations: { retry: false } },
   });
 
   return render(
-    <QueryClientProvider client={queryClient}><SessionServiceRequestsProvider><RequestProbe /><LateCheckoutRemovalControl /><ServicesScreen service={service} /></SessionServiceRequestsProvider></QueryClientProvider>,
+    <QueryClientProvider client={queryClient}><SessionServiceRequestsProvider><RequestProbe /><LateCheckoutRemovalControl /><ServicesScreen nowMs={nowMs} service={service} /></SessionServiceRequestsProvider></QueryClientProvider>,
   );
 }
 
@@ -68,7 +69,7 @@ describe('Services', () => {
       defaultOptions: { queries: { gcTime: 0, retry: false }, mutations: { retry: false } },
     });
     const ServicesRoute = () => (
-      <QueryClientProvider client={queryClient}><SessionServiceRequestsProvider><ServicesScreen service={new MockServicesService()} /></SessionServiceRequestsProvider></QueryClientProvider>
+      <QueryClientProvider client={queryClient}><SessionServiceRequestsProvider><ServicesScreen nowMs={() => inStayNowMs} service={new MockServicesService()} /></SessionServiceRequestsProvider></QueryClientProvider>
     );
     const rendered = await renderRouter({ services: ServicesRoute }, { initialUrl: '/services' });
 
@@ -84,6 +85,10 @@ describe('Services', () => {
     expect(rendered.getByRole('button', { name: 'Room Service' })).toBeTruthy();
     expect(rendered.getByTestId('services-housekeeping-launcher-chevron')).toBeTruthy();
     expect(rendered.getByTestId('services-room-service-launcher-chevron')).toBeTruthy();
+    expect(rendered.getByTestId('services-housekeeping-launcher-icon')).toBeTruthy();
+    expect(rendered.getByTestId('services-room-service-launcher-icon')).toBeTruthy();
+    expect(rendered.getByTestId('services-amenities-launcher-icon')).toBeTruthy();
+    expect(rendered.getByTestId('services-requests-launcher-icon')).toBeTruthy();
     expect(rendered.getByLabelText('Servicios').props.accessibilityState).toEqual(expect.objectContaining({
       disabled: false,
       selected: true,
@@ -153,7 +158,7 @@ describe('Services', () => {
   it('allows only one Late check-out until the existing request is removed', async () => {
   const nowSpy = jest
     .spyOn(Date, 'now')
-    .mockReturnValue(new Date(2026, 8, 18, 12, 0, 0, 0).getTime());
+    .mockReturnValue(new Date(2026, 8, 18, 11, 29, 0, 0).getTime());
 
   try {
     const submitRequest = jest.fn<

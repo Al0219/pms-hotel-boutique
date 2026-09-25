@@ -6,5 +6,5 @@ import { SessionVehiclesProvider } from '@/modules/valet';
 import { CheckoutSessionProvider } from '@/modules/checkout/presentation/CheckoutSessionProvider';
 
 export default function GuestLayout() {
-  return <GuestNavigationMenuProvider><GuestNoticeProvider><SessionServiceRequestsProvider><CheckoutSessionProvider><SessionVehiclesProvider><Stack screenOptions={{ headerShown: false }} /></SessionVehiclesProvider></CheckoutSessionProvider></SessionServiceRequestsProvider></GuestNoticeProvider></GuestNavigationMenuProvider>;
+  return <GuestNoticeProvider><SessionServiceRequestsProvider><CheckoutSessionProvider><GuestNavigationMenuProvider><SessionVehiclesProvider><Stack screenOptions={{ headerShown: false }} /></SessionVehiclesProvider></GuestNavigationMenuProvider></CheckoutSessionProvider></SessionServiceRequestsProvider></GuestNoticeProvider>;
 }

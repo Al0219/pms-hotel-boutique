@@ -1,8 +1,10 @@
-import { type RoomServiceMenu } from '@/modules/services/room-service/domain/models/RoomServiceMenu';
+import { type RoomServiceMenu, type RoomServicePeriod } from '@/modules/services/room-service/domain/models/RoomServiceMenu';
 
 export interface RoomServiceCartLine {
   itemFixtureKey: string;
   quantity: number;
+  /** Food added from a dual-period category keeps that category's meal period. */
+  mealPeriod?: RoomServicePeriod;
 }
 
 export interface RoomServiceCartState {
@@ -18,7 +20,7 @@ export function isRoomServiceCartValid(cart: RoomServiceCartState): boolean {
 }
 
 export type RoomServiceCartAction =
-  | { type: 'ADD_ITEM'; itemFixtureKey: string }
+  | { type: 'ADD_ITEM'; itemFixtureKey: string; mealPeriod?: RoomServicePeriod }
   | { type: 'INCREMENT_ITEM'; itemFixtureKey: string }
   | { type: 'DECREMENT_ITEM'; itemFixtureKey: string }
   | { type: 'REMOVE_ITEM'; itemFixtureKey: string }
@@ -47,7 +49,7 @@ export function roomServiceCartReducer(
         ? state.items.map((item) => item.itemFixtureKey === action.itemFixtureKey
           ? { ...item, quantity: item.quantity + 1 }
           : item)
-        : [...state.items, { itemFixtureKey: action.itemFixtureKey, quantity: 1 }],
+        : [...state.items, { itemFixtureKey: action.itemFixtureKey, quantity: 1, ...(action.type === 'ADD_ITEM' && action.mealPeriod ? { mealPeriod: action.mealPeriod } : {}) }],
     };
   }
 

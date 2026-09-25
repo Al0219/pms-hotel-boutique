@@ -137,6 +137,7 @@ describe('Hotel — IMP-AND-0114', () => {
   it('closes the drawer after navigation through one of its links', async () => {
     const ui = await renderRouter({ _layout: GuestTestLayout, hotel: HotelRoute, services: ShellOnly, account: ShellOnly }, { initialUrl: '/hotel' });
     await fireEvent.press(ui.getByLabelText('Abrir menú'));
+    await fireEvent.press(ui.getByTestId('guest-navigation-drawer-section-services'));
     await waitFor(() => expect(ui.getByTestId('guest-navigation-drawer-link-servicios')).toBeTruthy());
     await fireEvent.press(ui.getByTestId('guest-navigation-drawer-link-servicios'));
     await waitFor(() => expect(ui.getByTestId('hotel-pathname')).toHaveTextContent('/services'));

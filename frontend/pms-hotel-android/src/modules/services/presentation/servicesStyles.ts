@@ -46,6 +46,11 @@ export const servicesStyles = StyleSheet.create({
     minHeight: tokens.layout.buttonHeight,
     padding: tokens.space.md,
   },
+  navigationLeading: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: tokens.space.sm,
+  },
   navigationChevron: {
     color: tokens.color.muted,
     fontFamily: tokens.typography.family,

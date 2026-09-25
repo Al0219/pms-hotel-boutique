@@ -20,6 +20,7 @@ import {
 } from '@/modules/service-requests';
 import { buildRoomServiceSessionRequestInput } from '@/modules/services/room-service';
 import { buildTransferSessionRequestInput } from '@/modules/valet';
+import { GuestNavigationMenuProvider } from '@/modules/navigation';
 
 type ControlledServiceMode = 'success' | 'generic-error' | 'offline';
 
@@ -162,8 +163,10 @@ function createGuestLayout(sessionControl?: RefObject<SessionRequestsTestControl
       <QueryClientProvider client={queryClient}>
         <SessionServiceRequestsProvider>
           <CheckoutSessionProvider>
+            <GuestNavigationMenuProvider>
             {sessionControl ? <SessionRequestsTestController ref={sessionControl} /> : null}
             <Slot />
+            </GuestNavigationMenuProvider>
           </CheckoutSessionProvider>
         </SessionServiceRequestsProvider>
       </QueryClientProvider>
@@ -228,6 +231,13 @@ describe('Checkout / Invoice routes', () => {
     await waitFor(() => expect(ui.getByTestId('checkout-screen')).toBeTruthy());
     expect(ui.getByText('Check-out')).toBeTruthy();
     expect(ui.queryByTestId('invoice-screen')).toBeNull();
+    expect(ui.getByTestId('checkout-back')).toBeTruthy();
+    expect(ui.getByTestId('guest-child-header-menu')).toBeTruthy();
+    await act(async () => { fireEvent.press(ui.getByTestId('guest-child-header-menu')); });
+    await waitFor(() => expect(ui.getByTestId('guest-navigation-drawer-panel')).toBeTruthy());
+    await act(async () => { fireEvent.press(ui.getByTestId('guest-navigation-drawer-close')); });
+    await act(async () => { fireEvent.press(ui.getByTestId('checkout-back')); });
+    await waitFor(() => expect(ui.getByTestId('account-stay-hub-screen')).toBeTruthy());
   });
 
   it('returns direct Invoice without a snapshot to Account', async () => {
@@ -242,6 +252,10 @@ describe('Checkout / Invoice routes', () => {
     );
 
     await waitFor(() => expect(ui.getByTestId('invoice-no-snapshot')).toBeTruthy());
+    expect(ui.getByTestId('guest-child-header-menu')).toBeTruthy();
+    await act(async () => { fireEvent.press(ui.getByTestId('guest-child-header-menu')); });
+    await waitFor(() => expect(ui.getByTestId('guest-navigation-drawer-panel')).toBeTruthy());
+    await act(async () => { fireEvent.press(ui.getByTestId('guest-navigation-drawer-close')); });
 
     await act(async () => {
       fireEvent.press(ui.getByTestId('invoice-back'));
@@ -372,6 +386,7 @@ describe('Checkout mutation integration', () => {
     );
 
     await waitFor(() => expect(ui.getByTestId('account-checkout-launcher')).toBeTruthy());
+    expect(ui.getByTestId('account-checkout-launcher-icon')).toBeTruthy();
 
     await act(async () => {
       fireEvent.press(ui.getByTestId('account-checkout-launcher'));

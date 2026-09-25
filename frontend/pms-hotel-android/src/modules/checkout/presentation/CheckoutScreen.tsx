@@ -13,6 +13,7 @@ import { useCurrentStay } from '@/modules/stay/presentation/hooks/useCurrentStay
 import { type StayService } from '@/modules/stay';
 import { ConfirmationModal } from '@/shared/components';
 import { tokens } from '@/shared/theme/tokens';
+import { useAppClock } from '@/shared/time';
 
 function back() { router.dismissTo('/account'); }
 
@@ -32,7 +33,9 @@ function parseLocalDate(value: string): Date | null {
 
 function startOfLocalDay(value: Date): Date { return new Date(value.getFullYear(), value.getMonth(), value.getDate()); }
 
-export function CheckoutScreen({ now = () => new Date(), service, stayService }: { now?: () => Date; service?: CheckoutService; stayService?: StayService }) {
+export function CheckoutScreen({ now, service, stayService }: { now?: () => Date; service?: CheckoutService; stayService?: StayService }) {
+  const appClock = useAppClock();
+  const getNow = now ?? appClock.getNow;
   const stayQuery = useCurrentStay(stayService);
   const { requests } = useSessionServiceRequests();
   const read = stayQuery.data ? buildCheckoutSessionReadModel(stayQuery.data, requests) : null;
@@ -51,7 +54,7 @@ export function CheckoutScreen({ now = () => new Date(), service, stayService }:
   }, [read]);
 
   const departure = stayQuery.data ? parseLocalDate(stayQuery.data.departure) : null;
-  const checkoutAvailable = departure !== null && startOfLocalDay(now()).getTime() >= departure.getTime();
+  const checkoutAvailable = departure !== null && startOfLocalDay(getNow()).getTime() >= departure.getTime();
   const offline = submit.error instanceof NetworkError;
 
   function openConfirmation() {

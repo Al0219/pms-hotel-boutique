@@ -1,11 +1,12 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { SymbolView } from 'expo-symbols';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { accountStayHubStyles } from '@/modules/account/presentation/accountStayHubStyles';
 import { useCheckoutStatus } from '@/modules/checkout';
-import { GuestNavigationShell, GuestRootHeader, useGuestNotice } from '@/modules/navigation';
+import { guestFeatureIcons, GuestNavigationShell, GuestRootHeader, useGuestNotice } from '@/modules/navigation';
 import { ConfirmationModal } from '@/shared/components';
+import { tokens } from '@/shared/theme/tokens';
 import { filterServiceRequests, SessionServiceRequestCard, sessionServiceRequestEditPath, useCompleteSessionServiceRequest, useSessionServiceRequests } from '@/modules/service-requests';
 import { type StayService } from '@/modules/stay/data/services/StayService';
 import { useCurrentStay } from '@/modules/stay/presentation/hooks/useCurrentStay';
@@ -67,7 +68,6 @@ export function AccountStayHubScreen({ service }: AccountStayHubScreenProps) {
   const { removeRequest, requests } = useSessionServiceRequests();
   const { isCheckedOut } = useCheckoutStatus();
   const completeSessionRequest = useCompleteSessionServiceRequest();
-  const [nowMs] = useState(() => Date.now());
   const { dismissNotice, notice } = useGuestNotice();
   const activeRequests = filterServiceRequests(requests, 'ACTIVE');
   const submittedConfirmationVisible = notice?.type === 'SERVICE_REQUEST_SUCCESS';
@@ -139,13 +139,13 @@ export function AccountStayHubScreen({ service }: AccountStayHubScreenProps) {
             <Text style={accountStayHubStyles.referenceText}>{stay.reservationId}</Text>
           </View>
         </View>
-        <Pressable accessibilityLabel={isCheckedOut ? 'Ver factura' : 'Abrir Check-out'} accessibilityRole="button" onPress={() => router.push(isCheckedOut ? '/account/invoice' : '/account/checkout')} style={accountStayHubStyles.button} testID="account-checkout-launcher"><Text style={accountStayHubStyles.buttonLabel}>{isCheckedOut ? 'Ver factura' : 'Check-out'}</Text></Pressable>
+        <Pressable accessibilityLabel={isCheckedOut ? 'Ver factura' : 'Abrir Check-out'} accessibilityRole="button" onPress={() => router.push(isCheckedOut ? '/account/invoice' : '/account/checkout')} style={accountStayHubStyles.button} testID="account-checkout-launcher"><View accessible={false} testID="account-checkout-launcher-icon"><SymbolView accessibilityElementsHidden name={isCheckedOut ? guestFeatureIcons.invoice : guestFeatureIcons.checkout} size={20} tintColor={tokens.color.white} /></View><Text style={accountStayHubStyles.buttonLabel}>{isCheckedOut ? 'Ver factura' : 'Check-out'}</Text></Pressable>
         <View style={accountStayHubStyles.requestsSection} testID="account-session-requests">
           <Text accessibilityRole="header" style={accountStayHubStyles.sectionTitle}>Mis servicios</Text>
-          {activeRequests.length === 0 ? <Text style={accountStayHubStyles.subtitle}>Aún no tienes servicios solicitados.</Text> : activeRequests.slice(0, 3).map((request) => <SessionServiceRequestCard key={request.sessionRequestId} nowMs={nowMs} onComplete={completeSessionRequest} onRemove={removeRequest} onEdit={(item) => {
+          {activeRequests.length === 0 ? <Text style={accountStayHubStyles.subtitle}>Aún no tienes servicios solicitados.</Text> : activeRequests.slice(0, 3).map((request) => <SessionServiceRequestCard key={request.sessionRequestId} onComplete={completeSessionRequest} onRemove={removeRequest} onEdit={(item) => {
             const target = sessionServiceRequestEditPath(item);
             router.push({ pathname: target, params: { editRequestId: item.sessionRequestId, editMode: item.kind, returnTo: 'account' } });
-          }} request={request} />)}
+          }} request={request} requests={requests} />)}
           {requests.length > 0 ? <Pressable accessibilityRole="button" onPress={() => router.push('/services/requests')} style={accountStayHubStyles.button} testID="account-session-requests-all"><Text style={accountStayHubStyles.buttonLabel}>Ver todos</Text></Pressable> : null}
         </View>
       </ScrollView>
