@@ -1,7 +1,7 @@
 # 32 — Change Control: Cuenta, acceso y contexto de reserva
 
-**Estado:** `APPROVED FOR PLANNING`
-**Alcance:** arquitectura y documentación; no implementa autenticación, persistencia ni rutas nuevas.
+**Estado:** `APPROVED FOR IMPLEMENTATION` para `IMP-AND-0501`; `0502–0504` siguen pendientes.
+**Alcance:** foundation frontend-first session-only para Auth/Context; no implementa UI Login, selector, persistencia ni rutas nuevas.
 
 ## Problema
 
@@ -51,7 +51,7 @@ El proyecto podrá simular este flujo con contracts, services, mocks, TanStack Q
 - Con varias reservas, la UI debe presentar un selector accesible antes de fijar `ActiveReservationContext`.
 - Al cambiarla, se invalidarán o recargarán los datos reservation-scoped: Stay, habitación, Servicios, solicitudes, Valet, Checkout e Invoice.
 
-No se autoriza todavía una pantalla ni una ruta para “Mis reservas”, “Seleccionar reserva” o “Cambiar estadía”. El backlog contiene `IMP-WEB-0205/0206`, pero no una tarea Android equivalente ni fuente visual Android aprobada. Se requiere Change Control/backlog futuro antes de crear esa capacidad o asignarle un ID.
+Las pantallas/rutas futuras de Login y Reservations tienen autoridad visual frontend-first aprobada y reutilizarán tokens/componentes Android; Figma sigue como guía futura, no bloqueador. `IMP-AND-0501` no las implementa. `IMP-AND-0502` implementará Login y `IMP-AND-0503` el selector/contexto con sus pruebas y guards autorizados.
 
 ## Matriz de scope
 
@@ -91,7 +91,7 @@ Los contratos de Rewards, Promotions y Chat no cambian su comportamiento actual.
 
 ## Backlog y límites
 
-No se crea una fila ni se inventa un ID. La foundation Account/Auth/Linked Reservations/Active Reservation Context necesita una tarea aprobada antes de implementar código. La ausencia de task Android para Mis reservas se registra como gap de planificación, no se cubre con `IMP-AND-0116` sin una decisión posterior.
+Los IDs aprobados son `IMP-AND-0501` (foundation), `0502` (Guest Login), `0503` (Linked Reservations + Active Context) y `0504` (QA journey). Su secuencia es `0501 → 0502 → 0503 → 0504 → IMP-AND-0116 → Android Release`. `0501` implementa exclusivamente la foundation definida en `33_GUEST_AUTH_FOUNDATION_IMPLEMENTATION_CONTRACT.md`; no adelanta las rutas ni la UI de tareas posteriores.
 
 No incluir en una implementación derivada de este documento:
 

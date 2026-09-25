@@ -50,6 +50,10 @@ Esta excepción no autoriza reutilizar la referencia histórica en otras tareas,
 
 La footbar V2 implementada por esta excepción no convierte V2 en autoridad global. `IMP-AND-0102` permanece cerrada; `IMP-AND-0109` retiró su salida productiva al migrar la capacidad de estadía a Cuenta V3.
 
+## Autoridad visual frontend-first — Guest Auth
+
+`IMP-AND-0502 — Guest Login` y `IMP-AND-0503 — Linked Reservations + Active Context` tienen autoridad visual frontend-first aprobada. Login y Reservations reutilizarán los tokens y componentes Android actuales; no requieren un frame Figma como DoR para iniciar. Figma continúa siendo guía visual futura y cualquier frame posterior debe conservar los contratos, estados y navegación aprobados. `IMP-AND-0501` no crea pantallas ni rutas.
+
 ## 01 Estancia y servicios
 - estancia;
 - servicios;

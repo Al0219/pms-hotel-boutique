@@ -73,6 +73,10 @@ No se agregan NetInfo, cola offline, auto-retry especial, sincronización en seg
 
 `IMP-AND-0109` inspeccionó y retiró `app/(guest)/index.tsx`, `StayHomeScreen` y sus pruebas; `app/index.tsx` redirige a `/account`. La pantalla histórica no coexiste como un segundo hub productivo equivalente.
 
+## Dependencia futura de contexto
+
+La query vigente sigue siendo la de estadía actual frontend/mock y este contrato no la cambia. `IMP-AND-0501` solo define `ActiveReservationContext` como identidad `{ reservationId, reservationStayId }` y la convención futura de key `['stay', reservationId, reservationStayId]`. `IMP-AND-0503` deberá adaptar el service/query de Stay, evitar selección implícita e invalidar datos reservation-scoped aprobados. Account/Profile y Rewards mantienen scope de cuenta; Promotions y Chat no se reasignan ni invalidan por inferencia.
+
 ## Fuera de alcance
 
 Esta tarea no introduce `GuestAccount`, `GuestProfile`, preferencias, consentimientos, Rewards, promociones, cargos, Folio, Checkout, pagos, factura ni nuevas capacidades de Services.
