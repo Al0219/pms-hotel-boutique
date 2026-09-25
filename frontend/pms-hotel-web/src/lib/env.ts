@@ -3,6 +3,8 @@ export interface PublicEnvironment {
   useMockApi: boolean;
 }
 
+// Explicit public accesses let Next.js inline browser values; the optional
+// environment preserves the existing API for isolated consumers and tests.
 export function getPublicEnvironment(environment: NodeJS.ProcessEnv = {
   NODE_ENV: process.env.NODE_ENV,
   NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,

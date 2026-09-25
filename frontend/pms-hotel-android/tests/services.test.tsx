@@ -151,26 +151,82 @@ describe('Services', () => {
   });
 
   it('allows only one Late check-out until the existing request is removed', async () => {
-    const submitRequest = jest.fn<Promise<{ serviceFixtureKey: string }>, [{ serviceFixtureKey: string }]>(async ({ serviceFixtureKey }) => ({ serviceFixtureKey }));
-    const rendered = await renderServices(new MockServicesService({ submitRequest }));
+  const nowSpy = jest
+    .spyOn(Date, 'now')
+    .mockReturnValue(new Date(2026, 8, 18, 12, 0, 0, 0).getTime());
+
+  try {
+    const submitRequest = jest.fn<
+      Promise<{ serviceFixtureKey: string }>,
+      [{ serviceFixtureKey: string }]
+    >(async ({ serviceFixtureKey }) => ({ serviceFixtureKey }));
+
+    const rendered = await renderServices(
+      new MockServicesService({ submitRequest }),
+    );
 
     await selectLateCheckOut(rendered);
     await fireEvent.press(rendered.getByTestId('services-submit-button'));
-    await waitFor(() => expect(JSON.parse(rendered.getByTestId('session-service-requests-probe').props.children)).toHaveLength(1));
 
-    await fireEvent.press(rendered.getByTestId('service-card-late-check-out'));
-    await waitFor(() => expect(rendered.getByTestId('services-late-checkout-already-requested')).toBeTruthy());
-    expect(rendered.getByTestId('services-submit-button').props.accessibilityState.disabled).toBe(true);
+    await waitFor(() =>
+      expect(
+        JSON.parse(
+          rendered.getByTestId('session-service-requests-probe').props.children,
+        ),
+      ).toHaveLength(1),
+    );
+
+    await fireEvent.press(
+      rendered.getByTestId('service-card-late-check-out'),
+    );
+
+    await waitFor(() =>
+      expect(
+        rendered.getByTestId('services-late-checkout-already-requested'),
+      ).toBeTruthy(),
+    );
+
+    expect(
+      rendered.getByTestId('services-submit-button').props.accessibilityState
+        .disabled,
+    ).toBe(true);
+
     expect(submitRequest).toHaveBeenCalledTimes(1);
 
-    await fireEvent.press(rendered.getByTestId('late-checkout-removal-control'));
-    await waitFor(() => expect(JSON.parse(rendered.getByTestId('session-service-requests-probe').props.children)).toHaveLength(0));
-    await waitFor(() => expect(rendered.getByTestId('services-submit-button').props.accessibilityState.disabled).toBe(false));
+    await fireEvent.press(
+      rendered.getByTestId('late-checkout-removal-control'),
+    );
+
+    await waitFor(() =>
+      expect(
+        JSON.parse(
+          rendered.getByTestId('session-service-requests-probe').props.children,
+        ),
+      ).toHaveLength(0),
+    );
+
+    await waitFor(() =>
+      expect(
+        rendered.getByTestId('services-submit-button').props.accessibilityState
+          .disabled,
+      ).toBe(false),
+    );
 
     await fireEvent.press(rendered.getByTestId('services-submit-button'));
-    await waitFor(() => expect(JSON.parse(rendered.getByTestId('session-service-requests-probe').props.children)).toHaveLength(1));
+
+    await waitFor(() =>
+      expect(
+        JSON.parse(
+          rendered.getByTestId('session-service-requests-probe').props.children,
+        ),
+      ).toHaveLength(1),
+    );
+
     expect(submitRequest).toHaveBeenCalledTimes(2);
-  });
+  } finally {
+    nowSpy.mockRestore();
+  }
+});
 
   it('shows generic submit error and retries the same selected fixture through a new mutation', async () => {
     const submitRequest = jest

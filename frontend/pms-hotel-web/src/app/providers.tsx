@@ -7,11 +7,13 @@ import { enableMocking } from "@/data/mocks/enable";
 import { getPublicEnvironment } from "@/lib/env";
 
 export function Providers({ children }: Readonly<{ children: React.ReactNode }>) {
+  // Keep SSR and the first browser render identical while mocks are starting.
   const [mockReady, setMockReady] = useState(() => !getPublicEnvironment().useMockApi);
   const [mockError, setMockError] = useState(false);
+  const [mockAttempt, setMockAttempt] = useState(0);
   function startMocking() {
     setMockError(false);
-    void enableMocking().then(() => setMockReady(true)).catch(() => setMockError(true));
+    setMockAttempt(attempt => attempt + 1);
   }
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
@@ -19,10 +21,18 @@ export function Providers({ children }: Readonly<{ children: React.ReactNode }>)
       mutations: { retry: false },
     },
   }));
-
   useEffect(() => {
-    void enableMocking().then(() => setMockReady(true)).catch(() => setMockError(true));
-  }, []);
+    if (!getPublicEnvironment().useMockApi) return;
+
+    let mounted = true;
+    void enableMocking()
+      .then(() => { if (mounted) setMockReady(true); })
+      .catch(() => { if (mounted) setMockError(true); });
+
+    return () => {
+      mounted = false;
+    };
+  }, [mockAttempt]);
 
   return <QueryClientProvider client={queryClient}>{mockReady ? children : mockError
     ? <div role="alert"><p>No se pudo iniciar la demostración.</p><button type="button" onClick={startMocking}>Reintentar inicio</button></div>
