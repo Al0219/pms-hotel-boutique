@@ -44,6 +44,7 @@ export const guestNavigationDrawerSections: readonly GuestNavigationDrawerSectio
     links: [
       { icon: guestFeatureIcons.home, label: 'Inicio', path: '/account' },
       { icon: guestFeatureIcons.requests, label: 'Mis servicios', path: '/services/requests' },
+      { icon: guestFeatureIcons.switchStay, label: 'Cambiar estadía', path: '/reservations' },
       { icon: guestFeatureIcons.checkout, label: 'Check-out', path: '/account/checkout' },
       { icon: guestFeatureIcons.invoice, label: 'Factura', path: '/account/invoice', requiresCheckoutSnapshot: true },
     ],

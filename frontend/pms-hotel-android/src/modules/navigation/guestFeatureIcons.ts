@@ -26,6 +26,7 @@ export const guestFeatureIcons = {
   roomService: { android: 'restaurant', ios: 'fork.knife', web: 'restaurant' },
   services: { android: 'room_service', ios: 'bell.fill', web: 'room_service' },
   stay: { android: 'bed', ios: 'bed.double.fill', web: 'bed' },
+  switchStay: { android: 'swap_horiz', ios: 'arrow.left.arrow.right', web: 'swap_horiz' },
   transfer: { android: 'airport_shuttle', ios: 'car.side.fill', web: 'airport_shuttle' },
   valet: { android: 'directions_car', ios: 'car.fill', web: 'directions_car' },
   vehicle: { android: 'directions_car', ios: 'car.fill', web: 'directions_car' },

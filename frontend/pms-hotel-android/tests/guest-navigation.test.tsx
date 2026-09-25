@@ -326,6 +326,7 @@ describe("Guest Navigation Shell", () => {
       "Perfil",
       "Inicio",
       "Mis servicios",
+      "Cambiar estadía",
       "Check-out",
       "Factura",
       "Rewards",

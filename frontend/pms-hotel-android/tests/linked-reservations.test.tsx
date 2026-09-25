@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
-import { Text } from "react-native";
+import { BackHandler, Platform, Text } from "react-native";
 
 import { NetworkError } from "@/data/remote/http/HttpError";
 import { MockLinkedReservationsService } from "@/modules/guest-auth/data/mocks/MockLinkedReservationsService";
@@ -39,7 +39,7 @@ function ContextProbe() {
   );
 }
 
-async function setup(service: LinkedReservationsService) {
+async function setup(service: LinkedReservationsService, initialContext: { reservationId: string; reservationStayId: string } | null = null) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -48,7 +48,7 @@ async function setup(service: LinkedReservationsService) {
       <GuestAuthSessionProvider
         initialSession={{ accountId: "guest-account-primary" }}
       >
-        <ActiveReservationContextProvider>
+        <ActiveReservationContextProvider initialActiveReservationContext={initialContext}>
           <ContextProbe />
           <LinkedReservationsScreen service={service} />
         </ActiveReservationContextProvider>
@@ -127,5 +127,36 @@ describe("Linked reservations and active context", () => {
     expect(service.listForAccount).toHaveBeenCalledWith(
       "guest-account-primary",
     );
+  });
+
+  it("changes an active stay only after confirmation while preserving the session", async () => {
+    const replace = jest.spyOn(router, "replace").mockImplementation(() => undefined as never);
+    const screen = await setup(new MockLinkedReservationsService({ scenario: { kind: "success", reservations: [primary, second] } }), { reservationId: primary.reservationId, reservationStayId: primary.reservationStayId });
+    await waitFor(() => expect(screen.getByText("Estadía actual")).toBeTruthy());
+    expect(screen.getByTestId("linked-reservations-cancel")).toBeTruthy();
+    expect(screen.getByTestId("linked-reservations-continue").props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(screen.getByTestId("linked-reservation-stay-2026-004982"));
+    await fireEvent.press(screen.getByTestId("linked-reservations-continue"));
+    expect(screen.getByTestId("linked-reservations-change-confirmation")).toBeTruthy();
+    await fireEvent.press(screen.getByTestId("linked-reservations-change-confirmation-confirm"));
+    await waitFor(() => expect(screen.getByTestId("active-context").children.join("")).toContain("stay-2026-004982"));
+    expect(replace).toHaveBeenCalledWith("/account");
+    replace.mockRestore();
+  });
+
+  it("consumes Android Back without changing the initial selection context", async () => {
+    const original = Platform.OS;
+    Object.defineProperty(Platform, "OS", { configurable: true, value: "android" });
+    let handler: Parameters<typeof BackHandler.addEventListener>[1] | undefined;
+    const listener = jest.spyOn(BackHandler, "addEventListener").mockImplementation((_event, next) => { handler = next; return { remove: jest.fn() }; });
+    const replace = jest.spyOn(router, "replace").mockImplementation(() => undefined as never);
+    const screen = await setup(new MockLinkedReservationsService({ scenario: { kind: "success", reservations: [primary, second] } }));
+    await waitFor(() => expect(screen.getByTestId("linked-reservations-screen")).toBeTruthy());
+    expect(handler?.({} as never)).toBe(true);
+    expect(screen.getByTestId("active-context").children.join("")).toContain("null");
+    expect(replace).not.toHaveBeenCalled();
+    listener.mockRestore();
+    Object.defineProperty(Platform, "OS", { configurable: true, value: original });
+    replace.mockRestore();
   });
 });

@@ -23,3 +23,8 @@ La estadía primaria continúa siendo `HB-2026-004281 / stay-2026-004281`, habit
 ## Evidencia
 
 La suite `linked-reservations.test.tsx` cubre selección múltiple, autoselección, cuenta vacía, error y offline. Las suites de Stay y consumidores usan contexto activo inyectado en vez de una query global.
+
+
+## Cambiar estadía activa (IMP-AND-0116)
+
+Con una sesión Guest autenticada, el drawer permite abrir `/reservations` para reemplazar únicamente el contexto activo tras confirmación. La sesión se conserva; Back Android se consume y el acceso temporal no ve esta acción. El estado local reservation-scoped se aísla por stay y no simula persistencia Backend.

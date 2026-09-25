@@ -309,7 +309,8 @@ export function GuestNavigationMenuProvider({ children }: PropsWithChildren) {
                     (link) =>
                       Boolean(session) ||
                       (link.path !== "/account/profile" &&
-                        link.path !== "/account/rewards"),
+                        link.path !== "/account/rewards" &&
+                        link.path !== "/reservations"),
                   );
                   if (visibleLinks.length === 0) return null;
                   return (
