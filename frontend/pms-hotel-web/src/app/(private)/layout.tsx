@@ -11,6 +11,7 @@ import styles from "./private-layout.module.css";
 const STAFF_NAV: ReadonlyArray<{ href: string; label: string }> = [
   { href: "/dashboard", label: "Panel" },
   { href: "/reservas", label: "Reservas" },
+  { href: "/lista-espera", label: "Lista de espera" },
   { href: "/calendario", label: "Calendario" },
   { href: "/habitaciones", label: "Habitaciones" },
   { href: "/housekeeping", label: "Housekeeping" },

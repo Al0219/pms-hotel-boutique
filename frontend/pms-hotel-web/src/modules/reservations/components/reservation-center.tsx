@@ -94,6 +94,7 @@ export function ReservationCenter({ propertyId, endpoint }: Readonly<Reservation
         </div>
         <div className={styles.headerActions}>
           <Link className={styles.secondaryAction} href="/calendario">Ver calendario</Link>
+          <Link className={styles.secondaryAction} href="/lista-espera">Ver lista de espera</Link>
           <button className={styles.primaryAction} type="button" disabled title="El flujo de creación de reservas se implementa por separado.">+ Nueva reserva</button>
         </div>
       </header>

@@ -16,6 +16,7 @@ describe("PrivateLayout", () => {
     for (const [label, href] of [
       ["Panel", "/dashboard"],
       ["Reservas", "/reservas"],
+      ["Lista de espera", "/lista-espera"],
       ["Calendario", "/calendario"],
       ["Habitaciones", "/habitaciones"],
       ["Housekeeping", "/housekeeping"],

@@ -6,6 +6,7 @@
 
 export { ReservationCenter } from "./components/reservation-center";
 export { ReservationDetail } from "./components/reservation-detail";
+export { WaitlistBoard } from "./components/waitlist-board";
 export { ReservationCancellation } from "./components/reservation-cancellation";
 export { CalendarGantt } from "./calendar/calendar-gantt";
 export type { GanttBooking, GanttCell, GanttGrid, GanttRow } from "./calendar/calendar-gantt-model";
