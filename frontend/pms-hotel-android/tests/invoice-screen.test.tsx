@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 
 import { type InvoiceDocumentService, CheckoutSessionProvider, InvoiceScreen, useCheckoutSession } from '@/modules/checkout';
 import { GuestNavigationMenuProvider } from '@/modules/navigation';
+import { ActiveReservationContextProvider, GuestAuthSessionProvider } from '@/modules/guest-auth';
 import { AppClockProvider } from '@/shared/time';
 
 function SeededInvoice({ documentService }: { documentService: InvoiceDocumentService }) {
@@ -22,9 +23,9 @@ async function setup(documentService: InvoiceDocumentService) {
   return render(
     <QueryClientProvider client={queryClient}><AppClockProvider initialMode="IN_STAY">
       <CheckoutSessionProvider>
-        <GuestNavigationMenuProvider>
+        <GuestAuthSessionProvider><ActiveReservationContextProvider><GuestNavigationMenuProvider>
           <SeededInvoice documentService={documentService} />
-        </GuestNavigationMenuProvider>
+        </GuestNavigationMenuProvider></ActiveReservationContextProvider></GuestAuthSessionProvider>
       </CheckoutSessionProvider>
     </AppClockProvider></QueryClientProvider>,
   );

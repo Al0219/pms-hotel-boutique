@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, waitFor, within } from '@testing-library/react-native';
 import { router, Slot, usePathname } from 'expo-router';
 import { act, renderRouter } from 'expo-router/testing-library';
@@ -7,6 +8,7 @@ import HotelRoute from '../app/(guest)/hotel';
 import { HotelScreen, hotelProfileFixture } from '@/modules/hotel';
 import { GuestNavigationMenuProvider, GuestNavigationShell, GuestRootHeader, isGuestRootRoute } from '@/modules/navigation';
 import { SessionServiceRequestsProvider, useSessionServiceRequests } from '@/modules/service-requests';
+import { ActiveReservationContextProvider, GuestAuthSessionProvider } from '@/modules/guest-auth';
 
 declare const require: (moduleName: string) => { readFileSync(path: string, encoding: string): string };
 
@@ -24,8 +26,13 @@ function ShellOnly() {
   return <>{isGuestRootRoute(pathname) ? <GuestRootHeader title="Root" /> : null}<GuestNavigationShell /></>;
 }
 
+function GuestNavigationTestProviders({ children }: { children: React.ReactNode }) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return <QueryClientProvider client={queryClient}><GuestAuthSessionProvider><ActiveReservationContextProvider>{children}</ActiveReservationContextProvider></GuestAuthSessionProvider></QueryClientProvider>;
+}
+
 function GuestTestLayout() {
-  return <GuestNavigationMenuProvider><PathProbe /><Slot /></GuestNavigationMenuProvider>;
+  return <GuestNavigationTestProviders><GuestNavigationMenuProvider><PathProbe /><Slot /></GuestNavigationMenuProvider></GuestNavigationTestProviders>;
 }
 
 describe('Hotel — IMP-AND-0114', () => {
@@ -49,7 +56,7 @@ describe('Hotel — IMP-AND-0114', () => {
 
   it('opens /hotel and marks Hotel active without a Services CTA', async () => {
     const ui = await renderRouter({
-      _layout: () => <GuestNavigationMenuProvider><SessionServiceRequestsProvider><PathProbe /><Slot /></SessionServiceRequestsProvider></GuestNavigationMenuProvider>,
+      _layout: () => <GuestNavigationTestProviders><GuestNavigationMenuProvider><SessionServiceRequestsProvider><PathProbe /><Slot /></SessionServiceRequestsProvider></GuestNavigationMenuProvider></GuestNavigationTestProviders>,
       hotel: HotelRoute,
     }, { initialUrl: '/hotel' });
 

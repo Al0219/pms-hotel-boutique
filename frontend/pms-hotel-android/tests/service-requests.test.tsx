@@ -39,6 +39,7 @@ import {
 } from '@/modules/service-requests';
 import { MockStayService } from '@/modules/stay';
 import { GuestNavigationMenuProvider } from '@/modules/navigation';
+import { ActiveReservationContextProvider, GuestAuthSessionProvider } from '@/modules/guest-auth';
 import { AppClockProvider, useAppClock } from '@/shared/time';
 
 const sampleRequest: AddSessionServiceRequestInput = {
@@ -422,7 +423,7 @@ describe('Session service requests — IMP-AND-0112', () => {
   it('navigates from Account preview to the canonical route, keeps Servicios active, and returns to Services', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { gcTime: 0, retry: false } } });
     const ui = await renderRouter({
-      _layout: () => <QueryClientProvider client={queryClient}><GuestNavigationMenuProvider><SessionServiceRequestsProvider><SeedRequests requests={[sampleRequest]} /><PathProbe /><Slot /></SessionServiceRequestsProvider></GuestNavigationMenuProvider></QueryClientProvider>,
+      _layout: () => <QueryClientProvider client={queryClient}><GuestAuthSessionProvider><ActiveReservationContextProvider><GuestNavigationMenuProvider><SessionServiceRequestsProvider><SeedRequests requests={[sampleRequest]} /><PathProbe /><Slot /></SessionServiceRequestsProvider></GuestNavigationMenuProvider></ActiveReservationContextProvider></GuestAuthSessionProvider></QueryClientProvider>,
       account: AccountRoute,
       services: () => <Text testID="services-root">Servicios root</Text>,
       'services/requests': RequestsRoute,

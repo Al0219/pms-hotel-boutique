@@ -1,9 +1,9 @@
 # 33 — Guest Auth + Reservation Context foundation
 
-**Tarea:** `IMP-AND-0501 — Guest Auth + Reservation Context foundation`  
-**Estado:** `EN_QA` — validación automática completada; pendiente revisión final  
-**Owner:** `ANDROID-1`  
-**Reviewer:** `WEB-2`  
+**Tarea:** `IMP-AND-0501 — Guest Auth + Reservation Context foundation`
+**Estado:** `COMPLETADA` — foundation mergeada y autoridad para `0502`
+**Owner:** `ANDROID-1`
+**Reviewer:** `WEB-2`
 **Estrategia:** frontend-first, mock/local y exclusivamente session-only.
 
 ## Principio
@@ -97,6 +97,10 @@ No se invalida Promotions ni Chat por inferencia. La invalidez/limpieza real al 
 - `0503`: Linked Reservations, selector, guards de rutas, migración context-aware de Stay e invalidación reservation-scoped aprobada.
 - `0504`: QA del journey completo.
 - `0116`: conserva sus blockers de fuente visual, confirmación y estrategia de cache; `0501–0503` solo cubren parte de su prerequisito.
+
+## Integración posterior
+
+`IMP-AND-0502` monta ambos Providers de `0501` de forma estable en `app/_layout.tsx`; siguen siendo session-only y arrancan en `null`. Login consume `GuestAuthSessionProvider`, limpia `ActiveReservationContext` y no activa todavía `LinkedReservations`, `resolveLinkedReservationOutcome`, queries context-aware ni guards.
 
 ## Pruebas de 0501
 

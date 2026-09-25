@@ -21,6 +21,7 @@ import {
 import { buildRoomServiceSessionRequestInput } from '@/modules/services/room-service';
 import { buildTransferSessionRequestInput } from '@/modules/valet';
 import { GuestNavigationMenuProvider } from '@/modules/navigation';
+import { ActiveReservationContextProvider, GuestAuthSessionProvider } from '@/modules/guest-auth';
 
 type ControlledServiceMode = 'success' | 'generic-error' | 'offline';
 
@@ -163,10 +164,10 @@ function createGuestLayout(sessionControl?: RefObject<SessionRequestsTestControl
       <QueryClientProvider client={queryClient}>
         <SessionServiceRequestsProvider>
           <CheckoutSessionProvider>
-            <GuestNavigationMenuProvider>
-            {sessionControl ? <SessionRequestsTestController ref={sessionControl} /> : null}
-            <Slot />
-            </GuestNavigationMenuProvider>
+            <GuestAuthSessionProvider><ActiveReservationContextProvider><GuestNavigationMenuProvider>
+              {sessionControl ? <SessionRequestsTestController ref={sessionControl} /> : null}
+              <Slot />
+            </GuestNavigationMenuProvider></ActiveReservationContextProvider></GuestAuthSessionProvider>
           </CheckoutSessionProvider>
         </SessionServiceRequestsProvider>
       </QueryClientProvider>

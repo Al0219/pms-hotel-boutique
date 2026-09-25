@@ -69,6 +69,6 @@ El estado visual de `1841:476` se conserva, pero la decisión QA/producto sustit
 
 La semántica de este flujo es acceso temporal a una estadía concreta mediante reserva + correo; no es autenticación principal de cuenta. `IMP-AND-0501` define la foundation session-only de `ActiveReservationContext`, pero no altera este contract runtime: Access no crea `GuestAuthSession` ni añade una reserva a la cuenta. Solo `IMP-AND-0503`, con contrato y pruebas propios, podrá resolver un contexto temporal después de un éxito.
 
-En esta fase frontend/mock, `/` dirige a `/access`. `/access` está fuera de `GuestNavigationShell`, no muestra footbar ni tabs. Un éxito de mutation ejecuta `router.replace('/account')`; no existe modal, toast obligatorio, pantalla de success ni spinner adicional post-success.
+Con `IMP-AND-0502`, `/` dirige a `/login`; `/access` sigue estando fuera de `GuestNavigationShell`, sin footbar ni tabs, y puede abrirse como acción secundaria desde Login mediante `router.push`. Un éxito de su mutation conserva `router.replace('/account')`; no existe modal, toast obligatorio, pantalla de success ni spinner adicional post-success.
 
 No se implementan auth real, tokens, cookies, AsyncStorage, SecureStore, persistencia de guest linked, Backend, HTTP real, Firebase ni sesión. Un cold start puede volver a `/access`. El deep link directo a `/account` no queda prohibido por este contrato.

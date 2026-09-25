@@ -1,12 +1,12 @@
 # 04 — Navigation
 
-Expo Router es el mecanismo de navegación Guest aprobado. La raíz técnica continúa redirigiendo a `/access`; el flujo actual de acceso temporal a una estadía usa `router.replace('/account')`. `IMP-AND-0501` no modifica ese comportamiento. La separación Cuenta/Reserva/Contexto activo se implementará gradualmente desde la foundation de `32_AUTH_RESERVATION_CONTEXT_CHANGE_CONTROL.md` y `33_GUEST_AUTH_FOUNDATION_IMPLEMENTATION_CONTRACT.md`.
+Expo Router es el mecanismo de navegación Guest aprobado. `IMP-AND-0502` establece `/` → `/login`; Login es la entrada principal de cuenta y queda fuera de la shell. `/access` sigue siendo acceso temporal a una estadía y conserva su propio `router.replace('/account')` tras éxito. La separación Cuenta/Reserva/Contexto activo se implementa gradualmente desde la foundation de `32_AUTH_RESERVATION_CONTEXT_CHANGE_CONTROL.md` y `33_GUEST_AUTH_FOUNDATION_IMPLEMENTATION_CONTRACT.md`.
 
 ## Navegación futura Guest Auth
 
-`IMP-AND-0502` podrá crear `/login` y `IMP-AND-0503` `/reservations`, ambas fuera de `GuestNavigationShell`. Tienen autoridad visual frontend-first aprobada: reutilizan tokens y componentes Android existentes y no requieren un frame Figma para iniciar; Figma queda como guía futura. Tras Login, cero reservas vinculadas llevará al estado Empty con CTA a `/access`; una resolverá el contexto activo; varias requerirán selección. La raíz no cambia hasta que esas tareas sean implementadas y sus guards estén listos.
+`IMP-AND-0502` implementa `/login`; `IMP-AND-0503` creará `/reservations`, ambas fuera de `GuestNavigationShell`. Tienen autoridad visual frontend-first aprobada: reutilizan tokens y componentes Android existentes y no requieren un frame Figma para iniciar; Figma queda como guía futura. El éxito de Login usa temporalmente `router.replace('/account')`; no selecciona una reserva ni convierte Account en context-aware. `0503` reemplazará ese bridge: cero reservas mostrará Empty con CTA a `/access`, una resolverá el contexto y varias requerirán selección.
 
-Las rutas reservation-scoped, incluida `/account`, no deben montar con una sesión autenticada sin `ActiveReservationContext` ni elegir una reserva por defecto. La migración de la query Stay actual al contexto y las invalidaciones se autorizan únicamente en `IMP-AND-0503`.
+Las rutas reservation-scoped, incluida `/account`, no deben montar finalmente con una sesión autenticada sin `ActiveReservationContext` ni elegir una reserva por defecto. La migración de la query Stay actual al contexto y las invalidaciones se autorizan únicamente en `IMP-AND-0503`.
 
 ## Shell Guest vigente
 
@@ -23,7 +23,7 @@ Las rutas reservation-scoped, incluida `/account`, no deben montar con una sesi�
 
 Chat permanece disponible en `/chat`, sin tab seleccionada. La shell ofrece un botón flotante **Abrir chat**, de 48 × 48 dp y situado sobre la footbar, únicamente en `/account`, `/services`, `/valet` y `/hotel`. La acción usa `router.push('/chat')` para preservar el historial: Android Back o el gesto del sistema recuperan la ruta real de origen. Un deep link sin historial conserva el comportamiento nativo de Expo Router.
 
-Las pantallas raíz `/account`, `/services`, `/valet` y `/hotel` comparten `GuestRootHeader`: título y botón de menú en una fila normal, alineada verticalmente y distribuida entre ambos extremos. Las rutas hijas de Servicios, Cuenta y Chat comparten `GuestChildHeader`, con Back y título en la misma altura visual; no muestran menú ni Chat flotante. `/chat` es una pantalla enfocada: no renderiza `GuestNavigationShell` ni footbar, y su Back usa la pila nativa para recuperar el origen real. El drawer se abre desde la derecha, usa backdrop y X para cerrar, y presenta una superficie con iconos, feedback pressed y selección accesible. Su jerarquía vigente inicia con la acción `Perfil`, antes de headings; después presenta `ESTANCIA: Inicio, Mis servicios`; `BENEFICIOS: Rewards, Promociones`; `SERVICIOS: Servicios, Valet`; `HOTEL: Hotel`. No incluye Chat. Perfil, Rewards y Promociones son rutas hijas de Cuenta; Perfil se abre exclusivamente desde la primera acción del drawer y Rewards/Promociones desde BENEFICIOS, sin entrada en la footbar.
+Las pantallas raíz `/account`, `/services`, `/valet` y `/hotel` comparten `GuestRootHeader`: título y botón de menú en una fila normal, alineada verticalmente y distribuida entre ambos extremos. Las rutas hijas de Servicios, Cuenta y Chat comparten `GuestChildHeader`, con Back y título en la misma altura visual; no muestran menú ni Chat flotante. `/chat` es una pantalla enfocada: no renderiza `GuestNavigationShell` ni footbar, y su Back usa la pila nativa para recuperar el origen real. El drawer se abre desde la derecha, usa backdrop y X para cerrar, y presenta una superficie con iconos, feedback pressed y selección accesible. Su jerarquía vigente inicia con la acción `Perfil`, antes de headings; después presenta `ESTANCIA: Inicio, Mis servicios`; `BENEFICIOS: Rewards, Promociones`; `SERVICIOS: Servicios, Valet`; `HOTEL: Hotel`; y termina con la acción global separada `Cerrar sesión`, fuera de los acordeones. Logout pide confirmación, respeta primero cualquier `GuestNavigationGuard` dirty y, al confirmar, limpia la sesión/contexto en memoria y QueryClient antes de `router.replace('/login')`. No incluye Chat. Perfil, Rewards y Promociones son rutas hijas de Cuenta; Perfil se abre exclusivamente desde la primera acción del drawer y Rewards/Promociones desde BENEFICIOS, sin entrada en la footbar.
 
 ## Rutas de Cuenta
 
@@ -43,6 +43,8 @@ El lifecycle session-backed es `Account → Checkout live session read model →
 ## Back stack y accesibilidad
 
 Las tabs y los links del drawer usan `router.replace` y no acumulan destinos principales. Los launchers de una feature usan `router.push`; Back retorna a su raíz. La tab activa es un no-op.
+
+En Android, el hardware Back se resuelve centralmente solo en raíces Guest: en `/account` abre la confirmación de Logout; en `/services`, `/valet` y `/hotel` ejecuta `router.replace('/account')`. Primero cierra drawer abierto, luego cancela un modal/confirmación visible sin saltar cambios, y no intercepta rutas hijas, que conservan su Back aprobado. El footer Logout es fijo y separado del body scrollable dentro del `SafeAreaView` del drawer.
 
 La footbar usa `tablist`/`tab`, los controles de menú, drawer y Chat usan `button`, y los estados `selected`/`disabled` se derivan exclusivamente de `usePathname()`. No existe un store de navegación paralelo.
 

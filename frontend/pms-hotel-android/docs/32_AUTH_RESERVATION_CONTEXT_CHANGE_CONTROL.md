@@ -1,7 +1,7 @@
 # 32 — Change Control: Cuenta, acceso y contexto de reserva
 
-**Estado:** `APPROVED FOR IMPLEMENTATION` para `IMP-AND-0501`; `0502–0504` siguen pendientes.
-**Alcance:** foundation frontend-first session-only para Auth/Context; no implementa UI Login, selector, persistencia ni rutas nuevas.
+**Estado:** `IMP-AND-0501` completada; `IMP-AND-0502` en implementación/QA; `0503–0504` pendientes.
+**Alcance:** foundation session-only y Login frontend-first; no implementa selector, persistencia ni contexto activo productivo.
 
 ## Problema
 
@@ -51,13 +51,13 @@ El proyecto podrá simular este flujo con contracts, services, mocks, TanStack Q
 - Con varias reservas, la UI debe presentar un selector accesible antes de fijar `ActiveReservationContext`.
 - Al cambiarla, se invalidarán o recargarán los datos reservation-scoped: Stay, habitación, Servicios, solicitudes, Valet, Checkout e Invoice.
 
-Las pantallas/rutas futuras de Login y Reservations tienen autoridad visual frontend-first aprobada y reutilizarán tokens/componentes Android; Figma sigue como guía futura, no bloqueador. `IMP-AND-0501` no las implementa. `IMP-AND-0502` implementará Login y `IMP-AND-0503` el selector/contexto con sus pruebas y guards autorizados.
+Las pantallas/rutas futuras de Login y Reservations tienen autoridad visual frontend-first aprobada y reutilizarán tokens/componentes Android; Figma sigue como guía futura, no bloqueador. `IMP-AND-0502` implementa Login con handoff transitorio a `/account`; `IMP-AND-0503` implementará el selector/contexto con sus pruebas y guards autorizados. Login no selecciona una reserva ni consulta LinkedReservations.
 
 ## Matriz de scope
 
 | Candidato | Scope congelado o conclusión |
 | --- | --- |
-| `GuestAuthSession` | Account/auth scoped; todavía sin implementación. |
+| `GuestAuthSession` | Account/auth scoped; foundation session-only implementada por `0501` y consumida por Login en `0502`, sin persistencia. |
 | `GuestAccount`, Profile, preferencias y consentimientos | Account-scoped. |
 | Rewards | Account-scoped según su contrato vigente; no deriva datos de la estadía para presentación. |
 | Promotions | No definido: la ruta vive bajo Account, pero la elegibilidad futura puede requerir cuenta, reserva, rate plan u otro contexto. No se invalida ni se reasigna sin contrato. |
@@ -91,7 +91,7 @@ Los contratos de Rewards, Promotions y Chat no cambian su comportamiento actual.
 
 ## Backlog y límites
 
-Los IDs aprobados son `IMP-AND-0501` (foundation), `0502` (Guest Login), `0503` (Linked Reservations + Active Context) y `0504` (QA journey). Su secuencia es `0501 → 0502 → 0503 → 0504 → IMP-AND-0116 → Android Release`. `0501` implementa exclusivamente la foundation definida en `33_GUEST_AUTH_FOUNDATION_IMPLEMENTATION_CONTRACT.md`; no adelanta las rutas ni la UI de tareas posteriores.
+Los IDs aprobados son `IMP-AND-0501` (foundation), `0502` (Guest Login), `0503` (Linked Reservations + Active Context) y `0504` (QA journey). Su secuencia es `0501 → 0502 → 0503 → 0504 → IMP-AND-0116 → Android Release`. `0501` implementó la foundation definida en `33_GUEST_AUTH_FOUNDATION_IMPLEMENTATION_CONTRACT.md`; `0502` implementa exclusivamente Login y su handoff transitorio definido en `34_GUEST_LOGIN_IMPLEMENTATION_CONTRACT.md`, sin adelantar selector, guards ni UI de tareas posteriores.
 
 No incluir en una implementación derivada de este documento:
 
@@ -100,4 +100,4 @@ No incluir en una implementación derivada de este documento:
 - AsyncStorage, SecureStore, biometría o persistencia;
 - rutas nuevas por intuición;
 - reasignación de Promotions o Chat sin contrato;
-- cambios de código productivo en esta rama documental.
+- cambios fuera del scope aprobado de `0501/0502` sin una tarea posterior autorizada.

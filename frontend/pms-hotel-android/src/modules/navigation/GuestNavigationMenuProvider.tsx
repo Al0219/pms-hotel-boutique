@@ -1,11 +1,14 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { type Href, router, usePathname } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { createContext, type PropsWithChildren, useCallback, useContext, useMemo, useRef, useState } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { BackHandler, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { guestNavigationDrawerSections, type GuestNavigationDrawerLink, type GuestNavigationDrawerSection } from '@/modules/navigation/GuestNavigationShell';
+import { guestFeatureIcons } from '@/modules/navigation/guestFeatureIcons';
 import { useCheckoutStatus } from '@/modules/checkout';
+import { useActiveReservationContext, useGuestAuthSession } from '@/modules/guest-auth';
 import { guestNavigationStyles } from '@/modules/navigation/guestNavigationStyles';
 import { tokens } from '@/shared/theme/tokens';
 import { ConfirmationModal } from '@/shared/components';
@@ -16,11 +19,17 @@ export interface GuestNavigationGuard {
   onDiscard?: () => void;
   title: string;
 }
+
+type PendingGuestIntent =
+  | { guard: GuestNavigationGuard; kind: 'navigate'; path: string }
+  | { guard: GuestNavigationGuard; kind: 'logout' };
+
 type GuestNavigationMenuContextValue = {
   openMenu: () => void;
   registerNavigationGuard: (guard: GuestNavigationGuard) => () => void;
   requestGuestNavigation: (path: string) => void;
 };
+
 const detachedValue: GuestNavigationMenuContextValue = {
   openMenu: () => undefined,
   registerNavigationGuard: () => () => undefined,
@@ -65,15 +74,21 @@ function DrawerLink({ link, onPress, pathname, snapshotAvailable }: { link: Gues
 export function GuestNavigationMenuProvider({ children }: PropsWithChildren) {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [expandedSection, setExpandedSection] = useState<GuestNavigationDrawerSection['id'] | null>(null);
-  const [pendingNavigation, setPendingNavigation] = useState<{ guard: GuestNavigationGuard; path: string } | null>(null);
+  const [pendingIntent, setPendingIntent] = useState<PendingGuestIntent | null>(null);
+  const [logoutConfirmationVisible, setLogoutConfirmationVisible] = useState(false);
   const guardRef = useRef<GuestNavigationGuard | null>(null);
   const pathname = usePathname();
+  const queryClient = useQueryClient();
+  const { clearActiveReservationContext } = useActiveReservationContext();
+  const { clearSession } = useGuestAuthSession();
   const { isCheckedOut } = useCheckoutStatus();
+
   const openMenu = useCallback(() => {
     setExpandedSection(guestNavigationDrawerSections.find((section) => section.links.some((link) => isDrawerLinkActive(link, pathname)))?.id ?? null);
     setDrawerVisible(true);
   }, [pathname]);
   const closeMenu = useCallback(() => setDrawerVisible(false), []);
+
   /** Shared navigation intent so dirty feature screens never need to know the drawer implementation. */
   const requestGuestNavigation = useCallback((path: string) => {
     if (path === pathname) {
@@ -81,25 +96,80 @@ export function GuestNavigationMenuProvider({ children }: PropsWithChildren) {
       return;
     }
     if (guardRef.current?.isDirty) {
-      setPendingNavigation({ guard: guardRef.current, path });
+      setPendingIntent({ guard: guardRef.current, kind: 'navigate', path });
       return;
     }
     closeMenu();
     router.replace(path as Href);
   }, [closeMenu, pathname]);
+
+  const requestLogout = useCallback(() => {
+    if (guardRef.current?.isDirty) {
+      setPendingIntent({ guard: guardRef.current, kind: 'logout' });
+      return;
+    }
+    setLogoutConfirmationVisible(true);
+  }, []);
+
   const registerNavigationGuard = useCallback((guard: GuestNavigationGuard) => {
     guardRef.current = guard;
     return () => {
       if (guardRef.current === guard) guardRef.current = null;
     };
   }, []);
-  const discardAndNavigate = useCallback(() => {
-    const navigation = pendingNavigation;
-    setPendingNavigation(null);
-    navigation?.guard.onDiscard?.();
+
+  const discardPendingIntent = useCallback(() => {
+    const intent = pendingIntent;
+    setPendingIntent(null);
+    intent?.guard.onDiscard?.();
+    if (!intent) return;
+    if (intent.kind === 'logout') {
+      setLogoutConfirmationVisible(true);
+      return;
+    }
     closeMenu();
-    if (navigation) router.replace(navigation.path as Href);
-  }, [closeMenu, pendingNavigation]);
+    router.replace(intent.path as Href);
+  }, [closeMenu, pendingIntent]);
+
+  const performLogout = useCallback(() => {
+    closeMenu();
+    setLogoutConfirmationVisible(false);
+    clearActiveReservationContext();
+    clearSession();
+    queryClient.clear();
+    router.replace('/login');
+  }, [clearActiveReservationContext, clearSession, closeMenu, queryClient]);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+
+    const listener = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (drawerVisible) {
+        closeMenu();
+        return true;
+      }
+      if (logoutConfirmationVisible) {
+        setLogoutConfirmationVisible(false);
+        return true;
+      }
+      if (pendingIntent) {
+        setPendingIntent(null);
+        return true;
+      }
+      if (pathname === '/account') {
+        requestLogout();
+        return true;
+      }
+      if (pathname === '/services' || pathname === '/valet' || pathname === '/hotel') {
+        router.replace('/account');
+        return true;
+      }
+      return false;
+    });
+
+    return () => listener.remove();
+  }, [closeMenu, drawerVisible, logoutConfirmationVisible, pathname, pendingIntent, requestLogout]);
+
   const value = useMemo(
     () => ({ openMenu, registerNavigationGuard, requestGuestNavigation }),
     [openMenu, registerNavigationGuard, requestGuestNavigation],
@@ -123,7 +193,7 @@ export function GuestNavigationMenuProvider({ children }: PropsWithChildren) {
                 <SymbolView accessibilityElementsHidden name={{ android: 'close', ios: 'xmark', web: 'close' }} size={tokens.typography.size.sectionTitle} tintColor={tokens.color.inkStrong} />
               </Pressable>
             </View>
-            <View style={guestNavigationStyles.drawerSections}>
+            <ScrollView contentContainerStyle={guestNavigationStyles.drawerSections} style={guestNavigationStyles.drawerBody} testID="guest-navigation-drawer-body">
               {guestNavigationDrawerSections.map((section) => (
                 <View key={section.id} style={guestNavigationStyles.drawerSection}>
                   <Pressable accessibilityRole="button" accessibilityState={{ expanded: expandedSection === section.id }} onPress={() => setExpandedSection((current) => current === section.id ? null : section.id)} style={guestNavigationStyles.drawerSectionButton} testID={`guest-navigation-drawer-section-${section.id}`}>
@@ -134,18 +204,34 @@ export function GuestNavigationMenuProvider({ children }: PropsWithChildren) {
                   {expandedSection === section.id ? section.links.map((link) => <DrawerLink key={link.path} link={link} onPress={requestGuestNavigation} pathname={pathname} snapshotAvailable={isCheckedOut} />) : null}
                 </View>
               ))}
+            </ScrollView>
+            <View style={guestNavigationStyles.drawerLogoutArea} testID="guest-navigation-drawer-footer">
+              <Pressable accessibilityLabel="Cerrar sesión" accessibilityRole="button" onPress={requestLogout} style={({ pressed }) => [guestNavigationStyles.drawerLogout, pressed && guestNavigationStyles.drawerItemPressed]} testID="guest-navigation-drawer-logout">
+                <SymbolView accessibilityElementsHidden name={guestFeatureIcons.logout} size={tokens.typography.size.sectionTitle} tintColor={tokens.color.destructive} />
+                <Text style={guestNavigationStyles.drawerLogoutLabel}>Cerrar sesión</Text>
+              </Pressable>
             </View>
           </View>
         </SafeAreaView>
       </Modal> : null}
       <ConfirmationModal
-        body={pendingNavigation?.guard.message ?? ''}
+        body={pendingIntent?.guard.message ?? ''}
         confirmLabel="Salir"
-        onCancel={() => setPendingNavigation(null)}
-        onConfirm={discardAndNavigate}
+        onCancel={() => setPendingIntent(null)}
+        onConfirm={discardPendingIntent}
         testID="guest-navigation-discard-modal"
-        title={pendingNavigation?.guard.title ?? '¿Descartar cambios?'}
-        visible={pendingNavigation !== null}
+        title={pendingIntent?.guard.title ?? '¿Descartar cambios?'}
+        visible={pendingIntent !== null}
+      />
+      <ConfirmationModal
+        body="Volverás a la pantalla de inicio de sesión."
+        confirmLabel="Cerrar sesión"
+        destructive
+        onCancel={() => setLogoutConfirmationVisible(false)}
+        onConfirm={performLogout}
+        testID="guest-navigation-logout-modal"
+        title="¿Cerrar sesión?"
+        visible={logoutConfirmationVisible}
       />
     </GuestNavigationMenuContext.Provider>
   );

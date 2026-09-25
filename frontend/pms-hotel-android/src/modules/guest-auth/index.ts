@@ -15,4 +15,6 @@ export { resolveLinkedReservationOutcome } from '@/modules/guest-auth/domain/res
 export type { LinkedReservationOutcome } from '@/modules/guest-auth/domain/resolveLinkedReservationOutcome';
 export { ActiveReservationContextProvider, useActiveReservationContext } from '@/modules/guest-auth/presentation/ActiveReservationContextProvider';
 export { GuestAuthSessionProvider, useGuestAuthSession } from '@/modules/guest-auth/presentation/GuestAuthSessionProvider';
+export { LoginScreen } from '@/modules/guest-auth/presentation/LoginScreen';
+export { useGuestLogin } from '@/modules/guest-auth/presentation/hooks/useGuestLogin';
 export { reservationContextKey } from '@/modules/guest-auth/presentation/queryKeys';

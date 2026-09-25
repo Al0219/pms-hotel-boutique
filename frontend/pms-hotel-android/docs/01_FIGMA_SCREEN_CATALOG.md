@@ -52,7 +52,7 @@ La footbar V2 implementada por esta excepción no convierte V2 en autoridad glob
 
 ## Autoridad visual frontend-first — Guest Auth
 
-`IMP-AND-0502 — Guest Login` y `IMP-AND-0503 — Linked Reservations + Active Context` tienen autoridad visual frontend-first aprobada. Login y Reservations reutilizarán los tokens y componentes Android actuales; no requieren un frame Figma como DoR para iniciar. Figma continúa siendo guía visual futura y cualquier frame posterior debe conservar los contratos, estados y navegación aprobados. `IMP-AND-0501` no crea pantallas ni rutas.
+`IMP-AND-0502 — Guest Login` y `IMP-AND-0503 — Linked Reservations + Active Context` tienen autoridad visual frontend-first aprobada. Login y Reservations reutilizan los tokens y componentes Android actuales; no requieren un frame Figma como DoR para iniciar. `0502` implementa `/login` con composición mobile-first sobria y `0503` sigue pendiente para Reservations/contexto. Figma continúa siendo guía visual futura y cualquier frame posterior debe conservar los contratos, estados y navegación aprobados.
 
 ## 01 Estancia y servicios
 - estancia;

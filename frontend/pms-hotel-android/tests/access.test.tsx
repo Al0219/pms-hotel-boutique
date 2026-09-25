@@ -3,7 +3,6 @@ import { fireEvent, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { renderRouter } from 'expo-router/testing-library';
 
-import IndexRoute from '../app/index';
 import { NetworkError } from '@/data/remote/http/HttpError';
 import { MockAccessService } from '@/modules/access/data/mocks/MockAccessService';
 import { type AccessService } from '@/modules/access/data/services/AccessService';
@@ -28,11 +27,11 @@ async function fillValidAccess(screen: Awaited<ReturnType<typeof renderAccess>>[
 }
 
 describe('Access / Vincular reserva', () => {
-  it('redirects root to /access', async () => {
+  it('renders the direct /access route outside Guest navigation', async () => {
     function AccessRoute() {
       return <QueryClientProvider client={createQueryClient()}><AccessScreen service={new MockAccessService()} /></QueryClientProvider>;
     }
-    const screen = await renderRouter({ index: IndexRoute, access: AccessRoute }, { initialUrl: '/' });
+    const screen = await renderRouter({ access: AccessRoute }, { initialUrl: '/access' });
     await waitFor(() => expect(screen.getByTestId('access-screen')).toBeTruthy());
   });
 
@@ -47,6 +46,7 @@ describe('Access / Vincular reserva', () => {
     expect(screen.queryByText('Chat')).toBeNull();
     expect(screen.queryByText('Valet')).toBeNull();
     expect(screen.queryByText('Cuenta')).toBeNull();
+    expect(screen.queryByText('Cerrar sesión')).toBeNull();
   });
 
   it('keeps local invalid input outside the service boundary', async () => {
