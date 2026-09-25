@@ -6,7 +6,8 @@ import { HttpNetworkError } from "@/lib/http/errors";
 import { StatusBadge } from "@/shared/components";
 
 import { useRoomCleaning } from "../hooks/use-room-cleaning";
-import type { RoomCleaningStatus } from "../model/room-cleaning";
+import { CLEANING_STATUS_LABELS, CLEANING_STATUS_VARIANTS } from "./cleaning-status-labels";
+import { HousekeepingDiscrepancies } from "./housekeeping-discrepancies";
 import { RoomCleaningDetail } from "./room-cleaning-detail";
 import styles from "./housekeeping-board.module.css";
 
@@ -15,15 +16,11 @@ interface HousekeepingBoardProps {
   propertyId?: string;
   /** Must be supplied only after Backend approves the provisional Housekeeping contract. */
   endpoint?: string;
+  /** Must be supplied only after Backend approves the provisional Rooms contract. */
+  roomsEndpoint?: string;
 }
 
-const STATUS_LABELS: Record<RoomCleaningStatus, string> = {
-  DIRTY: "Sucia",
-  CLEAN: "Limpia",
-  INSPECTED: "Inspeccionada",
-};
-
-export function HousekeepingBoard({ propertyId, endpoint }: Readonly<HousekeepingBoardProps>) {
+export function HousekeepingBoard({ propertyId, endpoint, roomsEndpoint }: Readonly<HousekeepingBoardProps>) {
   const { data: rooms, error, isLoading, refetch } = useRoomCleaning(propertyId, endpoint);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
 
@@ -74,14 +71,17 @@ export function HousekeepingBoard({ propertyId, endpoint }: Readonly<Housekeepin
               onClick={() => setSelectedRoomId(room.id)}
             >
               <span><strong>{room.roomLabel}</strong><small>{room.id}</small></span>
-              <StatusBadge variant={room.status === "INSPECTED" ? "success" : room.status === "CLEAN" ? "info" : "warning"} size="sm">
-                {STATUS_LABELS[room.status]}
+              <StatusBadge variant={CLEANING_STATUS_VARIANTS[room.status]} size="sm">
+                {CLEANING_STATUS_LABELS[room.status]}
               </StatusBadge>
             </button>
           </li>)}
         </ul>
       </section>
-      <RoomCleaningDetail room={selectedRoom} />
+      <RoomCleaningDetail room={selectedRoom} propertyId={propertyId} endpoint={endpoint} />
     </div>
+    {roomsEndpoint && endpoint ? (
+      <HousekeepingDiscrepancies propertyId={propertyId} roomsEndpoint={roomsEndpoint} cleaningEndpoint={endpoint} />
+    ) : null}
   </main>;
 }

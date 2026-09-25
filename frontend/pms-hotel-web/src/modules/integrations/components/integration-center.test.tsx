@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { HttpNetworkError } from "@/lib/http/errors";
@@ -47,11 +47,11 @@ describe("IntegrationCenter", () => {
     const summary = within(screen.getByLabelText("Resumen de integraciones"));
     expect(summary.getByText("Categorías")).toBeInTheDocument();
     expect(summary.getByText("7")).toBeInTheDocument();
-    expect(summary.getByText("HEALTHY")).toBeInTheDocument();
+    expect(summary.getByText("Saludables")).toBeInTheDocument();
     expect(summary.getByText("4")).toBeInTheDocument();
     expect(summary.getByText("Requieren revisión")).toBeInTheDocument();
     expect(summary.getByText("2")).toBeInTheDocument();
-    expect(summary.getByText("CONFIGURED")).toBeInTheDocument();
+    expect(summary.getByText("Configuradas")).toBeInTheDocument();
     expect(summary.getByText("1")).toBeInTheDocument();
     expect(screen.getByText("Booking.com")).toBeInTheDocument();
     expect(screen.getByText("channel-booking")).toBeInTheDocument();
@@ -81,5 +81,21 @@ describe("IntegrationCenter", () => {
     render(<IntegrationCenter propertyId="GT-HB-01" endpoint="http://pms.test/contract/integrations" />);
 
     expect(screen.getByText(/sin conexión/i)).toBeInTheDocument();
+  });
+
+  it("opens the integration detail with health in Spanish and a deep link to its errors", () => {
+    useIntegrationsMock.mockReturnValue({ data: INTEGRATIONS, error: null, isLoading: false, refetch: vi.fn() });
+
+    render(<IntegrationCenter propertyId="GT-HB-01" endpoint="http://pms.test/contract/integrations" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Ver detalle de Booking.com" }));
+
+    expect(screen.getByRole("heading", { name: "Booking.com" })).toBeInTheDocument();
+    expect(screen.getAllByText("Saludable").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByRole("link", { name: "Ver errores de Booking.com" })).toHaveAttribute(
+      "href",
+      "/integraciones/errores?integrationId=INT-001",
+    );
+    expect(screen.getByRole("link", { name: "Ver cola de errores" })).toHaveAttribute("href", "/integraciones/errores");
   });
 });

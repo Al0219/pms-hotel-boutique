@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { DataTable } from "@/shared/components";
@@ -181,7 +182,9 @@ export function ReservationList({ reservations, onConvert }: Readonly<Reservatio
                 header: "Reserva / Huésped",
                 render: (item) => (
                   <>
-                    <strong className={styles.reference}>{item.id}</strong>
+                    <Link className={`${styles.reference} ${styles.referenceLink}`} href={`/reservas/${encodeURIComponent(item.id)}`}>
+                      {item.id}
+                    </Link>
                     <span className={styles.guestName}>{item.guestName}</span>
                   </>
                 ),

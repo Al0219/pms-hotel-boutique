@@ -8,6 +8,7 @@ import { HousekeepingBoard } from "@/modules/housekeeping";
 export default function HousekeepingPage() {
   const propertyId = process.env.NEXT_PUBLIC_PROPERTY_ID;
   const endpoint = "http://pms.test/room-cleaning";
+  const roomsEndpoint = "http://pms.test/rooms";
 
-  return <HousekeepingBoard propertyId={propertyId} endpoint={endpoint} />;
+  return <HousekeepingBoard propertyId={propertyId} endpoint={endpoint} roomsEndpoint={roomsEndpoint} />;
 }

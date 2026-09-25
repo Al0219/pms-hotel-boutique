@@ -9,7 +9,14 @@
 import { http, HttpResponse } from "msw";
 
 import type { RoomListDto } from "@/modules/rooms/dtos/room.dto";
+import type { RoomStatusChangeRequestDto, RoomStatusChangeResultDto } from "@/modules/rooms/dtos/room-status-change.dto";
 import type { RoomCleaningListDto } from "@/modules/housekeeping/dtos/room-cleaning.dto";
+import type {
+  CleaningTransitionRequestDto,
+  CleaningTransitionResultDto,
+  DiscrepancyResolutionDto,
+  DiscrepancyResolutionListDto,
+} from "@/modules/housekeeping/dtos/room-cleaning-transition.dto";
 import type { MaintenanceOrderListDto } from "@/modules/maintenance/dtos/maintenance-order.dto";
 import type { ConciergeTaskListDto } from "@/modules/concierge/dtos/concierge-task.dto";
 import type { ValetRequestListDto } from "@/modules/parking-valet/dtos/valet-request.dto";
@@ -17,7 +24,12 @@ import type { OperationalMessageListDto } from "@/modules/messaging/dtos/operati
 import type { CompanyListDto } from "@/modules/companies/dtos/company.dto";
 import type { AgencyListDto } from "@/modules/agencies/dtos/agency.dto";
 import type { GroupListDto } from "@/modules/groups/dtos/group.dto";
+import type { RoomingEntryDto } from "@/modules/groups/dtos/group.dto";
 import type { IntegrationListDto } from "@/modules/integrations/dtos/integration.dto";
+import type {
+  IntegrationErrorDto,
+  IntegrationErrorListDto,
+} from "@/modules/integrations/dtos/integration-error.dto";
 import type { PropertyReportListDto } from "@/modules/reports/dtos/property-report.dto";
 
 const BASE = "http://pms.test";
@@ -123,12 +135,37 @@ const mockAgencies: AgencyListDto = {
   ],
 };
 
+const mockRooming: Record<string, RoomingEntryDto[]> = {
+  "GRP-001": [
+    { entry_id: "RL-001", guest_name: "Ana Ruiz", room_label: "201" },
+    { entry_id: "RL-002", guest_name: "Pedro León", room_label: "202" },
+  ],
+  "GRP-002": [
+    { entry_id: "RL-003", guest_name: "Familia Méndez", room_label: "301" },
+  ],
+};
+
 const mockGroups: GroupListDto = {
   groups: [
-    { group_id: "GRP-001", property_id: "GT-HB-01", name: "Congreso Medicina Tropical 2026", lifecycle_status: "DEFINITE", room_block_reference: "BLOCK-CMT-2026", audit_reference: "AUD-GRP-001" },
-    { group_id: "GRP-002", property_id: "GT-HB-01", name: "Boda Familla Mendez", lifecycle_status: "IN_HOUSE", room_block_reference: "BLOCK-BM-2026", audit_reference: "AUD-GRP-002" },
+    {
+      group_id: "GRP-001", property_id: "GT-HB-01", name: "Congreso Medicina Tropical 2026", lifecycle_status: "DEFINITE",
+      room_block_reference: "BLOCK-CMT-2026", audit_reference: "AUD-GRP-001",
+      block_start_date: "2026-10-01", block_end_date: "2026-10-05", rooms_blocked: 20, rooms_picked_up: 14,
+      rooming_list: mockRooming["GRP-001"],
+    },
+    {
+      group_id: "GRP-002", property_id: "GT-HB-01", name: "Boda Familla Mendez", lifecycle_status: "IN_HOUSE",
+      room_block_reference: "BLOCK-BM-2026", audit_reference: "AUD-GRP-002",
+      block_start_date: "2026-09-18", block_end_date: "2026-09-21", rooms_blocked: 8, rooms_picked_up: 8,
+      rooming_list: mockRooming["GRP-002"],
+    },
     { group_id: "GRP-003", property_id: "GT-HB-01", name: "Retiro Corporativo Excel SA", lifecycle_status: "TENTATIVE", room_block_reference: null, audit_reference: null },
-    { group_id: "GRP-004", property_id: "GT-HB-01", name: "Conferencia Turismo Sostenible", lifecycle_status: "CLOSED", room_block_reference: "BLOCK-CTS-2025", audit_reference: "AUD-GRP-004" },
+    {
+      group_id: "GRP-004", property_id: "GT-HB-01", name: "Conferencia Turismo Sostenible", lifecycle_status: "CLOSED",
+      room_block_reference: "BLOCK-CTS-2025", audit_reference: "AUD-GRP-004",
+      block_start_date: "2025-11-10", block_end_date: "2025-11-14", rooms_blocked: 30, rooms_picked_up: 27,
+      rooming_list: [],
+    },
   ],
 };
 
@@ -254,6 +291,239 @@ function handleListPropertyReports({ request }: { request: Request }) {
   return HttpResponse.json(mockReports);
 }
 
+const ALLOWED_CLEANING_TRANSITIONS: Record<string, string[]> = {
+  DIRTY: ["CLEAN"],
+  CLEAN: ["INSPECTED", "DIRTY"],
+  INSPECTED: ["DIRTY"],
+};
+
+let discrepancyResolutions: DiscrepancyResolutionDto[] = [];
+
+function handleCleaningTransition({ params, request }: { params: { roomId?: string }; request: Request }) {
+  return (async () => {
+    const roomId = String(params.roomId);
+    const body = (await request.json()) as CleaningTransitionRequestDto;
+    const room = mockRoomCleaning.rooms.find((entry) => entry.room_id === roomId);
+
+    if (!room) {
+      return HttpResponse.json({ error: "ROOM_NOT_FOUND" }, { status: 404 });
+    }
+
+    const allowed = ALLOWED_CLEANING_TRANSITIONS[room.cleaning_status] ?? [];
+    if (!allowed.includes(body.to_status)) {
+      return HttpResponse.json({ error: "INVALID_TRANSITION" }, { status: 409 });
+    }
+
+    if (body.to_status === "DIRTY" && !body.reason?.trim()) {
+      return HttpResponse.json({ error: "REASON_REQUIRED" }, { status: 400 });
+    }
+
+    room.cleaning_status = body.to_status;
+    const result: CleaningTransitionResultDto = {
+      room_id: room.room_id,
+      property_id: room.property_id,
+      cleaning_status: room.cleaning_status,
+    };
+    return HttpResponse.json(result);
+  })();
+}
+
+function handleListDiscrepancyResolutions() {
+  const result: DiscrepancyResolutionListDto = { resolutions: discrepancyResolutions };
+  return HttpResponse.json(result);
+}
+
+function handleResolveDiscrepancy({ request }: { request: Request }) {
+  return (async () => {
+    const body = (await request.json()) as { room_id: string; reason: string };
+
+    if (!body.room_id || !body.reason?.trim()) {
+      return HttpResponse.json({ error: "REASON_REQUIRED" }, { status: 400 });
+    }
+
+    discrepancyResolutions = discrepancyResolutions.filter((entry) => entry.room_id !== body.room_id);
+    discrepancyResolutions.push({
+      room_id: body.room_id,
+      reason: body.reason.trim(),
+      resolved_at: new Date().toISOString(),
+    });
+
+    const result: DiscrepancyResolutionListDto = { resolutions: discrepancyResolutions };
+    return HttpResponse.json(result);
+  })();
+}
+
+const ALLOWED_ROOM_STATUS_CHANGES: Record<string, string[]> = {
+  ACTIVE: ["OOO", "OOS"],
+  OOO: ["ACTIVE", "OOS"],
+  OOS: ["ACTIVE", "OOO"],
+};
+
+function handleRoomStatusChange({ params, request }: { params: { roomId?: string }; request: Request }) {
+  return (async () => {
+    const roomId = String(params.roomId);
+    const body = (await request.json()) as RoomStatusChangeRequestDto;
+    const room = mockRooms.rooms.find((entry) => entry.room_id === roomId);
+
+    if (!room) {
+      return HttpResponse.json({ error: "ROOM_NOT_FOUND" }, { status: 404 });
+    }
+
+    const allowed = ALLOWED_ROOM_STATUS_CHANGES[room.status] ?? [];
+    if (!allowed.includes(body.to_status)) {
+      return HttpResponse.json({ error: "INVALID_TRANSITION" }, { status: 409 });
+    }
+
+    if (!body.reason?.trim()) {
+      return HttpResponse.json({ error: "REASON_REQUIRED" }, { status: 400 });
+    }
+
+    const blocking = body.to_status === "OOO" || body.to_status === "OOS";
+    if (blocking && (!body.start_date || !body.end_date || body.start_date >= body.end_date)) {
+      return HttpResponse.json({ error: "INVALID_PERIOD" }, { status: 400 });
+    }
+
+    room.status = body.to_status;
+    const result: RoomStatusChangeResultDto = {
+      room_id: room.room_id,
+      property_id: room.property_id,
+      status: room.status,
+      blocked_from: blocking ? body.start_date : null,
+      blocked_to: blocking ? body.end_date : null,
+    };
+    return HttpResponse.json(result);
+  })();
+}
+
+function handleAddRoomingEntry({ params, request }: { params: { groupId?: string }; request: Request }) {
+  return (async () => {
+    const groupId = String(params.groupId);
+    const group = mockGroups.groups.find((entry) => entry.group_id === groupId);
+
+    if (!group) {
+      return HttpResponse.json({ error: "GROUP_NOT_FOUND" }, { status: 404 });
+    }
+
+    const body = (await request.json()) as { guest_name: string; room_label: string };
+    if (!body.guest_name?.trim() || !body.room_label?.trim()) {
+      return HttpResponse.json({ error: "GUEST_AND_ROOM_REQUIRED" }, { status: 400 });
+    }
+
+    const blocked = group.rooms_blocked ?? 0;
+    const picked = group.rooms_picked_up ?? 0;
+    if (blocked > 0 && picked >= blocked) {
+      return HttpResponse.json({ error: "BLOCK_FULL" }, { status: 409 });
+    }
+
+    const list = mockRooming[groupId] ?? [];
+    const entry: RoomingEntryDto = {
+      entry_id: `RL-${String(list.length + 1).padStart(3, "0")}-${Date.now() % 1000}`,
+      guest_name: body.guest_name.trim(),
+      room_label: body.room_label.trim(),
+    };
+    list.push(entry);
+    mockRooming[groupId] = list;
+    group.rooming_list = list;
+    group.rooms_picked_up = picked + 1;
+
+    return HttpResponse.json(group);
+  })();
+}
+
+function handleRemoveRoomingEntry({ params }: { params: { groupId?: string; entryId?: string } }) {
+  const groupId = String(params.groupId);
+  const group = mockGroups.groups.find((entry) => entry.group_id === groupId);
+
+  if (!group) {
+    return HttpResponse.json({ error: "GROUP_NOT_FOUND" }, { status: 404 });
+  }
+
+  const list = mockRooming[groupId] ?? [];
+  const next = list.filter((entry) => entry.entry_id !== String(params.entryId));
+
+  if (next.length === list.length) {
+    return HttpResponse.json({ error: "ENTRY_NOT_FOUND" }, { status: 404 });
+  }
+
+  mockRooming[groupId] = next;
+  group.rooming_list = next;
+  group.rooms_picked_up = Math.max((group.rooms_picked_up ?? 1) - 1, 0);
+
+  return HttpResponse.json(group);
+}
+
+const mockIntegrationErrors: IntegrationErrorDto[] = [
+  {
+    error_id: "ERR-001", property_id: "GT-HB-01", integration_id: "INT-002", integration_provider: "Expedia",
+    kind: "reservation_import", message: "Reserva EXP-99120 rechazada por tarifa desactualizada.",
+    status: "PENDING", attempts: 1, max_attempts: 3, retryable: true, last_attempt_at: "2026-09-18T12:05:00.000Z",
+    history: [{ status: "PENDING", at: "2026-09-18T12:00:00.000Z", note: "Primer intento automático" }],
+  },
+  {
+    error_id: "ERR-002", property_id: "GT-HB-01", integration_id: "INT-006", integration_provider: "Salto Systems",
+    kind: "key_encoding", message: "Llave de habitación 204 no codificada: cerradura sin respuesta.",
+    status: "FAILED", attempts: 3, max_attempts: 3, retryable: false, last_attempt_at: "2026-09-17T23:20:00.000Z",
+    history: [
+      { status: "PENDING", at: "2026-09-17T23:00:00.000Z", note: "Primer intento automático" },
+      { status: "FAILED", at: "2026-09-17T23:20:00.000Z", note: "Requiere intervención en sitio" },
+    ],
+  },
+  {
+    error_id: "ERR-003", property_id: "GT-HB-01", integration_id: "INT-003", integration_provider: "Stripe",
+    kind: "capture", message: "Captura de Q940 rechazada por la pasarela.",
+    status: "PENDING", attempts: 0, max_attempts: 5, retryable: true, last_attempt_at: null,
+    history: [],
+  },
+  {
+    error_id: "ERR-004", property_id: "GT-HB-01", integration_id: "INT-001", integration_provider: "Booking.com",
+    kind: "rate_push", message: "Push de tarifa Deluxe King confirmado tras reintento.",
+    status: "RESOLVED", attempts: 2, max_attempts: 3, retryable: true, last_attempt_at: "2026-09-18T14:35:00.000Z",
+    history: [
+      { status: "PENDING", at: "2026-09-18T14:30:00.000Z", note: "Primer intento automático" },
+      { status: "RESOLVED", at: "2026-09-18T14:35:00.000Z", note: "Reintento manual exitoso" },
+    ],
+  },
+];
+
+const retriedKeys = new Set<string>();
+
+function handleListIntegrationErrors() {
+  const result: IntegrationErrorListDto = { errors: mockIntegrationErrors };
+  return HttpResponse.json(result);
+}
+
+function handleRetryIntegrationError({ params, request }: { params: { errorId?: string }; request: Request }) {
+  return (async () => {
+    const errorId = String(params.errorId);
+    const body = (await request.json()) as { idempotency_key: string };
+    const error = mockIntegrationErrors.find((entry) => entry.error_id === errorId);
+
+    if (!error) {
+      return HttpResponse.json({ error: "ERROR_NOT_FOUND" }, { status: 404 });
+    }
+
+    if (retriedKeys.has(`${errorId}:${body.idempotency_key}`)) {
+      return HttpResponse.json(error);
+    }
+
+    if (error.status === "RESOLVED") {
+      return HttpResponse.json({ error: "ALREADY_RESOLVED" }, { status: 409 });
+    }
+
+    if (!error.retryable) {
+      return HttpResponse.json({ error: "NON_RETRYABLE" }, { status: 422 });
+    }
+
+    retriedKeys.add(`${errorId}:${body.idempotency_key}`);
+    error.attempts += 1;
+    error.status = "RESOLVED";
+    error.last_attempt_at = new Date().toISOString();
+    error.history.push({ status: "RESOLVED", at: error.last_attempt_at, note: "Reintento manual exitoso" });
+
+    return HttpResponse.json(error);
+  })();
+}
+
 export const web3Handlers = [
   http.get(`${BASE}/rooms`, handleListRooms),
   http.get(`${BASE}/room-cleaning`, handleListRoomCleaning),
@@ -266,4 +536,12 @@ export const web3Handlers = [
   http.get(`${BASE}/groups`, handleListGroups),
   http.get(`${BASE}/integrations`, handleListIntegrations),
   http.get(`${BASE}/property-reports`, handleListPropertyReports),
+  http.post(`${BASE}/room-cleaning/:roomId/transitions`, handleCleaningTransition),
+  http.get(`${BASE}/room-cleaning/discrepancy-resolutions`, handleListDiscrepancyResolutions),
+  http.post(`${BASE}/room-cleaning/discrepancy-resolutions`, handleResolveDiscrepancy),
+  http.post(`${BASE}/rooms/:roomId/status-change`, handleRoomStatusChange),
+  http.post(`${BASE}/groups/:groupId/rooming-list`, handleAddRoomingEntry),
+  http.delete(`${BASE}/groups/:groupId/rooming-list/:entryId`, handleRemoveRoomingEntry),
+  http.get(`${BASE}/integration-errors`, handleListIntegrationErrors),
+  http.post(`${BASE}/integration-errors/:errorId/retry`, handleRetryIntegrationError),
 ];

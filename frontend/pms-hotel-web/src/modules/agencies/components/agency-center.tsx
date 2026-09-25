@@ -5,6 +5,7 @@ import { useState } from "react";
 import { HttpNetworkError } from "@/lib/http/errors";
 
 import { useAgencies } from "../hooks/use-agencies";
+import { AGENCY_STATUS_LABELS } from "../model/agency";
 import { AgencyDetail } from "./agency-detail";
 import styles from "./agency-center.module.css";
 
@@ -66,7 +67,7 @@ export function AgencyCenter({ propertyId, endpoint }: Readonly<AgencyCenterProp
               onClick={() => setSelectedAgencyId(agency.id)}
             >
               <span><strong>{agency.legalName}</strong><small>{agency.id}</small></span>
-              <span className={styles.status}>{agency.statusCode}</span>
+              <span className={styles.status}>{AGENCY_STATUS_LABELS[agency.status]}</span>
             </button>
           </li>)}
         </ul>

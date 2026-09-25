@@ -5,4 +5,4 @@
  */
 
 export { AgencyCenter } from "./components/agency-center";
-export type { Agency } from "./model/agency";
+export type { Agency, AgencyStatus } from "./model/agency";

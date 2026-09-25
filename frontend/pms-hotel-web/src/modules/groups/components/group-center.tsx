@@ -74,7 +74,7 @@ export function GroupCenter({ propertyId, endpoint, onTransition }: Readonly<Gro
           </li>)}
         </ul>
       </section>
-      <GroupDetail group={selectedGroup} onTransition={onTransition} />
+      <GroupDetail group={selectedGroup} onTransition={onTransition} propertyId={propertyId} endpoint={endpoint} />
     </div>
   </main>;
 }

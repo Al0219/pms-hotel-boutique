@@ -1,4 +1,5 @@
 import type { Company } from "../model/company";
+import { COMPANY_STATUS_LABELS } from "../model/company";
 
 import styles from "./company-center.module.css";
 
@@ -16,7 +17,7 @@ export function CompanyDetail({ company }: Readonly<CompanyDetailProps>) {
     <h2 id="company-detail-title">{company.legalName}</h2>
     <div className={styles.summaryGrid}>
       <Reference label="Empresa" value={company.id} />
-      <Reference label="Estado" value={company.statusCode} />
+      <Reference label="Estado" value={COMPANY_STATUS_LABELS[company.status]} />
       <Reference label="Property ID" value={company.propertyId} />
     </div>
     <div className={styles.detailGrid}>

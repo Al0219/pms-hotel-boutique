@@ -1,5 +1,7 @@
 import type { Group } from "../model/group";
+import { pickupRate, remainingBlockRooms } from "../model/group";
 import { GROUP_LIFECYCLE, nextGroupStatus, type GroupLifecycleStatus } from "../model/group-lifecycle";
+import { GroupRoomingPanel } from "./group-rooming-panel";
 
 import styles from "./group-center.module.css";
 
@@ -7,6 +9,10 @@ interface GroupDetailProps {
   group: Group;
   /** Supplied by composition once Backend confirms the transition contract. */
   onTransition?: (groupId: string, target: GroupLifecycleStatus) => void;
+  /** Must be resolved from the authorized staff session by the app composition layer. */
+  propertyId?: string;
+  /** Must be supplied only after Backend approves the provisional Group contract. */
+  endpoint?: string;
 }
 
 const STATUS_LABELS: Record<GroupLifecycleStatus, string> = {
@@ -21,7 +27,11 @@ function Reference({ label, value }: Readonly<{ label: string; value: string | n
   return <div className={styles.reference}><dt>{label}</dt><dd>{value ?? "Sin referencia"}</dd></div>;
 }
 
-export function GroupDetail({ group, onTransition }: Readonly<GroupDetailProps>) {
+function formatBlockDate(date: Date): string {
+  return date.toLocaleDateString("es-GT", { day: "numeric", month: "short", year: "numeric" }).replace(".", "");
+}
+
+export function GroupDetail({ group, onTransition, propertyId, endpoint }: Readonly<GroupDetailProps>) {
   const nextStatus = nextGroupStatus(group.status);
   const currentIndex = GROUP_LIFECYCLE.indexOf(group.status);
 
@@ -63,11 +73,31 @@ export function GroupDetail({ group, onTransition }: Readonly<GroupDetailProps>)
       <section className={styles.detailCard} aria-labelledby="group-block-title">
         <h3 id="group-block-title">Room block</h3>
         <dl className={styles.references}><Reference label="Referencia de block" value={group.roomBlockReference} /></dl>
+        {group.block ? (
+          <>
+            <dl className={styles.references}>
+              <Reference label="Fechas del block" value={`${formatBlockDate(group.block.startDate)} – ${formatBlockDate(group.block.endDate)}`} />
+              <Reference
+                label="Pickup"
+                value={`${group.block.roomsPickedUp}/${group.block.roomsBlocked} · ${Math.round(pickupRate(group.block) * 100)}% · ${remainingBlockRooms(group.block)} restantes`}
+              />
+            </dl>
+            <div className={styles.pickupBar} role="img" aria-label={`Pickup ${group.block.roomsPickedUp} de ${group.block.roomsBlocked}`}>
+              <span className={styles.pickupFill} style={{ width: `${Math.round(pickupRate(group.block) * 100)}%` }} />
+            </div>
+            <p className={styles.transitionHint}>El pickup consume inventario del block; el recálculo de disponibilidad lo refleja Availability.</p>
+          </>
+        ) : (
+          <p className={styles.transitionHint}>Sin block fechado para este grupo.</p>
+        )}
       </section>
       <section className={styles.detailCard} aria-labelledby="group-audit-title">
         <h3 id="group-audit-title">Auditoría</h3>
         <dl className={styles.references}><Reference label="Referencia de auditoría" value={group.auditReference} /></dl>
       </section>
+      {propertyId && endpoint ? (
+        <GroupRoomingPanel group={group} propertyId={propertyId} endpoint={endpoint} />
+      ) : null}
     </div>
   </section>;
 }

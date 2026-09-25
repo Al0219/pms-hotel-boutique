@@ -6,7 +6,7 @@ import { HttpNetworkError } from "@/lib/http/errors";
 import { StatusBadge } from "@/shared/components";
 
 import { useRooms } from "../hooks/use-rooms";
-import type { RoomStatus } from "../model/room";
+import { ROOM_STATUS_LABELS, ROOM_STATUS_VARIANTS } from "./room-status-labels";
 import { RoomDetail } from "./room-detail";
 import styles from "./room-board.module.css";
 
@@ -16,12 +16,6 @@ interface RoomBoardProps {
   /** Must be supplied only after Backend approves the provisional Rooms contract. */
   endpoint?: string;
 }
-
-const STATUS_LABELS: Record<RoomStatus, string> = {
-  ACTIVE: "Activa",
-  OOO: "Fuera de orden",
-  OOS: "Fuera de servicio",
-};
 
 export function RoomBoard({ propertyId, endpoint }: Readonly<RoomBoardProps>) {
   const { data: rooms, error, isLoading, refetch } = useRooms(propertyId, endpoint);
@@ -74,14 +68,14 @@ export function RoomBoard({ propertyId, endpoint }: Readonly<RoomBoardProps>) {
               onClick={() => setSelectedRoomId(room.id)}
             >
               <span><strong>{room.number}</strong><small>{room.roomTypeLabel}</small></span>
-              <StatusBadge variant={room.status === "ACTIVE" ? "success" : room.status === "OOO" ? "warning" : "error"} size="sm">
-                {STATUS_LABELS[room.status]}
+              <StatusBadge variant={ROOM_STATUS_VARIANTS[room.status]} size="sm">
+                {ROOM_STATUS_LABELS[room.status]}
               </StatusBadge>
             </button>
           </li>)}
         </ul>
       </section>
-      <RoomDetail room={selectedRoom} />
+      <RoomDetail room={selectedRoom} propertyId={propertyId} endpoint={endpoint} />
     </div>
   </main>;
 }

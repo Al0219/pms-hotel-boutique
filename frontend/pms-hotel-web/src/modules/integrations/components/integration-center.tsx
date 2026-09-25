@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 
 import { HttpNetworkError } from "@/lib/http/errors";
 import { DataTable } from "@/shared/components";
@@ -8,6 +9,8 @@ import { DataTable } from "@/shared/components";
 import { useIntegrations } from "../hooks/use-integrations";
 import { summarizeIntegrations } from "../model/integration";
 import type { IntegrationHealth } from "../model/integration-taxonomy";
+import { IntegrationDetail } from "./integration-detail";
+import { INTEGRATION_HEALTH_LABELS } from "./integration-health-labels";
 import styles from "./integration-center.module.css";
 
 interface IntegrationCenterProps {
@@ -16,13 +19,6 @@ interface IntegrationCenterProps {
   /** Must be supplied only after Backend approves the provisional Integration contract. */
   endpoint?: string;
 }
-
-const HEALTH_LABELS: Record<IntegrationHealth, string> = {
-  HEALTHY: "HEALTHY",
-  ATTENTION: "ATTENTION",
-  DEGRADED: "DEGRADED",
-  CONFIGURED: "CONFIGURED",
-};
 
 const HEALTH_BADGE: Record<IntegrationHealth, string> = {
   HEALTHY: styles.healthHealthy,
@@ -34,6 +30,7 @@ const HEALTH_BADGE: Record<IntegrationHealth, string> = {
 export function IntegrationCenter({ propertyId, endpoint }: Readonly<IntegrationCenterProps>) {
   const { data: integrations, error, isLoading, refetch } = useIntegrations(propertyId, endpoint);
   const summary = useMemo(() => summarizeIntegrations(integrations ?? []), [integrations]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   if (!propertyId) {
     return <main className={styles.page} role="status"><h1>Integration Center</h1><p>La sesión debe proporcionar un scope de propiedad autorizado antes de consultar integraciones.</p></main>;
@@ -59,11 +56,14 @@ export function IntegrationCenter({ propertyId, endpoint }: Readonly<Integration
     return <main className={styles.page}><h1>Integration Center</h1><p>No hay integraciones para esta propiedad.</p></main>;
   }
 
+  const selected = integrations.find((integration) => integration.id === selectedId) ?? null;
+
   return <main className={styles.page}>
     <header className={styles.header}>
       <p className={styles.eyebrow}>Integraciones</p>
       <h1>Integration Center</h1>
       <p>Conectores por categoría, salud, última sincronización y capacidades · property scope {propertyId}.</p>
+      <p><Link className={styles.errorsLink} href="/integraciones/errores">Ver cola de errores</Link></p>
     </header>
     <section className={styles.kpiGrid} aria-label="Resumen de integraciones">
       <div className={styles.kpiCard}>
@@ -72,17 +72,17 @@ export function IntegrationCenter({ propertyId, endpoint }: Readonly<Integration
         <p className={styles.kpiHint}>core</p>
       </div>
       <div className={styles.kpiCard}>
-        <p className={styles.kpiLabel}>HEALTHY</p>
+        <p className={styles.kpiLabel}>Saludables</p>
         <p className={styles.kpiValue}>{summary.healthy}</p>
         <p className={styles.kpiHint}>categorías</p>
       </div>
       <div className={styles.kpiCard}>
         <p className={styles.kpiLabel}>Requieren revisión</p>
         <p className={styles.kpiValue}>{summary.needsReview}</p>
-        <p className={styles.kpiHint}>ATTN + DEGRADED</p>
+        <p className={styles.kpiHint}>atención + degradadas</p>
       </div>
       <div className={styles.kpiCard}>
-        <p className={styles.kpiLabel}>CONFIGURED</p>
+        <p className={styles.kpiLabel}>Configuradas</p>
         <p className={styles.kpiValue}>{summary.configured}</p>
         <p className={styles.kpiHint}>sin error</p>
       </div>
@@ -102,10 +102,15 @@ export function IntegrationCenter({ propertyId, endpoint }: Readonly<Integration
           key: "provider",
           header: "Proveedor / Conectores",
           render: (integration) => (
-            <>
+            <button
+              type="button"
+              className={styles.providerButton}
+              onClick={() => setSelectedId(integration.id)}
+              aria-label={`Ver detalle de ${integration.provider}`}
+            >
               <span className={styles.provider}>{integration.provider}</span>
               {integration.adapter ? <span className={styles.adapter}>{integration.adapter}</span> : null}
-            </>
+            </button>
           ),
         },
         {
@@ -122,12 +127,15 @@ export function IntegrationCenter({ propertyId, endpoint }: Readonly<Integration
           header: "Estado / Última sync",
           render: (integration) => (
             <>
-              <span className={`${styles.badge} ${HEALTH_BADGE[integration.health]}`}>{HEALTH_LABELS[integration.health]}</span>
+              <span className={`${styles.badge} ${HEALTH_BADGE[integration.health]}`}>{INTEGRATION_HEALTH_LABELS[integration.health]}</span>
               <span className={styles.lastSync}>{integration.lastSync ?? "Sin sincronización"}</span>
             </>
           ),
         },
       ]}
     />
+    {selected ? (
+      <IntegrationDetail integration={selected} onClose={() => setSelectedId(null)} />
+    ) : null}
   </main>;
 }

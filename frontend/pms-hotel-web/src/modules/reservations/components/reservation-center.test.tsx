@@ -166,6 +166,14 @@ describe("ReservationCenter", () => {
     expect(screen.getByText("HB-2026-08421")).toBeInTheDocument();
   });
 
+  it("links to the staff calendar from the center header", () => {
+    useReservationCenterMock.mockReturnValue({ data: centerData(), error: null, isLoading: false, refetch: vi.fn() });
+
+    render(<ReservationCenter propertyId="GT-HB-01" endpoint="http://pms.test/contract/reservations" />);
+
+    expect(screen.getByRole("link", { name: "Ver calendario" })).toHaveAttribute("href", "/calendario");
+  });
+
   it("opens the waitlist conversion panel from a waitlist row", () => {
     useReservationCenterMock.mockReturnValue({ data: centerData(), error: null, isLoading: false, refetch: vi.fn() });
     useWaitlistConversionPreviewMock.mockReturnValue(waitlistPreviewMockReturn());

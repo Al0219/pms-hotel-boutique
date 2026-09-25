@@ -5,4 +5,6 @@
  */
 
 export { HousekeepingBoard } from "./components/housekeeping-board";
+export type { HousekeepingDiscrepancy, DiscrepancyKind } from "./model/housekeeping-discrepancy";
 export type { RoomCleaning, RoomCleaningStatus } from "./model/room-cleaning";
+export type { CleaningTransitionResult, DiscrepancyResolution } from "./model/room-cleaning-transition";

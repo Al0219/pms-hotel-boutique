@@ -1,0 +1,83 @@
+.page { display: grid; gap: var(--space-4); }
+
+.header { align-items: flex-start; display: flex; flex-wrap: wrap; gap: var(--space-3); justify-content: space-between; }
+.titleBlock { display: grid; gap: var(--space-2); }
+.titleBlock h1 { margin: 0; }
+.subtitle { color: var(--color-text-secondary); margin: 0; }
+
+.headerActions { display: flex; gap: var(--space-2); }
+.navButton {
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-label-md);
+  min-height: 40px;
+  min-width: 44px;
+  padding: var(--space-2) var(--space-3);
+}
+.navButton:hover { background: var(--color-brand-subtle); border-color: var(--color-brand-primary); }
+.navButton:focus-visible { outline: 3px solid var(--color-brand-accent); outline-offset: 2px; }
+
+.retryButton {
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-brand-primary);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-brand);
+  cursor: pointer;
+  font: inherit;
+  padding: var(--space-2) var(--space-3);
+}
+.retryButton:focus-visible { outline: 3px solid var(--color-brand-accent); outline-offset: 2px; }
+
+.gridScroll { overflow-x: auto; }
+.grid { border-collapse: collapse; min-width: 1100px; width: 100%; }
+.caption {
+  caption-side: bottom;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-caption);
+  padding-top: var(--space-3);
+  text-align: left;
+}
+
+.roomHeader, .dayHeader {
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-default);
+  font-size: var(--font-size-caption);
+  padding: var(--space-2);
+}
+.roomHeader { min-width: 160px; text-align: left; }
+.dayHeader { min-width: 72px; }
+.dayLabel { display: block; font-weight: var(--font-weight-semibold); }
+.weekdayLabel { color: var(--color-text-secondary); display: block; text-transform: capitalize; }
+
+.roomCell, .dayCell, .occupancyCell { border: 1px solid var(--color-border-default); padding: var(--space-2); vertical-align: top; }
+.roomCell { background: var(--color-surface-card); }
+.roomCell strong { display: block; }
+.roomDetail { color: var(--color-text-secondary); display: block; font-size: var(--font-size-caption); }
+.roomStatus { color: var(--color-system-warning); display: block; font-size: var(--font-size-caption); font-weight: var(--font-weight-semibold); }
+
+.dayCell { min-height: 48px; }
+.booking {
+  border-radius: var(--radius-sm);
+  display: block;
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-caption);
+  margin-bottom: 2px;
+  overflow: hidden;
+  padding: 2px var(--space-2);
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.booking:focus-visible { outline: 3px solid var(--color-brand-accent); outline-offset: 2px; }
+.bookingConfirmed { background: var(--color-system-success-soft); color: var(--color-system-success); }
+.bookingPending { background: var(--color-system-warning-soft); color: var(--color-system-warning); }
+.bookingWaitlist { background: var(--color-system-info-soft); color: var(--color-system-info); }
+.bookingNoShow { background: var(--color-system-error-soft); color: var(--color-system-error); }
+.bookingCancelled { background: var(--color-surface-subtle); color: var(--color-text-secondary); text-decoration: line-through; }
+
+.occupancyCell { background: var(--color-surface-card); font-size: var(--font-size-caption); font-weight: var(--font-weight-semibold); text-align: center; }

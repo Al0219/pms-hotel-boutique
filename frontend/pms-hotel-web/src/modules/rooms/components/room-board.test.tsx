@@ -7,9 +7,13 @@ import { RoomBoard } from "./room-board";
 
 afterEach(() => cleanup());
 
-const { useRoomsMock } = vi.hoisted(() => ({ useRoomsMock: vi.fn() }));
+const { useRoomsMock, useChangeStatusMock } = vi.hoisted(() => ({
+  useRoomsMock: vi.fn(),
+  useChangeStatusMock: vi.fn(),
+}));
 
 vi.mock("../hooks/use-rooms", () => ({ useRooms: useRoomsMock }));
+vi.mock("../hooks/use-room-status-change", () => ({ useChangeRoomStatus: useChangeStatusMock }));
 
 describe("RoomBoard", () => {
   it("presents room numbers with status badges and room type labels", () => {
@@ -21,6 +25,9 @@ describe("RoomBoard", () => {
       error: null,
       isLoading: false,
       refetch: vi.fn(),
+    });
+    useChangeStatusMock.mockReturnValue({
+      mutate: vi.fn(), reset: vi.fn(), isPending: false, isSuccess: false, isError: false, data: undefined, error: null,
     });
 
     render(<RoomBoard propertyId="GT-HB-01" endpoint="http://pms.test/contract/rooms" />);
@@ -86,5 +93,25 @@ describe("RoomBoard", () => {
     render(<RoomBoard propertyId="GT-HB-01" endpoint="http://pms.test/contract/rooms" />);
 
     expect(screen.queryByText("Fuera de servicio")).not.toBeInTheDocument();
+  });
+
+  it("wires the OOO/OOS panel in the room detail", () => {
+    useRoomsMock.mockReturnValue({
+      data: [
+        { id: "RM-103", propertyId: "GT-HB-01", number: "103", floor: "1", status: "OOO", roomTypeLabel: "Standard" },
+      ],
+      error: null,
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+    useChangeStatusMock.mockReturnValue({
+      mutate: vi.fn(), reset: vi.fn(), isPending: false, isSuccess: false, isError: false, data: undefined, error: null,
+    });
+
+    render(<RoomBoard propertyId="GT-HB-01" endpoint="http://pms.test/contract/rooms" />);
+
+    expect(screen.getByRole("heading", { name: "Bloqueo OOO / OOS" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Liberar a activa" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Poner fuera de servicio" })).toBeInTheDocument();
   });
 });
