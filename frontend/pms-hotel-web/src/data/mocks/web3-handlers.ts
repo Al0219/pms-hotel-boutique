@@ -9,6 +9,7 @@
 import { http, HttpResponse } from "msw";
 
 import type { RoomListDto } from "@/modules/rooms/dtos/room.dto";
+import type { RoomStatusChangeRequestDto, RoomStatusChangeResultDto } from "@/modules/rooms/dtos/room-status-change.dto";
 import type { RoomCleaningListDto } from "@/modules/housekeeping/dtos/room-cleaning.dto";
 import type {
   CleaningTransitionRequestDto,
@@ -322,6 +323,48 @@ function handleResolveDiscrepancy({ request }: { request: Request }) {
   })();
 }
 
+const ALLOWED_ROOM_STATUS_CHANGES: Record<string, string[]> = {
+  ACTIVE: ["OOO", "OOS"],
+  OOO: ["ACTIVE", "OOS"],
+  OOS: ["ACTIVE", "OOO"],
+};
+
+function handleRoomStatusChange({ params, request }: { params: { roomId?: string }; request: Request }) {
+  return (async () => {
+    const roomId = String(params.roomId);
+    const body = (await request.json()) as RoomStatusChangeRequestDto;
+    const room = mockRooms.rooms.find((entry) => entry.room_id === roomId);
+
+    if (!room) {
+      return HttpResponse.json({ error: "ROOM_NOT_FOUND" }, { status: 404 });
+    }
+
+    const allowed = ALLOWED_ROOM_STATUS_CHANGES[room.status] ?? [];
+    if (!allowed.includes(body.to_status)) {
+      return HttpResponse.json({ error: "INVALID_TRANSITION" }, { status: 409 });
+    }
+
+    if (!body.reason?.trim()) {
+      return HttpResponse.json({ error: "REASON_REQUIRED" }, { status: 400 });
+    }
+
+    const blocking = body.to_status === "OOO" || body.to_status === "OOS";
+    if (blocking && (!body.start_date || !body.end_date || body.start_date >= body.end_date)) {
+      return HttpResponse.json({ error: "INVALID_PERIOD" }, { status: 400 });
+    }
+
+    room.status = body.to_status;
+    const result: RoomStatusChangeResultDto = {
+      room_id: room.room_id,
+      property_id: room.property_id,
+      status: room.status,
+      blocked_from: blocking ? body.start_date : null,
+      blocked_to: blocking ? body.end_date : null,
+    };
+    return HttpResponse.json(result);
+  })();
+}
+
 export const web3Handlers = [
   http.get(`${BASE}/rooms`, handleListRooms),
   http.get(`${BASE}/room-cleaning`, handleListRoomCleaning),
@@ -337,4 +380,5 @@ export const web3Handlers = [
   http.post(`${BASE}/room-cleaning/:roomId/transitions`, handleCleaningTransition),
   http.get(`${BASE}/room-cleaning/discrepancy-resolutions`, handleListDiscrepancyResolutions),
   http.post(`${BASE}/room-cleaning/discrepancy-resolutions`, handleResolveDiscrepancy),
+  http.post(`${BASE}/rooms/:roomId/status-change`, handleRoomStatusChange),
 ];
