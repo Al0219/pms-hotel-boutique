@@ -85,6 +85,13 @@ describe("ReservationList", () => {
     expect(screen.getAllByRole("button", { name: "Convertir a reserva" })).toHaveLength(1);
   });
 
+  it("links each reservation reference to its detail page", () => {
+    render(<ReservationList reservations={[reservation(), waitlistReservation()]} />);
+
+    expect(screen.getByRole("link", { name: "HB-2026-08421" })).toHaveAttribute("href", "/reservas/HB-2026-08421");
+    expect(screen.getByRole("link", { name: "WAIT-0007" })).toHaveAttribute("href", "/reservas/WAIT-0007");
+  });
+
   it("filters rows by the search query", () => {
     render(<ReservationList reservations={[reservation(), waitlistReservation()]} />);
 
