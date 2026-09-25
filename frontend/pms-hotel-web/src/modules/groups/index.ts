@@ -5,5 +5,5 @@
  */
 
 export { GroupCenter } from "./components/group-center";
-export type { Group } from "./model/group";
+export type { Group, GroupRoomBlock, RoomingEntry } from "./model/group";
 export type { GroupLifecycleStatus } from "./model/group-lifecycle";

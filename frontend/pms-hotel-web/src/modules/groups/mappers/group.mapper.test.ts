@@ -11,7 +11,7 @@ describe("mapGroup", () => {
       room_block_reference: " BLK-001 ", audit_reference: " AUD-001 ",
     })).toEqual({
       id: "GRP-001", propertyId: "GT-HB-01", name: "Convención Maya", status: "TENTATIVE",
-      roomBlockReference: "BLK-001", auditReference: "AUD-001",
+      roomBlockReference: "BLK-001", block: null, roomingList: [], auditReference: "AUD-001",
     });
   });
 
@@ -34,5 +34,45 @@ describe("mapGroup", () => {
       group_id: " ", property_id: "GT-HB-01", name: "Convención Maya", lifecycle_status: "INQUIRY",
       room_block_reference: null, audit_reference: null,
     })).toThrow(new DomainMappingError("INVALID_GROUP_ID"));
+  });
+
+  it("maps a dated block with pickup and rooming list", () => {
+    expect(mapGroup({
+      group_id: "GRP-001", property_id: "GT-HB-01", name: "Convención Maya", lifecycle_status: "DEFINITE",
+      room_block_reference: "BLK-001", audit_reference: null,
+      block_start_date: "2026-10-01", block_end_date: "2026-10-05",
+      rooms_blocked: 20, rooms_picked_up: 14,
+      rooming_list: [{ entry_id: "RL-01", guest_name: " Ana Ruiz ", room_label: " 201 " }],
+    })).toEqual({
+      id: "GRP-001", propertyId: "GT-HB-01", name: "Convención Maya", status: "DEFINITE",
+      roomBlockReference: "BLK-001",
+      block: {
+        reference: "BLK-001",
+        startDate: new Date("2026-10-01T00:00:00"),
+        endDate: new Date("2026-10-05T00:00:00"),
+        roomsBlocked: 20,
+        roomsPickedUp: 14,
+      },
+      roomingList: [{ id: "RL-01", guestName: "Ana Ruiz", roomLabel: "201" }],
+      auditReference: null,
+    });
+  });
+
+  it("rejects a pickup larger than the block", () => {
+    expect(() => mapGroup({
+      group_id: "GRP-001", property_id: "GT-HB-01", name: "Convención Maya", lifecycle_status: "DEFINITE",
+      room_block_reference: "BLK-001", audit_reference: null,
+      block_start_date: "2026-10-01", block_end_date: "2026-10-05",
+      rooms_blocked: 10, rooms_picked_up: 11,
+    })).toThrow(new DomainMappingError("INVALID_GROUP_BLOCK_PICKUP"));
+  });
+
+  it("rejects an incomplete block", () => {
+    expect(() => mapGroup({
+      group_id: "GRP-001", property_id: "GT-HB-01", name: "Convención Maya", lifecycle_status: "DEFINITE",
+      room_block_reference: "BLK-001", audit_reference: null,
+      block_start_date: "2026-10-01", block_end_date: null,
+      rooms_blocked: 10, rooms_picked_up: 4,
+    })).toThrow(new DomainMappingError("INVALID_GROUP_BLOCK"));
   });
 });

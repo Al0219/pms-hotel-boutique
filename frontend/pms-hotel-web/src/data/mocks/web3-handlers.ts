@@ -24,6 +24,7 @@ import type { OperationalMessageListDto } from "@/modules/messaging/dtos/operati
 import type { CompanyListDto } from "@/modules/companies/dtos/company.dto";
 import type { AgencyListDto } from "@/modules/agencies/dtos/agency.dto";
 import type { GroupListDto } from "@/modules/groups/dtos/group.dto";
+import type { RoomingEntryDto } from "@/modules/groups/dtos/group.dto";
 import type { IntegrationListDto } from "@/modules/integrations/dtos/integration.dto";
 import type { PropertyReportListDto } from "@/modules/reports/dtos/property-report.dto";
 
@@ -130,12 +131,37 @@ const mockAgencies: AgencyListDto = {
   ],
 };
 
+const mockRooming: Record<string, RoomingEntryDto[]> = {
+  "GRP-001": [
+    { entry_id: "RL-001", guest_name: "Ana Ruiz", room_label: "201" },
+    { entry_id: "RL-002", guest_name: "Pedro León", room_label: "202" },
+  ],
+  "GRP-002": [
+    { entry_id: "RL-003", guest_name: "Familia Méndez", room_label: "301" },
+  ],
+};
+
 const mockGroups: GroupListDto = {
   groups: [
-    { group_id: "GRP-001", property_id: "GT-HB-01", name: "Congreso Medicina Tropical 2026", lifecycle_status: "DEFINITE", room_block_reference: "BLOCK-CMT-2026", audit_reference: "AUD-GRP-001" },
-    { group_id: "GRP-002", property_id: "GT-HB-01", name: "Boda Familla Mendez", lifecycle_status: "IN_HOUSE", room_block_reference: "BLOCK-BM-2026", audit_reference: "AUD-GRP-002" },
+    {
+      group_id: "GRP-001", property_id: "GT-HB-01", name: "Congreso Medicina Tropical 2026", lifecycle_status: "DEFINITE",
+      room_block_reference: "BLOCK-CMT-2026", audit_reference: "AUD-GRP-001",
+      block_start_date: "2026-10-01", block_end_date: "2026-10-05", rooms_blocked: 20, rooms_picked_up: 14,
+      rooming_list: mockRooming["GRP-001"],
+    },
+    {
+      group_id: "GRP-002", property_id: "GT-HB-01", name: "Boda Familla Mendez", lifecycle_status: "IN_HOUSE",
+      room_block_reference: "BLOCK-BM-2026", audit_reference: "AUD-GRP-002",
+      block_start_date: "2026-09-18", block_end_date: "2026-09-21", rooms_blocked: 8, rooms_picked_up: 8,
+      rooming_list: mockRooming["GRP-002"],
+    },
     { group_id: "GRP-003", property_id: "GT-HB-01", name: "Retiro Corporativo Excel SA", lifecycle_status: "TENTATIVE", room_block_reference: null, audit_reference: null },
-    { group_id: "GRP-004", property_id: "GT-HB-01", name: "Conferencia Turismo Sostenible", lifecycle_status: "CLOSED", room_block_reference: "BLOCK-CTS-2025", audit_reference: "AUD-GRP-004" },
+    {
+      group_id: "GRP-004", property_id: "GT-HB-01", name: "Conferencia Turismo Sostenible", lifecycle_status: "CLOSED",
+      room_block_reference: "BLOCK-CTS-2025", audit_reference: "AUD-GRP-004",
+      block_start_date: "2025-11-10", block_end_date: "2025-11-14", rooms_blocked: 30, rooms_picked_up: 27,
+      rooming_list: [],
+    },
   ],
 };
 
@@ -365,6 +391,63 @@ function handleRoomStatusChange({ params, request }: { params: { roomId?: string
   })();
 }
 
+function handleAddRoomingEntry({ params, request }: { params: { groupId?: string }; request: Request }) {
+  return (async () => {
+    const groupId = String(params.groupId);
+    const group = mockGroups.groups.find((entry) => entry.group_id === groupId);
+
+    if (!group) {
+      return HttpResponse.json({ error: "GROUP_NOT_FOUND" }, { status: 404 });
+    }
+
+    const body = (await request.json()) as { guest_name: string; room_label: string };
+    if (!body.guest_name?.trim() || !body.room_label?.trim()) {
+      return HttpResponse.json({ error: "GUEST_AND_ROOM_REQUIRED" }, { status: 400 });
+    }
+
+    const blocked = group.rooms_blocked ?? 0;
+    const picked = group.rooms_picked_up ?? 0;
+    if (blocked > 0 && picked >= blocked) {
+      return HttpResponse.json({ error: "BLOCK_FULL" }, { status: 409 });
+    }
+
+    const list = mockRooming[groupId] ?? [];
+    const entry: RoomingEntryDto = {
+      entry_id: `RL-${String(list.length + 1).padStart(3, "0")}-${Date.now() % 1000}`,
+      guest_name: body.guest_name.trim(),
+      room_label: body.room_label.trim(),
+    };
+    list.push(entry);
+    mockRooming[groupId] = list;
+    group.rooming_list = list;
+    group.rooms_picked_up = picked + 1;
+
+    return HttpResponse.json(group);
+  })();
+}
+
+function handleRemoveRoomingEntry({ params }: { params: { groupId?: string; entryId?: string } }) {
+  const groupId = String(params.groupId);
+  const group = mockGroups.groups.find((entry) => entry.group_id === groupId);
+
+  if (!group) {
+    return HttpResponse.json({ error: "GROUP_NOT_FOUND" }, { status: 404 });
+  }
+
+  const list = mockRooming[groupId] ?? [];
+  const next = list.filter((entry) => entry.entry_id !== String(params.entryId));
+
+  if (next.length === list.length) {
+    return HttpResponse.json({ error: "ENTRY_NOT_FOUND" }, { status: 404 });
+  }
+
+  mockRooming[groupId] = next;
+  group.rooming_list = next;
+  group.rooms_picked_up = Math.max((group.rooms_picked_up ?? 1) - 1, 0);
+
+  return HttpResponse.json(group);
+}
+
 export const web3Handlers = [
   http.get(`${BASE}/rooms`, handleListRooms),
   http.get(`${BASE}/room-cleaning`, handleListRoomCleaning),
@@ -381,4 +464,6 @@ export const web3Handlers = [
   http.get(`${BASE}/room-cleaning/discrepancy-resolutions`, handleListDiscrepancyResolutions),
   http.post(`${BASE}/room-cleaning/discrepancy-resolutions`, handleResolveDiscrepancy),
   http.post(`${BASE}/rooms/:roomId/status-change`, handleRoomStatusChange),
+  http.post(`${BASE}/groups/:groupId/rooming-list`, handleAddRoomingEntry),
+  http.delete(`${BASE}/groups/:groupId/rooming-list/:entryId`, handleRemoveRoomingEntry),
 ];
