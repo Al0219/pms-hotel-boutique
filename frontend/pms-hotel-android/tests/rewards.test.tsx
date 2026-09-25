@@ -50,7 +50,7 @@ function RewardsTestLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <GuestAuthSessionProvider><ActiveReservationContextProvider><GuestNavigationMenuProvider>
+      <GuestAuthSessionProvider initialSession={{ accountId: 'guest-account-primary' }}><ActiveReservationContextProvider initialActiveReservationContext={{ reservationId: 'HB-2026-004281', reservationStayId: 'stay-2026-004281' }}><GuestNavigationMenuProvider>
         <GuestNoticeProvider>
           <SessionServiceRequestsProvider>
             <CheckoutSessionProvider>
