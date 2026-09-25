@@ -1,6 +1,12 @@
 # 04 — Navigation
 
-Expo Router es el mecanismo de navegación Guest aprobado. La raíz técnica redirige a `/access`; el flujo actual de acceso temporal a una estadía usa `router.replace('/account')`. La separación futura Cuenta/Reserva/Contexto activo se congela en `32_AUTH_RESERVATION_CONTEXT_CHANGE_CONTROL.md`.
+Expo Router es el mecanismo de navegación Guest aprobado. La raíz técnica continúa redirigiendo a `/access`; el flujo actual de acceso temporal a una estadía usa `router.replace('/account')`. `IMP-AND-0501` no modifica ese comportamiento. La separación Cuenta/Reserva/Contexto activo se implementará gradualmente desde la foundation de `32_AUTH_RESERVATION_CONTEXT_CHANGE_CONTROL.md` y `33_GUEST_AUTH_FOUNDATION_IMPLEMENTATION_CONTRACT.md`.
+
+## Navegación futura Guest Auth
+
+`IMP-AND-0502` podrá crear `/login` y `IMP-AND-0503` `/reservations`, ambas fuera de `GuestNavigationShell`. Tienen autoridad visual frontend-first aprobada: reutilizan tokens y componentes Android existentes y no requieren un frame Figma para iniciar; Figma queda como guía futura. Tras Login, cero reservas vinculadas llevará al estado Empty con CTA a `/access`; una resolverá el contexto activo; varias requerirán selección. La raíz no cambia hasta que esas tareas sean implementadas y sus guards estén listos.
+
+Las rutas reservation-scoped, incluida `/account`, no deben montar con una sesión autenticada sin `ActiveReservationContext` ni elegir una reserva por defecto. La migración de la query Stay actual al contexto y las invalidaciones se autorizan únicamente en `IMP-AND-0503`.
 
 ## Shell Guest vigente
 
