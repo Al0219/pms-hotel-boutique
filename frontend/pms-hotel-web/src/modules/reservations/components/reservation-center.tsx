@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import { HttpNetworkError } from "@/lib/http/errors";
@@ -92,6 +93,7 @@ export function ReservationCenter({ propertyId, endpoint }: Readonly<Reservation
           <p className={styles.subtitle}>Estados, alertas y acciones de todas las reservas de la propiedad en una sola vista.</p>
         </div>
         <div className={styles.headerActions}>
+          <Link className={styles.secondaryAction} href="/calendario">Ver calendario</Link>
           <button className={styles.primaryAction} type="button" disabled title="El flujo de creación de reservas se implementa por separado.">+ Nueva reserva</button>
         </div>
       </header>

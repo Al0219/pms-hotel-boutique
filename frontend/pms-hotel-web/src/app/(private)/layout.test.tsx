@@ -16,6 +16,7 @@ describe("PrivateLayout", () => {
     for (const [label, href] of [
       ["Panel", "/dashboard"],
       ["Reservas", "/reservas"],
+      ["Calendario", "/calendario"],
       ["Habitaciones", "/habitaciones"],
       ["Housekeeping", "/housekeeping"],
       ["Mantenimiento", "/mantenimiento"],
@@ -40,6 +41,6 @@ describe("PrivateLayout", () => {
 
     const nav = screen.getByRole("navigation", { name: "Módulos Staff" });
 
-    expect(within(nav).queryByRole("link", { name: "Calendario" })).not.toBeInTheDocument();
+    expect(within(nav).queryByRole("link", { name: "Cola de errores" })).not.toBeInTheDocument();
   });
 });

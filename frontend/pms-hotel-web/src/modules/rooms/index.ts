@@ -5,4 +5,5 @@
  */
 
 export { RoomBoard } from "./components/room-board";
+export { useRooms } from "./hooks/use-rooms";
 export type { Room, RoomStatus } from "./model/room";
