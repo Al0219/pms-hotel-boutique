@@ -5,4 +5,4 @@
  */
 
 export { CompanyCenter } from "./components/company-center";
-export type { Company } from "./model/company";
+export type { Company, CompanyStatus } from "./model/company";

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { HttpNetworkError } from "@/lib/http/errors";
 
 import { useCompanies } from "../hooks/use-companies";
+import { COMPANY_STATUS_LABELS } from "../model/company";
 import { CompanyDetail } from "./company-detail";
 import styles from "./company-center.module.css";
 
@@ -66,7 +67,7 @@ export function CompanyCenter({ propertyId, endpoint }: Readonly<CompanyCenterPr
               onClick={() => setSelectedCompanyId(company.id)}
             >
               <span><strong>{company.legalName}</strong><small>{company.id}</small></span>
-              <span className={styles.status}>{company.statusCode}</span>
+              <span className={styles.status}>{COMPANY_STATUS_LABELS[company.status]}</span>
             </button>
           </li>)}
         </ul>

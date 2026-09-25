@@ -1,5 +1,5 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { HttpNetworkError } from "@/lib/http/errors";
 
@@ -8,6 +8,8 @@ import type { PropertyReport } from "../model/property-report";
 import { ReportsDashboard } from "./reports-dashboard";
 
 afterEach(() => cleanup());
+
+beforeEach(() => localStorage.clear());
 
 const { usePropertyReportsMock } = vi.hoisted(() => ({ usePropertyReportsMock: vi.fn() }));
 
@@ -98,5 +100,50 @@ describe("ReportsDashboard", () => {
     render(<ReportsDashboard propertyId="GT-HB-01" />);
 
     expect(screen.getByText(/contrato API con Backend/i)).toBeInTheDocument();
+  });
+
+  it("filters the breakdown by property name", () => {
+    usePropertyReportsMock.mockReturnValue({ data: REPORTS, error: null, isLoading: false, refetch: vi.fn() });
+
+    render(<ReportsDashboard propertyId="GT-HB-01" endpoint="http://pms.test/contract/reports" />);
+
+    fireEvent.change(screen.getByPlaceholderText("Nombre de la propiedad…"), { target: { value: "Atitlán" } });
+
+    expect(screen.queryByText("Hotel Boutique Guatemala")).not.toBeInTheDocument();
+    expect(screen.getByText("Hotel Lake Atitlán")).toBeInTheDocument();
+  });
+
+  it("exports the filtered breakdown as CSV", () => {
+    const createObjectURL = vi.fn(() => "blob:csv");
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal("URL", { ...URL, createObjectURL, revokeObjectURL });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+
+    usePropertyReportsMock.mockReturnValue({ data: REPORTS, error: null, isLoading: false, refetch: vi.fn() });
+
+    render(<ReportsDashboard propertyId="GT-HB-01" endpoint="http://pms.test/contract/reports" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Exportar CSV" }));
+
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:csv");
+
+    click.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  it("saves the current filters as a reusable view", () => {
+    usePropertyReportsMock.mockReturnValue({ data: REPORTS, error: null, isLoading: false, refetch: vi.fn() });
+
+    render(<ReportsDashboard propertyId="GT-HB-01" endpoint="http://pms.test/contract/reports" />);
+
+    fireEvent.change(screen.getByPlaceholderText("Nombre de la propiedad…"), { target: { value: "Atitlán" } });
+    fireEvent.change(screen.getByPlaceholderText("Septiembre"), { target: { value: "Atitlán" } });
+    fireEvent.change(screen.getByLabelText("Programación"), { target: { value: "WEEKLY" } });
+    fireEvent.click(screen.getByRole("button", { name: "Guardar vista" }));
+
+    expect(screen.getByText("Atitlán")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Aplicar" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Eliminar" })).toBeInTheDocument();
   });
 });

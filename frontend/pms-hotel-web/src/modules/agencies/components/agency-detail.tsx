@@ -1,4 +1,5 @@
 import type { Agency } from "../model/agency";
+import { AGENCY_STATUS_LABELS } from "../model/agency";
 
 import styles from "./agency-center.module.css";
 
@@ -16,7 +17,7 @@ export function AgencyDetail({ agency }: Readonly<AgencyDetailProps>) {
     <h2 id="agency-detail-title">{agency.legalName}</h2>
     <div className={styles.summaryGrid}>
       <Reference label="Agencia" value={agency.id} />
-      <Reference label="Estado" value={agency.statusCode} />
+      <Reference label="Estado" value={AGENCY_STATUS_LABELS[agency.status]} />
       <Reference label="Contrato" value={agency.contractReference} />
     </div>
     <div className={styles.detailGrid}>
