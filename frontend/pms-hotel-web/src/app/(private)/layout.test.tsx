@@ -24,6 +24,7 @@ describe("PrivateLayout", () => {
       ["Agencias", "/agencias"],
       ["Grupos", "/grupos"],
       ["Integraciones", "/integraciones"],
+      ["Cola de errores", "/integraciones/errores"],
       ["Reportes", "/reportes"],
     ] as const) {
       expect(within(nav).getByRole("link", { name: label })).toHaveAttribute("href", href);
@@ -41,6 +42,7 @@ describe("PrivateLayout", () => {
 
     const nav = screen.getByRole("navigation", { name: "Módulos Staff" });
 
-    expect(within(nav).queryByRole("link", { name: "Cola de errores" })).not.toBeInTheDocument();
+    expect(within(nav).queryByRole("link", { name: "Folios" })).not.toBeInTheDocument();
+    expect(within(nav).queryByRole("link", { name: "Pagos" })).not.toBeInTheDocument();
   });
 });

@@ -5,5 +5,7 @@
  */
 
 export { IntegrationCenter } from "./components/integration-center";
+export { ErrorQueue } from "./components/error-queue";
 export type { Integration } from "./model/integration";
 export type { IntegrationCategory, IntegrationHealth } from "./model/integration-taxonomy";
+export type { IntegrationError, IntegrationErrorStatus } from "./model/integration-error";

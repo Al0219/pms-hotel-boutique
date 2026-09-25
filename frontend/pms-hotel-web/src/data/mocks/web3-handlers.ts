@@ -26,6 +26,10 @@ import type { AgencyListDto } from "@/modules/agencies/dtos/agency.dto";
 import type { GroupListDto } from "@/modules/groups/dtos/group.dto";
 import type { RoomingEntryDto } from "@/modules/groups/dtos/group.dto";
 import type { IntegrationListDto } from "@/modules/integrations/dtos/integration.dto";
+import type {
+  IntegrationErrorDto,
+  IntegrationErrorListDto,
+} from "@/modules/integrations/dtos/integration-error.dto";
 import type { PropertyReportListDto } from "@/modules/reports/dtos/property-report.dto";
 
 const BASE = "http://pms.test";
@@ -448,6 +452,78 @@ function handleRemoveRoomingEntry({ params }: { params: { groupId?: string; entr
   return HttpResponse.json(group);
 }
 
+const mockIntegrationErrors: IntegrationErrorDto[] = [
+  {
+    error_id: "ERR-001", property_id: "GT-HB-01", integration_id: "INT-002", integration_provider: "Expedia",
+    kind: "reservation_import", message: "Reserva EXP-99120 rechazada por tarifa desactualizada.",
+    status: "PENDING", attempts: 1, max_attempts: 3, retryable: true, last_attempt_at: "2026-09-18T12:05:00.000Z",
+    history: [{ status: "PENDING", at: "2026-09-18T12:00:00.000Z", note: "Primer intento automático" }],
+  },
+  {
+    error_id: "ERR-002", property_id: "GT-HB-01", integration_id: "INT-006", integration_provider: "Salto Systems",
+    kind: "key_encoding", message: "Llave de habitación 204 no codificada: cerradura sin respuesta.",
+    status: "FAILED", attempts: 3, max_attempts: 3, retryable: false, last_attempt_at: "2026-09-17T23:20:00.000Z",
+    history: [
+      { status: "PENDING", at: "2026-09-17T23:00:00.000Z", note: "Primer intento automático" },
+      { status: "FAILED", at: "2026-09-17T23:20:00.000Z", note: "Requiere intervención en sitio" },
+    ],
+  },
+  {
+    error_id: "ERR-003", property_id: "GT-HB-01", integration_id: "INT-003", integration_provider: "Stripe",
+    kind: "capture", message: "Captura de Q940 rechazada por la pasarela.",
+    status: "PENDING", attempts: 0, max_attempts: 5, retryable: true, last_attempt_at: null,
+    history: [],
+  },
+  {
+    error_id: "ERR-004", property_id: "GT-HB-01", integration_id: "INT-001", integration_provider: "Booking.com",
+    kind: "rate_push", message: "Push de tarifa Deluxe King confirmado tras reintento.",
+    status: "RESOLVED", attempts: 2, max_attempts: 3, retryable: true, last_attempt_at: "2026-09-18T14:35:00.000Z",
+    history: [
+      { status: "PENDING", at: "2026-09-18T14:30:00.000Z", note: "Primer intento automático" },
+      { status: "RESOLVED", at: "2026-09-18T14:35:00.000Z", note: "Reintento manual exitoso" },
+    ],
+  },
+];
+
+const retriedKeys = new Set<string>();
+
+function handleListIntegrationErrors() {
+  const result: IntegrationErrorListDto = { errors: mockIntegrationErrors };
+  return HttpResponse.json(result);
+}
+
+function handleRetryIntegrationError({ params, request }: { params: { errorId?: string }; request: Request }) {
+  return (async () => {
+    const errorId = String(params.errorId);
+    const body = (await request.json()) as { idempotency_key: string };
+    const error = mockIntegrationErrors.find((entry) => entry.error_id === errorId);
+
+    if (!error) {
+      return HttpResponse.json({ error: "ERROR_NOT_FOUND" }, { status: 404 });
+    }
+
+    if (retriedKeys.has(`${errorId}:${body.idempotency_key}`)) {
+      return HttpResponse.json(error);
+    }
+
+    if (error.status === "RESOLVED") {
+      return HttpResponse.json({ error: "ALREADY_RESOLVED" }, { status: 409 });
+    }
+
+    if (!error.retryable) {
+      return HttpResponse.json({ error: "NON_RETRYABLE" }, { status: 422 });
+    }
+
+    retriedKeys.add(`${errorId}:${body.idempotency_key}`);
+    error.attempts += 1;
+    error.status = "RESOLVED";
+    error.last_attempt_at = new Date().toISOString();
+    error.history.push({ status: "RESOLVED", at: error.last_attempt_at, note: "Reintento manual exitoso" });
+
+    return HttpResponse.json(error);
+  })();
+}
+
 export const web3Handlers = [
   http.get(`${BASE}/rooms`, handleListRooms),
   http.get(`${BASE}/room-cleaning`, handleListRoomCleaning),
@@ -466,4 +542,6 @@ export const web3Handlers = [
   http.post(`${BASE}/rooms/:roomId/status-change`, handleRoomStatusChange),
   http.post(`${BASE}/groups/:groupId/rooming-list`, handleAddRoomingEntry),
   http.delete(`${BASE}/groups/:groupId/rooming-list/:entryId`, handleRemoveRoomingEntry),
+  http.get(`${BASE}/integration-errors`, handleListIntegrationErrors),
+  http.post(`${BASE}/integration-errors/:errorId/retry`, handleRetryIntegrationError),
 ];

@@ -19,6 +19,7 @@ const STAFF_NAV: ReadonlyArray<{ href: string; label: string }> = [
   { href: "/agencias", label: "Agencias" },
   { href: "/grupos", label: "Grupos" },
   { href: "/integraciones", label: "Integraciones" },
+  { href: "/integraciones/errores", label: "Cola de errores" },
   { href: "/reportes", label: "Reportes" },
 ];
 
