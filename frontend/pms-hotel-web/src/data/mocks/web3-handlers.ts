@@ -10,6 +10,12 @@ import { http, HttpResponse } from "msw";
 
 import type { RoomListDto } from "@/modules/rooms/dtos/room.dto";
 import type { RoomCleaningListDto } from "@/modules/housekeeping/dtos/room-cleaning.dto";
+import type {
+  CleaningTransitionRequestDto,
+  CleaningTransitionResultDto,
+  DiscrepancyResolutionDto,
+  DiscrepancyResolutionListDto,
+} from "@/modules/housekeeping/dtos/room-cleaning-transition.dto";
 import type { MaintenanceOrderListDto } from "@/modules/maintenance/dtos/maintenance-order.dto";
 import type { ConciergeTaskListDto } from "@/modules/concierge/dtos/concierge-task.dto";
 import type { ValetRequestListDto } from "@/modules/parking-valet/dtos/valet-request.dto";
@@ -254,6 +260,68 @@ function handleListPropertyReports({ request }: { request: Request }) {
   return HttpResponse.json(mockReports);
 }
 
+const ALLOWED_CLEANING_TRANSITIONS: Record<string, string[]> = {
+  DIRTY: ["CLEAN"],
+  CLEAN: ["INSPECTED", "DIRTY"],
+  INSPECTED: ["DIRTY"],
+};
+
+let discrepancyResolutions: DiscrepancyResolutionDto[] = [];
+
+function handleCleaningTransition({ params, request }: { params: { roomId?: string }; request: Request }) {
+  return (async () => {
+    const roomId = String(params.roomId);
+    const body = (await request.json()) as CleaningTransitionRequestDto;
+    const room = mockRoomCleaning.rooms.find((entry) => entry.room_id === roomId);
+
+    if (!room) {
+      return HttpResponse.json({ error: "ROOM_NOT_FOUND" }, { status: 404 });
+    }
+
+    const allowed = ALLOWED_CLEANING_TRANSITIONS[room.cleaning_status] ?? [];
+    if (!allowed.includes(body.to_status)) {
+      return HttpResponse.json({ error: "INVALID_TRANSITION" }, { status: 409 });
+    }
+
+    if (body.to_status === "DIRTY" && !body.reason?.trim()) {
+      return HttpResponse.json({ error: "REASON_REQUIRED" }, { status: 400 });
+    }
+
+    room.cleaning_status = body.to_status;
+    const result: CleaningTransitionResultDto = {
+      room_id: room.room_id,
+      property_id: room.property_id,
+      cleaning_status: room.cleaning_status,
+    };
+    return HttpResponse.json(result);
+  })();
+}
+
+function handleListDiscrepancyResolutions() {
+  const result: DiscrepancyResolutionListDto = { resolutions: discrepancyResolutions };
+  return HttpResponse.json(result);
+}
+
+function handleResolveDiscrepancy({ request }: { request: Request }) {
+  return (async () => {
+    const body = (await request.json()) as { room_id: string; reason: string };
+
+    if (!body.room_id || !body.reason?.trim()) {
+      return HttpResponse.json({ error: "REASON_REQUIRED" }, { status: 400 });
+    }
+
+    discrepancyResolutions = discrepancyResolutions.filter((entry) => entry.room_id !== body.room_id);
+    discrepancyResolutions.push({
+      room_id: body.room_id,
+      reason: body.reason.trim(),
+      resolved_at: new Date().toISOString(),
+    });
+
+    const result: DiscrepancyResolutionListDto = { resolutions: discrepancyResolutions };
+    return HttpResponse.json(result);
+  })();
+}
+
 export const web3Handlers = [
   http.get(`${BASE}/rooms`, handleListRooms),
   http.get(`${BASE}/room-cleaning`, handleListRoomCleaning),
@@ -266,4 +334,7 @@ export const web3Handlers = [
   http.get(`${BASE}/groups`, handleListGroups),
   http.get(`${BASE}/integrations`, handleListIntegrations),
   http.get(`${BASE}/property-reports`, handleListPropertyReports),
+  http.post(`${BASE}/room-cleaning/:roomId/transitions`, handleCleaningTransition),
+  http.get(`${BASE}/room-cleaning/discrepancy-resolutions`, handleListDiscrepancyResolutions),
+  http.post(`${BASE}/room-cleaning/discrepancy-resolutions`, handleResolveDiscrepancy),
 ];
