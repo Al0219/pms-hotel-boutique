@@ -135,9 +135,10 @@ export const guestNavigationStyles = StyleSheet.create({
     borderTopLeftRadius: tokens.radius.card,
     bottom: 0,
     elevation: 4,
+    flex: 1,
     maxWidth: 420,
     paddingHorizontal: tokens.layout.screenInset,
-    paddingVertical: tokens.space.md,
+    paddingTop: tokens.space.md,
     position: 'absolute',
     right: 0,
     top: 0,
@@ -145,6 +146,7 @@ export const guestNavigationStyles = StyleSheet.create({
   },
   drawerHeader: {
     alignItems: 'center',
+    flexShrink: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: tokens.space.xl,
@@ -170,8 +172,33 @@ export const guestNavigationStyles = StyleSheet.create({
     justifyContent: 'center',
     width: tokens.layout.controlHeight,
   },
+  drawerBody: {
+    flex: 1,
+    minHeight: 0,
+  },
   drawerSections: {
     gap: tokens.space.lg,
+    paddingBottom: tokens.space.md,
+  },
+  drawerLogoutArea: {
+    borderTopColor: tokens.color.border,
+    borderTopWidth: 1,
+    flexShrink: 0,
+    paddingTop: tokens.space.md,
+  },
+  drawerLogout: {
+    alignItems: 'center',
+    borderRadius: tokens.radius.control,
+    flexDirection: 'row',
+    gap: tokens.space.sm,
+    minHeight: tokens.layout.controlHeight,
+    paddingHorizontal: tokens.space.sm,
+  },
+  drawerLogoutLabel: {
+    color: tokens.color.destructive,
+    fontFamily: tokens.typography.family,
+    fontSize: tokens.typography.size.label,
+    fontWeight: '600',
   },
   drawerSection: {
     gap: tokens.space.xs,

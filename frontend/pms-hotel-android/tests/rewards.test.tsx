@@ -8,6 +8,7 @@ import { NetworkError } from '@/data/remote/http/HttpError';
 import { AccountStayHubScreen } from '@/modules/account';
 import { CheckoutSessionProvider } from '@/modules/checkout';
 import { GuestNavigationMenuProvider, GuestNoticeProvider, GuestRootHeader } from '@/modules/navigation';
+import { ActiveReservationContextProvider, GuestAuthSessionProvider } from '@/modules/guest-auth';
 import { PromotionsScreen } from '@/modules/promotions/presentation/PromotionsScreen';
 import { type RewardsFixtureDto } from '@/modules/rewards/data/dto/RewardsFixtureDto';
 import { mapRewardsFixtureDto } from '@/modules/rewards/data/mappers/mapRewardsFixtureDto';
@@ -49,7 +50,7 @@ function RewardsTestLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <GuestNavigationMenuProvider>
+      <GuestAuthSessionProvider><ActiveReservationContextProvider><GuestNavigationMenuProvider>
         <GuestNoticeProvider>
           <SessionServiceRequestsProvider>
             <CheckoutSessionProvider>
@@ -59,7 +60,7 @@ function RewardsTestLayout() {
             </CheckoutSessionProvider>
           </SessionServiceRequestsProvider>
         </GuestNoticeProvider>
-      </GuestNavigationMenuProvider>
+      </GuestNavigationMenuProvider></ActiveReservationContextProvider></GuestAuthSessionProvider>
     </QueryClientProvider>
   );
 }

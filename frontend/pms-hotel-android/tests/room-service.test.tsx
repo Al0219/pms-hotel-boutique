@@ -14,6 +14,7 @@ import { currentStayFixture } from '@/modules/stay/data/mocks/currentStayFixture
 import { SessionServiceRequestsProvider, useSessionServiceRequests } from '@/modules/service-requests';
 import { CheckoutSessionProvider, useCheckoutSession } from '@/modules/checkout';
 import { GuestNavigationMenuProvider } from '@/modules/navigation';
+import { ActiveReservationContextProvider, GuestAuthSessionProvider } from '@/modules/guest-auth';
 import { AppClockProvider } from '@/shared/time';
 
 function RequestProbe() {
@@ -455,7 +456,7 @@ describe('Room Service — IMP-AND-0111', () => {
   it('opens from Services, keeps Servicios active, and returns through Back and success', async () => {
     const queryClient = client();
     const ui = await renderRouter({
-      _layout: () => <AppClockProvider initialMode="IN_STAY"><QueryClientProvider client={queryClient}><GuestNavigationMenuProvider><SessionServiceRequestsProvider><PathProbe /><Slot /></SessionServiceRequestsProvider></GuestNavigationMenuProvider></QueryClientProvider></AppClockProvider>,
+      _layout: () => <AppClockProvider initialMode="IN_STAY"><QueryClientProvider client={queryClient}><GuestAuthSessionProvider><ActiveReservationContextProvider><GuestNavigationMenuProvider><SessionServiceRequestsProvider><PathProbe /><Slot /></SessionServiceRequestsProvider></GuestNavigationMenuProvider></ActiveReservationContextProvider></GuestAuthSessionProvider></QueryClientProvider></AppClockProvider>,
       account: () => <Text testID="account-root">Cuenta</Text>,
       services: ServicesRoute,
       'services/room-service': RoomServiceRoute,
@@ -481,7 +482,7 @@ describe('Room Service — IMP-AND-0111', () => {
   it('uses the shared drawer navigation guard for dirty carts without resetting on the current route', async () => {
     const queryClient = client();
     const ui = await renderRouter({
-      _layout: () => <AppClockProvider initialMode="IN_STAY"><QueryClientProvider client={queryClient}><GuestNavigationMenuProvider><SessionServiceRequestsProvider><PathProbe /><Slot /></SessionServiceRequestsProvider></GuestNavigationMenuProvider></QueryClientProvider></AppClockProvider>,
+      _layout: () => <AppClockProvider initialMode="IN_STAY"><QueryClientProvider client={queryClient}><GuestAuthSessionProvider><ActiveReservationContextProvider><GuestNavigationMenuProvider><SessionServiceRequestsProvider><PathProbe /><Slot /></SessionServiceRequestsProvider></GuestNavigationMenuProvider></ActiveReservationContextProvider></GuestAuthSessionProvider></QueryClientProvider></AppClockProvider>,
       account: () => <Text testID="account-root">Cuenta</Text>,
       services: ServicesRoute,
       'services/room-service': RoomServiceRoute,

@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 
 import { QueryProvider } from '@/providers/QueryProvider';
+import { ActiveReservationContextProvider, GuestAuthSessionProvider } from '@/modules/guest-auth';
 import { AppClockProvider } from '@/shared/time';
 
 // Metro removes this DEV-only module from production's dependency graph.
@@ -13,7 +14,11 @@ export default function RootLayout() {
   return (
     <AppClockProvider>
       <QueryProvider>
-        <Stack screenOptions={{ headerShown: false }} />
+        <GuestAuthSessionProvider>
+          <ActiveReservationContextProvider>
+            <Stack screenOptions={{ headerShown: false }} />
+          </ActiveReservationContextProvider>
+        </GuestAuthSessionProvider>
       </QueryProvider>
       {AppClockQaControl ? <AppClockQaControl /> : null}
     </AppClockProvider>
