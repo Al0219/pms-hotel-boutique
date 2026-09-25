@@ -1,223 +1,75 @@
 "use client";
-
-import { useState } from "react";
-import Link from "next/link";
+import { useRef, useState } from "react";
+import { AccountFeedback, AccountSection } from "@/modules/account";
+import { HttpNetworkError } from "@/lib/http/errors";
+import { useGuestProfile } from "../hooks/use-guest-profile";
+import type { GuestProfile } from "../model/profile";
 import styles from "./profile-page.module.css";
 
 export function ProfilePage() {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [country, setCountry] = useState("");
-  const [language, setLanguage] = useState("Español");
-
-  // Preferencias de estancia
-  const [bedType, setBedType] = useState("King");
-  const [roomVibe, setRoomVibe] = useState("tranquila");
-  const [floorPref, setFloorPref] = useState("Piso alto · evitar zonas ruidosas");
-
-  const [saved, setSaved] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaved(true);
-    setTimeout(() => setSaved(false), 4000);
-  };
-
-  return (
-    <main className={styles.page}>
-      <header className={styles.header}>
-        <Link className={styles.brand} href="/">
-          Hotel Boutique
-        </Link>
-        <nav aria-label="Navegación principal">
-          <Link href="/habitaciones">Habitaciones</Link>
-          <Link href="/amenidades">Amenidades</Link>
-          <Link href="/mis-reservas">Mis reservas</Link>
-          <Link className={styles.activeNav} href="/cuenta">
-            Mi cuenta
-          </Link>
-        </nav>
-      </header>
-
-      <div className={styles.container}>
-        <Link className={styles.backLink} href="/cuenta">
-          ← Mi cuenta
-        </Link>
-
-        <p className={styles.eyebrow}>PERFIL Y PREFERENCIAS</p>
-        <h1 className={styles.title}>Datos personales y preferencias</h1>
-        <p className={styles.subtitle}>
-          Edita tu perfil Guest y preferencias reutilizables. Validamos campos obligatorios y
-          protegemos tus datos según la configuración de privacidad.
-        </p>
-
-        <form className={styles.formGrid} onSubmit={handleSubmit}>
-          {/* Card Izquierda: Datos Personales */}
-          <section className={styles.card}>
-            <h2>Datos personales</h2>
-
-            <div className={styles.fieldRow}>
-              <div className={styles.field}>
-                <label htmlFor="first-name">Nombre *</label>
-                <input
-                  autoComplete="given-name"
-                  id="first-name"
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="Ej. Juan"
-                  required
-                  type="text"
-                  value={firstName}
-                />
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="last-name">Apellidos *</label>
-                <input
-                  autoComplete="family-name"
-                  id="last-name"
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Ej. Pérez"
-                  required
-                  type="text"
-                  value={lastName}
-                />
-              </div>
-            </div>
-
-            <div className={styles.fieldRow}>
-              <div className={styles.field}>
-                <label htmlFor="email">Correo electrónico *</label>
-                <input
-                  autoComplete="email"
-                  id="email"
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="tu@correo.com"
-                  required
-                  type="email"
-                  value={email}
-                />
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="phone">Teléfono *</label>
-                <input
-                  autoComplete="tel"
-                  id="phone"
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Ej. +502 0000 0000"
-                  required
-                  type="tel"
-                  value={phone}
-                />
-              </div>
-            </div>
-
-            <div className={styles.fieldRow}>
-              <div className={styles.field}>
-                <label htmlFor="country">País / región</label>
-                <input
-                  id="country"
-                  onChange={(e) => setCountry(e.target.value)}
-                  placeholder="Ej. Guatemala"
-                  type="text"
-                  value={country}
-                />
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="language">Idioma preferido</label>
-                <select
-                  id="language"
-                  onChange={(e) => setLanguage(e.target.value)}
-                  value={language}
-                >
-                  <option value="Español">Español</option>
-                  <option value="English">English</option>
-                </select>
-              </div>
-            </div>
-          </section>
-
-          {/* Card Derecha: Preferencias de estancia */}
-          <aside className={styles.card}>
-            <h2>Preferencias de estancia</h2>
-
-            <div className={styles.prefItem}>
-              <p>Cama:</p>
-              <div className={styles.prefBadges}>
-                {["King", "Queen", "Twin"].map((type) => (
-                  <button
-                    className={`${styles.badgeSelect} ${
-                      bedType === type ? styles.badgeSelectActive : ""
-                    }`}
-                    key={type}
-                    onClick={() => setBedType(type)}
-                    type="button"
-                  >
-                    {type} {bedType === type ? "✓" : ""}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className={styles.prefItem}>
-              <p>Habitación:</p>
-              <div className={styles.prefBadges}>
-                {["tranquila", "vista exterior", "cerca de elevador"].map((vibe) => (
-                  <button
-                    className={`${styles.badgeSelect} ${
-                      roomVibe === vibe ? styles.badgeSelectActive : ""
-                    }`}
-                    key={vibe}
-                    onClick={() => setRoomVibe(vibe)}
-                    type="button"
-                  >
-                    {vibe} {roomVibe === vibe ? "✓" : ""}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className={styles.prefItem}>
-              <p>Piso:</p>
-              <div className={styles.prefBadges}>
-                {["Piso alto · evitar zonas ruidosas", "Piso bajo"].map((floor) => (
-                  <button
-                    className={`${styles.badgeSelect} ${
-                      floorPref === floor ? styles.badgeSelectActive : ""
-                    }`}
-                    key={floor}
-                    onClick={() => setFloorPref(floor)}
-                    type="button"
-                  >
-                    {floor} {floorPref === floor ? "✓" : ""}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className={styles.privacyBadge}>
-              <span className={styles.fieldLabel}>Privacidad</span>
-              <span className={styles.privacyTag}>SOLO CUENTA</span>
-            </div>
-            <p className={styles.consentText}>Consentimiento revocable</p>
-
-            <button className={styles.submitButton} type="submit">
-              Guardar cambios
-            </button>
-
-            {saved && (
-              <output className={styles.statusOutput}>
-                ¡Perfil y preferencias actualizados correctamente!
-              </output>
-            )}
-          </aside>
-        </form>
-
-        <span className={styles.note}>
-          Validación: nombre, apellidos, email y teléfono obligatorios · email válido · teléfono internacional.
-          Privacidad: datos visibles solo para tu cuenta y personal autorizado.
-        </span>
+  const query = useGuestProfile();
+  return <AccountSection title="Datos personales y preferencias" description="Edita tus datos de contacto y preferencias. El correo de acceso de tu cuenta no cambia al guardar este perfil.">
+    <AccountFeedback loading={query.isPending} error={query.error} retry={query.retry} />
+    {!query.error && query.data && <ProfileForm key={query.data.id} profile={query.data} mutation={query.mutation} />}
+  </AccountSection>;
+}
+function ProfileForm({ profile, mutation }: { profile: GuestProfile; mutation: ReturnType<typeof useGuestProfile>["mutation"] }) {
+  const [baseline, setBaseline] = useState(profile);
+  const [draft, setDraft] = useState(profile);
+  const [validation, setValidation] = useState<string | null>(null);
+  const submitting = useRef(false);
+  const dirty = JSON.stringify(draft) !== JSON.stringify(baseline);
+  function change<K extends keyof GuestProfile>(key: K, value: GuestProfile[K]) {
+    setDraft(previous => ({ ...previous, [key]: value }));
+    setValidation(null);
+    mutation.reset();
+  }
+  async function save(event: React.FormEvent) {
+    event.preventDefault();
+    if (!dirty || submitting.current) return;
+    if (![draft.firstName, draft.lastName, draft.email, draft.phone, draft.country].every(value => value.trim()) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.email.trim()) || !/^\+[\d ()-]{7,20}$/.test(draft.phone.trim())) {
+      setValidation("Completa los campos y utiliza un correo válido y un teléfono con prefijo internacional (+).");
+      return;
+    }
+    submitting.current = true;
+    try {
+      const saved = await mutation.mutateAsync(draft);
+      setBaseline(saved);
+      setDraft(saved);
+    } catch { /* The mutation exposes a safe, recoverable error; preserve the draft. */ }
+    finally { submitting.current = false; }
+  }
+  return <form className={styles.formGrid} onSubmit={save} aria-busy={mutation.isPending}>
+    <fieldset className={styles.card} disabled={mutation.isPending}>
+      <legend>Datos personales</legend>
+      <div className={styles.fieldRow}>
+        <div className={styles.field}><label htmlFor="first-name">Nombre *</label><input id="first-name" autoComplete="given-name" required value={draft.firstName} onChange={e => change("firstName", e.target.value)} /></div>
+        <div className={styles.field}><label htmlFor="last-name">Apellidos *</label><input id="last-name" autoComplete="family-name" required value={draft.lastName} onChange={e => change("lastName", e.target.value)} /></div>
       </div>
-    </main>
-  );
+      <div className={styles.fieldRow}>
+        <div className={styles.field}><label htmlFor="contact-email">Correo de contacto *</label><input id="contact-email" autoComplete="email" type="email" required value={draft.email} onChange={e => change("email", e.target.value)} /></div>
+        <div className={styles.field}><label htmlFor="phone">Teléfono *</label><input id="phone" autoComplete="tel" type="tel" required value={draft.phone} onChange={e => change("phone", e.target.value)} /></div>
+      </div>
+      <div className={styles.fieldRow}>
+        <div className={styles.field}><label htmlFor="country">País / región *</label><input id="country" autoComplete="country-name" required value={draft.country} onChange={e => change("country", e.target.value)} /></div>
+        <div className={styles.field}><label htmlFor="language">Idioma preferido</label><select id="language" value={draft.preferredLanguage} onChange={e => change("preferredLanguage", e.target.value)}><option>Español</option><option>English</option></select></div>
+      </div>
+    </fieldset>
+    <fieldset id="preferencias" className={styles.card} disabled={mutation.isPending}>
+      <legend>Configuración y preferencias de estancia</legend>
+      {([
+        ["bedType", "Cama", ["King", "Queen", "Twin"]],
+        ["roomVibe", "Habitación", ["tranquila", "vista exterior", "cerca de elevador"]],
+        ["floorPreference", "Piso", ["Piso alto · evitar zonas ruidosas", "Piso bajo"]],
+      ] as const).map(([key, label, options]) => <div className={styles.field} key={key}>
+        <label htmlFor={key}>{label}</label><select id={key} value={draft.preferences[key]} onChange={e => change("preferences", { ...draft.preferences, [key]: e.target.value })}>{options.map(option => <option key={option}>{option}</option>)}</select>
+      </div>)}
+      <p>Privacidad: {profile.preferences.privacyLevel}</p>
+      <p>Consentimiento revocable: {profile.preferences.revocableConsent ? "Sí" : "No"}</p>
+      <p role="status">{mutation.isPending ? "Guardando…" : dirty ? "Tienes cambios sin guardar." : mutation.isSuccess ? "Perfil guardado correctamente." : "Sin cambios pendientes."}</p>
+      {(validation || mutation.error) && <p role="alert">{validation ?? (mutation.error instanceof HttpNetworkError ? "Sin conexión. Conservamos tus cambios; intenta guardar de nuevo." : "No se pudo guardar. Conservamos tus cambios; puedes reintentar o cancelar.")}</p>}
+      <button className={styles.submitButton} type="submit" disabled={!dirty || mutation.isPending}>Guardar cambios</button>
+      <button type="button" disabled={!dirty || mutation.isPending} onClick={() => { setDraft(baseline); setValidation(null); mutation.reset(); }}>Cancelar cambios</button>
+    </fieldset>
+  </form>;
 }

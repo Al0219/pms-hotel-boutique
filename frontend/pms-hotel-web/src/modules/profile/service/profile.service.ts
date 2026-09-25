@@ -1,18 +1,12 @@
 import { httpRequest } from "@/lib/http/client";
-
+import { getPublicEnvironment } from "@/lib/env";
 import type { GuestProfileDTO } from "../dtos/profile.dto";
 
-/** PROVISIONAL endpoint for fetching guest profile */
-export function getGuestProfile(profileId: string, signal?: AbortSignal): Promise<GuestProfileDTO> {
-  return httpRequest<GuestProfileDTO>({ path: `/profile/${encodeURIComponent(profileId)}`, signal });
+/** Provisional Guest read/update transport; account-to-profile binding is explicit. */
+export function getGuestProfile(profileId: string, accountId: string, signal?: AbortSignal): Promise<GuestProfileDTO> {
+  return httpRequest({ path: `/profile/${encodeURIComponent(profileId)}?accountId=${encodeURIComponent(accountId)}`, baseUrl: getPublicEnvironment().useMockApi ? "http://pms.test" : undefined, signal });
 }
-
-/** PROVISIONAL endpoint for updating guest profile */
-export function updateGuestProfile(profile: Partial<GuestProfileDTO>, signal?: AbortSignal): Promise<GuestProfileDTO> {
-  return httpRequest<GuestProfileDTO>({
-    path: `/profile/update`,
-    method: "POST",
-    body: JSON.stringify(profile),
-    signal,
-  });
+export function updateGuestProfile(profile: GuestProfileDTO, accountId: string, signal?: AbortSignal): Promise<GuestProfileDTO> {
+  return httpRequest({ path: `/profile/update?accountId=${encodeURIComponent(accountId)}`, baseUrl: getPublicEnvironment().useMockApi ? "http://pms.test" : undefined,
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(profile), signal });
 }

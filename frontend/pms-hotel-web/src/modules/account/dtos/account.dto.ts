@@ -4,6 +4,7 @@
  */
 export interface AccountSummaryDTO {
   account_id: string;
+  profile_id?: string;
   guest_name: string;
   email: string;
   access_method: string;

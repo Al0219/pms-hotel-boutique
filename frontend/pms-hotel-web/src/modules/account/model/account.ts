@@ -38,6 +38,7 @@ export interface PromotionsSummary {
 
 export interface AccountSummary {
   accountId: string;
+  profileId: string | null;
   guestName: string;
   email: string;
   accessMethod: string;

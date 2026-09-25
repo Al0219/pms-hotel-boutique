@@ -1,3 +1,4 @@
+import { accountHandlers } from "./account-handlers";
 import { http, HttpResponse } from "msw";
 import { private07Handlers } from "./private-07";
 
@@ -1435,7 +1436,11 @@ function handleGetRevenueKpis({ request }: { request: Request }) {
   return HttpResponse.json(mockResponse);
 }
 
+import { guestAccessHandlers } from "./guest-access-handlers";
+
 export const handlers = [
+  ...guestAccessHandlers,
+  ...accountHandlers,
   ...private07Handlers,
   http.get("http://pms.test/__msw/health", () => HttpResponse.json({ status: "ok" })),
   http.get("http://pms.test/__msw/missing", () => HttpResponse.text(null, { status: 404 })),

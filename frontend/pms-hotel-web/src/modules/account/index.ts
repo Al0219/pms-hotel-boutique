@@ -6,3 +6,7 @@ export * from "./dtos/account.dto";
 export * from "./model/account";
 export * from "./mappers/account.mapper";
 export * from "./service/account.service";
+
+export { AccountSection, AccountFeedback } from './components/account-section';
+export { useAccountSummary } from './hooks/use-account-summary';
+export { ReservationHistoryDetail } from "./components/reservation-history-detail";

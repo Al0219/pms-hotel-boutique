@@ -5,3 +5,5 @@
  */
 export type { ExternalIdentity, ExternalIdentityProvider, GuestAccount } from "./model/guest-account";
 export { GuestAccessPage } from "./components/guest-access-page";
+export { GuestSessionProvider, useGuestSession } from "./components/guest-session-provider";
+export { GuestAccountGate } from "./components/guest-account-gate";
