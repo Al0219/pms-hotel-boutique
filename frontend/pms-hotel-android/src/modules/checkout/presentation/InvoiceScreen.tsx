@@ -2,17 +2,72 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { ExpoInvoiceDocumentService } from '@/modules/checkout/data/device/ExpoInvoiceDocumentService';
+import { type InvoiceDocumentService } from '@/modules/checkout/data/services/InvoiceDocumentService';
 import { GuestChildHeader } from '@/modules/navigation';
 import { useInvoiceActions } from '@/modules/checkout/presentation/hooks/useCheckout';
 import { useCheckoutSession } from '@/modules/checkout/presentation/CheckoutSessionProvider';
 import { tokens } from '@/shared/theme/tokens';
 
 const back = () => router.dismissTo('/account');
+const invoiceDocumentService = new ExpoInvoiceDocumentService();
 
-export function InvoiceScreen() {
+export function InvoiceScreen({ documentService = invoiceDocumentService }: { documentService?: InvoiceDocumentService }) {
   const { snapshot } = useCheckoutSession();
-  const { email, pdf } = useInvoiceActions();
+  const { email } = useInvoiceActions();
   const [actionResult, setActionResult] = useState<string | null>(null);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+  const [openError, setOpenError] = useState<string | null>(null);
+  const [shareError, setShareError] = useState<string | null>(null);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [openingPdf, setOpeningPdf] = useState(false);
+  const [sharingPdf, setSharingPdf] = useState(false);
+  const [generatedPdfUri, setGeneratedPdfUri] = useState<string | null>(null);
+
+  async function generatePdf() {
+    if (!snapshot || generatingPdf) return;
+    setGeneratingPdf(true);
+    setGenerateError(null);
+    setOpenError(null);
+    setShareError(null);
+    setActionResult(null);
+    setGeneratedPdfUri(null);
+    try {
+      const generated = await documentService.generate(snapshot);
+      setGeneratedPdfUri(generated.uri);
+      setActionResult('PDF generado correctamente.');
+    } catch {
+      setGenerateError('No pudimos generar el PDF.');
+    } finally {
+      setGeneratingPdf(false);
+    }
+  }
+
+  async function openPdf() {
+    if (!generatedPdfUri || openingPdf) return;
+    setOpeningPdf(true);
+    setOpenError(null);
+    try {
+      await documentService.open(generatedPdfUri);
+    } catch {
+      setOpenError('No encontramos una aplicación para abrir el PDF.');
+    } finally {
+      setOpeningPdf(false);
+    }
+  }
+
+  async function sharePdf() {
+    if (!generatedPdfUri || sharingPdf) return;
+    setSharingPdf(true);
+    setShareError(null);
+    try {
+      await documentService.share(generatedPdfUri);
+    } catch {
+      setShareError('El PDF fue generado, pero no pudimos abrir las opciones para compartir.');
+    } finally {
+      setSharingPdf(false);
+    }
+  }
 
   return (
     <View style={styles.screen} testID="invoice-screen">
@@ -39,8 +94,8 @@ export function InvoiceScreen() {
                   </View>
                   {item.amountNature === 'ESTIMATED' ? <Text style={styles.muted}>Tarifa estimada</Text> : null}
                   {item.lineItems?.map((line, index) => (
-                    <View key={`${item.key}-${line.label}-${index}`} style={styles.row}>
-                      <Text style={styles.body}>{line.quantity ? `${line.label} × ${line.quantity}` : line.label}</Text>
+                    <View key={item.key + '-' + line.label + '-' + index} style={styles.row}>
+                      <Text style={styles.body}>{line.quantity ? line.label + ' × ' + line.quantity : line.label}</Text>
                       <Text style={styles.body}>{line.priceText}</Text>
                     </View>
                   ))}
@@ -48,13 +103,26 @@ export function InvoiceScreen() {
               ))}
               <Text style={styles.body} testID="invoice-total">{snapshot.folio.checkoutTotal?.text ?? snapshot.folio.totalText}</Text>
             </View>
-            <Pressable accessibilityLabel="Generar PDF" accessibilityRole="button" disabled={pdf.isPending} onPress={() => pdf.mutate(undefined, { onSuccess: () => setActionResult('PDF generado') })} style={styles.button}>
-              <Text style={styles.buttonText}>{pdf.isPending ? 'Generando PDF...' : 'Generar PDF'}</Text>
-            </Pressable>
-            <Pressable accessibilityLabel="Enviar por correo" accessibilityRole="button" disabled={email.isPending} onPress={() => email.mutate(undefined, { onSuccess: () => setActionResult('Correo enviado') })} style={styles.button}>
-              <Text style={styles.buttonText}>{email.isPending ? 'Enviando correo...' : 'Enviar por correo'}</Text>
+            {generatedPdfUri ? (
+              <>
+                <Pressable accessibilityLabel="Ver PDF" accessibilityRole="button" disabled={openingPdf} onPress={() => { void openPdf(); }} style={styles.button} testID="invoice-open-pdf">
+                  <Text style={styles.buttonText}>{openingPdf ? 'Abriendo PDF...' : 'Ver PDF'}</Text>
+                </Pressable>
+                <Pressable accessibilityLabel="Compartir PDF" accessibilityRole="button" disabled={sharingPdf} onPress={() => { void sharePdf(); }} style={styles.button} testID="invoice-share-pdf">
+                  <Text style={styles.buttonText}>{sharingPdf ? 'Abriendo opciones...' : 'Compartir PDF'}</Text>
+                </Pressable>
+                <Pressable accessibilityLabel="Enviar por correo" accessibilityRole="button" disabled={email.isPending} onPress={() => email.mutate(undefined, { onSuccess: () => setActionResult('Solicitud de correo registrada en esta sesión.') })} style={styles.button} testID="invoice-email-pdf">
+                  <Text style={styles.buttonText}>{email.isPending ? 'Enviando correo...' : 'Enviar por correo'}</Text>
+                </Pressable>
+              </>
+            ) : null}
+            <Pressable accessibilityLabel={generatedPdfUri ? 'Generar nuevamente' : 'Generar PDF'} accessibilityRole="button" disabled={generatingPdf} onPress={() => { void generatePdf(); }} style={styles.button} testID="invoice-generate-pdf">
+              <Text style={styles.buttonText}>{generatingPdf ? 'Generando PDF...' : generatedPdfUri ? 'Generar nuevamente' : 'Generar PDF'}</Text>
             </Pressable>
             {actionResult ? <Text accessibilityLiveRegion="polite" style={styles.body} testID="invoice-action-result">{actionResult}</Text> : null}
+            {generateError ? <Text accessibilityLiveRegion="polite" style={styles.body} testID="invoice-generate-error">{generateError}</Text> : null}
+            {openError ? <Text accessibilityLiveRegion="polite" style={styles.body} testID="invoice-open-error">{openError}</Text> : null}
+            {shareError ? <Text accessibilityLiveRegion="polite" style={styles.body} testID="invoice-share-error">{shareError}</Text> : null}
           </>
         )}
       </ScrollView>

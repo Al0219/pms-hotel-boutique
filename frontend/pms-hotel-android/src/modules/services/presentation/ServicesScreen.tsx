@@ -1,12 +1,13 @@
 import { buildLateCheckoutSessionRequestInput } from '@/modules/services/domain/buildLateCheckoutSessionRequestInput';
 import { router } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import { useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { NetworkError } from '@/data/remote/http/HttpError';
-import { useCheckoutStatus } from '@/modules/checkout';
-import { GuestNavigationShell, GuestRootHeader, useGuestNotice } from '@/modules/navigation';
-import { formatServiceDateLabel, useSessionServiceRequests } from '@/modules/service-requests';
+import { GuestCheckoutDueState, useCheckoutStatus } from '@/modules/checkout';
+import { guestFeatureIcons, type GuestFeatureIcon, GuestNavigationShell, GuestRootHeader, useGuestNotice } from '@/modules/navigation';
+import { canRequestLateCheckout, formatServiceDateLabel, getGuestStayActionStatus, useSessionServiceRequests } from '@/modules/service-requests';
 import { type ServicesService } from '@/modules/services/data/services/ServicesService';
 import { type ServiceCatalogItem } from '@/modules/services/domain/models/ServiceCatalog';
 import { useServicesCatalog } from '@/modules/services/presentation/hooks/useServicesCatalog';
@@ -15,10 +16,13 @@ import { servicesStyles } from '@/modules/services/presentation/servicesStyles';
 import { type StayService } from '@/modules/stay';
 import { useCurrentStay } from '@/modules/stay/presentation/hooks/useCurrentStay';
 import { deriveRemoteState } from '@/state/remoteState';
+import { useAppClock } from '@/shared/time';
+import { tokens } from '@/shared/theme/tokens';
 
 export interface ServicesScreenProps {
   service?: ServicesService;
   stayService?: StayService;
+  nowMs?: () => number;
 }
 
 interface ServicesStateCardProps {
@@ -101,11 +105,13 @@ function ServiceCard({
 
 function ServiceNavigationCard({
   disabled = false,
+  icon,
   label,
   onPress,
   testID,
 }: {
   disabled?: boolean;
+  icon: GuestFeatureIcon;
   label: string;
   onPress: () => void;
   testID: string;
@@ -120,14 +126,19 @@ function ServiceNavigationCard({
       style={[servicesStyles.serviceNavigationCard, disabled && servicesStyles.buttonDisabled]}
       testID={testID}
     >
-      <Text style={servicesStyles.serviceLabel}>{label}</Text>
+      <View style={servicesStyles.navigationLeading}>
+        <View accessible={false} testID={`${testID}-icon`}><SymbolView accessibilityElementsHidden name={icon} size={24} tintColor={tokens.color.brand} /></View>
+        <Text style={servicesStyles.serviceLabel}>{label}</Text>
+      </View>
       <Text accessible={false} style={servicesStyles.navigationChevron} testID={`${testID}-chevron`}>›</Text>
     </Pressable>
   );
 }
 
 /** Services presentation: local selection plus Query-owned remote/mutation state. */
-export function ServicesScreen({ service, stayService }: ServicesScreenProps) {
+export function ServicesScreen({ service, stayService, nowMs }: ServicesScreenProps) {
+  const appClock = useAppClock();
+  const getNowMs = nowMs ?? appClock.nowMs;
   const catalogQuery = useServicesCatalog(service);
   const catalogState = deriveRemoteState(catalogQuery, () => false);
   const stayState = deriveRemoteState(useCurrentStay(stayService), () => false);
@@ -143,11 +154,12 @@ export function ServicesScreen({ service, stayService }: ServicesScreenProps) {
     ? catalogState.data.items.find((item) => item.fixtureKey === selectedFixtureKey) ?? null
     : null;
   const lateCheckoutAlreadyRequested = requests.some((request) => request.kind === 'LATE_CHECKOUT');
+  const lifecycle = stayState.kind === 'success' ? getGuestStayActionStatus({ isCheckedOut, nowMs: getNowMs(), requests, stay: stayState.data }) : isCheckedOut ? 'CHECKED_OUT' : 'ACTIVE';
 
   function submitSelectedService(): void {
     const lateCheckoutUntil = selectedService?.lateCheckoutUntil;
     const lateCheckoutPriceAmount = selectedService?.priceAmount;
-    if (!selectedService || selectedService.fixtureKey !== 'late-check-out' || lateCheckoutAlreadyRequested || isCheckedOut || !lateCheckoutUntil || typeof lateCheckoutPriceAmount !== 'number' || stayState.kind !== 'success' || submission.isPending || submissionInFlight.current) return;
+    if (!selectedService || selectedService.fixtureKey !== 'late-check-out' || lateCheckoutAlreadyRequested || isCheckedOut || !lateCheckoutUntil || typeof lateCheckoutPriceAmount !== 'number' || stayState.kind !== 'success' || !canRequestLateCheckout(stayState.data.departure, getNowMs()) || submission.isPending || submissionInFlight.current) return;
 
     submissionInFlight.current = true;
     submission.mutate(selectedService.fixtureKey, {
@@ -221,18 +233,21 @@ export function ServicesScreen({ service, stayService }: ServicesScreenProps) {
     return null;
   }
 
+  if (lifecycle === 'CHECKOUT_DUE') return <View style={servicesStyles.screen} testID="services-screen"><GuestRootHeader title="Servicios" /><ScrollView contentContainerStyle={servicesStyles.content} style={servicesStyles.scroll}><ServiceNavigationCard icon={guestFeatureIcons.requests} label="Mis servicios" onPress={() => router.push('/services/requests')} testID="services-requests-launcher" /><GuestCheckoutDueState actionTestID="services-checkout-due-action" testID="services-checkout-due" /></ScrollView><GuestNavigationShell /></View>;
+
   const isSubmitOffline = submission.isError && submission.error instanceof NetworkError;
   const isSubmitError = submission.isError && !isSubmitOffline;
   const hasSubmitFailure = isSubmitOffline || isSubmitError;
+  const lateCheckoutRequestAllowed = selectedService?.fixtureKey !== 'late-check-out' || (stayState.kind === 'success' && canRequestLateCheckout(stayState.data.departure, getNowMs()));
 
   return (
     <View style={servicesStyles.screen} testID="services-screen">
       <GuestRootHeader title="Servicios" />
       <ScrollView contentContainerStyle={servicesStyles.content} style={servicesStyles.scroll}>
-        <ServiceNavigationCard disabled={isCheckedOut} label="Limpieza" onPress={() => router.push('/services/housekeeping')} testID="services-housekeeping-launcher" />
-        <ServiceNavigationCard disabled={isCheckedOut} label="Room Service" onPress={() => router.push('/services/room-service')} testID="services-room-service-launcher" />
-        <ServiceNavigationCard disabled={isCheckedOut} label="Amenidades" onPress={() => router.push('/services/amenities')} testID="services-amenities-launcher" />
-        <ServiceNavigationCard label="Mis servicios" onPress={() => router.push('/services/requests')} testID="services-requests-launcher" />
+        <ServiceNavigationCard disabled={isCheckedOut} icon={guestFeatureIcons.housekeeping} label="Limpieza" onPress={() => router.push('/services/housekeeping')} testID="services-housekeeping-launcher" />
+        <ServiceNavigationCard disabled={isCheckedOut} icon={guestFeatureIcons.roomService} label="Room Service" onPress={() => router.push('/services/room-service')} testID="services-room-service-launcher" />
+        <ServiceNavigationCard disabled={isCheckedOut} icon={guestFeatureIcons.amenities} label="Amenidades" onPress={() => router.push('/services/amenities')} testID="services-amenities-launcher" />
+        <ServiceNavigationCard icon={guestFeatureIcons.requests} label="Mis servicios" onPress={() => router.push('/services/requests')} testID="services-requests-launcher" />
         {isCheckedOut ? <ServicesStateCard body="Los servicios de estancia ya no están disponibles." testID="services-stay-completed" title="Estancia finalizada" /> : null}
         {!hasSubmitFailure ? (
           <View style={servicesStyles.catalog}>
@@ -277,16 +292,17 @@ export function ServicesScreen({ service, stayService }: ServicesScreenProps) {
         ) : null}
 
         {selectedService?.fixtureKey === 'late-check-out' && lateCheckoutAlreadyRequested ? <ServicesStateCard body="Puedes revisar la solicitud existente en Mis servicios." onRetry={() => router.push('/services/requests')} retryLabel="Ver mis servicios" testID="services-late-checkout-already-requested" title="Late check-out ya solicitado" /> : null}
+        {selectedService?.fixtureKey === 'late-check-out' && !lateCheckoutRequestAllowed ? <ServicesStateCard body="El Late check-out puede solicitarse hasta 35 minutos antes de la hora de salida normal." testID="services-late-checkout-cutoff" title="Late check-out no disponible" /> : null}
 
         {!hasSubmitFailure ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityState={{ disabled: !selectedService || isCheckedOut || lateCheckoutAlreadyRequested || stayState.kind !== 'success' || submission.isPending }}
-            disabled={!selectedService || isCheckedOut || lateCheckoutAlreadyRequested || stayState.kind !== 'success' || submission.isPending}
+            accessibilityState={{ disabled: !selectedService || isCheckedOut || lateCheckoutAlreadyRequested || !lateCheckoutRequestAllowed || stayState.kind !== 'success' || submission.isPending }}
+            disabled={!selectedService || isCheckedOut || lateCheckoutAlreadyRequested || !lateCheckoutRequestAllowed || stayState.kind !== 'success' || submission.isPending}
             onPress={submitSelectedService}
             style={[
               servicesStyles.button,
-              (!selectedService || isCheckedOut || lateCheckoutAlreadyRequested || stayState.kind !== 'success' || submission.isPending) && servicesStyles.buttonDisabled,
+              (!selectedService || isCheckedOut || lateCheckoutAlreadyRequested || !lateCheckoutRequestAllowed || stayState.kind !== 'success' || submission.isPending) && servicesStyles.buttonDisabled,
             ]}
             testID="services-submit-button"
           >

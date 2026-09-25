@@ -61,9 +61,8 @@ describe('Housekeeping — IMP-AND-0110', () => {
     expect(ui.getByTestId('housekeeping-notes').props.multiline).toBe(true);
     expect(ui.getByTestId('housekeeping-notes').props.maxLength).toBe(500);
     await fireEvent.press(ui.getByTestId('housekeeping-time-selector'));
-    expect(ui.getByTestId('housekeeping-time-picker-wheel')).toBeTruthy();
     expect(ui.getByTestId('housekeeping-time-picker-options').props.snapToInterval).toBe(48);
-    for (const slot of ['09:00–10:00', '10:00–11:00', '11:00–12:00', '14:00–15:00']) {
+    for (const slot of ['09:00–10:00', '10:00–11:00', '11:00–12:00', '12:00–13:00', '14:00–15:00']) {
       expect(ui.getByTestId(`housekeeping-time-picker-option-${slot}`)).toBeTruthy();
     }
     await fireEvent.press(ui.getByTestId('housekeeping-time-picker-cancel'));
@@ -197,7 +196,7 @@ describe('Housekeeping — IMP-AND-0110', () => {
     await waitFor(() => expect(ui.getByTestId('housekeeping-submit-success')).toBeTruthy());
     expect(ui.queryByTestId('housekeeping-submit')).toBeNull();
     expect(JSON.parse(ui.getByTestId('session-service-requests-probe').props.children)).toEqual([
-      expect.objectContaining({ kind: 'HOUSEKEEPING', origin: 'SERVICES', status: 'REQUESTED', title: 'Limpieza', summary: '11 sept 2026 · 09:00–10:00' }),
+      expect.objectContaining({ kind: 'HOUSEKEEPING', origin: 'SERVICES', status: 'REQUESTED', title: 'Limpieza', summary: '11/09/2026 · 09:00–10:00' }),
     ]);
   });
 
@@ -277,5 +276,16 @@ describe('Housekeeping — IMP-AND-0110', () => {
     await fireEvent.press(ui.getByTestId('housekeeping-submit'));
     await waitFor(() => expect(ui.getByTestId('account-route')).toBeTruthy());
     nowSpy.mockRestore();
+  });
+});
+
+
+describe('Housekeeping shared selector chevrons', () => {
+  it('renders the shared decorative chevron on cleaning type, date, and time selectors', async () => {
+    const { ui } = await setup();
+    await waitFor(() => expect(ui.getByTestId('housekeeping-type-selector')).toBeTruthy());
+    for (const testID of ['housekeeping-type-selector-chevron', 'housekeeping-date-selector-chevron', 'housekeeping-time-selector-chevron']) {
+      expect(ui.getByTestId(testID)).toBeTruthy();
+    }
   });
 });

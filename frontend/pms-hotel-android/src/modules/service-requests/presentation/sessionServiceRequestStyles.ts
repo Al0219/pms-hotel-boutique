@@ -28,4 +28,11 @@ export const sessionServiceRequestStyles = StyleSheet.create({
   confirmBackdrop: { alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.35)', flex: 1, justifyContent: 'center', padding: tokens.space.lg },
   confirmCard: { backgroundColor: tokens.color.white, borderRadius: tokens.radius.card, gap: tokens.space.md, padding: tokens.space.lg, width: '100%' },
   confirmActions: { flexDirection: 'row', gap: tokens.space.sm, justifyContent: 'flex-end' },
+  editorActions: { gap: tokens.space.sm, marginTop: tokens.space.sm, width: '100%' },
+  editorButton: { alignItems: 'center', borderRadius: tokens.radius.control, justifyContent: 'center', minHeight: tokens.layout.buttonHeight, paddingHorizontal: tokens.space.md, width: '100%' },
+  editorButtonPrimary: { backgroundColor: tokens.color.brand },
+  editorButtonSecondary: { backgroundColor: tokens.color.white, borderColor: tokens.color.brand, borderWidth: 1 },
+  editorButtonLabel: { fontFamily: tokens.typography.family, fontSize: tokens.typography.size.label, fontWeight: '600', textAlign: 'center' },
+  editorButtonLabelPrimary: { color: tokens.color.white },
+  editorButtonLabelSecondary: { color: tokens.color.brand },
 });

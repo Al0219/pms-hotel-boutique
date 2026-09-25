@@ -9,6 +9,7 @@ import {
   type GuestNavigationIcon,
   type GuestNavigationTab,
 } from '@/modules/navigation/guestNavigationTabs';
+import { guestFeatureIcons } from '@/modules/navigation/guestFeatureIcons';
 import { guestNavigationStyles } from '@/modules/navigation/guestNavigationStyles';
 import { tokens } from '@/shared/theme/tokens';
 
@@ -16,53 +17,71 @@ export interface GuestNavigationDrawerLink {
   icon: GuestNavigationIcon;
   label: string;
   path: string;
+  requiresCheckoutSnapshot?: boolean;
 }
 
 export interface GuestNavigationDrawerSection {
-  id: 'stay' | 'benefits' | 'services' | 'hotel';
-  label: 'ESTANCIA' | 'BENEFICIOS' | 'SERVICIOS' | 'HOTEL';
+  id: 'account' | 'stay' | 'services' | 'mobility' | 'benefits' | 'hotel'; icon: GuestNavigationIcon;
+  label: 'CUENTA' | 'ESTANCIA' | 'SERVICIOS' | 'MOVILIDAD' | 'BENEFICIOS' | 'HOTEL';
   links: readonly GuestNavigationDrawerLink[];
 }
 
 export const guestNavigationDrawerPrimaryLink: GuestNavigationDrawerLink = {
-  icon: { android: 'person', ios: 'person.fill', web: 'person' },
+  icon: guestFeatureIcons.profile,
   label: 'Perfil',
   path: '/account/profile',
 };
 
 export const guestNavigationDrawerSections: readonly GuestNavigationDrawerSection[] = [
   {
+    id: 'account',
+    icon: guestFeatureIcons.profile, label: 'CUENTA',
+    links: [guestNavigationDrawerPrimaryLink],
+  },
+  {
     id: 'stay',
-    label: 'ESTANCIA',
+    icon: guestFeatureIcons.stay, label: 'ESTANCIA',
     links: [
-      { icon: { android: 'home', ios: 'house.fill', web: 'home' }, label: 'Inicio', path: '/account' },
-      { icon: { android: 'list', ios: 'list.bullet', web: 'list' }, label: 'Mis servicios', path: '/services/requests' },
+      { icon: guestFeatureIcons.home, label: 'Inicio', path: '/account' },
+      { icon: guestFeatureIcons.requests, label: 'Mis servicios', path: '/services/requests' },
+      { icon: guestFeatureIcons.checkout, label: 'Check-out', path: '/account/checkout' },
+      { icon: guestFeatureIcons.invoice, label: 'Factura', path: '/account/invoice', requiresCheckoutSnapshot: true },
     ],
   },
   {
     id: 'benefits',
-    label: 'BENEFICIOS',
+    icon: guestFeatureIcons.rewards, label: 'BENEFICIOS',
     links: [
-      { icon: { android: 'star', ios: 'star.fill', web: 'star' }, label: 'Rewards', path: '/account/rewards' },
-      { icon: { android: 'local_offer', ios: 'tag.fill', web: 'local_offer' }, label: 'Promociones', path: '/account/promotions' },
+      { icon: guestFeatureIcons.rewards, label: 'Rewards', path: '/account/rewards' },
+      { icon: guestFeatureIcons.promotions, label: 'Promociones', path: '/account/promotions' },
     ],
   },
   {
     id: 'services',
-    label: 'SERVICIOS',
+    icon: guestFeatureIcons.services, label: 'SERVICIOS',
     links: [
-      { icon: { android: 'room_service', ios: 'bell.fill', web: 'room_service' }, label: 'Servicios', path: '/services' },
-      { icon: { android: 'directions_car', ios: 'car.fill', web: 'directions_car' }, label: 'Valet', path: '/valet' },
+      { icon: guestFeatureIcons.services, label: 'Servicios', path: '/services' },
+      { icon: guestFeatureIcons.housekeeping, label: 'Limpieza', path: '/services/housekeeping' },
+      { icon: guestFeatureIcons.roomService, label: 'Room Service', path: '/services/room-service' },
+      { icon: guestFeatureIcons.amenities, label: 'Amenidades', path: '/services/amenities' },
+      { icon: guestFeatureIcons.chat, label: 'Chat', path: '/chat' },
+    ],
+  },
+  {
+    id: 'mobility',
+    icon: guestFeatureIcons.valet, label: 'MOVILIDAD',
+    links: [
+      { icon: guestFeatureIcons.valet, label: 'Valet', path: '/valet' },
     ],
   },
   {
     id: 'hotel',
-    label: 'HOTEL',
-    links: [{ icon: { android: 'apartment', ios: 'building.2.fill', web: 'apartment' }, label: 'Hotel', path: '/hotel' }],
+    icon: guestFeatureIcons.hotel, label: 'HOTEL',
+    links: [{ icon: guestFeatureIcons.hotel, label: 'Hotel', path: '/hotel' }],
   },
 ];
 
-export const guestNavigationDrawerLinks = [guestNavigationDrawerPrimaryLink, ...guestNavigationDrawerSections.flatMap((section) => section.links)];
+export const guestNavigationDrawerLinks = guestNavigationDrawerSections.flatMap((section) => section.links);
 
 const guestNavigationRootPaths = new Set(['/account', '/services', '/valet', '/hotel']);
 
@@ -139,7 +158,7 @@ export function GuestNavigationShell({ onNavigateAway }: Pick<GuestNavigationTab
       {isRootRoute ? (
         <Pressable accessibilityLabel="Abrir chat" accessibilityRole="button" onPress={openChat} style={guestNavigationStyles.chatFab} testID="guest-navigation-chat-fab">
           <View testID="guest-navigation-chat-fab-icon">
-            <SymbolView accessibilityElementsHidden importantForAccessibility="no" name={{ android: 'chat', ios: 'message.fill', web: 'chat' }} size={tokens.layout.controlHeight / 2} style={guestNavigationStyles.chatFabIcon} tintColor={tokens.color.white} />
+            <SymbolView accessibilityElementsHidden importantForAccessibility="no" name={guestFeatureIcons.chat} size={tokens.layout.controlHeight / 2} style={guestNavigationStyles.chatFabIcon} tintColor={tokens.color.white} />
           </View>
         </Pressable>
       ) : null}

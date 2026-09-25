@@ -8,6 +8,7 @@ import { AmenitiesScreen } from '@/modules/services/amenities';
 import { HousekeepingScreen } from '@/modules/services/housekeeping';
 import { RoomServiceScreen } from '@/modules/services/room-service';
 import { MockServicesService, ServicesScreen } from '@/modules/services';
+import { SessionVehiclesProvider, ValetScreen } from '@/modules/valet';
 
 const checkoutContent = {
   checks: [],
@@ -48,7 +49,7 @@ function CheckedOutProviders({ children }: PropsWithChildren) {
       <SessionServiceRequestsProvider>
         <CheckoutSessionProvider>
           <CheckedOutSeed />
-          {children}
+          <SessionVehiclesProvider>{children}</SessionVehiclesProvider>
         </CheckoutSessionProvider>
       </SessionServiceRequestsProvider>
     </QueryClientProvider>
@@ -75,6 +76,16 @@ describe('Checkout service gates', () => {
     await fireEvent.press(ui.getByTestId('service-card-late-check-out'));
     expect(ui.getByTestId('services-submit-button').props.accessibilityState.disabled).toBe(true);
     expect(ui.getByTestId('services-requests-launcher').props.accessibilityState.disabled).toBe(false);
+    ui.unmount();
+  });
+
+  it('blocks every Valet action after checkout while retaining the root shell', async () => {
+    const ui = await render(<CheckedOutProviders><ValetScreen /></CheckedOutProviders>);
+    await waitFor(() => expect(ui.getByTestId('valet-stay-completed')).toBeTruthy());
+    expect(ui.getByTestId('valet-creation-blocked')).toBeTruthy();
+    expect(ui.queryByTestId('valet-register-vehicle')).toBeNull();
+    expect(ui.queryByTestId('valet-vehicle-card')).toBeNull();
+    expect(ui.queryByTestId('valet-transfer-card')).toBeNull();
     ui.unmount();
   });
 });

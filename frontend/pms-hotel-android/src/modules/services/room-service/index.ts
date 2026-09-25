@@ -9,7 +9,8 @@ export {
   ROOM_SERVICE_MIN_ITEM_QUANTITY,
   roomServiceCartReducer,
 } from './domain/models/RoomServiceCart';
-export { roomServiceCategories } from './domain/models/RoomServiceMenu';
+export { roomServiceCategories, roomServiceCategoryPeriod } from './domain/models/RoomServiceMenu';
+export { checkoutDayLateLunchMaxTime, getRoomServiceCartAvailabilityWindows, getRoomServicePeriodWindows, hasIncompatibleRoomServiceCartPeriods, isRoomServiceCartAvailableAt, isRoomServiceItemAvailable, isRoomServicePeriodAvailableAt, isRoomServicePeriodAvailableOnDate, isRoomServiceTimeInWindow, roomServicePeriodWindows } from './domain/roomServiceAvailability';
 export type {
   RoomServiceCartAction,
   RoomServiceCartLine,
@@ -19,8 +20,11 @@ export type {
   RoomServiceCategory,
   RoomServiceMenu,
   RoomServiceMenuItem,
+  RoomServiceAvailabilityWindow,
+  RoomServicePeriod,
 } from './domain/models/RoomServiceMenu';
 export type { RoomServiceRequest } from './domain/models/RoomServiceRequest';
+export type { RoomServiceCheckoutDayContext } from './domain/roomServiceAvailability';
 export { RoomServiceScreen } from './presentation/RoomServiceScreen';
 
 export { buildRoomServiceSessionRequestInput } from './domain/buildRoomServiceSessionRequestInput';
