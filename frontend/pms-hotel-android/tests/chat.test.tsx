@@ -156,7 +156,7 @@ describe('Chat con Recepción', () => {
     expect(rendered.queryByLabelText('Servicios')).toBeNull();
     expect(rendered.queryByLabelText('Valet')).toBeNull();
     expect(rendered.queryByLabelText('Hotel')).toBeNull();
-    expect(rendered.queryByLabelText('Abrir menú')).toBeNull();
+    expect(rendered.getByLabelText('Abrir menú')).toBeTruthy();
     expect(rendered.queryByLabelText('Abrir chat')).toBeNull();
     expect(rendered.queryByTestId('guest-navigation-chat-fab')).toBeNull();
     expect(rendered.queryByLabelText('Navegación principal de huésped')).toBeNull();
@@ -168,7 +168,7 @@ describe('Chat con Recepción', () => {
     await fireEvent.press(header.getByLabelText('Volver'));
     expect(onBack).toHaveBeenCalledTimes(1);
     expect(header.getByText('Encabezado secundario')).toBeTruthy();
-    expect(header.queryByLabelText('Abrir menú')).toBeNull();
+    expect(header.getByLabelText('Abrir menú')).toBeTruthy();
 
     const backSpy = jest.spyOn(router, 'back').mockImplementation(() => undefined);
     const rendered = await renderChat(new MockChatService());

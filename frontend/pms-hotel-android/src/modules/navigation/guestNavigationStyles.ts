@@ -25,6 +25,7 @@ export const guestNavigationStyles = StyleSheet.create({
     justifyContent: 'center',
     width: tokens.layout.controlHeight,
   },
+  childHeaderActions: { alignItems: 'center', flexDirection: 'row', gap: tokens.space.xs, minWidth: tokens.layout.controlHeight },
   childBackArrow: {
     color: tokens.color.inkStrong,
     fontFamily: tokens.typography.family,
@@ -175,6 +176,7 @@ export const guestNavigationStyles = StyleSheet.create({
   drawerSection: {
     gap: tokens.space.xs,
   },
+  drawerSectionButton: { alignItems: 'center', flexDirection: 'row', gap: tokens.space.xs, minHeight: tokens.layout.controlHeight, paddingHorizontal: tokens.space.xs },
   drawerSectionTitle: {
     color: tokens.color.muted,
     fontFamily: tokens.typography.family,

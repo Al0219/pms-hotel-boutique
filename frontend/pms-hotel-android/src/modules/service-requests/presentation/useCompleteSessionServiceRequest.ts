@@ -4,13 +4,15 @@ import { type SessionServiceRequest } from '@/modules/service-requests/domain/Se
 import { canCompleteServiceRequest } from '@/modules/service-requests/domain/serviceRequestPresentation';
 import { useSessionServiceRequests } from '@/modules/service-requests/presentation/SessionServiceRequestsProvider';
 import { useOptionalSessionVehicles } from '@/modules/valet/session/SessionVehiclesProvider';
+import { useAppClock } from '@/shared/time';
 
 /** Completes exactly one local request; vehicle receipt also updates its linked vehicle. */
 export function useCompleteSessionServiceRequest(): (request: SessionServiceRequest) => void {
   const { completeRequest } = useSessionServiceRequests();
   const vehiclesContext = useOptionalSessionVehicles();
+  const appClock = useAppClock();
   return useCallback((request) => {
-    if (!canCompleteServiceRequest(request, Date.now())) return;
+    if (!canCompleteServiceRequest(request, appClock.nowMs())) return;
     const details = request.details;
     if (request.kind === 'VEHICLE_REQUEST' && details?.type === 'VEHICLE_REQUEST') {
       if (!vehiclesContext) return;
@@ -21,5 +23,5 @@ export function useCompleteSessionServiceRequest(): (request: SessionServiceRequ
       return;
     }
     completeRequest(request.sessionRequestId);
-  }, [completeRequest, vehiclesContext]);
+  }, [appClock, completeRequest, vehiclesContext]);
 }

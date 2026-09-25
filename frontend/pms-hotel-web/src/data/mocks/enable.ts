@@ -1,15 +1,20 @@
 import { getPublicEnvironment } from "@/lib/env";
 
-let workerPromise: Promise<void> | null = null;
+let mockWorkerPromise: Promise<void> | null = null;
 
 export async function enableMocking(): Promise<void> {
-  if (typeof window === "undefined" || !getPublicEnvironment().useMockApi) return;
-  workerPromise ??= (async () => {
+  if (typeof window === "undefined" || !getPublicEnvironment().useMockApi) {
+    return;
+  }
+
+  mockWorkerPromise ??= (async () => {
     const { mockWorker } = await import("./browser");
     await mockWorker.start({ onUnhandledRequest: "bypass" });
   })().catch(error => {
-    workerPromise = null;
+    // A rejected startup must not permanently block retries.
+    mockWorkerPromise = null;
     throw error;
   });
-  await workerPromise;
+
+  await mockWorkerPromise;
 }

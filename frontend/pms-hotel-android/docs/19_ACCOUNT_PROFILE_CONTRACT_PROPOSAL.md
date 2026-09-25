@@ -515,17 +515,11 @@ No se crea pantalla, formulario, ruta ni entry point en `IMP-AND-0201`.
 
 La UI final pertenece al dominio de `Cuenta`.
 
-Rutas concretas se definirán al implementar `IMP-AND-0202/0303`, pero deben consumir Guest Navigation V3.
+La ruta y el entry point canónicos están definidos por `31_ACCOUNT_PROFILE_CHANGE_CONTROL.md` y `32_AUTH_RESERVATION_CONTEXT_CHANGE_CONTROL.md`: `IMP-AND-0202` implementa `/account/profile` desde la primera acción Perfil del drawer, e `IMP-AND-0303` queda absorbida. La UI consume Guest Navigation V3.
 
-Cuando Account/Profile esté disponible:
+Para `/account` y sus hijas, incluida la ruta canónica `/account/profile`, la shell vigente mantiene **Inicio** como tab activa. No crear una footbar privada ni una tab Cuenta adicional; ver `04_NAVIGATION.md` y `31_ACCOUNT_PROFILE_CHANGE_CONTROL.md`.
 
-```text
-Cuenta = selected
-```
-
-No crear una footbar privada.
-
-`IMP-AND-0201` por sí misma crea contratos, no habilita todavía la tab Cuenta.
+`IMP-AND-0201` por sí misma creó contratos; no creó ruta, entry point ni UI de Profile.
 
 ---
 
@@ -665,4 +659,4 @@ IMP-AND-0201
 PENDIENTE → READY
 ```
 
-La implementación de UI final continuará posteriormente en `IMP-AND-0202` / `IMP-AND-0303`.
+La implementación de UI final canónica corresponde a `IMP-AND-0202` en `/account/profile`. `IMP-AND-0303` queda absorbida y no implementa una segunda UI. Ver `31_ACCOUNT_PROFILE_CHANGE_CONTROL.md`.

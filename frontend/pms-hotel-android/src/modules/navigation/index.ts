@@ -1,4 +1,4 @@
-export { guestNavigationDrawerLinks, guestNavigationDrawerSections, GuestNavigationShell, GuestNavigationTabs, isGuestRootRoute, type GuestNavigationDrawerLink, type GuestNavigationDrawerSection } from '@/modules/navigation/GuestNavigationShell';
+export { guestNavigationDrawerLinks, guestNavigationDrawerPrimaryLink, guestNavigationDrawerSections, GuestNavigationShell, GuestNavigationTabs, isGuestRootRoute, type GuestNavigationDrawerLink, type GuestNavigationDrawerSection } from '@/modules/navigation/GuestNavigationShell';
 export {
   getGuestNavigationTabPressHandler,
   guestNavigationTabs,
@@ -13,3 +13,4 @@ export { GuestNoticeProvider, useGuestNotice, type GuestServiceNotice } from '@/
 export { GuestNavigationMenuProvider, useGuestNavigationMenu } from '@/modules/navigation/GuestNavigationMenuProvider';
 export { GuestRootHeader } from '@/modules/navigation/GuestRootHeader';
 export { GuestChildHeader } from '@/modules/navigation/GuestChildHeader';
+export { guestFeatureIcons, type GuestFeatureIcon } from '@/modules/navigation/guestFeatureIcons';

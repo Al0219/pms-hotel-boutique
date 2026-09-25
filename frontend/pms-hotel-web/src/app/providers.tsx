@@ -7,32 +7,31 @@ import { getPublicEnvironment } from "@/lib/env";
 import { GuestSessionProvider } from "@/modules/auth";
 
 export function Providers({ children }: Readonly<{ children: React.ReactNode }>) {
+  // Keep SSR and the first browser render identical while mocks are starting.
+  const [mockReady, setMockReady] = useState(() => !getPublicEnvironment().useMockApi);
+  const [mockError, setMockError] = useState(false);
+  const [mockAttempt, setMockAttempt] = useState(0);
+  function startMocking() {
+    setMockError(false);
+    setMockAttempt(attempt => attempt + 1);
+  }
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   }));
-  const [mockState, setMockState] = useState<"loading" | "ready" | "error">(() => getPublicEnvironment().useMockApi ? "loading" : "ready");
-
-  function startMocks() {
-    return enableMocking().then(
-      () => setMockState("ready"),
-      () => setMockState("error"),
-    );
-  }
-
   useEffect(() => {
+    if (!getPublicEnvironment().useMockApi) return;
+
     let mounted = true;
-    void enableMocking().then(
-      () => { if (mounted) setMockState("ready"); },
-      () => { if (mounted) setMockState("error"); },
-    );
-    return () => { mounted = false; };
-  }, []);
+    void enableMocking()
+      .then(() => { if (mounted) setMockReady(true); })
+      .catch(() => { if (mounted) setMockError(true); });
 
-  if (mockState === "loading") return <p role="status">Preparando la demostración…</p>;
-  if (mockState === "error") return <section>
-    <p role="alert">No se pudo preparar la demostración.</p>
-    <button type="button" onClick={() => { setMockState("loading"); void startMocks(); }}>Reintentar</button>
-  </section>;
+    return () => {
+      mounted = false;
+    };
+  }, [mockAttempt]);
 
-  return <QueryClientProvider client={queryClient}><GuestSessionProvider>{children}</GuestSessionProvider></QueryClientProvider>;
+  return <QueryClientProvider client={queryClient}>{mockReady ? <GuestSessionProvider>{children}</GuestSessionProvider> : mockError
+    ? <div role="alert"><p>No se pudo iniciar la demostración.</p><button type="button" onClick={startMocking}>Reintentar inicio</button></div>
+    : <p role="status">Preparando demostración…</p>}</QueryClientProvider>;
 }

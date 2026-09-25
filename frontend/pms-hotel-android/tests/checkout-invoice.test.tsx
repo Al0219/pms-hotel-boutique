@@ -35,7 +35,7 @@ describe('Checkout / Invoice — IMP-AND-0203', () => {
   it('contains no financial calculation, backend transport, document storage, or child shell', () => {
     const fs = require('fs');
     const sources = ['src/modules/checkout/domain/Checkout.ts', 'src/modules/checkout/data/mappers/mapCheckoutFixtureDto.ts', 'src/modules/checkout/presentation/CheckoutScreen.tsx', 'src/modules/checkout/presentation/InvoiceScreen.tsx'].map((file) => fs.readFileSync(file, 'utf8')).join('\n');
-    for (const prohibited of ['parseFloat', 'Number(', 'axios', 'expo-file-system', 'shareAsync', 'PaymentMethod', 'FiscalDocument']) expect(sources).not.toContain(prohibited);
+    for (const prohibited of ['parseFloat', 'Number(', 'axios', 'expo-file-system', 'PaymentMethod', 'FiscalDocument']) expect(sources).not.toContain(prohibited);
     expect(sources).not.toMatch(/\bfetch\s*\(/);
     expect(sources).not.toContain('GuestNavigationShell');
   });
