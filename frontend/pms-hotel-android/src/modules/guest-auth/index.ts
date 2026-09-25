@@ -1,20 +1,37 @@
-export type { GuestAccountService } from '@/modules/guest-auth/data/services/GuestAccountService';
-export type { GuestAuthService } from '@/modules/guest-auth/data/services/GuestAuthService';
-export type { LinkedReservationsService } from '@/modules/guest-auth/data/services/LinkedReservationsService';
-export { MockGuestAccountService } from '@/modules/guest-auth/data/mocks/MockGuestAccountService';
-export { MockGuestAuthService } from '@/modules/guest-auth/data/mocks/MockGuestAuthService';
-export type { MockGuestAuthServiceOptions } from '@/modules/guest-auth/data/mocks/MockGuestAuthService';
-export { MockLinkedReservationsService } from '@/modules/guest-auth/data/mocks/MockLinkedReservationsService';
-export type { MockLinkedReservationsScenario, MockLinkedReservationsServiceOptions } from '@/modules/guest-auth/data/mocks/MockLinkedReservationsService';
-export { InvalidGuestCredentialsError } from '@/modules/guest-auth/domain/errors/InvalidGuestCredentialsError';
-export type { ActiveReservationContext } from '@/modules/guest-auth/domain/models/ActiveReservationContext';
-export type { GuestAuthSession } from '@/modules/guest-auth/domain/models/GuestAuthSession';
-export type { GuestLoginRequest } from '@/modules/guest-auth/domain/models/GuestLoginRequest';
-export type { LinkedReservationSummary } from '@/modules/guest-auth/domain/models/LinkedReservationSummary';
-export { resolveLinkedReservationOutcome } from '@/modules/guest-auth/domain/resolveLinkedReservationOutcome';
-export type { LinkedReservationOutcome } from '@/modules/guest-auth/domain/resolveLinkedReservationOutcome';
-export { ActiveReservationContextProvider, useActiveReservationContext } from '@/modules/guest-auth/presentation/ActiveReservationContextProvider';
-export { GuestAuthSessionProvider, useGuestAuthSession } from '@/modules/guest-auth/presentation/GuestAuthSessionProvider';
-export { LoginScreen } from '@/modules/guest-auth/presentation/LoginScreen';
-export { useGuestLogin } from '@/modules/guest-auth/presentation/hooks/useGuestLogin';
-export { reservationContextKey } from '@/modules/guest-auth/presentation/queryKeys';
+export type { GuestAccountService } from "@/modules/guest-auth/data/services/GuestAccountService";
+export type { GuestAuthService } from "@/modules/guest-auth/data/services/GuestAuthService";
+export type { LinkedReservationsService } from "@/modules/guest-auth/data/services/LinkedReservationsService";
+export { MockGuestAccountService } from "@/modules/guest-auth/data/mocks/MockGuestAccountService";
+export { MockGuestAuthService } from "@/modules/guest-auth/data/mocks/MockGuestAuthService";
+export type { MockGuestAuthServiceOptions } from "@/modules/guest-auth/data/mocks/MockGuestAuthService";
+export { MockLinkedReservationsService } from "@/modules/guest-auth/data/mocks/MockLinkedReservationsService";
+export type {
+  MockLinkedReservationsScenario,
+  MockLinkedReservationsServiceOptions,
+} from "@/modules/guest-auth/data/mocks/MockLinkedReservationsService";
+export { InvalidGuestCredentialsError } from "@/modules/guest-auth/domain/errors/InvalidGuestCredentialsError";
+export type { ActiveReservationContext } from "@/modules/guest-auth/domain/models/ActiveReservationContext";
+export type { GuestAuthSession } from "@/modules/guest-auth/domain/models/GuestAuthSession";
+export type { GuestLoginRequest } from "@/modules/guest-auth/domain/models/GuestLoginRequest";
+export type { LinkedReservationSummary } from "@/modules/guest-auth/domain/models/LinkedReservationSummary";
+export { resolveLinkedReservationOutcome } from "@/modules/guest-auth/domain/resolveLinkedReservationOutcome";
+export type { LinkedReservationOutcome } from "@/modules/guest-auth/domain/resolveLinkedReservationOutcome";
+export {
+  ActiveReservationContextProvider,
+  useActiveReservationContext,
+} from "@/modules/guest-auth/presentation/ActiveReservationContextProvider";
+export {
+  GuestAuthSessionProvider,
+  useGuestAuthSession,
+} from "@/modules/guest-auth/presentation/GuestAuthSessionProvider";
+export { LoginScreen } from "@/modules/guest-auth/presentation/LoginScreen";
+export { useGuestLogin } from "@/modules/guest-auth/presentation/hooks/useGuestLogin";
+export { reservationContextKey } from "@/modules/guest-auth/presentation/queryKeys";
+
+export { LinkedReservationsScreen } from "@/modules/guest-auth/presentation/LinkedReservationsScreen";
+
+export { useLinkedReservations } from "@/modules/guest-auth/presentation/hooks/useLinkedReservations";
+
+export { useGuestLogout } from "@/modules/guest-auth/presentation/hooks/useGuestLogout";
+
+export { GuestRouteGuard } from "@/modules/guest-auth/presentation/GuestRouteGuard";

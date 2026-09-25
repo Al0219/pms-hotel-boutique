@@ -1,26 +1,40 @@
-import { useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { router } from 'expo-router';
+import { useRef, useState } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { router } from "expo-router";
 
-import { NetworkError } from '@/data/remote/http/HttpError';
-import { type AccessService } from '@/modules/access/data/services/AccessService';
-import { ReservationNotFoundError } from '@/modules/access/domain/errors/ReservationNotFoundError';
-import { type ReservationAccessRequest } from '@/modules/access/domain/models/ReservationAccess';
-import { accessStyles } from '@/modules/access/presentation/accessStyles';
-import { useLinkReservation } from '@/modules/access/presentation/hooks/useLinkReservation';
+import { NetworkError } from "@/data/remote/http/HttpError";
+import { type AccessService } from "@/modules/access/data/services/AccessService";
+import { ReservationNotFoundError } from "@/modules/access/domain/errors/ReservationNotFoundError";
+import {
+  type ReservationAccessRequest,
+  type ReservationAccessResult,
+} from "@/modules/access/domain/models/ReservationAccess";
+import { useActiveReservationContext } from "@/modules/guest-auth";
+import { accessStyles } from "@/modules/access/presentation/accessStyles";
+import { useLinkReservation } from "@/modules/access/presentation/hooks/useLinkReservation";
 
 type FieldErrors = Partial<Record<keyof ReservationAccessRequest, string>>;
 
 export interface AccessScreenProps {
   service?: AccessService;
-  onLinked?: () => void;
+  onLinked?: (result: ReservationAccessResult) => void;
 }
 
 function validate(request: ReservationAccessRequest): FieldErrors {
   const errors: FieldErrors = {};
-  if (!request.reservationCode) errors.reservationCode = 'Ingresa tu código de reserva.';
-  if (!request.email) errors.email = 'Ingresa tu correo electrónico.';
-  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(request.email)) errors.email = 'Ingresa un correo electrónico válido.';
+  if (!request.reservationCode)
+    errors.reservationCode = "Ingresa tu código de reserva.";
+  if (!request.email) errors.email = "Ingresa tu correo electrónico.";
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(request.email))
+    errors.email = "Ingresa un correo electrónico válido.";
   return errors;
 }
 
@@ -36,11 +50,21 @@ function AccessStateCard({
   title: string;
 }) {
   return (
-    <View style={[accessStyles.stateCard, testID === 'access-offline' && accessStyles.offlineStateCard]} testID={testID}>
+    <View
+      style={[
+        accessStyles.stateCard,
+        testID === "access-offline" && accessStyles.offlineStateCard,
+      ]}
+      testID={testID}
+    >
       <Text style={accessStyles.stateTitle}>{title}</Text>
       <Text style={accessStyles.stateBody}>{body}</Text>
       {onRetry ? (
-        <Pressable accessibilityRole="button" onPress={onRetry} style={accessStyles.button}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onRetry}
+          style={accessStyles.button}
+        >
           <Text style={accessStyles.buttonLabel}>Reintentar</Text>
         </Pressable>
       ) : null}
@@ -49,12 +73,13 @@ function AccessStateCard({
 }
 
 /** Access is intentionally outside GuestNavigationShell until a link succeeds. */
-export function AccessScreen({ service, onLinked = () => router.replace('/account') }: AccessScreenProps) {
+export function AccessScreen({ service, onLinked }: AccessScreenProps) {
+  const { setActiveReservationContext } = useActiveReservationContext();
   const linkReservation = useLinkReservation(service);
   const inFlight = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
-  const [reservationCode, setReservationCode] = useState('');
-  const [email, setEmail] = useState('');
+  const [reservationCode, setReservationCode] = useState("");
+  const [email, setEmail] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const request = (): ReservationAccessRequest => ({
@@ -64,39 +89,63 @@ export function AccessScreen({ service, onLinked = () => router.replace('/accoun
 
   function changeReservationCode(value: string): void {
     setReservationCode(value);
-    if (fieldErrors.reservationCode) setFieldErrors((current) => ({ ...current, reservationCode: undefined }));
+    if (fieldErrors.reservationCode)
+      setFieldErrors((current) => ({ ...current, reservationCode: undefined }));
   }
 
   function changeEmail(value: string): void {
     setEmail(value);
-    if (fieldErrors.email) setFieldErrors((current) => ({ ...current, email: undefined }));
+    if (fieldErrors.email)
+      setFieldErrors((current) => ({ ...current, email: undefined }));
   }
 
   function submit(): void {
     const nextRequest = request();
     const errors = validate(nextRequest);
     setFieldErrors(errors);
-    if (Object.keys(errors).length > 0 || linkReservation.isPending || inFlight.current) return;
+    if (
+      Object.keys(errors).length > 0 ||
+      linkReservation.isPending ||
+      inFlight.current
+    )
+      return;
 
     inFlight.current = true;
     linkReservation.mutate(nextRequest, {
-      onSuccess: onLinked,
-      onSettled: () => { inFlight.current = false; },
+      onSuccess: (result) => {
+        setActiveReservationContext({
+          reservationId: result.reservationId,
+          reservationStayId: result.reservationStayId,
+        });
+        if (onLinked) onLinked(result);
+        else router.replace("/account");
+      },
+      onSettled: () => {
+        inFlight.current = false;
+      },
     });
   }
 
   function keepFormReachable(): void {
     // Lets Android resize for the keyboard before the scroll position is calculated.
-    requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+    requestAnimationFrame(() =>
+      scrollRef.current?.scrollToEnd({ animated: true }),
+    );
   }
 
-  const isOffline = linkReservation.isError && linkReservation.error instanceof NetworkError;
-  const isNotFound = linkReservation.isError && linkReservation.error instanceof ReservationNotFoundError;
+  const isOffline =
+    linkReservation.isError && linkReservation.error instanceof NetworkError;
+  const isNotFound =
+    linkReservation.isError &&
+    linkReservation.error instanceof ReservationNotFoundError;
   const isGenericError = linkReservation.isError && !isOffline && !isNotFound;
   const isPending = linkReservation.isPending;
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={accessStyles.screen}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={accessStyles.screen}
+    >
       <ScrollView
         contentContainerStyle={accessStyles.scrollContent}
         keyboardShouldPersistTaps="handled"
@@ -105,9 +154,16 @@ export function AccessScreen({ service, onLinked = () => router.replace('/accoun
       >
         <View style={accessStyles.form} testID="access-screen">
           <Text style={accessStyles.title}>Vincula tu reserva</Text>
-          <Text style={accessStyles.subtitle}>Ingresa los datos de tu reserva para continuar.</Text>
+          <Text style={accessStyles.subtitle}>
+            Ingresa los datos de tu reserva para continuar.
+          </Text>
           <View style={accessStyles.field}>
-            <Text nativeID="access-reservation-code-label" style={accessStyles.label}>Código de reserva</Text>
+            <Text
+              nativeID="access-reservation-code-label"
+              style={accessStyles.label}
+            >
+              Código de reserva
+            </Text>
             <TextInput
               accessibilityHint={fieldErrors.reservationCode}
               accessibilityLabel="Código de reserva"
@@ -116,14 +172,26 @@ export function AccessScreen({ service, onLinked = () => router.replace('/accoun
               maxLength={32}
               onChangeText={changeReservationCode}
               onFocus={keepFormReachable}
-              style={[accessStyles.input, fieldErrors.reservationCode && accessStyles.inputInvalid]}
+              style={[
+                accessStyles.input,
+                fieldErrors.reservationCode && accessStyles.inputInvalid,
+              ]}
               testID="access-reservation-code"
               value={reservationCode}
             />
-            {fieldErrors.reservationCode ? <Text accessibilityLiveRegion="polite" style={accessStyles.fieldError}>{fieldErrors.reservationCode}</Text> : null}
+            {fieldErrors.reservationCode ? (
+              <Text
+                accessibilityLiveRegion="polite"
+                style={accessStyles.fieldError}
+              >
+                {fieldErrors.reservationCode}
+              </Text>
+            ) : null}
           </View>
           <View style={accessStyles.field}>
-            <Text nativeID="access-email-label" style={accessStyles.label}>Correo electrónico</Text>
+            <Text nativeID="access-email-label" style={accessStyles.label}>
+              Correo electrónico
+            </Text>
             <TextInput
               accessibilityHint={fieldErrors.email}
               accessibilityLabel="Correo electrónico"
@@ -134,11 +202,21 @@ export function AccessScreen({ service, onLinked = () => router.replace('/accoun
               maxLength={254}
               onChangeText={changeEmail}
               onFocus={keepFormReachable}
-              style={[accessStyles.input, fieldErrors.email && accessStyles.inputInvalid]}
+              style={[
+                accessStyles.input,
+                fieldErrors.email && accessStyles.inputInvalid,
+              ]}
               testID="access-email"
               value={email}
             />
-            {fieldErrors.email ? <Text accessibilityLiveRegion="polite" style={accessStyles.fieldError}>{fieldErrors.email}</Text> : null}
+            {fieldErrors.email ? (
+              <Text
+                accessibilityLiveRegion="polite"
+                style={accessStyles.fieldError}
+              >
+                {fieldErrors.email}
+              </Text>
+            ) : null}
           </View>
           {isNotFound ? (
             <AccessStateCard
@@ -147,17 +225,36 @@ export function AccessScreen({ service, onLinked = () => router.replace('/accoun
               title="No pudimos verificar los datos"
             />
           ) : null}
-          {isGenericError ? <AccessStateCard body="Intenta nuevamente." onRetry={submit} testID="access-error" title="No pudimos vincular tu reserva" /> : null}
-          {isOffline ? <AccessStateCard body="Conéctate a internet para vincular tu reserva." onRetry={submit} testID="access-offline" title="Sin conexión" /> : null}
+          {isGenericError ? (
+            <AccessStateCard
+              body="Intenta nuevamente."
+              onRetry={submit}
+              testID="access-error"
+              title="No pudimos vincular tu reserva"
+            />
+          ) : null}
+          {isOffline ? (
+            <AccessStateCard
+              body="Conéctate a internet para vincular tu reserva."
+              onRetry={submit}
+              testID="access-offline"
+              title="Sin conexión"
+            />
+          ) : null}
           <Pressable
             accessibilityRole="button"
             accessibilityState={{ disabled: isPending }}
             disabled={isPending}
             onPress={submit}
-            style={[accessStyles.button, isPending && accessStyles.buttonDisabled]}
+            style={[
+              accessStyles.button,
+              isPending && accessStyles.buttonDisabled,
+            ]}
             testID="access-submit-button"
           >
-            <Text style={accessStyles.buttonLabel}>{isPending ? 'Vinculando...' : 'Vincular reserva'}</Text>
+            <Text style={accessStyles.buttonLabel}>
+              {isPending ? "Vinculando..." : "Vincular reserva"}
+            </Text>
           </Pressable>
         </View>
       </ScrollView>

@@ -55,3 +55,8 @@ La footbar anterior `Servicios · Chat · Valet · Cuenta`, documentada por refe
 ## Rutas de Servicios
 
 `/services/housekeeping`, `/services/room-service`, `/services/amenities` y `/services/requests` conservan Servicios activa y Back hacia `/services`. Sus schedulers, y los de Valet/Transfer, restringen fechas a la ventana local inclusiva `max(ReservationStay.arrival, today) → ReservationStay.departure`. Con `CheckoutSessionSnapshot` presente, los launchers y rutas directas de Limpieza, Room Service y Amenidades bloquean creación; Late Checkout se bloquea desde Servicios. Mis servicios sigue disponible. Valet, Transfer, Chat y Hotel no se bloquean por este estado, pero Valet y Transfer no pueden exceder departure. Hotel es una sección independiente en `/hotel`; no existe `/services/hotel-info` ni un launcher permanente de Hotel dentro de Servicios.
+
+
+## Cambiar estadía activa (IMP-AND-0116)
+
+Con una sesión Guest autenticada, el drawer permite abrir `/reservations` para reemplazar únicamente el contexto activo tras confirmación. La sesión se conserva; Back Android se consume y el acceso temporal no ve esta acción. El estado local reservation-scoped se aísla por stay y no simula persistencia Backend.

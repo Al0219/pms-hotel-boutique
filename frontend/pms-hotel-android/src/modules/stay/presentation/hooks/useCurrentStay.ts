@@ -1,22 +1,33 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from "@tanstack/react-query";
 
-import { mapReservationStayDto } from '@/modules/stay/data/mappers/mapReservationStayDto';
-import { MockStayService } from '@/modules/stay/data/mocks/MockStayService';
-import { type StayService } from '@/modules/stay/data/services/StayService';
-import { type ReservationStay } from '@/modules/stay/domain/models/ReservationStay';
-
-export const currentStayQueryKey = ['stay', 'current'] as const;
+import { type ActiveReservationContext } from "@/modules/guest-auth/domain/models/ActiveReservationContext";
+import { useActiveReservationContext } from "@/modules/guest-auth/presentation/ActiveReservationContextProvider";
+import { reservationContextKey } from "@/modules/guest-auth/presentation/queryKeys";
+import { mapReservationStayDto } from "@/modules/stay/data/mappers/mapReservationStayDto";
+import { MockStayService } from "@/modules/stay/data/mocks/MockStayService";
+import { type StayService } from "@/modules/stay/data/services/StayService";
+import { type ReservationStay } from "@/modules/stay/domain/models/ReservationStay";
 
 const defaultStayService: StayService = new MockStayService();
 
-async function loadCurrentStay(service: StayService): Promise<ReservationStay> {
-  return mapReservationStayDto(await service.getCurrentStay());
+async function loadCurrentStay(
+  service: StayService,
+  context: ActiveReservationContext,
+): Promise<ReservationStay> {
+  return mapReservationStayDto(await service.getCurrentStay(context));
 }
 
-/** TanStack Query owns the current-stay server state; this hook owns no store. */
-export function useCurrentStay(service: StayService = defaultStayService) {
+/** TanStack Query owns context-scoped stay server state; no active context means no request. */
+export function useCurrentStay(
+  service: StayService = defaultStayService,
+  explicitContext?: ActiveReservationContext | null,
+) {
+  const { activeReservationContext } = useActiveReservationContext();
+  const context =
+    explicitContext === undefined ? activeReservationContext : explicitContext;
   return useQuery({
-    queryKey: currentStayQueryKey,
-    queryFn: () => loadCurrentStay(service),
+    queryKey: context ? reservationContextKey(context) : ["stay", "none"],
+    queryFn: () => loadCurrentStay(service, context!),
+    enabled: Boolean(context),
   });
 }
