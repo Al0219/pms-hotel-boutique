@@ -5,3 +5,4 @@
  */
 export { RolesPage } from "./components/roles-page";
 export type { RolePreview } from "./model/role";
+export { useRoles } from "./hooks/use-roles";

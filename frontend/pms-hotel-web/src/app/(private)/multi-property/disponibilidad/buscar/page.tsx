@@ -1,21 +1,7 @@
-"use client";
-
-import { AvailabilitySearch, MultiPropertyView } from "@/modules/multi-property";
-import { useRouter } from "next/navigation";
-
-export default function AvailabilitySearchRoute() {
-  const router = useRouter();
-  
-  const handleNavigate = (view: MultiPropertyView) => {
-    const routes: Record<MultiPropertyView, string> = {
-      dashboard: "/multi-property",
-      search: "/multi-property/disponibilidad/buscar",
-      results: "/multi-property/disponibilidad/resultados",
-      evaluate: "/multi-property/rebooking/evaluar",
-      applied: "/multi-property/rebooking/aplicado"
-    };
-    router.push(routes[view]);
-  };
-
-  return <AvailabilitySearch onNavigate={handleNavigate} />;
+import { AvailabilitySearch } from "@/modules/multi-property";
+export default async function AvailabilitySearchRoute({ searchParams }: { searchParams: Promise<{ start?: string; end?: string; roomType?: string }> }) {
+  const params = await searchParams;
+  const criteria = typeof params.start === "string" && typeof params.end === "string"
+    ? { startDate: params.start, endDate: params.end, roomType: typeof params.roomType === "string" ? params.roomType : "" } : undefined;
+  return <AvailabilitySearch criteria={criteria} />;
 }
