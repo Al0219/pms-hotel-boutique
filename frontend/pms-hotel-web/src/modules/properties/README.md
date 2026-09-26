@@ -18,7 +18,7 @@ Related domain internals owned by other modules. This module does not own anothe
 
 ## Dependencies
 
-May consume intentional public APIs from: availability, revenue, permissions.
+Consumes the Staff session public API from auth. Future metrics integration requires the intentional public APIs and review of availability/revenue (WEB-4).
 
 ## MUST
 
@@ -28,7 +28,7 @@ May consume intentional public APIs from: availability, revenue, permissions.
 
 ## MUST NOT
 
-- Implement a feature, API contract, DTO, mapper, service, hook, or UI in this Structure Freeze.
+- Treat the mock property preference as Backend authorization.
 - Deep-import another module's internals.
 - Redefine business semantics owned by another module.
 
@@ -46,15 +46,17 @@ components/
 index.ts
 ```
 
-Do not create these folders before then.
+The Private 09 correction now implements only the scope model and context/switcher components. It does not introduce a Backend API.
 
 ## Public API
 
 Cross-module dependencies use `@/modules/properties`, never paths such as `@/modules/properties/service/*`, `dtos/*`, `mappers/*`, `hooks/*`, or `components/*`.
 
+Exports: PropertyProvider, PropertySwitcher, usePropertyScope, resolvePropertyScope and PropertyScope. Consumers must explicitly adopt the context; it does not rewrite requests of other modules.
+
 ## Backlog
 
-The canonical `docs/Backlog_Implementacion_PMS_V1.xlsx` governs WEB-2's future tasks for this module. This shell does not mark any task completed.
+The canonical `docs/Backlog_Implementacion_PMS_V1.xlsx` governs WEB-2's tasks. The user-authorized Private 09 correction is documented in `../../../docs/34_PRIVATE_09_FRONTEND.md`; the XLSX status is unchanged.
 
 ## Figma / Documentation
 

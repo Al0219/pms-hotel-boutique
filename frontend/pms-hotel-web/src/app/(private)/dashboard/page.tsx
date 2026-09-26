@@ -1,3 +1,2 @@
-export default function PrivateShellPage() {
-  return <p className="technical-shell">PMS Hotel Boutique — Private shell</p>;
-}
+import { MultiPropertyDashboard } from "@/modules/multi-property";
+export default function PrivateDashboardPage() { return <MultiPropertyDashboard />; }

@@ -1,159 +1,53 @@
 "use client";
-
-import React from "react";
+import Link from "next/link";
+import { useStaffSession } from "@/modules/auth";
+import { usePropertyScope } from "@/modules/properties";
+import { usePortfolio } from "../hooks/use-portfolio";
+import { consolidateMetrics } from "../model/portfolio";
+import { PortfolioState, ScopeSummary, formatAmount } from "./portfolio-state";
+import type { ViewProps } from "../types";
 import styles from "./multi-property.module.css";
-import { ViewProps } from "../types";
 
-export function MultiPropertyDashboard({ onNavigate }: ViewProps) {
-  const HEADER = {
-    title: "Dashboard Multi-property",
-    subtitle: "Portfolio autorizado · snapshot 08 sep 2026 · métricas consolidadas por propiedad",
-  };
-
-  const KPIS = [
-    {
-      title: "Ocupación portfolio",
-      value: "79%",
-      badge: "2 props",
-      footer: "158 / 200 room-nights",
-    },
-    {
-      title: "ADR portfolio",
-      value: "Q 1,228",
-      badge: "NET",
-      footer: "Q194,050 / 158 sold RN",
-    },
-    {
-      title: "RevPAR portfolio",
-      value: "Q 970",
-      badge: "NET",
-      footer: "Q194,050 / 200 avail. RN",
-    },
-    {
-      title: "Revenue neto",
-      value: "Q 194,050",
-      badge: "2 props",
-      footer: "room revenue net · GTQ",
-    },
-  ];
-
-  const PROPERTIES = [
-    {
-      name: "GT-HB-01 · Hotel Boutique Huehue",
-      occ: "82%",
-      adr: "Q 1,125",
-      revpar: "Q 923",
-      revenue: "Q 92,250",
-      alerts: "2",
-    },
-    {
-      name: "GT-HB-03 · Hotel Boutique Antigua",
-      occ: "76%",
-      adr: "Q 1,340",
-      revpar: "Q 1,018",
-      revenue: "Q 101,800",
-      alerts: "1",
-    },
-  ];
-
-  const ALERTS = [
-    {
-      prop: "GT-HB-01 · Hotel Boutique Huehue",
-      message: "Parity gap +6% · OOO 1",
-      count: "2 alertas",
-    },
-    {
-      prop: "GT-HB-03 · Hotel Boutique Antigua",
-      message: "Locks DEGRADED · 1 device offline",
-      count: "1 alerta",
-    },
-  ];
-
-  return (
-    <div className={styles.page}>
-      {/* Header */}
-      <header className={styles.header}>
-        <div>
-          <h1 className={styles.title}>{HEADER.title}</h1>
-          <p className={styles.subtitle}>{HEADER.subtitle}</p>
+export function MultiPropertyDashboard({ onNavigate }: Partial<ViewProps>) {
+  const session = useStaffSession();
+  const context = usePropertyScope();
+  const query = usePortfolio();
+  const rows = query.data ?? [];
+  const totals = consolidateMetrics(rows);
+  return <section className={styles.page}>
+    <header className={styles.header}>
+      <div><h1 className={styles.title}>Dashboard Multi-property</h1><p className={styles.subtitle}>Métricas por propiedad · snapshot de demostración del 08 sep 2026</p></div>
+      {session.permissions.includes("COMPARE_AVAILABILITY") && (onNavigate
+        ? <button className={styles.btnOlive} onClick={() => onNavigate("search")}>Comparar disponibilidad</button>
+        : <Link className={styles.btnOlive} href="/multi-property/disponibilidad/buscar">Comparar disponibilidad</Link>)}
+    </header>
+    <ScopeSummary />
+    <PortfolioState context={context} query={query} empty={rows.length === 0} />
+    {context.scope && !query.isPending && !query.isError && rows.length > 0 && <>
+      {totals.map(total => <section key={total.currency + total.date} aria-label={"Consolidado " + total.currency}>
+        <h2 className={styles.cardTitle}>Consolidado · {total.currency} · {total.date}</h2>
+        <div className={styles.grid4}>
+          {[
+            ["Ocupación portfolio", total.occupancy === null ? "Sin base disponible" : total.occupancy.toFixed(1) + "%", total.roomsSold + " / " + total.roomsAvailable + " room-nights"],
+            ["ADR portfolio", formatAmount(total.adr, total.currency), "Revenue / room-nights vendidos"],
+            ["RevPAR portfolio", formatAmount(total.revpar, total.currency), "Revenue / room-nights disponibles"],
+            ["Revenue neto", formatAmount(total.revenue, total.currency), "Snapshot de demostración"],
+          ].map(([title, value, footer]) => <div className={styles.cardNoMargin} key={title}><h3 className={styles.cardTitle}>{title}</h3><p className={styles.cardValueBig}>{value}</p><p className={styles.cardFooter}>{footer}</p></div>)}
         </div>
-        <div className={styles.headerActions}>
-          <button className={styles.btnGray}>Gerencia</button>
-          <span className={styles.btnPillOutline}>Portfolio · 2 propiedades</span>
-          <button className={styles.btnOlive}>Cambiar a GT-HB-03</button>
-          <button className={styles.btnOlive} onClick={() => onNavigate('search')}>Comparar disponibilidad</button>
-        </div>
-      </header>
-
-      {/* KPIs */}
-      <div className={styles.grid4}>
-        {KPIS.map((kpi, idx) => (
-          <div key={idx} className={styles.cardNoMargin}>
-            <h3 className={styles.cardTitle}>{kpi.title}</h3>
-            <div className={styles.flexStart} style={{ gap: '0.5rem', alignItems: 'baseline' }}>
-              <p className={styles.cardValueBig}>{kpi.value}</p>
-              <span className={styles.badgeGreen}>{kpi.badge}</span>
-            </div>
-            <p className={styles.cardFooter}>{kpi.footer}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Table Card */}
+      </section>)}
       <div className={styles.card}>
         <h2 className={styles.cardTitle}>Propiedades autorizadas · comparación</h2>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th className={styles.th}>Propiedad</th>
-              <th className={styles.th}>Ocup.</th>
-              <th className={styles.th}>ADR</th>
-              <th className={styles.th}>RevPAR</th>
-              <th className={styles.th}>Revenue neto</th>
-              <th className={styles.th}>Alertas</th>
-            </tr>
-          </thead>
-          <tbody>
-            {PROPERTIES.map((prop, idx) => (
-              <tr key={idx}>
-                <td className={`${styles.td} ${styles.tdBold}`}>{prop.name}</td>
-                <td className={styles.td}>{prop.occ}</td>
-                <td className={styles.td}>{prop.adr}</td>
-                <td className={styles.td}>{prop.revpar}</td>
-                <td className={styles.td}>{prop.revenue}</td>
-                <td className={styles.td}>{prop.alerts}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      
-      {/* Table Footer Text */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <p className={styles.textBold} style={{ fontSize: '0.875rem' }}>
-          Portfolio: 158/200 room-nights = 79% · ADR Q1,228 · RevPAR Q970 · Revenue Q194,050 · 3 alertas
-        </p>
-        <p className={styles.textGray} style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
-          Solo propiedades del portfolio autorizado; métricas por propiedad antes del agregado.
-        </p>
-      </div>
-
-      {/* Alerts Card */}
-      <div className={styles.card}>
-        <h2 className={styles.cardTitle}>Alertas por propiedad</h2>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {ALERTS.map((alert, idx) => (
-            <div key={idx} className={styles.listRow}>
-              <span className={styles.textBold} style={{ flex: 1 }}>{alert.prop}</span>
-              <span className={styles.textGray} style={{ flex: 1, textAlign: 'center' }}>{alert.message}</span>
-              <span className={styles.textBold} style={{ flex: 1, textAlign: 'right' }}>{alert.count}</span>
-            </div>
-          ))}
+        <div className={styles.tableScroll} tabIndex={0} role="region" aria-label="Métricas por propiedad">
+          <table className={styles.table}>
+            <thead><tr>{["Propiedad", "Ocupación", "ADR", "RevPAR", "Revenue neto", "Zona horaria"].map(label => <th className={styles.th} scope="col" key={label}>{label}</th>)}</tr></thead>
+            <tbody>{rows.map(row => {
+              const property = session.memberships.find(item => item.propertyId === row.propertyId);
+              return <tr key={row.propertyId}><th scope="row" className={styles.td}>{row.propertyId} · {property?.name}</th><td className={styles.td}>{row.occupancy === null ? "—" : row.occupancy.toFixed(1) + "%"}</td><td className={styles.td}>{formatAmount(row.adr, row.currency)}</td><td className={styles.td}>{formatAmount(row.revpar, row.currency)}</td><td className={styles.td}>{formatAmount(row.revenue, row.currency)}</td><td className={styles.td}>{property?.timezone}</td></tr>;
+            })}</tbody>
+          </table>
         </div>
-        <p className={styles.cardFooter} style={{ marginTop: '1rem' }}>
-          3 alertas portfolio · cada alerta conserva property_id y origen.
-        </p>
+        {rows.length < context.scope.propertyIds.length && <p role="status">Algunas propiedades seleccionadas no tienen métricas en este snapshot. El consolidado incluye únicamente las filas disponibles.</p>}
       </div>
-    </div>
-  );
+    </>}
+  </section>;
 }

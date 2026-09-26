@@ -1,4 +1,4 @@
-.shell { display: grid; gap: 0; grid-template-columns: 240px 1fr; min-height: 100vh; }
+.shell { display: grid; gap: 0; grid-template-columns: 240px 1fr; min-height: 100vh; font-family: var(--font-inter), "Inter", sans-serif; }
 
 .sidebar {
   background: var(--color-surface-card);
@@ -22,17 +22,27 @@
   text-decoration: none;
 }
 .navLink:hover { background: var(--color-brand-subtle); }
+.navLink[aria-current="page"] { background: var(--color-brand-subtle); font-weight: var(--font-weight-semibold); }
 .navLink:focus-visible { outline: 3px solid var(--color-brand-accent); outline-offset: 2px; }
 
 .mainColumn { display: flex; flex-direction: column; min-width: 0; }
 
 .header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  align-items: center;
+  justify-content: space-between;
   background: var(--color-surface-card);
   border-bottom: 1px solid var(--color-border-default);
   padding: var(--space-3) var(--space-4);
 }
 
 .propertyContext { color: var(--color-text-secondary); font-size: var(--font-size-caption); margin: 0; }
+.header :is(select, button) { max-width: 100%; min-height: 40px; padding: var(--space-2); border: 1px solid var(--color-border-default); border-radius: var(--radius-sm); background: var(--color-surface-card); color: var(--color-text-primary); }
+.header > div { min-width: 0; }
+.header :is(select, button) { font: inherit; }
+.header :is(select, button):focus-visible { outline: 3px solid var(--color-brand-accent); outline-offset: 2px; }
 
 .main { min-width: 0; padding: var(--space-4); }
 
