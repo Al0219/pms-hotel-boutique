@@ -8,6 +8,7 @@ import {
   useCheckoutSession,
 } from "@/modules/checkout";
 import { SessionServiceRequestsProvider } from "@/modules/service-requests";
+import { GuestNavigationShell } from "@/modules/navigation";
 import { AmenitiesScreen } from "@/modules/services/amenities";
 import { HousekeepingScreen } from "@/modules/services/housekeeping";
 import { RoomServiceScreen } from "@/modules/services/room-service";
@@ -83,27 +84,34 @@ describe("Checkout service gates", () => {
       <HousekeepingScreen key="housekeeping" />,
       "housekeeping-stay-completed",
       "housekeeping-creation-blocked",
+      "housekeeping-post-checkout-body",
     ],
     [
       "Amenidades",
       <AmenitiesScreen key="amenities" />,
       "amenities-stay-completed",
       "amenities-creation-blocked",
+      "amenities-post-checkout-body",
     ],
     [
       "Room Service",
       <RoomServiceScreen key="room-service" />,
       "room-service-stay-completed",
       "room-service-creation-blocked",
+      "room-service-post-checkout-body",
     ],
   ])(
     "blocks direct %s creation after a checkout snapshot",
-    async (_, screen, screenTestID, blockedTestID) => {
+    async (_, screen, screenTestID, blockedTestID, bodyTestID) => {
       const ui = await render(
         <CheckedOutProviders>{screen}</CheckedOutProviders>,
       );
       await waitFor(() => expect(ui.getByTestId(screenTestID)).toBeTruthy());
       expect(ui.getByTestId(blockedTestID)).toBeTruthy();
+      const postCheckoutBody = ui.getByTestId(bodyTestID);
+      expect(postCheckoutBody).toHaveStyle({ flex: 1 });
+      expect(postCheckoutBody.parent?.props.testID).toBe(screenTestID);
+      expect(postCheckoutBody.parent?.props.children.at(-1).type).toBe(GuestNavigationShell);
       expect(ui.queryByText("Confirmar servicio")).toBeNull();
       expect(ui.queryByText("Confirmar pedido")).toBeNull();
       ui.unmount();

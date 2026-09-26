@@ -44,6 +44,30 @@ type PendingGuestIntent =
   | { guard: GuestNavigationGuard; kind: "navigate"; path: string }
   | { guard: GuestNavigationGuard; kind: "logout" };
 
+const guestAndroidChildBackDestinations: Readonly<Record<string, Href>> = {
+  "/account/checkout": "/account",
+  "/account/rewards": "/account",
+  "/account/promotions": "/account",
+  "/services/requests": "/services",
+  "/services/housekeeping": "/services",
+  "/services/room-service": "/services",
+  "/services/amenities": "/services",
+};
+
+/** Explicitly scoped safe Android Back destinations for focused Guest routes. */
+export function resolveGuestAndroidChildBackDestination(pathname: string): Href | null {
+  return guestAndroidChildBackDestinations[pathname] ?? null;
+}
+
+/** Chat normally restores its actual stack origin; direct entry never exits the app. */
+export function navigateGuestChatBack(): void {
+  if (router.canGoBack()) {
+    router.back();
+    return;
+  }
+  router.replace("/account");
+}
+
 type GuestNavigationMenuContextValue = {
   openMenu: () => void;
   registerNavigationGuard: (guard: GuestNavigationGuard) => () => void;
@@ -226,6 +250,15 @@ export function GuestNavigationMenuProvider({ children }: PropsWithChildren) {
         pathname === "/hotel"
       ) {
         router.replace("/account");
+        return true;
+      }
+      if (pathname === "/chat") {
+        navigateGuestChatBack();
+        return true;
+      }
+      const childDestination = resolveGuestAndroidChildBackDestination(pathname);
+      if (childDestination) {
+        router.replace(childDestination);
         return true;
       }
       return false;

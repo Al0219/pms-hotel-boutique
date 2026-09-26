@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { BackHandler, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { NetworkError } from '@/data/remote/http/HttpError';
 import { GuestCheckoutDueState, useCheckoutStatus } from '@/modules/checkout';
@@ -152,8 +152,20 @@ export function HousekeepingScreen({ service, stayService, nowMs }: Housekeeping
   const selectedCleaningType = housekeepingQaCleaningTypes.find((type) => type.value === cleaningType)!;
   const timeSlotOptions: readonly TimeSlotOption[] = housekeepingQaTimeSlots.map((slot) => ({ value: slot, label: slot }));
 
-  if (isCheckedOut) return <View style={styles.screen} testID="housekeeping-stay-completed"><GuestChildHeader backAccessibilityLabel="Volver a servicios" backTestID="housekeeping-back-arrow" onBack={returnToServices} title="Limpieza" /><View style={styles.content}><StateCard body="Los servicios de estancia ya no están disponibles." testID="housekeeping-creation-blocked" title="Estancia finalizada" /></View><GuestNavigationShell /></View>;
-  if (lifecycle === 'CHECKOUT_DUE') return <View style={styles.screen} testID="housekeeping-screen"><GuestChildHeader backAccessibilityLabel="Volver a servicios" backTestID="housekeeping-back-arrow" onBack={returnToServices} title="Limpieza" /><View style={styles.content}><GuestCheckoutDueState actionTestID="housekeeping-checkout-due-action" testID="housekeeping-checkout-due" /></View><GuestNavigationShell /></View>;
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (typePickerVisible) { setTypePickerVisible(false); return true; }
+      if (datePickerVisible) { setDatePickerVisible(false); return true; }
+      if (timePickerVisible) { setTimePickerVisible(false); return true; }
+      returnToServices();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [datePickerVisible, timePickerVisible, typePickerVisible]);
+
+  if (isCheckedOut) return <View style={styles.screen} testID="housekeeping-stay-completed"><GuestChildHeader backAccessibilityLabel="Volver a servicios" backTestID="housekeeping-back-arrow" onBack={returnToServices} title="Limpieza" /><View style={[styles.content, styles.stateContent]} testID="housekeeping-post-checkout-body"><StateCard body="Los servicios de estancia ya no están disponibles." testID="housekeeping-creation-blocked" title="Estancia finalizada" /></View><GuestNavigationShell /></View>;
+  if (lifecycle === 'CHECKOUT_DUE') return <View style={styles.screen} testID="housekeeping-screen"><GuestChildHeader backAccessibilityLabel="Volver a servicios" backTestID="housekeeping-back-arrow" onBack={returnToServices} title="Limpieza" /><View style={[styles.content, styles.stateContent]} testID="housekeeping-post-checkout-body"><GuestCheckoutDueState actionTestID="housekeeping-checkout-due-action" testID="housekeeping-checkout-due" /></View><GuestNavigationShell /></View>;
 
   return (
     <View style={styles.screen} testID="housekeeping-screen">

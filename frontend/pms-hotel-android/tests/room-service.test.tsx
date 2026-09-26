@@ -25,7 +25,7 @@ import {
   CheckoutSessionProvider,
   useCheckoutSession,
 } from "@/modules/checkout";
-import { GuestNavigationMenuProvider } from "@/modules/navigation";
+import { GuestNavigationMenuProvider, GuestNavigationShell } from "@/modules/navigation";
 import {
   ActiveReservationContextProvider,
   GuestAuthSessionProvider,
@@ -233,6 +233,13 @@ describe("Room Service — IMP-AND-0111", () => {
       new MockStayService(),
       () => new Date(2026, 8, 18, 12, 0).getTime(),
     );
+    await waitFor(() =>
+      expect(ui.getByTestId("room-service-checkout-due")).toBeTruthy(),
+    );
+    const postCheckoutBody = ui.getByTestId("room-service-post-checkout-body");
+    expect(postCheckoutBody).toHaveStyle({ flex: 1 });
+    expect(postCheckoutBody.parent?.props.testID).toBe("room-service-screen");
+    expect(postCheckoutBody.parent?.props.children.at(-1).type).toBe(GuestNavigationShell);
     await waitFor(() =>
       expect(ui.getByTestId("room-service-checkout-due")).toBeTruthy(),
     );

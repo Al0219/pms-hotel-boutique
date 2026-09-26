@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { router } from 'expo-router';
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -18,7 +17,7 @@ import { type ChatMessage } from '@/modules/chat/domain/models/ChatConversation'
 import { useChatConversation } from '@/modules/chat/presentation/hooks/useChatConversation';
 import { useSendChatMessage } from '@/modules/chat/presentation/hooks/useSendChatMessage';
 import { chatStyles } from '@/modules/chat/presentation/chatStyles';
-import { GuestChildHeader } from '@/modules/navigation';
+import { GuestChildHeader, navigateGuestChatBack } from '@/modules/navigation';
 import { useSessionServiceRequests } from '@/modules/service-requests';
 import { deriveRemoteState } from '@/state/remoteState';
 
@@ -152,7 +151,7 @@ export function ChatScreen({ service }: ChatScreenProps) {
   if (conversationState.kind === 'loading') {
     return (
       <View style={chatStyles.screen}>
-        <GuestChildHeader onBack={() => router.back()} title="Chat con el hotel" />
+        <GuestChildHeader onBack={navigateGuestChatBack} title="Chat con el hotel" />
         <ChatLoading />
       </View>
     );
@@ -161,7 +160,7 @@ export function ChatScreen({ service }: ChatScreenProps) {
   if (conversationState.kind === 'offline') {
     return (
       <View style={chatStyles.screen}>
-        <GuestChildHeader onBack={() => router.back()} title="Chat con el hotel" />
+        <GuestChildHeader onBack={navigateGuestChatBack} title="Chat con el hotel" />
         <View style={chatStyles.stateContent}>
           <ChatStateCard
             body="Conéctate a internet para ver la conversación."
@@ -178,7 +177,7 @@ export function ChatScreen({ service }: ChatScreenProps) {
   if (conversationState.kind === 'error') {
     return (
       <View style={chatStyles.screen}>
-        <GuestChildHeader onBack={() => router.back()} title="Chat con el hotel" />
+        <GuestChildHeader onBack={navigateGuestChatBack} title="Chat con el hotel" />
         <View style={chatStyles.stateContent}>
           <ChatStateCard
             body="Intenta nuevamente."
@@ -204,7 +203,7 @@ export function ChatScreen({ service }: ChatScreenProps) {
       style={chatStyles.screen}
       testID="chat-screen"
     >
-      <GuestChildHeader onBack={() => router.back()} title="Chat con el hotel" />
+      <GuestChildHeader onBack={navigateGuestChatBack} title="Chat con el hotel" />
       <View style={chatStyles.conversationBody}>
         <View style={chatStyles.contextHeader}>
           <Text style={chatStyles.context}>

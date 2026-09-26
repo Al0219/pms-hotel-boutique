@@ -4,6 +4,7 @@ import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 import { useLayoutEffect, useRef } from "react";
 import { Text } from "react-native";
 
+import { GuestNavigationShell } from "@/modules/navigation";
 import { NetworkError } from "@/data/remote/http/HttpError";
 import {
   CheckoutSessionProvider,
@@ -382,6 +383,13 @@ describe("Amenidades — IMP-AND-0113", () => {
       new MockAmenitiesService(submitRequest),
       () => checkoutDueNowMs,
     );
+    await waitFor(() =>
+      expect(ui.getByTestId("amenities-checkout-due")).toBeTruthy(),
+    );
+    const postCheckoutBody = ui.getByTestId("amenities-post-checkout-body");
+    expect(postCheckoutBody).toHaveStyle({ flex: 1 });
+    expect(postCheckoutBody.parent?.props.testID).toBe("amenities-screen");
+    expect(postCheckoutBody.parent?.props.children.at(-1).type).toBe(GuestNavigationShell);
     await waitFor(() =>
       expect(ui.getByTestId("amenities-checkout-due")).toBeTruthy(),
     );
