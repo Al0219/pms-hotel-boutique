@@ -12,6 +12,9 @@ export const servicesStyles = StyleSheet.create({
     padding: tokens.layout.screenInset,
     paddingBottom: tokens.space.xxl,
   },
+  stateContent: {
+    flex: 1,
+  },
   screenContent: {
     flex: 1,
   },

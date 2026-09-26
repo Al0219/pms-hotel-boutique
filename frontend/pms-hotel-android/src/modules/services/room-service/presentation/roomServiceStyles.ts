@@ -12,6 +12,7 @@ export const roomServiceStyles = StyleSheet.create({
   cartIcon: { fontSize: tokens.typography.size.sectionTitle },
   scroll: { flex: 1 },
   content: { gap: tokens.space.md, padding: tokens.layout.screenInset, paddingBottom: tokens.space.xxl },
+  stateContent: { flex: 1 },
   room: { color: tokens.color.muted, fontFamily: tokens.typography.family, fontSize: tokens.typography.size.label },
   sectionTitle: { color: tokens.color.inkStrong, fontFamily: tokens.typography.family, fontSize: tokens.typography.size.sectionTitle, fontWeight: '600' },
   categoryList: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.xs },

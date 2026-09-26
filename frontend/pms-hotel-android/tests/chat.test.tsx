@@ -162,7 +162,7 @@ describe('Chat con Recepción', () => {
     expect(rendered.queryByLabelText('Navegación principal de huésped')).toBeNull();
   });
 
-  it('uses the shared child header and delegates its Back action to the navigation stack', async () => {
+  it('uses the shared child header and recovers either the stack origin or the account fallback', async () => {
     const onBack = jest.fn();
     const header = await render(<GuestChildHeader onBack={onBack} title="Encabezado secundario" />);
     await fireEvent.press(header.getByLabelText('Volver'));
@@ -171,10 +171,16 @@ describe('Chat con Recepción', () => {
     expect(header.getByLabelText('Abrir menú')).toBeTruthy();
 
     const backSpy = jest.spyOn(router, 'back').mockImplementation(() => undefined);
+    const replaceSpy = jest.spyOn(router, 'replace').mockImplementation(() => undefined as never);
+    const canGoBackSpy = jest.spyOn(router, 'canGoBack').mockReturnValue(true);
     const rendered = await renderChat(new MockChatService());
     await waitForChat(rendered);
     await fireEvent.press(rendered.getByLabelText('Volver'));
     expect(backSpy).toHaveBeenCalledTimes(1);
+    expect(replaceSpy).not.toHaveBeenCalled();
+    canGoBackSpy.mockReturnValue(false);
+    await fireEvent.press(rendered.getByLabelText('Volver'));
+    expect(replaceSpy).toHaveBeenCalledWith('/account');
   });
 
   it('does not send empty or whitespace drafts and trims a valid message before mutation', async () => {

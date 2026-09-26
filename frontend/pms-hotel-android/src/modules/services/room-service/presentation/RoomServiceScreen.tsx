@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
+  BackHandler,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -724,6 +725,26 @@ export function RoomServiceScreen({
     onDiscard: () => { if (!editedRequest) resetCreate(); },
     title: editedRequest ? "¿Descartar cambios?" : "¿Salir del servicio?",
   }), [editedRequest, isDirty, registerNavigationGuard]);
+  function goBack() {
+    if (step === "SCHEDULE") setStep("CART");
+    else if (step === "CART") setStep("CATALOG");
+    else requestExit(editedRequest ? returnFromEdit : () => router.dismissTo("/services"));
+  }
+  const goBackRef = useRef<() => void>(() => undefined);
+  goBackRef.current = goBack;
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (categoryModalVisible) { setCategoryModalVisible(false); return true; }
+      if (pendingRemoval !== null) { setPendingRemoval(null); return true; }
+      if (datePickerVisible) { setDatePickerVisible(false); return true; }
+      if (timePickerVisible) { setTimePickerVisible(false); return true; }
+      if (discardVisible) { setDiscardVisible(false); return true; }
+      goBackRef.current();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [categoryModalVisible, datePickerVisible, discardVisible, editedRequest, pendingRemoval, step, timePickerVisible]);
   if (isCheckedOut)
     return (
       <View style={styles.screen} testID="room-service-stay-completed">
@@ -733,7 +754,7 @@ export function RoomServiceScreen({
           onBack={() => router.dismissTo("/services")}
           title="Room Service"
         />
-        <View style={styles.content}>
+        <View style={[styles.content, styles.stateContent]} testID="room-service-post-checkout-body">
           <StateCard
             body="Los servicios de estancia ya no están disponibles."
             testID="room-service-creation-blocked"
@@ -752,7 +773,7 @@ export function RoomServiceScreen({
           onBack={() => router.dismissTo("/services")}
           title="Room Service"
         />
-        <View style={styles.content}>
+        <View style={[styles.content, styles.stateContent]} testID="room-service-post-checkout-body">
           <GuestCheckoutDueState
             actionTestID="room-service-checkout-due-action"
             testID="room-service-checkout-due"
@@ -872,14 +893,6 @@ export function RoomServiceScreen({
   const canOpenCart =
     menu.kind === "success" && stay.kind === "success" && !pending;
   const cartItemCount = cart.items.reduce((total, item) => total + item.quantity, 0);
-  const goBack = () => {
-    if (step === "SCHEDULE") setStep("CART");
-    else if (step === "CART") setStep("CATALOG");
-    else
-      requestExit(
-        editedRequest ? returnFromEdit : () => router.dismissTo("/services"),
-      );
-  };
   return (
     <View style={styles.screen} testID="room-service-screen">
       <GuestChildHeader backAccessibilityLabel="Volver a servicios" backTestID="room-service-back-arrow" onBack={goBack} title="Room Service" />

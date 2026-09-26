@@ -22,6 +22,7 @@ import {
   useGuestNavigationMenu,
   guestNavigationTabs,
   resolveActiveGuestNavigationTab,
+  resolveGuestAndroidChildBackDestination,
 } from "@/modules/navigation";
 import {
   CheckoutSessionProvider,
@@ -271,6 +272,10 @@ function ProfileRoute() {
       <Text>Perfil</Text>
     </View>
   );
+}
+
+function ChildRoute() {
+  return <Text>Ruta hija</Text>;
 }
 
 describe("Guest Navigation Shell", () => {
@@ -924,7 +929,52 @@ describe("Guest Navigation Shell", () => {
     back.restore();
   });
 
-  it("does not intercept Android Back for child routes", async () => {
+  it.each([
+    ["/account/checkout", "account/checkout", "/account"],
+    ["/account/rewards", "account/rewards", "/account"],
+    ["/account/promotions", "account/promotions", "/account"],
+    ["/services/requests", "services/requests", "/services"],
+    ["/services/housekeeping", "services/housekeeping", "/services"],
+    ["/services/room-service", "services/room-service", "/services"],
+    ["/services/amenities", "services/amenities", "/services"],
+  ] as const)("handles Android Back from %s without leaving Guest", async (path, route, destination) => {
+    const back = installAndroidBackHandler();
+    const replaceSpy = jest.spyOn(router, "replace").mockImplementation(() => undefined as never);
+    const client = createQueryClient();
+    const rendered = await renderRouter({
+      _layout: createLogoutDrawerLayout(client, { accountId: "guest-account-primary" }, { reservationId: "reservation-primary", reservationStayId: "stay-primary" }),
+      [route]: LogoutStateProbe,
+    }, { initialUrl: path });
+
+    await waitFor(() => expect(back.addEventListener).toHaveBeenCalled());
+    await act(async () => { expect(back.trigger()).toBe(true); });
+    expect(replaceSpy).toHaveBeenCalledWith(destination);
+    expect(rendered.getByTestId("guest-navigation-session-probe").props.children).toBe("guest-account-primary");
+    expect(rendered.getByTestId("guest-navigation-context-probe").props.children).toBe("reservation-primary/stay-primary");
+    replaceSpy.mockRestore();
+    back.restore();
+  });
+
+  it("uses the Chat stack when available and an account fallback otherwise", async () => {
+    const back = installAndroidBackHandler();
+    const backSpy = jest.spyOn(router, "back").mockImplementation(() => undefined);
+    const replaceSpy = jest.spyOn(router, "replace").mockImplementation(() => undefined as never);
+    const canGoBackSpy = jest.spyOn(router, "canGoBack").mockReturnValue(true);
+    await renderRouter({ _layout: DrawerLayout, chat: ChildRoute }, { initialUrl: "/chat" });
+    await waitFor(() => expect(back.addEventListener).toHaveBeenCalled());
+    await act(async () => { expect(back.trigger()).toBe(true); });
+    expect(backSpy).toHaveBeenCalledTimes(1);
+    expect(replaceSpy).not.toHaveBeenCalled();
+    canGoBackSpy.mockReturnValue(false);
+    await act(async () => { expect(back.trigger()).toBe(true); });
+    expect(replaceSpy).toHaveBeenCalledWith("/account");
+    canGoBackSpy.mockRestore();
+    replaceSpy.mockRestore();
+    backSpy.mockRestore();
+    back.restore();
+  });
+
+  it("keeps Profile on its own focused Back behavior", async () => {
     const back = installAndroidBackHandler();
     const replaceSpy = jest
       .spyOn(router, "replace")
@@ -943,6 +993,12 @@ describe("Guest Navigation Shell", () => {
     expect(replaceSpy).not.toHaveBeenCalled();
     replaceSpy.mockRestore();
     back.restore();
+  });
+
+  it("keeps the Android child map explicit", () => {
+    expect(resolveGuestAndroidChildBackDestination("/account/checkout")).toBe("/account");
+    expect(resolveGuestAndroidChildBackDestination("/services/amenities")).toBe("/services");
+    expect(resolveGuestAndroidChildBackDestination("/account/future")).toBeNull();
   });
 
   it("prepares replace navigation for Inicio and keeps its current route as a no-op", () => {
