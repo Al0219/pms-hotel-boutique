@@ -1,6 +1,7 @@
 package com.pms.hotelboutique.backend.modules.securityauth.api;
 
 import com.pms.hotelboutique.backend.modules.securityauth.application.StaffAuthService;
+import com.pms.hotelboutique.backend.modules.securityauth.application.StaffAuthorizationService;
 import com.pms.hotelboutique.backend.modules.securityauth.application.StaffPrincipal;
 import com.pms.hotelboutique.backend.modules.securityauth.application.StaffTokenPair;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,9 +25,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class StaffAuthController {
     private static final String REFRESH_COOKIE = "pms_staff_refresh";
     private final StaffAuthService staffAuthService;
+    private final StaffAuthorizationService authorizationService;
 
-    public StaffAuthController(StaffAuthService staffAuthService) {
+    public StaffAuthController(StaffAuthService staffAuthService, StaffAuthorizationService authorizationService) {
         this.staffAuthService = staffAuthService;
+        this.authorizationService = authorizationService;
     }
 
     @PostMapping("/sessions")
@@ -45,7 +48,11 @@ public class StaffAuthController {
     @Operation(summary = "Read the active Staff session")
     public StaffSessionResponse session(@AuthenticationPrincipal StaffPrincipal principal) {
         StaffPrincipal active = staffAuthService.getActivePrincipal(principal);
-        return new StaffSessionResponse(active.staffUserId(), active.sessionId(), active.username(), active.roleCode());
+        var snapshot = authorizationService.resolve(active.staffUserId());
+        var memberships = snapshot.properties().stream().map(property -> new StaffSessionResponse.PropertyMembershipResponse(
+                property.propertyId(), property.propertyCode(), property.propertyName(), property.timezone(), property.currency())).toList();
+        return new StaffSessionResponse(active.staffUserId(), active.sessionId(), active.username(), active.roleCode(),
+                snapshot.permissions(), memberships);
     }
 
     @DeleteMapping("/session")

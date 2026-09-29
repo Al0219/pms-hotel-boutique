@@ -1,0 +1,100 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-staff-auth-002
+      author: alan
+      changes:
+        - createTable:
+            tableName: roles
+            columns:
+              - column: { name: code, type: varchar(64), constraints: { primaryKey: true, nullable: false } }
+              - column: { name: name, type: varchar(120), constraints: { nullable: false } }
+              - column: { name: system_managed, type: boolean, constraints: { nullable: false } }
+              - column: { name: status, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: updated_at, type: timestamptz, constraints: { nullable: false } }
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE roles ADD CONSTRAINT ck_roles_status CHECK (status IN ('ACTIVE', 'INACTIVE'))
+        - createTable:
+            tableName: permission_catalog
+            columns:
+              - column: { name: code, type: varchar(96), constraints: { primaryKey: true, nullable: false } }
+              - column: { name: description, type: varchar(255), constraints: { nullable: false } }
+        - createTable:
+            tableName: role_permissions
+            columns:
+              - column: { name: role_code, type: varchar(64), constraints: { nullable: false, foreignKeyName: fk_role_permissions_role, references: roles(code) } }
+              - column: { name: permission_code, type: varchar(96), constraints: { nullable: false, foreignKeyName: fk_role_permissions_permission, references: permission_catalog(code) } }
+        - addPrimaryKey:
+            tableName: role_permissions
+            columnNames: role_code, permission_code
+            constraintName: pk_role_permissions
+        - createTable:
+            tableName: organization_memberships
+            columns:
+              - column: { name: staff_user_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_memberships_staff_user, references: staff_users(id) } }
+              - column: { name: organization_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_memberships_organization, references: organizations(id) } }
+              - column: { name: role_code, type: varchar(64), constraints: { nullable: false, foreignKeyName: fk_memberships_role, references: roles(code) } }
+              - column: { name: status, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: updated_at, type: timestamptz, constraints: { nullable: false } }
+        - addPrimaryKey:
+            tableName: organization_memberships
+            columnNames: staff_user_id, organization_id
+            constraintName: pk_organization_memberships
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE organization_memberships ADD CONSTRAINT ck_memberships_status CHECK (status IN ('ACTIVE', 'INACTIVE'))
+        - createTable:
+            tableName: membership_properties
+            columns:
+              - column: { name: staff_user_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: organization_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: property_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_membership_properties_property, references: properties(id) } }
+              - column: { name: status, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: updated_at, type: timestamptz, constraints: { nullable: false } }
+        - addPrimaryKey:
+            tableName: membership_properties
+            columnNames: staff_user_id, organization_id, property_id
+            constraintName: pk_membership_properties
+        - addForeignKeyConstraint:
+            baseTableName: membership_properties
+            baseColumnNames: staff_user_id, organization_id
+            constraintName: fk_membership_properties_membership
+            referencedTableName: organization_memberships
+            referencedColumnNames: staff_user_id, organization_id
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE membership_properties ADD CONSTRAINT ck_membership_properties_status CHECK (status IN ('ACTIVE', 'INACTIVE'))
+        - insert: { tableName: roles, columns: [ {column: {name: code, value: SUPER_ADMIN}}, {column: {name: name, value: Super Admin}}, {column: {name: system_managed, valueBoolean: true}}, {column: {name: status, value: ACTIVE}}, {column: {name: created_at, valueComputed: CURRENT_TIMESTAMP}}, {column: {name: updated_at, valueComputed: CURRENT_TIMESTAMP}} ] }
+        - insert: { tableName: roles, columns: [ {column: {name: code, value: GERENCIA}}, {column: {name: name, value: Gerencia}}, {column: {name: system_managed, valueBoolean: true}}, {column: {name: status, value: ACTIVE}}, {column: {name: created_at, valueComputed: CURRENT_TIMESTAMP}}, {column: {name: updated_at, valueComputed: CURRENT_TIMESTAMP}} ] }
+        - insert: { tableName: roles, columns: [ {column: {name: code, value: RECEPCION}}, {column: {name: name, value: Recepcion}}, {column: {name: system_managed, valueBoolean: true}}, {column: {name: status, value: ACTIVE}}, {column: {name: created_at, valueComputed: CURRENT_TIMESTAMP}}, {column: {name: updated_at, valueComputed: CURRENT_TIMESTAMP}} ] }
+        - insert: { tableName: roles, columns: [ {column: {name: code, value: OPERACIONES}}, {column: {name: name, value: Operaciones}}, {column: {name: system_managed, valueBoolean: true}}, {column: {name: status, value: ACTIVE}}, {column: {name: created_at, valueComputed: CURRENT_TIMESTAMP}}, {column: {name: updated_at, valueComputed: CURRENT_TIMESTAMP}} ] }
+        - insert: { tableName: roles, columns: [ {column: {name: code, value: AUDITOR}}, {column: {name: name, value: Auditor}}, {column: {name: system_managed, valueBoolean: true}}, {column: {name: status, value: ACTIVE}}, {column: {name: created_at, valueComputed: CURRENT_TIMESTAMP}}, {column: {name: updated_at, valueComputed: CURRENT_TIMESTAMP}} ] }
+        - sql:
+            dbms: postgresql
+            splitStatements: true
+            sql: |
+              INSERT INTO permission_catalog (code, description) VALUES
+              ('MULTI_PROPERTY_READ', 'Read authorized properties as an explicit portfolio'),
+              ('STAFF_MANAGE', 'Provision and manage staff access'),
+              ('RESERVATION_MANAGE', 'Manage reservations and stays'),
+              ('FOLIO_PAYMENT_OPERATE', 'Post ordinary folio and payment operations'),
+              ('PAYMENT_REFUND_VOID', 'Refund or void payments'),
+              ('OPERATIONS_MANAGE', 'Manage housekeeping, maintenance and valet'),
+              ('COMMERCIAL_MANAGE', 'Manage rates, inventory and revenue'),
+              ('AUDIT_READ', 'Read audit and compliance records'),
+              ('NIGHT_AUDIT_RUN', 'Run business-date closing');
+              INSERT INTO role_permissions (role_code, permission_code)
+              SELECT 'SUPER_ADMIN', code FROM permission_catalog;
+              INSERT INTO role_permissions (role_code, permission_code) VALUES
+              ('GERENCIA','MULTI_PROPERTY_READ'), ('GERENCIA','STAFF_MANAGE'), ('GERENCIA','RESERVATION_MANAGE'),
+              ('GERENCIA','FOLIO_PAYMENT_OPERATE'), ('GERENCIA','PAYMENT_REFUND_VOID'), ('GERENCIA','OPERATIONS_MANAGE'),
+              ('GERENCIA','COMMERCIAL_MANAGE'), ('GERENCIA','AUDIT_READ'), ('GERENCIA','NIGHT_AUDIT_RUN'),
+              ('RECEPCION','RESERVATION_MANAGE'), ('RECEPCION','FOLIO_PAYMENT_OPERATE'),
+              ('OPERACIONES','OPERATIONS_MANAGE'), ('AUDITOR','AUDIT_READ');
+              INSERT INTO organization_memberships (staff_user_id, organization_id, role_code, status, created_at, updated_at)
+              SELECT id, '4f63ec16-4b5c-4daf-a9ba-fc4251fb81d1', role_code, 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+              FROM staff_users
+              ON CONFLICT (staff_user_id, organization_id) DO NOTHING;

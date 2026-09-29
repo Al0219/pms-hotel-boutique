@@ -4,6 +4,7 @@ import com.pms.hotelboutique.backend.modules.securityauth.domain.AuthAuditEvent;
 import com.pms.hotelboutique.backend.modules.securityauth.domain.StaffUser;
 import com.pms.hotelboutique.backend.modules.securityauth.infrastructure.persistence.AuthAuditEventRepository;
 import com.pms.hotelboutique.backend.modules.securityauth.infrastructure.persistence.StaffUserRepository;
+import com.pms.hotelboutique.backend.modules.securityauth.infrastructure.persistence.StaffAuthorizationRepository;
 import java.time.Instant;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -20,16 +21,16 @@ public class StaffBootstrapConfiguration {
     private static final Logger log = LoggerFactory.getLogger(StaffBootstrapConfiguration.class);
 
     @Bean
-    ApplicationRunner bootstrapSuperAdmin(StaffUserRepository staffUsers, AuthAuditEventRepository auditEvents,
+    ApplicationRunner bootstrapSuperAdmin(StaffUserRepository staffUsers, AuthAuditEventRepository auditEvents, StaffAuthorizationRepository authorizationRepository,
             PasswordEncoder passwordEncoder,
             @Value("${pms.security.bootstrap-admin-username:}") String username,
             @Value("${pms.security.bootstrap-admin-email:}") String email,
             @Value("${pms.security.bootstrap-admin-password:}") String password) {
-        return ignored -> bootstrap(staffUsers, auditEvents, passwordEncoder, username, email, password);
+        return ignored -> bootstrap(staffUsers, auditEvents, authorizationRepository, passwordEncoder, username, email, password);
     }
 
     @Transactional
-    void bootstrap(StaffUserRepository staffUsers, AuthAuditEventRepository auditEvents, PasswordEncoder passwordEncoder,
+    void bootstrap(StaffUserRepository staffUsers, AuthAuditEventRepository auditEvents, StaffAuthorizationRepository authorizationRepository, PasswordEncoder passwordEncoder,
             String username, String email, String password) {
         if (blank(username) && blank(email) && blank(password)) {
             return;
@@ -44,6 +45,7 @@ public class StaffBootstrapConfiguration {
         Instant now = Instant.now();
         StaffUser user = staffUsers.save(new StaffUser(UUID.randomUUID(), username.trim(), email.trim(),
                 passwordEncoder.encode(password), "SUPER_ADMIN", now));
+        authorizationRepository.ensureSuperAdminMembership(user.getId(), UUID.fromString("4f63ec16-4b5c-4daf-a9ba-fc4251fb81d1"));
         auditEvents.save(new AuthAuditEvent("STAFF_BOOTSTRAP_CREATED", user.getId(), null, "deployment_secret", now));
     }
 

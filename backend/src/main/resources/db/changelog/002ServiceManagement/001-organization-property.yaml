@@ -1,0 +1,57 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-management-001
+      author: alan
+      changes:
+        - createTable:
+            tableName: organizations
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: name, type: varchar(160), constraints: { nullable: false } }
+              - column: { name: code, type: varchar(64), constraints: { nullable: false, unique: true } }
+              - column: { name: status, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: updated_at, type: timestamptz, constraints: { nullable: false } }
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE organizations ADD CONSTRAINT ck_organizations_status CHECK (status IN ('ACTIVE', 'INACTIVE'))
+        - createTable:
+            tableName: properties
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: organization_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_properties_organization, references: organizations(id) } }
+              - column: { name: name, type: varchar(160), constraints: { nullable: false } }
+              - column: { name: code, type: varchar(64), constraints: { nullable: false } }
+              - column: { name: timezone, type: varchar(64), constraints: { nullable: false } }
+              - column: { name: currency, type: char(3), constraints: { nullable: false } }
+              - column: { name: status, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: updated_at, type: timestamptz, constraints: { nullable: false } }
+        - addUniqueConstraint:
+            tableName: properties
+            columnNames: organization_id, code
+            constraintName: uq_properties_organization_code
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE properties ADD CONSTRAINT ck_properties_status CHECK (status IN ('ACTIVE', 'INACTIVE'))
+        - insert:
+            tableName: organizations
+            columns:
+              - column: { name: id, value: 4f63ec16-4b5c-4daf-a9ba-fc4251fb81d1 }
+              - column: { name: name, value: PMS Hotel Boutique }
+              - column: { name: code, value: HOTEL_BOUTIQUE }
+              - column: { name: status, value: ACTIVE }
+              - column: { name: created_at, valueComputed: CURRENT_TIMESTAMP }
+              - column: { name: updated_at, valueComputed: CURRENT_TIMESTAMP }
+        - insert:
+            tableName: properties
+            columns:
+              - column: { name: id, value: 3dcd0a8e-5c6a-46e7-8d51-7c95d86b232d }
+              - column: { name: organization_id, value: 4f63ec16-4b5c-4daf-a9ba-fc4251fb81d1 }
+              - column: { name: name, value: Hotel Boutique }
+              - column: { name: code, value: HB-GT-001 }
+              - column: { name: timezone, value: America/Guatemala }
+              - column: { name: currency, value: GTQ }
+              - column: { name: status, value: ACTIVE }
+              - column: { name: created_at, valueComputed: CURRENT_TIMESTAMP }
+              - column: { name: updated_at, valueComputed: CURRENT_TIMESTAMP }

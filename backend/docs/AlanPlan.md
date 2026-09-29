@@ -32,8 +32,8 @@ en `AlanHandoff.md`.
 | Prefijo | Módulo | Dueño | Estado |
 | --- | --- | --- | --- |
 | 001 | ServicePagos | Por asignar | Reservado |
-| 002 | ServiceManagement | Por asignar | Reservado |
-| 003 | ServiceSecurityAuth | Alan / BD1 | `003-staff-auth-001` implementado en BE-002 |
+| 002 | ServiceManagement | Alan / BD1 | `002-management-001` implementado en BE-003 |
+| 003 | ServiceSecurityAuth | Alan / BD1 | `003-staff-auth-001` (BE-002) y `002`/`003` de RBAC (BE-003) |
 
 Cada módulo agrega versiones internas consecutivas. Una migración aplicada no
 se renombra ni modifica. El changelog completo incluye módulos según sus
@@ -72,13 +72,16 @@ dependencias; un perfil parcial incluye solo su módulo y sus dependencias.
 
 ### BE-003 — Property scope y autorización Staff
 
-- **Estado:** PENDIENTE
+- **Estado:** COMPLETADA
 - **Owner:** Alan / BD1
 - **Dependencias:** BE-002; modelo de membership y permisos confirmado.
 - **Alcance:** permisos, memberships activas y resolución explícita de
   `PROPERTY` / `ALL_PROPERTIES` antes de consultas operativas.
 - **Aceptación:** `ALL_PROPERTIES` exige `MULTI_PROPERTY_READ`; no hay query
-  global seguida de filtro ni fallback de scope.
+  global seguida de filtro ni fallback de scope. C2 aprobado en
+  `09_AUTHORIZATION_SCOPE_CONTRACT_C2.md`; roles fijos y una membership/rol Staff.
+- **DoD:** migraciones validadas desde una PostgreSQL vacía, tests y smoke de
+  sesión Staff completados; evidencia en `AlanHandoff.md`.
 
 ### BE-004 — OAuth2/OIDC Google y BFF
 
