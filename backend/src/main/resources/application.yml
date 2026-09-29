@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: pms-hotel-backend
+  datasource:
+    url: ${PMS_DATABASE_URL:jdbc:postgresql://localhost:5432/pms_hotel}
+    username: ${PMS_DATABASE_USERNAME:pms_app}
+    password: ${PMS_DATABASE_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  sql:
+    init:
+      mode: never
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
