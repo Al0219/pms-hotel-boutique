@@ -1,0 +1,60 @@
+name: pms-hotel-boutique
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: pms_hotel
+      POSTGRES_USER: pms_app
+      POSTGRES_PASSWORD: ${PMS_POSTGRES_PASSWORD:-pms-local-development}
+    volumes:
+      - pms-hotel-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pms_app -d pms_hotel"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      PMS_DATABASE_URL: jdbc:postgresql://postgres:5432/pms_hotel
+      PMS_DATABASE_USERNAME: pms_app
+      PMS_DATABASE_PASSWORD: ${PMS_POSTGRES_PASSWORD:-pms-local-development}
+    expose:
+      - "8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  web:
+    build:
+      context: ./frontend/pms-hotel-web
+      args:
+        NEXT_PUBLIC_USE_MOCK_API: ${NEXT_PUBLIC_USE_MOCK_API:-true}
+        NEXT_PUBLIC_API_BASE_URL: /api
+    environment:
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
+      PMS_BACKEND_INTERNAL_URL: http://backend:8080
+    ports:
+      - "${PMS_WEB_PORT:-3000}:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000').then(response => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+volumes:
+  pms-hotel-postgres:

@@ -9,6 +9,7 @@
 # Android / Gradle
 **/.gradle/
 **/build/
+**/target/
 **/local.properties
 **/*.iml
 

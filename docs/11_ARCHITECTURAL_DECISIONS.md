@@ -170,3 +170,58 @@ La fuente visual y funcional canónica para Android es `238:132 — Implementati
 
 ## Nueva decisión futura
 Registrar ID, fecha, status, contexto, problema, decisión, alternativas, consecuencias y responsables. No borrar historia; usar `SUPERSEDED`.
+
+## Backend — Foundation aprobada
+
+### DEC-B-001 — Arquitectura y persistencia Backend
+
+**Fecha:** 2026-09-28
+**Status:** APPROVED
+**Responsable:** Alan / BD1
+
+**Decisión:** Backend se implementa como monolito modular con Spring Boot y
+capas Controller, Service interface/implementation, Repository/Entity y
+DTO/Mapper. PostgreSQL es la base de datos y Liquibase es el único mecanismo de
+migraciones. Hibernate usa `ddl-auto=validate`.
+
+**Consecuencias:** Los changesets se organizan por módulo bajo
+`backend/src/main/resources/db/changelog/<nnn>Service<Modulo>/`. Los módulos
+pueden usar changelogs de entrada para desarrollo local con sus dependencias;
+integración y CI aplican el changelog completo. No se crean tablas manualmente
+ni se editan changesets ya aplicados.
+
+### DEC-B-002 — Seguridad, BFF y seguimiento Backend
+
+**Fecha:** 2026-09-28
+**Status:** APPROVED
+**Responsable:** Alan / BD1
+
+**Decisión:** Spring Security usa `SecurityFilterChain`, JWT internos,
+OAuth2/OIDC y refresh tokens. Guest y Staff son contextos separados. Web usa
+Next.js como BFF y conserva tokens en cookies seguras no accesibles a JavaScript.
+El control de tareas Backend se mantiene en `backend/docs/AlanPlan.md` y
+`backend/docs/AlanHandoff.md`, sin usar el XLSX.
+
+**Consecuencias:** El Backend sigue siendo la autoridad de contratos y
+autorización. Antes de cualquier query property-scoped se validan sesión,
+permiso, membership y scope. Los DTOs mock frontend no definen endpoints ni
+persistencia.
+
+### DEC-B-003 — Pila Docker local reproducible
+
+**Fecha:** 2026-09-29
+**Status:** APPROVED
+**Responsable:** Alan / BD1
+
+**Decisión:** La ejecución local de la pila Web, Backend y PostgreSQL se
+centraliza en el `compose.yaml` de la raíz y se inicia con `docker compose up
+--build`. Web es el único servicio publicado al host. Backend y PostgreSQL
+solo se comunican por la red interna de Compose; Web reserva
+`PMS_BACKEND_INTERNAL_URL` para los futuros Route Handlers BFF. Android queda
+fuera de Compose porque se ejecuta mediante Expo con emulador o dispositivo del
+host.
+
+**Consecuencias:** Cada servicio posee una imagen reproducible y healthcheck.
+La CI de la pila construye, inicia y espera los tres servicios. Los valores
+predeterminados de PostgreSQL son exclusivamente locales; producción deberá
+injectar secretos y configuración propios.
