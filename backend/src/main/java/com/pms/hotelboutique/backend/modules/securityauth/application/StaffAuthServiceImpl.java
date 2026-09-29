@@ -31,12 +31,13 @@ public class StaffAuthServiceImpl implements StaffAuthService {
     private final AuthAuditEventRepository auditEvents;
     private final PasswordEncoder passwordEncoder;
     private final StaffJwtService jwtService;
+    private final StaffAuthorizationService authorizationService;
     private final Duration refreshTokenTtl;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public StaffAuthServiceImpl(StaffUserRepository staffUsers, AuthSessionRepository sessions,
             RefreshTokenRepository refreshTokens, AuthAuditEventRepository auditEvents,
-            PasswordEncoder passwordEncoder, StaffJwtService jwtService,
+            PasswordEncoder passwordEncoder, StaffJwtService jwtService, StaffAuthorizationService authorizationService,
             @Value("${pms.security.refresh-token-ttl:P7D}") Duration refreshTokenTtl) {
         this.staffUsers = staffUsers;
         this.sessions = sessions;
@@ -44,6 +45,7 @@ public class StaffAuthServiceImpl implements StaffAuthService {
         this.auditEvents = auditEvents;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.authorizationService = authorizationService;
         this.refreshTokenTtl = refreshTokenTtl;
     }
 
@@ -55,6 +57,7 @@ public class StaffAuthServiceImpl implements StaffAuthService {
             auditEvents.save(new AuthAuditEvent("STAFF_LOGIN_FAILED", user.getId(), null, "invalid_credentials", now));
             throw new StaffAuthenticationException();
         }
+        authorizationService.resolve(user.getId());
         AuthSession session = sessions.save(new AuthSession(UUID.randomUUID(), user, now.plus(refreshTokenTtl), now));
         StaffTokenPair tokens = createTokenPair(session, UUID.randomUUID(), now);
         auditEvents.save(new AuthAuditEvent("STAFF_LOGIN_SUCCEEDED", user.getId(), session.getId(), "password", now));
@@ -88,7 +91,8 @@ public class StaffAuthServiceImpl implements StaffAuthService {
         if (!session.isActive(now) || !user.isActive() || !user.getId().equals(principal.staffUserId())) {
             throw new StaffAuthenticationException();
         }
-        return new StaffPrincipal(user.getId(), session.getId(), user.getUsername(), user.getRoleCode());
+        StaffAuthorizationSnapshot snapshot = authorizationService.resolve(user.getId());
+        return new StaffPrincipal(user.getId(), session.getId(), user.getUsername(), snapshot.roleCode());
     }
 
     @Override
@@ -102,7 +106,8 @@ public class StaffAuthServiceImpl implements StaffAuthService {
         refreshTokens.save(new RefreshToken(UUID.randomUUID(), session, hash(rawRefreshToken), familyId,
                 now.plus(refreshTokenTtl), now));
         StaffUser user = session.getStaffUser();
-        StaffPrincipal principal = new StaffPrincipal(user.getId(), session.getId(), user.getUsername(), user.getRoleCode());
+        StaffAuthorizationSnapshot snapshot = authorizationService.resolve(user.getId());
+        StaffPrincipal principal = new StaffPrincipal(user.getId(), session.getId(), user.getUsername(), snapshot.roleCode());
         return new StaffTokenPair(jwtService.issue(principal, now), rawRefreshToken, jwtService.accessTokenExpiresInSeconds());
     }
 

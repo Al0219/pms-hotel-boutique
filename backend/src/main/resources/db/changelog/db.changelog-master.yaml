@@ -1,4 +1,7 @@
 databaseChangeLog:
   - include:
+      file: 002ServiceManagement/db.changelog.yaml
+      relativeToChangelogFile: true
+  - include:
       file: 003ServiceSecurityAuth/db.changelog.yaml
       relativeToChangelogFile: true

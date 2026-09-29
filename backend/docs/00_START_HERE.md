@@ -11,3 +11,4 @@ Antes de implementar:
 7. persistence;
 8. audit/idempotency;
 9. tests.
+7. `09_AUTHORIZATION_SCOPE_CONTRACT_C2.md` antes de BE-003 o de cualquier módulo property-scoped.

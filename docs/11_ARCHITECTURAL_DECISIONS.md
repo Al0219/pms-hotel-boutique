@@ -246,3 +246,23 @@ al correo registrado antes de vincularse.
 **Consecuencias:** Los cambios de rol, estado o contraseña revocan sesiones
 Staff. El primer SUPER_ADMIN se provisiona con secretos de despliegue sin
 credenciales en el repositorio.
+
+### DEC-B-005 — C2: autorización Staff y scope por propiedad
+
+**Fecha:** 2026-09-29
+**Status:** APPROVED
+**Responsable:** Alan / BD1
+
+**Decisión:** El V1 usa los roles fijos `SUPER_ADMIN`, `GERENCIA`,
+`RECEPCION`, `OPERACIONES` y `AUDITOR`. Cada Staff mantiene una sola membership
+de organización y un solo rol. La membership activa define las propiedades
+accesibles; `SUPER_ADMIN` recibe todas las propiedades activas de su
+organización. `ALL_PROPERTIES` requiere `MULTI_PROPERTY_READ` y siempre se
+materializa como el conjunto explícito y autorizado de IDs.
+
+**Consecuencias:** La autorización se recalcula desde PostgreSQL en cada
+petición; no se copia el catálogo ni memberships mutables al JWT. Los módulos
+operativos deben pasar el scope autorizado al repositorio antes de consultar.
+Los roles son gestionados por el sistema en V1. La administración posterior de
+Staff deberá revocar sesiones ante cambios de credencial, estado, rol o
+membership.

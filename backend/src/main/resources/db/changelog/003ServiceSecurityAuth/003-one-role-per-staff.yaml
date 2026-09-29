@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-staff-auth-003
+      author: alan
+      changes:
+        - addUniqueConstraint:
+            tableName: organization_memberships
+            columnNames: staff_user_id
+            constraintName: uq_organization_memberships_staff_user

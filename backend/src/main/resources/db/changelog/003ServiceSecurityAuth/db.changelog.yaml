@@ -2,3 +2,9 @@ databaseChangeLog:
   - include:
       file: 001-staff-auth-schema.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 002-rbac-memberships.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 003-one-role-per-staff.yaml
+      relativeToChangelogFile: true

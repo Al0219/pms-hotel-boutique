@@ -80,3 +80,48 @@ Guest Google continúa en BE-004.
 BE-003 implementará roles/permisos efectivos, memberships y property scope.
 BE-004 incorporará Google OIDC, sesión Guest y los Route Handlers BFF; no debe
 reutilizar cookies, tokens ni sesiones Staff.
+
+## BE-003 — Cierre
+
+- **Rama:** `feature/be-003-authorization-scope`
+- **Estado:** COMPLETADA
+- **Fecha de cierre:** 2026-09-29
+- **Contrato:** C2 aprobado en `09_AUTHORIZATION_SCOPE_CONTRACT_C2.md`.
+- **Alcance:** Organization/Property iniciales, roles y permisos Staff,
+  memberships activas y resolución `PROPERTY`/`ALL_PROPERTIES` en Backend.
+- **Límite:** no publica CRUD de Staff ni conecta los mocks Web. Esas tareas
+  requieren su contrato BFF/administrativo y mantienen la regla de revocar
+  sesiones al cambiar acceso.
+
+
+### Entregado
+
+- `002ServiceManagement/001` crea Organization y Property iniciales mediante
+  Liquibase; no hay creación manual de tablas.
+- `003ServiceSecurityAuth/002` crea roles fijos, catálogo de permisos,
+  memberships y propiedades por membership. `003` impone una sola membership y
+  rol por usuario Staff en V1.
+- La sesión Staff resuelve rol, permisos y propiedades activas desde PostgreSQL
+  antes de emitir token, validar una sesión y responder `GET /session`.
+- `PropertyScopeResolver` construye scopes explícitos `PROPERTY` o
+  `ALL_PROPERTIES`; este último exige `MULTI_PROPERTY_READ` y solo contiene IDs
+  autorizados.
+
+### Evidencia de validación
+
+- `./mvnw -B test` con Maven/Temurin 21 y PostgreSQL 17: 6 pruebas exitosas.
+- PostgreSQL 17 vacía: Liquibase aplicó, en orden, `002-management-001`,
+  `003-staff-auth-001`, `003-staff-auth-002` y `003-staff-auth-003`; después
+  la suite completa pasó.
+- Smoke Docker aislado: bootstrap temporal de `SUPER_ADMIN`, login Staff y
+  `GET /api/v1/staff-auth/session` verificaron `SUPER_ADMIN`,
+  `MULTI_PROPERTY_READ` y `HB-GT-001`. Los contenedores y token temporales se
+  eliminaron al finalizar.
+- `git diff --check`: exitoso.
+
+### Siguiente tarea
+
+BE-004 implementa Google OIDC, identidad Guest y BFF. BE-005 reemplazará la
+fixture Web Private-09 por un DTO/Mapper BFF basado en C2. El CRUD auditado de
+Staff y memberships queda como tarea administrativa posterior; deberá revocar
+sesiones cuando cambie el acceso.
