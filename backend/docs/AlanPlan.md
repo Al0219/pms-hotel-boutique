@@ -33,7 +33,7 @@ en `AlanHandoff.md`.
 | --- | --- | --- | --- |
 | 001 | ServicePagos | Por asignar | Reservado |
 | 002 | ServiceManagement | Por asignar | Reservado |
-| 003 | ServiceSecurityAuth | Alan / BD1 | Registrado; sin changesets de negocio |
+| 003 | ServiceSecurityAuth | Alan / BD1 | `003-staff-auth-001` implementado en BE-002 |
 
 Cada módulo agrega versiones internas consecutivas. Una migración aplicada no
 se renombra ni modifica. El changelog completo incluye módulos según sus
@@ -58,13 +58,17 @@ dependencias; un perfil parcial incluye solo su módulo y sus dependencias.
 
 ### BE-002 — Identidad, sesiones y JWT internos
 
-- **Estado:** PENDIENTE
+- **Estado:** COMPLETADO
 - **Owner:** Alan / BD1
-- **Dependencias:** BE-001; contrato de login local y refresh confirmado.
-- **Alcance:** Guest Auth y Staff Auth separados, hash de credenciales, access
-  token corto, refresh token opaco y rotativo, logout y revocación.
-- **Aceptación:** no hay cruce Guest/Staff; tokens inválidos, expirados o
-  revocados se rechazan; no se exponen tokens ni contraseñas.
+- **Dependencias:** BE-001; C1 aprobado en `08_AUTH_SESSION_CONTRACT_PROPOSAL.md`.
+- **Alcance:** Staff Auth para usuarios provisionados por el hotel, un rol
+  por usuario, `SUPER_ADMIN` global, hash de credenciales, JWT/refresh separado
+  por contexto, logout y revocación. Guest Auth se activa exclusivamente con
+  Google en BE-004.
+- **Aceptación:** Staff no se autorregistra; tokens inválidos, expirados o
+  revocados se rechazan; no se exponen tokens ni contraseñas; SUPER_ADMIN se
+  provisiona solo con secretos de despliegue. Validado con Liquibase/PostgreSQL,
+  login, JWT, refresh rotativo y logout.
 
 ### BE-003 — Property scope y autorización Staff
 
@@ -80,7 +84,8 @@ dependencias; un perfil parcial incluye solo su módulo y sus dependencias.
 
 - **Estado:** PENDIENTE
 - **Owner:** Alan / BD1 con responsable Web.
-- **Dependencias:** BE-002; configuración Google y contrato BFF aprobados.
+- **Dependencias:** BE-002; configuración Google, contrato BFF y política de
+  vinculación de reservas aprobados.
 - **Alcance:** intercambio OAuth2/OIDC, identidad Guest local y JWT propios;
   refresh transparente desde Next.js.
 

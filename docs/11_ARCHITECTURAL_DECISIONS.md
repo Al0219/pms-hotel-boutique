@@ -225,3 +225,24 @@ host.
 La CI de la pila construye, inicia y espera los tres servicios. Los valores
 predeterminados de PostgreSQL son exclusivamente locales; producción deberá
 injectar secretos y configuración propios.
+
+### DEC-B-004 — Contrato C1 de identidad Staff y cuenta Guest
+
+**Fecha:** 2026-09-29
+**Status:** APPROVED
+**Responsable:** Alan / BD1
+
+**Decisión:** Una reserva pública puntual usa correo sin crear cuenta ni sesión.
+Una `GuestAccount` se crea o recupera exclusivamente después de validar Google
+OIDC en BE-004. Staff no se autorregistra: el hotel provisiona username, correo
+laboral, contraseña hasheada y un único rol. `SUPER_ADMIN` posee todas las
+funciones y las propiedades activas mediante scope explícito.
+
+**Sesiones:** Next.js BFF mantiene access y refresh en cookies `HttpOnly`; BE-002
+implementa solo Staff. MFA Guest se delega a Google y no hay MFA local Staff en
+esta versión. Una reserva pasada exige Google, referencia de reserva y desafío
+al correo registrado antes de vincularse.
+
+**Consecuencias:** Los cambios de rol, estado o contraseña revocan sesiones
+Staff. El primer SUPER_ADMIN se provisiona con secretos de despliegue sin
+credenciales en el repositorio.

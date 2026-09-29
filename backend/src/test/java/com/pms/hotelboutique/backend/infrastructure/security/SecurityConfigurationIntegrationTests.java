@@ -23,6 +23,6 @@ class SecurityConfigurationIntegrationTests {
         mockMvc.perform(get("/v3/api-docs"))
             .andExpect(status().isOk());
         mockMvc.perform(get("/not-configured"))
-            .andExpect(status().isForbidden());
+            .andExpect(status().isUnauthorized());
     }
 }

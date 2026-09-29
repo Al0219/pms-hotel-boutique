@@ -30,3 +30,12 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+pms:
+  security:
+    jwt-secret: ${PMS_JWT_SECRET:}
+    access-token-ttl: ${PMS_ACCESS_TOKEN_TTL:PT15M}
+    refresh-token-ttl: ${PMS_REFRESH_TOKEN_TTL:P7D}
+    bootstrap-admin-username: ${PMS_BOOTSTRAP_ADMIN_USERNAME:}
+    bootstrap-admin-email: ${PMS_BOOTSTRAP_ADMIN_EMAIL:}
+    bootstrap-admin-password: ${PMS_BOOTSTRAP_ADMIN_PASSWORD:}

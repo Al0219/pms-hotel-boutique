@@ -1,0 +1,179 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-staff-auth-001
+      author: alan
+      changes:
+        - createTable:
+            tableName: staff_users
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: username
+                  type: varchar(80)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: work_email
+                  type: varchar(320)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: password_hash
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role_code
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE staff_users ADD CONSTRAINT ck_staff_users_status CHECK (status IN ('ACTIVE', 'SUSPENDED', 'DISABLED'))
+        - createTable:
+            tableName: auth_sessions
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: context
+                  type: varchar(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: staff_user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_auth_sessions_staff_user
+                    references: staff_users(id)
+              - column:
+                  name: status
+                  type: varchar(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expires_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: revoked_at
+                  type: timestamptz
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE auth_sessions ADD CONSTRAINT ck_auth_sessions_context CHECK (context = 'STAFF')
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE auth_sessions ADD CONSTRAINT ck_auth_sessions_status CHECK (status IN ('ACTIVE', 'REVOKED'))
+        - createIndex:
+            tableName: auth_sessions
+            indexName: ix_auth_sessions_staff_user
+            columns:
+              - column:
+                  name: staff_user_id
+        - createTable:
+            tableName: refresh_tokens
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: session_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_refresh_tokens_session
+                    references: auth_sessions(id)
+              - column:
+                  name: token_hash
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: family_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expires_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: revoked_at
+                  type: timestamptz
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: refresh_tokens
+            indexName: ix_refresh_tokens_session
+            columns:
+              - column:
+                  name: session_id
+        - createTable:
+            tableName: auth_audit_events
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: event_type
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: staff_user_id
+                  type: uuid
+              - column:
+                  name: session_id
+                  type: uuid
+              - column:
+                  name: occurred_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: detail
+                  type: varchar(160)
