@@ -22,6 +22,10 @@ services:
       PMS_DATABASE_URL: jdbc:postgresql://postgres:5432/pms_hotel
       PMS_DATABASE_USERNAME: pms_app
       PMS_DATABASE_PASSWORD: ${PMS_POSTGRES_PASSWORD:-pms-local-development}
+      PMS_JWT_SECRET: ${PMS_JWT_SECRET:-}
+      PMS_BOOTSTRAP_ADMIN_USERNAME: ${PMS_BOOTSTRAP_ADMIN_USERNAME:-}
+      PMS_BOOTSTRAP_ADMIN_EMAIL: ${PMS_BOOTSTRAP_ADMIN_EMAIL:-}
+      PMS_BOOTSTRAP_ADMIN_PASSWORD: ${PMS_BOOTSTRAP_ADMIN_PASSWORD:-}
     expose:
       - "8080"
     depends_on:

@@ -47,8 +47,36 @@
 
 ### Siguiente tarea
 
-BE-002 permanece bloqueada hasta confirmar el contrato de login/refresh y el
-modelo de identidad persistente. Debe separar Guest Auth y Staff Auth desde el
-modelo de datos, incluir hashes de credenciales, refresh opaco rotativo y JWT
-interno de corta duración. No se deben crear tablas ni endpoints de identidad
-antes de esa confirmación.
+La propuesta `08_AUTH_SESSION_CONTRACT_PROPOSAL.md` fue derivada de Web y
+actualizada con la regla de producto: correo permite reserva puntual sin cuenta;
+la cuenta Guest requiere Google y se implementa en BE-004. Staff solo se
+provisiona por el hotel con username, contraseña, correo laboral y un rol;
+`SUPER_ADMIN` es global. MFA Guest se delega a Google y MFA local Staff queda
+diferido. C1 fue aprobado y BE-002 implementa exclusivamente el contexto Staff;
+Guest Google continúa en BE-004.
+
+## BE-002 — Inicio
+
+- **Rama:** `feature/be-002-staff-auth`
+- **Estado:** COMPLETADO
+- **Contrato:** C1 aprobado en `08_AUTH_SESSION_CONTRACT_PROPOSAL.md`.
+- **Alcance autorizado:** usuarios Staff provisionados por hotel, username,
+  correo laboral, contraseña hasheada, un rol, SUPER_ADMIN, sesiones Staff, JWT,
+  refresh rotativo y logout.
+- **Fuera de alcance:** Google/Guest (BE-004), property scope efectivo
+  (BE-003), UI de provisionamiento y gestión de roles.
+
+
+### Validación BE-002
+
+- `./mvnw test` se ejecutó en JDK 21 contra PostgreSQL local con el esquema
+  validado por Liquibase.
+- Smoke en contenedor: login Staff, JWT con audiencia/contexto Staff, refresh
+  rotativo, rechazo 401 sin refresh y revocación persistente tras logout.
+- El changeset aplicado es `003-staff-auth-001`; no se modifica ni se reutiliza.
+
+### Próximo alcance
+
+BE-003 implementará roles/permisos efectivos, memberships y property scope.
+BE-004 incorporará Google OIDC, sesión Guest y los Route Handlers BFF; no debe
+reutilizar cookies, tokens ni sesiones Staff.
