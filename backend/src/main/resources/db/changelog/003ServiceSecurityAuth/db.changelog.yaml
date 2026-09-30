@@ -8,3 +8,6 @@ databaseChangeLog:
   - include:
       file: 003-one-role-per-staff.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 004-guest-auth-schema.yaml
+      relativeToChangelogFile: true

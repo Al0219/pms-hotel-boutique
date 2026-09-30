@@ -266,3 +266,18 @@ operativos deben pasar el scope autorizado al repositorio antes de consultar.
 Los roles son gestionados por el sistema en V1. La administración posterior de
 Staff deberá revocar sesiones ante cambios de credencial, estado, rol o
 membership.
+
+### DEC-B-006 — C3: Guest Google OIDC mediante BFF
+
+**Fecha:** 2026-09-29
+**Status:** APPROVED
+**Responsable:** Alan / BD1
+
+**Decisión:** Guest usa Google OIDC con Authorization Code, `state`, `nonce` y
+PKCE. Next.js posee el callback y las cookies; Spring Boot conserva la
+autoridad de validar OIDC, resolver la cuenta y emitir sesiones. Las cuentas
+Guest se separan de Staff y modelan identidades externas por proveedor y `sub`.
+
+**Consecuencias:** Los tokens Guest no llegan a JavaScript. La vinculación
+histórica exige OTP y una consulta de Reservations; no se inventa persistencia
+de reservas antes de que su módulo exista.

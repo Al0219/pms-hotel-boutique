@@ -1,0 +1,11 @@
+package com.pms.hotelboutique.backend.modules.guestauth.api;
+import com.pms.hotelboutique.backend.modules.guestauth.application.*; import io.swagger.v3.oas.annotations.*; import io.swagger.v3.oas.annotations.media.Schema; import io.swagger.v3.oas.annotations.tags.Tag; import jakarta.validation.Valid; import org.springframework.http.*; import org.springframework.security.core.annotation.AuthenticationPrincipal; import org.springframework.web.bind.annotation.*;
+@RestController @RequestMapping("/api/v1/guest-auth") @Tag(name="Guest authentication",description="BFF-only Google OIDC endpoints. Tokens are never sent to browser JavaScript.") public class GuestAuthController {
+ private static final String REFRESH_COOKIE="pms_guest_refresh"; private final GuestAuthService auth; public GuestAuthController(GuestAuthService auth){this.auth=auth;}
+ @PostMapping("/google/start") @Operation(summary="Start Google OIDC") public GoogleStartResponse start(){return new GoogleStartResponse(auth.startGoogleAuthorization());}
+ @PostMapping("/google/exchange") @Operation(summary="Exchange an OIDC authorization code") public ResponseEntity<GuestAuthResponse> exchange(@Valid @RequestBody GoogleExchangeRequest request){return ResponseEntity.status(HttpStatus.CREATED).body(response(auth.exchangeGoogleAuthorization(request.code(),request.state())));}
+ @PostMapping("/refresh") @Operation(summary="Rotate a Guest refresh token") public GuestAuthResponse refresh(@CookieValue(name=REFRESH_COOKIE,required=false) @Schema(hidden=true) String refresh){return response(auth.refresh(refresh));}
+ @GetMapping("/session") @Operation(summary="Read active Guest session") public GuestSessionResponse session(@AuthenticationPrincipal GuestPrincipal principal){GuestPrincipal active=auth.getActivePrincipal(principal);return new GuestSessionResponse(active.guestAccountId(),active.sessionId(),active.email(),"GUEST");}
+ @DeleteMapping("/session") @Operation(summary="Revoke active Guest session") public ResponseEntity<Void> logout(@AuthenticationPrincipal GuestPrincipal principal){auth.logout(principal);return ResponseEntity.noContent().build();}
+ private GuestAuthResponse response(GuestTokenPair p){return new GuestAuthResponse(p.accessToken(),p.refreshToken(),p.accessTokenExpiresInSeconds());}
+}
