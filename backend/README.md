@@ -31,3 +31,17 @@ Liquibase crea y modifica el esquema. No se crean tablas manualmente ni se usa
 Las migraciones viven bajo `db/changelog/<nnn>Service<Modulo>/`. Cada módulo es
 dueño de sus changesets; los aplicados son inmutables. El changelog maestro se
 usa en integración y los changelogs de módulo permiten desarrollo parcial.
+
+### Validación aislada de BD2
+
+Desde la raíz:
+
+```sh
+docker compose -p pms-bd2-phase1 -f backend/compose.bd2-test.yaml up --abort-on-container-exit --exit-code-from verify
+docker compose -p pms-bd2-phase1 -f backend/compose.bd2-test.yaml down
+```
+
+Usa PostgreSQL 17 efímero sin puertos publicados y Maven/JDK 21. No usa la base
+de datos de la aplicación ni sus secretos. Ejecuta toda la suite y empaqueta el JAR.
+El contrato para BD3 y los límites de Fase 1 están en
+[`docs/11_BD2_CORE_FOUNDATION_CONTRACT.md`](docs/11_BD2_CORE_FOUNDATION_CONTRACT.md).

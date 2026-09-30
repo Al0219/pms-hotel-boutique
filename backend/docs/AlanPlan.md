@@ -1,8 +1,8 @@
-# AlanPlan — Backend Dev 1
+# AlanPlan — Seguimiento Backend
 
 ## Propósito
 
-Este archivo controla el trabajo de Backend para Alan (BD1). Sustituye el uso
+Este archivo conserva el trabajo de Alan (BD1) y el seguimiento de BD2. Sustituye el uso
 del XLSX para tareas Backend. Los mocks y DTOs de Web o Android no son contratos
 Backend confirmados.
 
@@ -32,7 +32,7 @@ en `AlanHandoff.md`.
 | Prefijo | Módulo | Dueño | Estado |
 | --- | --- | --- | --- |
 | 001 | ServicePagos | Por asignar | Reservado |
-| 002 | ServiceManagement | Alan / BD1 | `002-management-001` implementado en BE-003 |
+| 002 | ServiceManagement | BD1 (base) / BD2 (core) | `002-management-001` en BE-003; `002-management-002` en BD2-001 |
 | 003 | ServiceSecurityAuth | Alan / BD1 | `003-staff-auth-001` (BE-002) y `002`/`003` de RBAC (BE-003) |
 
 Cada módulo agrega versiones internas consecutivas. Una migración aplicada no
@@ -103,8 +103,30 @@ dependencias; un perfil parcial incluye solo su módulo y sus dependencias.
 - **Alcance:** contratos confirmados de identidad, sesión y propiedades
   autorizadas; integración mediante DTO/Mapper.
 
+## BD2 — Core PMS
+
+### BD2-001 — Fase 1: cimientos y contratos
+
+- **Estado:** COMPLETADA
+- **Owner:** BD2
+- **Reviewer:** Codex — revisión local; PR/revisión del equipo pendiente.
+- **Rama:** `feature/bd2-foundation-contracts`
+- **Dependencias:** BE-001 y BE-003 COMPLETADAS; reutiliza Organization/Property y scope.
+- **DoR:** plan de fases autorizado por el usuario; Fase 1 autorizada explícitamente.
+- **Alcance:** esquema mínimo de inventario/tarifas, dinero exacto y puerto interno ATS con fixture de pruebas.
+- **Contrato:** `11_BD2_CORE_FOUNDATION_CONTRACT.md`.
+- **Aceptación:** migración sobre esquema existente y vacío; relaciones no cruzan propiedades;
+  OOO/OOS conserva motivo/período/actor; importe BIGINT con moneda; rango de noches explícito;
+  stub ATS=5 solo en pruebas, nunca en el artefacto productivo.
+- **DoD:** suite Backend en PostgreSQL, pruebas de restricciones y dinero, build del artefacto;
+  evidencia y límites en AlanHandoff.
+- **Fuera de alcance:** entidades operativas, CRUD, cálculo real, endpoints y reservas.
+
+Fases siguientes: entidades/repositorios; motor ATS con integración BD3; APIs y scope;
+integración y concurrencia. Sus contratos y DoR se concretarán antes de implementarlas.
+
 ## Entorno de validación
 
-El host local tiene Java Runtime 25 sin `javac`. La validación reproducible de
+En la validación original, el host tenía Java Runtime 25 sin `javac`. La validación reproducible de
 BE-001 se ejecuta con `maven:3.9.11-eclipse-temurin-21` y PostgreSQL 17 en
 Docker; el workflow Backend CI usa Temurin 21.

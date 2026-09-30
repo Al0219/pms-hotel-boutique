@@ -173,6 +173,26 @@ Registrar ID, fecha, status, contexto, problema, decisión, alternativas, consec
 
 ## Backend — Foundation aprobada
 
+### DEC-B-007 — BD2 Fase 1: inventario y contrato interno
+
+**Fecha:** 2026-09-30
+**Status:** APPROVED — alcance autorizado por el usuario en conversación.
+**Responsable:** BD2.
+
+**Contexto:** BD3 necesita un puerto estable mientras se construye el motor ATS.
+**Decisión:** reutilizar Property y Liquibase de BD1; agregar el esquema mínimo
+de Rooms, RoomTypes, OOO/OOS y RatePlans. Dinero exacto con unidades menores BIGINT
+y moneda explícita mediante clases propias y converters JPA. Puerto interno ATS
+por rango de noches, con stub de cinco unidades exclusivamente en pruebas.
+**Alternativas:** recrear properties o incorporar otra herramienta de migración
+duplicaría la base existente; una librería monetaria no es necesaria para este
+valor mínimo. Un stub activo en producción permitiría vender stock ficticio.
+**Consecuencias:** no hay motor ATS real ni CRUD en Fase 1. Overbooking=0; OOS
+no descuenta ATS, OOO sí. Los instantes se conservan en UTC y las noches como
+fechas locales. La reserva atómica exige integración posterior con BD3.
+El detalle técnico y los límites están en
+`backend/docs/11_BD2_CORE_FOUNDATION_CONTRACT.md`.
+
 ### DEC-B-001 — Arquitectura y persistencia Backend
 
 **Fecha:** 2026-09-28

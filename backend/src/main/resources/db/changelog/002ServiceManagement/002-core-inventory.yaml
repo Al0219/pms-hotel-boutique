@@ -1,0 +1,78 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-management-002
+      author: bd2
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              CREATE TABLE room_types (
+                id UUID PRIMARY KEY,
+                property_id UUID NOT NULL REFERENCES properties(id),
+                code VARCHAR(64) NOT NULL CHECK (btrim(code) <> ''),
+                name VARCHAR(160) NOT NULL CHECK (btrim(name) <> ''),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT uq_room_types_property_code UNIQUE (property_id, code),
+                CONSTRAINT uq_room_types_property_id UNIQUE (property_id, id)
+              );
+              CREATE TABLE rooms (
+                id UUID PRIMARY KEY,
+                property_id UUID NOT NULL REFERENCES properties(id),
+                room_type_id UUID NOT NULL,
+                code VARCHAR(64) NOT NULL CHECK (btrim(code) <> ''),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT fk_rooms_property_type FOREIGN KEY (property_id, room_type_id)
+                  REFERENCES room_types(property_id, id),
+                CONSTRAINT uq_rooms_property_code UNIQUE (property_id, code),
+                CONSTRAINT uq_rooms_property_id UNIQUE (property_id, id)
+              );
+              CREATE INDEX ix_rooms_property_type ON rooms(property_id, room_type_id);
+              CREATE TABLE out_of_order_records (
+                id UUID PRIMARY KEY,
+                property_id UUID NOT NULL REFERENCES properties(id),
+                room_id UUID NOT NULL,
+                kind VARCHAR(3) NOT NULL CHECK (kind IN ('OOO', 'OOS')),
+                start_date DATE NOT NULL,
+                end_date DATE NOT NULL,
+                reason VARCHAR(500) NOT NULL CHECK (btrim(reason) <> ''),
+                created_by UUID NOT NULL REFERENCES staff_users(id),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                released_at TIMESTAMPTZ,
+                released_by UUID REFERENCES staff_users(id),
+                release_reason VARCHAR(500),
+                CONSTRAINT fk_room_outages_property_room FOREIGN KEY (property_id, room_id)
+                  REFERENCES rooms(property_id, id),
+                CONSTRAINT ck_room_outages_period CHECK (start_date < end_date),
+                CONSTRAINT ck_room_outages_release CHECK (
+                  (released_at IS NULL AND released_by IS NULL AND release_reason IS NULL)
+                  OR (released_at IS NOT NULL AND released_by IS NOT NULL
+                    AND release_reason IS NOT NULL AND btrim(release_reason) <> ''
+                    AND released_at >= created_at))
+              );
+              CREATE INDEX ix_room_outages_active ON out_of_order_records
+                (property_id, start_date, end_date, room_id) WHERE released_at IS NULL AND kind = 'OOO';
+              CREATE INDEX ix_room_outages_room ON out_of_order_records(property_id, room_id);
+              CREATE TABLE rate_plans (
+                id UUID PRIMARY KEY,
+                property_id UUID NOT NULL REFERENCES properties(id),
+                room_type_id UUID NOT NULL,
+                code VARCHAR(64) NOT NULL CHECK (btrim(code) <> ''),
+                name VARCHAR(160) NOT NULL CHECK (btrim(name) <> ''),
+                base_amount_minor BIGINT NOT NULL CHECK (base_amount_minor >= 0),
+                currency CHAR(3) NOT NULL CHECK (currency ~ '^[A-Z]{3}$'),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT fk_rate_plans_property_type FOREIGN KEY (property_id, room_type_id)
+                  REFERENCES room_types(property_id, id),
+                CONSTRAINT uq_rate_plans_property_type_code UNIQUE (property_id, room_type_id, code)
+              );
+      rollback:
+        - sql:
+            dbms: postgresql
+            sql: |
+              DROP TABLE rate_plans;
+              DROP TABLE out_of_order_records;
+              DROP TABLE rooms;
+              DROP TABLE room_types;
