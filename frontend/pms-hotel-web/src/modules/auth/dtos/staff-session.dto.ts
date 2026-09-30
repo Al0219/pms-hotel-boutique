@@ -11,3 +11,19 @@ export interface StaffIdentityDTO {
     status: "ACTIVE" | "INACTIVE";
   }[];
 }
+
+/** C2 BFF response for the active Staff session. Tokens are never part of this DTO. */
+export interface StaffSessionDTO {
+  staffUserId: string;
+  sessionId: string;
+  username: string;
+  roleCode: string;
+  permissions: string[];
+  memberships: {
+    propertyId: string;
+    propertyCode: string;
+    name: string;
+    timezone: string;
+    currency: string;
+  }[];
+}

@@ -1,5 +1,8 @@
+export type StaffRoleCode = "SUPER_ADMIN" | "GERENCIA" | "RECEPCION" | "OPERACIONES" | "AUDITOR";
+
 export interface StaffMembership {
   propertyId: string;
+  propertyCode: string | null;
   name: string;
   timezone: string;
   currency: string;
@@ -14,6 +17,8 @@ export interface StaffIdentity {
 }
 
 export interface StaffSession extends StaffIdentity {
+  /** Available only for the real C2 BFF session; Private-09 mock never models it. */
+  staffUserId?: string;
   roleName: string;
   permissions: string[];
 }

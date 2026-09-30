@@ -5,38 +5,42 @@ import { StaffLogout, useStaffSession } from "@/modules/auth";
 import { PropertySwitcher } from "@/modules/properties";
 import styles from "./private-layout.module.css";
 
-// Existing route catalogue, grouped by the documented Staff roles.
-// Presentation only; no server authorization is implied.
 const nav = [
-  { href: "/dashboard", label: "Panel", roles: ["gerencia", "recepcion"] },
-  { href: "/multi-property", label: "Multi-property", roles: ["gerencia", "recepcion"] },
-  { href: "/reservas", label: "Reservas", roles: ["recepcion"] },
-  { href: "/lista-espera", label: "Lista de espera", roles: ["recepcion"] },
-  { href: "/calendario", label: "Calendario", roles: ["recepcion"] },
-  { href: "/habitaciones", label: "Habitaciones", roles: ["recepcion"] },
-  { href: "/housekeeping", label: "Housekeeping", roles: ["operaciones"] },
-  { href: "/mantenimiento", label: "Mantenimiento", roles: ["operaciones"] },
-  { href: "/conserjeria", label: "Conserjería", roles: ["operaciones", "recepcion"] },
-  { href: "/parking-valet", label: "Parking / Valet", roles: ["operaciones"] },
-  { href: "/grupos", label: "Grupos / Eventos", roles: ["gerencia"] },
-  { href: "/integraciones", label: "Integraciones", roles: ["gerencia"] },
-  { href: "/integraciones/errores", label: "Cola de errores", roles: ["gerencia"] },
-  { href: "/reportes", label: "Reportes", roles: ["gerencia", "recepcion"] },
-  { href: "/mensajeria", label: "Mensajería", roles: ["recepcion"] },
-  { href: "/seguridad/roles", label: "Roles / Permisos", roles: ["gerencia"] },
-  { href: "/seguridad/auditoria", label: "Auditoría", roles: ["gerencia"] },
+  { href: "/dashboard", label: "Panel", roles: ["SUPER_ADMIN", "GERENCIA", "RECEPCION"] },
+  { href: "/multi-property", label: "Multi-property", roles: ["SUPER_ADMIN", "GERENCIA"] },
+  { href: "/reservas", label: "Reservas", roles: ["SUPER_ADMIN", "GERENCIA", "RECEPCION"] },
+  { href: "/lista-espera", label: "Lista de espera", roles: ["SUPER_ADMIN", "GERENCIA", "RECEPCION"] },
+  { href: "/calendario", label: "Calendario", roles: ["SUPER_ADMIN", "GERENCIA", "RECEPCION"] },
+  { href: "/habitaciones", label: "Habitaciones", roles: ["SUPER_ADMIN", "GERENCIA", "RECEPCION"] },
+  { href: "/housekeeping", label: "Housekeeping", roles: ["SUPER_ADMIN", "GERENCIA", "OPERACIONES"] },
+  { href: "/mantenimiento", label: "Mantenimiento", roles: ["SUPER_ADMIN", "GERENCIA", "OPERACIONES"] },
+  { href: "/conserjeria", label: "Conserjería", roles: ["SUPER_ADMIN", "GERENCIA", "OPERACIONES", "RECEPCION"] },
+  { href: "/parking-valet", label: "Parking / Valet", roles: ["SUPER_ADMIN", "GERENCIA", "OPERACIONES"] },
+  { href: "/grupos", label: "Grupos / Eventos", roles: ["SUPER_ADMIN", "GERENCIA"] },
+  { href: "/integraciones", label: "Integraciones", roles: ["SUPER_ADMIN", "GERENCIA"] },
+  { href: "/integraciones/errores", label: "Cola de errores", roles: ["SUPER_ADMIN", "GERENCIA"] },
+  { href: "/reportes", label: "Reportes", roles: ["SUPER_ADMIN", "GERENCIA", "AUDITOR"] },
+  { href: "/mensajeria", label: "Mensajería", roles: ["SUPER_ADMIN", "GERENCIA", "RECEPCION"] },
+  { href: "/seguridad/roles", label: "Roles / Permisos", roles: ["SUPER_ADMIN", "GERENCIA"] },
+  { href: "/seguridad/auditoria", label: "Auditoría", roles: ["SUPER_ADMIN", "GERENCIA", "AUDITOR"] },
 ] as const;
+
+function canonicalRole(roleId: string): string {
+  return roleId === "superadmin" ? "SUPER_ADMIN" : roleId.toUpperCase();
+}
 
 export function StaffShell({ children }: { children: React.ReactNode }) {
   const session = useStaffSession();
   const pathname = usePathname();
+  const role = canonicalRole(session.roleId);
   const supportsScope = pathname === "/dashboard" || pathname === "/multi-property" || pathname.startsWith("/multi-property/disponibilidad/");
   const propertyId = process.env.NEXT_PUBLIC_PROPERTY_ID;
+  const mockSession = session.roleId === session.roleId.toLowerCase();
   return <div className={styles.shell}>
     <aside className={styles.sidebar} aria-label="Private shell sidebar">
       <p className={styles.brand}>PMS Staff</p>
       <nav aria-label="Módulos Staff"><ul className={styles.navList}>
-        {nav.filter(entry => (entry.roles as readonly string[]).includes(session.roleId)).map(entry => <li key={entry.href}>
+        {nav.filter(entry => (entry.roles as readonly string[]).includes(role)).map(entry => <li key={entry.href}>
           <Link className={styles.navLink} href={entry.href} aria-current={pathname === entry.href ? "page" : undefined}>{entry.label}</Link>
         </li>)}
       </ul></nav>
@@ -44,7 +48,7 @@ export function StaffShell({ children }: { children: React.ReactNode }) {
     </aside>
     <div className={styles.mainColumn}>
       <header className={styles.header} aria-label="Private shell header">
-        <div><strong>{session.userName}</strong><p>{session.roleName} · Sesión de demostración</p></div>
+        <div><strong>{session.userName}</strong><p>{session.roleName} · {mockSession ? "Sesión de demostración" : "Sesión Staff"}</p></div>
         {supportsScope ? <PropertySwitcher /> : <p className={styles.propertyContext}>{propertyId ? "Contexto propio del módulo: " + propertyId : "Este módulo conserva su contexto de propiedad."}</p>}
         <StaffLogout />
       </header>

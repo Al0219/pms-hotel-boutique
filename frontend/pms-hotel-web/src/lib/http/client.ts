@@ -40,5 +40,7 @@ export async function httpRequest<ResponseDto>({
     throw new HttpStatusError(response.status, response.statusText);
   }
 
+  if (response.status === 204) return undefined as ResponseDto;
+
   return (await response.json()) as ResponseDto;
 }

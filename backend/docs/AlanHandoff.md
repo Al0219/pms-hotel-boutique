@@ -170,3 +170,57 @@ sesiones cuando cambie el acceso.
 - Configurar dominio/remitente y API key de Resend para el OTP futuro.
 - Integrar el puerto de vínculo OTP cuando Reservations publique búsqueda segura
   por referencia y correo, sin revelar existencia de reservas.
+
+
+## BE-005 — Inicio
+
+- **Rama:** `feature/be-005-staff-bff-integration`
+- **Estado:** EN_PROGRESO
+- **Contrato:** C2 aprobado en `09_AUTHORIZATION_SCOPE_CONTRACT_C2.md`; C1 sigue siendo autoridad para cookies y sesiones Staff.
+- **Alcance autorizado:** Route Handlers BFF Staff, DTO/Mapper C2 y sustitución de la rama no-mock del provider Private-09.
+- **Límite:** no crea CRUD de Staff, roles, memberships ni migraciones; el fixture Private-09 permanece para el modo mock y sus pruebas.
+
+
+## BE-005 — Cierre
+
+- **Rama:** `feature/be-005-staff-bff-integration`
+- **Estado:** COMPLETADA
+- **Fecha de cierre:** 2026-09-30
+- **Contrato:** C1 para el ciclo de sesión Staff y C2 para la sesión/autorización
+  efectiva, ambos registrados en los documentos de Backend.
+
+### Entregado
+
+- Route Handlers BFF Staff para login, consulta de sesión C2, refresh y logout,
+  con cookies `HttpOnly` host-only separadas de Guest. Ninguna respuesta BFF
+  serializa access ni refresh token hacia JavaScript.
+- DTO, mapper estricto y servicio de sesión Staff para el flujo no-mock Web.
+  El mapper rechaza roles, permisos, propiedades, zonas horarias o monedas
+  inválidos y memberships duplicadas.
+- Provider Staff que resuelve la sesión C2, intenta refresh ante un `401` y
+  conserva la fixture Private-09 únicamente cuando el modo mock está activo.
+- Navegación privada basada en el rol C2 y las propiedades/permisos efectivos;
+  `SUPER_ADMIN` recibe todos los módulos definidos.
+- La descripción OpenAPI de `GET /api/v1/staff-auth/session` y el contrato C2
+  especifican que la autorización se recalcula y que los tokens quedan dentro
+  del BFF. No se crearon migraciones ni CRUD administrativo.
+
+### Evidencia de validación
+
+- `npm run typecheck`, `npm run lint` y `npm run build`: exitosos.
+- `npm run test -- --run`: 182 archivos y 768 pruebas Web exitosas.
+- Maven/Temurin 21 contra PostgreSQL 17 en Docker: `./mvnw -B -q test` exitoso,
+  con Liquibase actualizado y validación Hibernate activa.
+- `docker compose up --build -d`: imágenes Backend/Web construidas y servicios
+  healthy.
+- Smoke BFF Staff sin exponer secretos: login `201` con acuse limitado, sesión
+  C2 `200` con rol `SUPER_ADMIN`, refresh `200`, logout `204` y consulta
+  posterior `401`.
+- `git diff --check`: exitoso antes del cierre.
+
+### Siguiente tarea
+
+El siguiente módulo operativo puede consumir C2 desde el BFF y debe aplicar
+`PROPERTY`/`ALL_PROPERTIES` mediante el scope Backend. El CRUD auditado de
+usuarios, roles y memberships continúa fuera de BE-005 y deberá revocar
+sesiones al modificar el acceso.
