@@ -45,7 +45,7 @@ public class StaffAuthController {
     }
 
     @GetMapping("/session")
-    @Operation(summary = "Read the active Staff session")
+    @Operation(summary = "Read the active Staff session", description = "BFF-only. Permissions and authorized properties are recalculated for this request; no tokens are returned.")
     public StaffSessionResponse session(@AuthenticationPrincipal StaffPrincipal principal) {
         StaffPrincipal active = staffAuthService.getActivePrincipal(principal);
         var snapshot = authorizationService.resolve(active.staffUserId());

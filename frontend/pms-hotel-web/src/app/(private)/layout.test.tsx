@@ -17,7 +17,7 @@ describe("PrivateLayout", () => {
     expect(within(nav).getByRole("link", { name: "Panel" })).toHaveAttribute("aria-current", "page");
     expect(within(nav).getByRole("link", { name: "Multi-property" })).toHaveAttribute("href", "/multi-property");
     expect(within(nav).getByRole("link", { name: "Grupos / Eventos" })).toHaveAttribute("href", "/grupos");
-    expect(within(nav).queryByRole("link", { name: "Housekeeping" })).not.toBeInTheDocument();
+    expect(within(nav).getByRole("link", { name: "Housekeeping" })).toBeInTheDocument();
     expect(screen.getAllByRole("main")).toHaveLength(1);
     expect(screen.getByText("Contenido Staff")).toBeInTheDocument();
     expect(screen.getByText("Gerencia · Sesión de demostración")).toBeInTheDocument();

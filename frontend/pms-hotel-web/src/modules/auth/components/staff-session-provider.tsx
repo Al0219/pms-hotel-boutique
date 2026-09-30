@@ -1,12 +1,12 @@
 "use client";
 
 import { createContext, useContext, type ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRoles } from "@/modules/permissions";
 import { useSecurity } from "@/modules/security";
 import { getPublicEnvironment } from "@/lib/env";
-import { mapStaffIdentity } from "../mappers/staff-session.mapper";
-import { getStaffIdentityDTO } from "../service/staff-session.service";
+import { mapStaffIdentity, mapStaffSession } from "../mappers/staff-session.mapper";
+import { getActiveStaffSessionDTO, getStaffIdentityDTO, logoutStaffSession } from "../service/staff-session.service";
 import type { StaffSession } from "../model/staff-session";
 
 const StaffContext = createContext<StaffSession | null>(null);
@@ -30,8 +30,33 @@ export function StaffLogout() {
 }
 
 export function StaffSessionProvider({ children }: { children: ReactNode }) {
-  if (!getPublicEnvironment().useMockApi) return <p>La demostración Staff requiere los mocks habilitados.</p>;
-  return <StaffMockSession>{children}</StaffMockSession>;
+  return getPublicEnvironment().useMockApi
+    ? <StaffMockSession>{children}</StaffMockSession>
+    : <StaffBffSession>{children}</StaffBffSession>;
+}
+
+function StaffBffSession({ children }: { children: ReactNode }) {
+  const session = useQuery({
+    queryKey: ["staff-session"],
+    queryFn: async ({ signal }) => mapStaffSession(await getActiveStaffSessionDTO(signal)),
+    retry: false,
+  });
+  const logout = useMutation({
+    mutationFn: logoutStaffSession,
+    onSuccess: () => { void session.refetch(); },
+  });
+  if (session.fetchStatus === "paused") return <p role="status">Sin conexión. Esperando para cargar la sesión Staff.</p>;
+  if (session.isPending) return <p role="status">Cargando sesión Staff…</p>;
+  if (session.isError || !session.data) return <section>
+    <h1>Sesión Staff requerida</h1>
+    <p>Inicia sesión desde el acceso Staff autorizado por el hotel.</p>
+    <button type="button" onClick={() => void session.refetch()}>Reintentar sesión</button>
+  </section>;
+  return <StaffContext.Provider value={session.data}>
+    <StaffActions.Provider value={{
+      logout: () => logout.mutate(), busy: logout.isPending, error: logout.isError,
+    }}>{children}</StaffActions.Provider>
+  </StaffContext.Provider>;
 }
 
 function StaffMockSession({ children }: { children: ReactNode }) {
@@ -60,7 +85,7 @@ function StaffMockSession({ children }: { children: ReactNode }) {
   if (!identity.data || !role) return <p role="alert">La sesión no tiene un rol de demostración válido.</p>;
   if (current.id !== identity.data.id) return <p role="alert">La identidad no corresponde a la sesión Staff actual.</p>;
   const session: StaffSession = {
-    ...identity.data, roleName: role.name, permissions: role.permissions,
+    ...identity.data, staffUserId: identity.data.id, roleName: role.name, permissions: role.permissions,
     memberships: identity.data.memberships.filter(item => item.active),
   };
   return <StaffContext.Provider value={session}>

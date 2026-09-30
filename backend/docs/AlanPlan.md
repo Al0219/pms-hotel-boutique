@@ -97,11 +97,17 @@ dependencias; un perfil parcial incluye solo su módulo y sus dependencias.
 
 ### BE-005 — Contratos OpenAPI e integración inicial
 
-- **Estado:** PENDIENTE
+- **Estado:** COMPLETADA
 - **Owner:** Alan / BD1
 - **Dependencias:** BE-002 y BE-003.
 - **Alcance:** contratos confirmados de identidad, sesión y propiedades
-  autorizadas; integración mediante DTO/Mapper.
+  autorizadas; integración Staff mediante BFF, DTO/Mapper y navegación privada
+  derivada de permisos C2.
+- **Aceptación:** el BFF Staff no expone tokens al navegador, mantiene cookies
+  aisladas de Guest, devuelve C2 recalculado y soporta refresh/logout; el modo
+  no-mock consume DTO/Mapper C2 y el modo mock conserva la fixture Private-09.
+- **DoD:** contrato C2 y OpenAPI documentados; pruebas Backend/Web, build Docker
+  y smoke completo login/sesión/refresh/logout registrados en `AlanHandoff.md`.
 
 ## Entorno de validación
 

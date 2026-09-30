@@ -70,6 +70,24 @@ nombres y roles mock. BE-005 debe crear un DTO/Mapper BFF explícito entre esta
 respuesta y el modelo Web, en vez de conectar la UI a la fixture o asumir que
 sus nombres (`role_id`, `user_name`, `status`) son API Backend.
 
+### Rutas BFF Web de BE-005
+
+Las rutas públicas de Next.js son una fachada del mismo origen; Spring Boot
+permanece en la red interna de Compose. Se aplican las cookies Staff `HttpOnly`,
+`SameSite=Lax`, host-only y `Secure` bajo HTTPS. Nunca se devuelven tokens al
+JavaScript del navegador.
+
+| Ruta BFF | Método | Resultado |
+| --- | --- | --- |
+| `/api/auth/staff/session` | `POST` | Reenvía username/contraseña solo al Backend, crea cookies Staff y devuelve `{ authenticated: true }`. |
+| `/api/auth/staff/session` | `GET` | Devuelve exclusivamente la sesión C2 actual. |
+| `/api/auth/staff/refresh` | `POST` | Reenvía la cookie `pms_staff_refresh`, rota ambos tokens y devuelve `{ refreshed: true }`. |
+| `/api/auth/staff/session` | `DELETE` | Revoca la sesión Staff y elimina solo sus cookies; responde `204`. |
+
+`pms_staff_access` tiene path `/` y vida corta; `pms_staff_refresh` tiene path
+`/api/auth/staff/refresh` y vida máxima de siete días. Estas cookies no se
+comparten con Guest ni habilitan acceso si la autorización Backend cambió.
+
 ## Cambios de acceso
 
 Un cambio posterior de rol, estado, contraseña o membership debe revocar las
