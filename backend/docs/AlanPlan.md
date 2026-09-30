@@ -85,12 +85,15 @@ dependencias; un perfil parcial incluye solo su módulo y sus dependencias.
 
 ### BE-004 — OAuth2/OIDC Google y BFF
 
-- **Estado:** PENDIENTE
+- **Estado:** COMPLETADA
 - **Owner:** Alan / BD1 con responsable Web.
-- **Dependencias:** BE-002; configuración Google, contrato BFF y política de
-  vinculación de reservas aprobados.
+- **Dependencias:** BE-002/BE-003; C3 aprobado en `10_GUEST_AUTH_CONTRACT_C3.md`.
 - **Alcance:** intercambio OAuth2/OIDC, identidad Guest local y JWT propios;
-  refresh transparente desde Next.js.
+  refresh transparente desde Next.js; el OTP histórico espera el módulo Reservations.
+- **Aceptación:** Google OIDC real, sesión `GUEST`, refresh rotativo y logout
+  fueron verificados localmente mediante Docker. El callback/dominio productivo,
+  remitente Resend y vínculo OTP dependiente de Reservations quedan como
+  seguimiento de despliegue e integración.
 
 ### BE-005 — Contratos OpenAPI e integración inicial
 

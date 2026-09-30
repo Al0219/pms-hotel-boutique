@@ -1,0 +1,70 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-guest-auth-004
+      author: alan
+      changes:
+        - createTable:
+            tableName: guest_accounts
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: email, type: varchar(320), constraints: { nullable: false, unique: true } }
+              - column: { name: email_verified_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: status, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: last_login_at, type: timestamptz }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: updated_at, type: timestamptz, constraints: { nullable: false } }
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE guest_accounts ADD CONSTRAINT ck_guest_accounts_status CHECK (status IN ('ACTIVE', 'DISABLED'))
+        - createTable:
+            tableName: guest_identities
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: guest_account_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_guest_identities_account, references: guest_accounts(id) } }
+              - column: { name: provider, type: varchar(32), constraints: { nullable: false } }
+              - column: { name: provider_subject, type: varchar(255), constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+        - addUniqueConstraint:
+            tableName: guest_identities
+            columnNames: provider, provider_subject
+            constraintName: uq_guest_identities_provider_subject
+        - createTable:
+            tableName: guest_auth_sessions
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: guest_account_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_guest_sessions_account, references: guest_accounts(id) } }
+              - column: { name: status, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: expires_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: revoked_at, type: timestamptz }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+        - createIndex: { tableName: guest_auth_sessions, indexName: ix_guest_sessions_account, columns: [ { column: { name: guest_account_id } } ] }
+        - createTable:
+            tableName: guest_refresh_tokens
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: session_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_guest_refresh_session, references: guest_auth_sessions(id) } }
+              - column: { name: token_hash, type: varchar(64), constraints: { nullable: false, unique: true } }
+              - column: { name: family_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: expires_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: revoked_at, type: timestamptz }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+        - createIndex: { tableName: guest_refresh_tokens, indexName: ix_guest_refresh_session, columns: [ { column: { name: session_id } } ] }
+        - createTable:
+            tableName: guest_oidc_transactions
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: state_hash, type: varchar(64), constraints: { nullable: false, unique: true } }
+              - column: { name: nonce, type: varchar(128), constraints: { nullable: false } }
+              - column: { name: pkce_verifier, type: varchar(128), constraints: { nullable: false } }
+              - column: { name: expires_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: used_at, type: timestamptz }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+        - createTable:
+            tableName: guest_auth_audit_events
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: event_type, type: varchar(96), constraints: { nullable: false } }
+              - column: { name: guest_account_id, type: uuid, constraints: { nullable: true, foreignKeyName: fk_guest_audit_account, references: guest_accounts(id) } }
+              - column: { name: session_id, type: uuid, constraints: { nullable: true, foreignKeyName: fk_guest_audit_session, references: guest_auth_sessions(id) } }
+              - column: { name: occurred_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: detail, type: varchar(255), constraints: { nullable: false } }

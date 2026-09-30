@@ -1,6 +1,7 @@
 package com.pms.hotelboutique.backend.infrastructure.security;
 
 import com.pms.hotelboutique.backend.modules.securityauth.infrastructure.security.StaffJwtAuthenticationFilter;
+import com.pms.hotelboutique.backend.modules.guestauth.infrastructure.security.GuestJwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -16,7 +17,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfiguration {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, StaffJwtAuthenticationFilter staffJwtAuthenticationFilter)
+    SecurityFilterChain securityFilterChain(HttpSecurity http, StaffJwtAuthenticationFilter staffJwtAuthenticationFilter, GuestJwtAuthenticationFilter guestJwtAuthenticationFilter)
             throws Exception {
         return http
             .csrf(AbstractHttpConfigurer::disable)
@@ -25,9 +26,10 @@ public class SecurityConfiguration {
                 (request, response, exception) -> response.sendError(401)))
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/actuator/health", "/actuator/health/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/v1/staff-auth/sessions", "/api/v1/staff-auth/refresh").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/staff-auth/sessions", "/api/v1/staff-auth/refresh", "/api/v1/guest-auth/google/start", "/api/v1/guest-auth/google/exchange", "/api/v1/guest-auth/refresh").permitAll()
                 .anyRequest().authenticated())
             .addFilterBefore(staffJwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(guestJwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .build();
     }
 }

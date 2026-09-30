@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { getPublicEnvironment } from "@/lib/env";
 import { HttpNetworkError } from "@/lib/http/errors";
 import { useGuestSession } from "./guest-session-provider";
 import styles from "./guest-access-page.module.css";
@@ -48,7 +49,7 @@ export function GuestAccessPage() {
     <div className={styles.content}>
       <h1 id="access-title">{step === "email" ? "Accede con tu correo" : step === "google" ? "Continuar con Google" : "Accede a tu cuenta"}</h1>
       <p>Consulta tus reservas, beneficios y preferencias. También puedes reservar sin crear una cuenta.</p>
-      <p>Acceso de demostración: no se envían correos ni se conecta con Google.</p>
+      <p>{getPublicEnvironment().useMockApi ? "Acceso de demostración: no se envían correos ni se conecta con Google." : "Tu cuenta se vincula de forma segura mediante Google."}</p>
       {step === "options" ? <div className={styles.card}>
         <h2>Elige cómo continuar</h2>
         <button className={styles.google} onClick={() => changeStep("google")} type="button"><span aria-hidden="true">G</span>Continuar con Google</button>
@@ -66,7 +67,7 @@ export function GuestAccessPage() {
         <button className={styles.primary} disabled={isPending} type="submit">{isPending ? "Accediendo…" : "Acceder con correo"}</button>
       </form> : <div className={styles.card}>
         <p>Continúa con la cuenta Google de demostración. Este método es opcional.</p>
-        <button className={styles.primary} disabled={isPending} onClick={() => void signIn({ method: "GOOGLE" })} type="button">{isPending ? "Accediendo…" : "Continuar retorno al PMS"}</button>
+        {getPublicEnvironment().useMockApi ? <button className={styles.primary} disabled={isPending} onClick={() => void signIn({ method: "GOOGLE" })} type="button">{isPending ? "Accediendo…" : "Continuar retorno al PMS"}</button> : <a className={styles.primary} href="/api/auth/guest/google">Continuar con Google</a>}
       </div>}
       {isPending && <p className={styles.status} role="status">Verificando acceso…</p>}
       {error && <p id="access-error" className={styles.status} role="alert">{errorMessage}</p>}

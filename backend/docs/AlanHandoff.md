@@ -125,3 +125,48 @@ BE-004 implementa Google OIDC, identidad Guest y BFF. BE-005 reemplazará la
 fixture Web Private-09 por un DTO/Mapper BFF basado en C2. El CRUD auditado de
 Staff y memberships queda como tarea administrativa posterior; deberá revocar
 sesiones cuando cambie el acceso.
+
+## BE-004 — Cierre
+
+- **Rama:** `feature/be-004-guest-oidc-bff`
+- **Estado:** COMPLETADO
+- **Contrato:** C3 aprobado en `10_GUEST_AUTH_CONTRACT_C3.md`.
+- **Alcance:** Google OIDC, GuestAccount/GuestIdentity, sesión Guest,
+  refresh rotativo y Route Handlers BFF con cookies host-only.
+- **Dependencia registrada:** el OTP de vinculación histórica se integra una
+  vez que Reservations publique la consulta de referencia/correo; BE-004 no
+  crea entidades de Reservation, Stay ni GuestProfile.
+
+
+### Avance BE-004
+
+- C3 está registrado y el Backend implementa la transacción Google OIDC con
+  `state`, `nonce`, PKCE, validación de token y `email_verified`.
+- GuestAccount, GuestIdentity, sesiones, refresh rotativo y JWT Guest son
+  estructuras separadas de Staff. Las rutas BFF Guest manejan cookies host-only
+  HttpOnly sin serializar tokens hacia JavaScript.
+- Resend se implementa como adaptador de infraestructura. La consulta y OTP de
+  reservas históricas esperan el puerto seguro del módulo Reservations.
+
+### Validación realizada
+
+- Maven/Temurin 21 y PostgreSQL 17: 7 pruebas exitosas.
+- PostgreSQL vacía aplicó cinco changesets, incluido `003-guest-auth-004`.
+- `npm run typecheck`, `npm run lint` y el build de imágenes Docker Backend/Web
+  fueron exitosos.
+- Prueba local real: Google OIDC con usuario externo de prueba creó sesión y
+  `GET /api/auth/guest/session` devolvió el correo validado y `context=GUEST`.
+  La redirección BFF usa `PMS_WEB_PUBLIC_URL`, por lo que no filtra la dirección
+  interna del contenedor.
+- Refresh real por BFF: `POST /api/auth/guest/refresh` devolvió `200` y
+  `refreshed=true`; el token de refresh se rotó.
+- Logout real por BFF: `DELETE /api/auth/guest/session` devolvió `204` y la
+  consulta posterior de sesión devolvió `401`. Se corrigió la respuesta BFF para
+  emitir `204 No Content` sin cuerpo.
+
+### Seguimiento de despliegue e integración
+
+- Registrar el callback y dominio definitivos en Google para producción.
+- Configurar dominio/remitente y API key de Resend para el OTP futuro.
+- Integrar el puerto de vínculo OTP cuando Reservations publique búsqueda segura
+  por referencia y correo, sin revelar existencia de reservas.
