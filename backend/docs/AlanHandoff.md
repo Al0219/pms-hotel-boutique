@@ -1,4 +1,32 @@
-# AlanHandoff — Backend Dev 1
+# AlanHandoff — Seguimiento Backend
+
+## BD2-001 — Fase 1 completada
+
+- **Rama:** `feature/bd2-foundation-contracts`.
+- **Owner:** BD2.
+- **Autorización:** plan de Fase 1 indicado por el usuario el 2026-09-30.
+- **Base:** esquema y seguridad existentes de BD1; no se recrea `properties`.
+- **Contrato:** `11_BD2_CORE_FOUNDATION_CONTRACT.md`.
+- **Estado:** COMPLETADA — aceptación y DoD local PASS, 2026-09-30.
+- **Entregado:** changeset `002-management-002`, valores/converters monetarios,
+  AvailabilityPort, rango local de noches y configuración de mock solo para tests.
+- **Validación:** PostgreSQL 17 y Maven/Temurin 21 aislados mediante
+  `compose.bd2-test.yaml`: `mvn -B verify` terminó con BUILD SUCCESS y código 0.
+  18 pruebas, cero fallos/errores/omitidas (7 existentes + 11 nuevas).
+- **Migraciones:** instalación vacía con seis changesets; actualización BD1
+  (cinco changesets) a BD2 (seis), seguida de reaplicación sin cambios. Property
+  inicial preservada; no se modificaron changesets previos.
+- **Restricciones verificadas:** referencias cruzadas entre propiedades, precios
+  negativos, códigos duplicados, períodos vacíos, liberación incompleta y borrado
+  de una Room con historial son rechazados por PostgreSQL.
+- **Dinero:** roundtrip de converters, escala de moneda, precisión decimal,
+  overflow y mezcla de monedas cubiertos. El mapeo de entidades será Fase 2.
+- **Artefacto:** JAR contiene AvailabilityPort, valores/converters y migración;
+  no contiene AvailabilityStubConfiguration ni el changelog base de pruebas.
+- **Revisión local:** scope y cambios inspeccionados; `git diff --check` PASS.
+  No se declara revisión externa, PR ni publicación a GitHub.
+- **Siguiente paso:** Fase 2, entidades y repositorios según el contrato de BD2.
+  ATS real, autorización de endpoints y consumo atómico con BD3 siguen pendientes.
 
 ## Foundation Backend — BE-001
 

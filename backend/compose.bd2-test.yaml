@@ -1,0 +1,31 @@
+# Isolated validation: no host ports, no application database or secrets.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: pms_bd2_test
+      POSTGRES_USER: pms_test
+      POSTGRES_PASSWORD: disposable-test-password
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pms_test -d pms_bd2_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  verify:
+    image: maven:3.9.11-eclipse-temurin-21
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - maven-cache:/root/.m2
+    environment:
+      PMS_DATABASE_URL: jdbc:postgresql://postgres:5432/pms_bd2_test
+      PMS_DATABASE_USERNAME: pms_test
+      PMS_DATABASE_PASSWORD: disposable-test-password
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["mvn", "-B", "--no-transfer-progress", "verify"]
+volumes:
+  maven-cache:

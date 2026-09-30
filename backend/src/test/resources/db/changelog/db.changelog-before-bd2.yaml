@@ -1,0 +1,6 @@
+# Exact pre-BD2 includes, used only to test upgrading an existing BD1 schema.
+databaseChangeLog:
+  - include:
+      file: db/changelog/002ServiceManagement/db.changelog.yaml
+  - include:
+      file: db/changelog/003ServiceSecurityAuth/db.changelog.yaml

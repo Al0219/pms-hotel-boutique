@@ -5,3 +5,7 @@ databaseChangeLog:
   - include:
       file: 003ServiceSecurityAuth/db.changelog.yaml
       relativeToChangelogFile: true
+  # Core inventory references Staff actors; run only after SecurityAuth.
+  - include:
+      file: 002ServiceManagement/002-core-inventory.yaml
+      relativeToChangelogFile: true
