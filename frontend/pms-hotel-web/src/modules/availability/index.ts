@@ -52,6 +52,10 @@ export {
 } from "./service/availability-matrix.service";
 
 export {
+  AvailabilityPage,
+} from "./components/availability-page";
+
+export {
   AvailabilityMatrixGrid,
   type AvailabilityMatrixGridProps,
 } from "./components/availability-matrix-grid";

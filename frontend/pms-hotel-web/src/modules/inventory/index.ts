@@ -30,6 +30,10 @@ export {
 } from "./service/sell-limit.service";
 
 export {
+  InventoryPage,
+} from "./components/inventory-page";
+
+export {
   SellLimitsManager,
   type SellLimitsManagerProps,
 } from "./components/sell-limits-manager";

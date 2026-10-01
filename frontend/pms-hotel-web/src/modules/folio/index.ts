@@ -59,6 +59,10 @@ export {
 } from "./service/folio.service";
 
 export {
+  FoliosPage,
+} from "./components/folios-page";
+
+export {
   FolioDetailCard,
 } from "./components/folio-detail-card";
 export type {

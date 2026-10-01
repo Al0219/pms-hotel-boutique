@@ -66,6 +66,10 @@ export {
 } from "./service/rate-restriction.service";
 
 export {
+  RatesPage,
+} from "./components/rates-page";
+
+export {
   RatePlanListCard,
   type RatePlanListCardProps,
 } from "./components/rate-plan-list-card";
