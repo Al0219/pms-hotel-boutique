@@ -1,0 +1,52 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-reservations-003
+      author: juan-bd3
+      changes:
+        - createTable:
+            tableName: reservation_stays
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: reservation_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_stays_reservation, references: reservations(id) } }
+              - column: { name: property_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_stays_property, references: properties(id) } }
+              - column: { name: room_type_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: room_id, type: uuid }
+              - column: { name: arrival, type: date, constraints: { nullable: false } }
+              - column: { name: departure, type: date, constraints: { nullable: false } }
+              - column: { name: status, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: updated_at, type: timestamptz, constraints: { nullable: false } }
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE reservation_stays ADD CONSTRAINT fk_stays_property_type FOREIGN KEY (property_id, room_type_id) REFERENCES room_types(property_id, id)
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE reservation_stays ADD CONSTRAINT fk_stays_property_room FOREIGN KEY (property_id, room_id) REFERENCES rooms(property_id, id)
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE reservation_stays ADD CONSTRAINT ck_reservation_stays_status CHECK (status IN ('RESERVED', 'IN_HOUSE', 'CHECKED_OUT', 'CANCELLED', 'NO_SHOW'))
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE reservation_stays ADD CONSTRAINT ck_reservation_stays_period CHECK (arrival < departure)
+        - createIndex: { tableName: reservation_stays, indexName: ix_stays_reservation, columns: [ { column: { name: reservation_id } } ] }
+        - createIndex: { tableName: reservation_stays, indexName: ix_stays_property_type, columns: [ { column: { name: property_id } }, { column: { name: room_type_id } } ] }
+        - createTable:
+            tableName: reservation_guests
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: reservation_stay_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_stay_guests_stay, references: reservation_stays(id) } }
+              - column: { name: guest_profile_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_stay_guests_profile, references: guest_profiles(id) } }
+              - column: { name: is_primary, type: boolean, constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+        - addUniqueConstraint:
+            tableName: reservation_guests
+            columnNames: reservation_stay_id, guest_profile_id
+            constraintName: uq_stay_guests_stay_profile
+        - sql:
+            dbms: postgresql
+            sql: CREATE UNIQUE INDEX uq_stay_guests_primary ON reservation_guests(reservation_stay_id) WHERE is_primary
+        - createIndex: { tableName: reservation_guests, indexName: ix_stay_guests_profile, columns: [ { column: { name: guest_profile_id } } ] }
+      rollback:
+        - sql:
+            dbms: postgresql
+            sql: DROP TABLE reservation_guests; DROP TABLE reservation_stays

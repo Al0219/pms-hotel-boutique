@@ -1,0 +1,33 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-reservations-001
+      author: juan-bd3
+      changes:
+        - createTable:
+            tableName: guest_profiles
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: guest_account_id, type: uuid, constraints: { nullable: true, foreignKeyName: fk_guest_profiles_account, references: guest_accounts(id) } }
+              - column: { name: property_id, type: uuid, constraints: { nullable: true, foreignKeyName: fk_guest_profiles_property, references: properties(id) } }
+              - column: { name: first_name, type: varchar(80), constraints: { nullable: false } }
+              - column: { name: last_name, type: varchar(80), constraints: { nullable: false } }
+              - column: { name: email, type: varchar(320) }
+              - column: { name: phone, type: varchar(32) }
+              - column: { name: document_type, type: varchar(16) }
+              - column: { name: document_number, type: varchar(64) }
+              - column: { name: preferred_language, type: varchar(8) }
+              - column: { name: status, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: updated_at, type: timestamptz, constraints: { nullable: false } }
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE guest_profiles ADD CONSTRAINT ck_guest_profiles_status CHECK (status IN ('ACTIVE', 'INACTIVE'))
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE guest_profiles ADD CONSTRAINT ck_guest_profiles_names CHECK (btrim(first_name) <> '' AND btrim(last_name) <> '')
+        - createIndex: { tableName: guest_profiles, indexName: ix_guest_profiles_account, columns: [ { column: { name: guest_account_id } } ] }
+        - createIndex: { tableName: guest_profiles, indexName: ix_guest_profiles_property, columns: [ { column: { name: property_id } } ] }
+      rollback:
+        - sql:
+            dbms: postgresql
+            sql: DROP TABLE guest_profiles

@@ -1,0 +1,53 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-reservations-005
+      author: juan-bd3
+      changes:
+        - createTable:
+            tableName: reservation_audit_events
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: occurred_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: actor_type, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: actor_id, type: uuid }
+              - column: { name: action, type: varchar(64), constraints: { nullable: false } }
+              - column: { name: entity_type, type: varchar(64), constraints: { nullable: false } }
+              - column: { name: entity_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: property_id, type: uuid, constraints: { nullable: true, foreignKeyName: fk_audit_property, references: properties(id) } }
+              - column: { name: before_state, type: text }
+              - column: { name: after_state, type: text }
+              - column: { name: reason, type: varchar(500) }
+              - column: { name: correlation_id, type: uuid }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE reservation_audit_events ADD CONSTRAINT ck_audit_actor CHECK (actor_type IN ('STAFF', 'GUEST', 'SYSTEM'))
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE reservation_audit_events ADD CONSTRAINT ck_audit_action CHECK (btrim(action) <> '')
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE reservation_audit_events ADD CONSTRAINT ck_audit_entity CHECK (btrim(entity_type) <> '')
+        - createIndex: { tableName: reservation_audit_events, indexName: ix_audit_entity, columns: [ { column: { name: entity_type } }, { column: { name: entity_id } } ] }
+        - createIndex: { tableName: reservation_audit_events, indexName: ix_audit_occurred, columns: [ { column: { name: occurred_at } } ] }
+        - createIndex: { tableName: reservation_audit_events, indexName: ix_audit_correlation, columns: [ { column: { name: correlation_id } } ] }
+        # Append-only enforcement at the database level: audit history can
+        # never be edited to "fix" the past; corrections are new events.
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              CREATE OR REPLACE FUNCTION bd3_reject_audit_mutation() RETURNS trigger AS $$
+              BEGIN
+                RAISE EXCEPTION 'reservation_audit_events is append-only (tried %)', TG_OP;
+              END; $$ LANGUAGE plpgsql;
+        - sql:
+            dbms: postgresql
+            sql: CREATE TRIGGER trg_audit_append_only BEFORE UPDATE OR DELETE ON reservation_audit_events FOR EACH ROW EXECUTE FUNCTION bd3_reject_audit_mutation();
+      rollback:
+        - sql:
+            dbms: postgresql
+            sql: |
+              DROP TRIGGER IF EXISTS trg_audit_append_only ON reservation_audit_events;
+              DROP FUNCTION IF EXISTS bd3_reject_audit_mutation();
+              DROP TABLE reservation_audit_events;

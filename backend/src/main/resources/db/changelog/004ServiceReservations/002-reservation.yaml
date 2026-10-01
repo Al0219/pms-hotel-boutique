@@ -1,0 +1,34 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-reservations-002
+      author: juan-bd3
+      changes:
+        - createTable:
+            tableName: reservations
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: property_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_reservations_property, references: properties(id) } }
+              - column: { name: booking_guest_id, type: uuid, constraints: { nullable: true, foreignKeyName: fk_reservations_booking_guest, references: guest_profiles(id) } }
+              - column: { name: confirmation_code, type: varchar(16), constraints: { nullable: false, unique: true } }
+              - column: { name: status, type: varchar(32), constraints: { nullable: false } }
+              - column: { name: currency, type: char(3), constraints: { nullable: false } }
+              - column: { name: source_channel, type: varchar(64), constraints: { nullable: false } }
+              - column: { name: source_reference, type: varchar(128) }
+              - column: { name: notes, type: varchar(1000) }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: updated_at, type: timestamptz, constraints: { nullable: false } }
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE reservations ADD CONSTRAINT ck_reservations_status CHECK (status IN ('PENDING', 'CONFIRMED', 'CANCELLED'))
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE reservations ADD CONSTRAINT ck_reservations_currency CHECK (currency ~ '^[A-Z]{3}$')
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE reservations ADD CONSTRAINT ck_reservations_channel CHECK (btrim(source_channel) <> '')
+        - createIndex: { tableName: reservations, indexName: ix_reservations_property, columns: [ { column: { name: property_id } } ] }
+        - createIndex: { tableName: reservations, indexName: ix_reservations_booking_guest, columns: [ { column: { name: booking_guest_id } } ] }
+      rollback:
+        - sql:
+            dbms: postgresql
+            sql: DROP TABLE reservations
