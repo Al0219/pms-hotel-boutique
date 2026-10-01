@@ -31,3 +31,11 @@ export interface SellLimitListResponseDto {
   items: SellLimitDto[];
   total_count: number;
 }
+
+export interface SellLimitListQueryDto {
+  property_id: string;
+  start_date?: string;
+  end_date?: string;
+  room_type_id?: string;
+}
+

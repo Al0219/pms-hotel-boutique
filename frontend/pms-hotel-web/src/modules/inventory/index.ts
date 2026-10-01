@@ -7,6 +7,7 @@ export type {
   SellLimitDto,
   UpdateSellLimitRequestDto,
   SellLimitListResponseDto,
+  SellLimitListQueryDto,
 } from "./dtos/sell-limit.dto";
 
 export type {
@@ -19,14 +20,13 @@ export {
 } from "./model/sell-limit";
 
 export {
-  toDomainSellLimit,
-  toDomainSellLimitList,
-  toDtoUpdateSellLimit,
-} from "./mappers/sell-limit.mapper";
+  useSellLimits,
+  type UseSellLimitsResult,
+} from "./hooks/use-sell-limits";
 
 export {
-  fetchSellLimits,
-  updateSellLimit,
+  fetchSellLimitsDto,
+  updateSellLimitDto,
 } from "./service/sell-limit.service";
 
 export {

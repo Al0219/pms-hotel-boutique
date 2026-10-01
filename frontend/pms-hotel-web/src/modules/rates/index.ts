@@ -51,13 +51,18 @@ export {
 } from "./mappers/rate-restriction.mapper";
 
 export {
+  useRateRestrictions,
+  type UseRateRestrictionsResult,
+} from "./hooks/use-rate-restrictions";
+
+export {
   fetchRatePlanByIdDto,
   fetchRatePlansDto,
 } from "./service/rate-plan.service";
 
 export {
-  fetchRateRestrictions,
-  batchUpdateRateRestrictions,
+  fetchRateRestrictionsDto,
+  batchUpdateRateRestrictionsDto,
 } from "./service/rate-restriction.service";
 
 export {

@@ -7,6 +7,7 @@ import type { PaymentGuaranteeRequest } from "../model/payment";
 import {
   mapPaymentGuaranteeDtoToDomain,
   mapPaymentGuaranteeRequestToDto,
+  mapPaymentListFiltersToDto,
 } from "./payment.mapper";
 
 describe("Payment Mapper", () => {
@@ -108,4 +109,21 @@ describe("Payment Mapper", () => {
       ).toThrow(DomainMappingError);
     });
   });
+
+  describe("mapPaymentListFiltersToDto", () => {
+    it("maps domain filters to DTO correctly", () => {
+      const dto = mapPaymentListFiltersToDto({
+        propertyId: "prop_01",
+        folioId: "fol_101",
+        status: "AUTHORIZED",
+        paymentMethod: "CREDIT_CARD",
+      });
+
+      expect(dto.property_id).toBe("prop_01");
+      expect(dto.folio_id).toBe("fol_101");
+      expect(dto.status).toBe("AUTHORIZED");
+      expect(dto.payment_method).toBe("CREDIT_CARD");
+    });
+  });
 });
+
