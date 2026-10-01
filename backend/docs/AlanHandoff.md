@@ -1,10 +1,10 @@
 # AlanHandoff — Seguimiento Backend
 
-## BD2-003 — Fase 3 en progreso
+## BD2-003 — Fase 3 completada (entrega BD2)
 
 - **Rama:** `feature/bd2-availability-engine`, basada en `origin/main` `8e67b7d`.
-- **Estado:** EN_QA; implementación, pruebas y revisión local completadas,
-  commit/push de BD2 pendientes.
+- **Commit/push:** `ec8c68f` publicado en `origin/feature/bd2-availability-engine`.
+- **Estado:** COMPLETADA para entrega BD2; lista para PR/revisión del equipo.
 - **Entregado:** `AvailabilityService` calcula el mínimo de unidades vendibles
   por noche como `max(0, físico - OOO - ReservationStay consumidor)`. El query
   usa IDs explícitos de propiedad/tipo, cuenta habitaciones OOO distintas y
@@ -26,7 +26,7 @@
   mínimo/no negativo; y límites UTC a través de DST.
 - **Dependencia de integración:** el query requiere las tablas BD3 `reservations`
   y `reservation_stays`, presentes en `origin/feature/bd3-foundation`, todavía
-  no integradas a `main`.
+  no integradas a `main`; el ATS entra en funcionamiento cuando BD3 se integre.
 - **Límite:** el precheck no bloquea ni serializa admisiones concurrentes; la
   garantía de sobreventa cero requiere el trabajo transaccional posterior.
 

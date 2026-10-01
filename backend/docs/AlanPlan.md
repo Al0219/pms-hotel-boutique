@@ -148,9 +148,10 @@ dependencias; un perfil parcial incluye solo su módulo y sus dependencias.
 
 ### BD2-003 — Fase 3: motor ATS MVP
 
-- **Estado:** EN_QA — implementación local y acceptance/DoD PASS; commit/push pendientes.
+- **Estado:** COMPLETADA — implementación, acceptance y DoD local PASS.
 - **Owner:** BD2.
 - **Rama:** `feature/bd2-availability-engine`, desde `origin/main` en `8e67b7d`.
+- **Commit/push:** `ec8c68f` publicado en `origin/feature/bd2-availability-engine`.
 - **Dependencias:** BD2-002 integrada en PR #61; contrato y ciclo de vida de
   `ReservationStay` revisados en `origin/feature/bd3-foundation` (aún no integrada).
 - **DoR:** Fase 3 autorizada por el usuario. El contrato BD2 existente define
@@ -167,7 +168,7 @@ dependencias; un perfil parcial incluye solo su módulo y sus dependencias.
   puerto exige que el llamante haya autorizado previamente la propiedad. La
   capa HTTP debe resolver y comprobar `PROPERTY`/`ALL_PROPERTIES` antes de
   invocarlo; no se ejecutan consultas globales ni filtrado posterior.
-- **DoD local:** suite completa PostgreSQL + build PASS, test del query SQL y
+- **DoD:** suite completa PostgreSQL + build PASS, test del query SQL y
   límites UTC/DST, diff revisado. El runtime necesita las tablas de BD3 al
   invocar el cálculo; éstas están en la rama BD3 aún no integrada. El precheck
   ATS no hace admisión atómica y no garantiza por sí solo cero sobreventa concurrente.
