@@ -1,5 +1,27 @@
 # AlanHandoff — Seguimiento Backend
 
+## BD2-002 — Fase 2 completada
+
+- **Rama:** `feature/bd2-entities-repositories`.
+- **Base:** `origin/main` en `a59a235`; Fase 1 integrada mediante PR #60.
+- **Estado:** COMPLETADA — aceptación y DoD local PASS, 2026-10-01.
+- **Archivos:** dominio y persistencia de `modules/inventory`, pruebas JPA,
+  contrato BD2 y estos documentos de seguimiento.
+- **Entregado:** entidades JPA Property, RoomType, Room, RatePlan y
+  OutOfOrderRecord; repositorios property-scoped; conteo de habitaciones OOO
+  distintas por noche local.
+- **Validación:** `docker compose -p pms-bd2-phase1 -f
+  backend/compose.bd2-test.yaml run --rm --no-deps verify mvn -B
+  --no-transfer-progress verify` — BUILD SUCCESS en PostgreSQL 17/Temurin 21;
+  19 pruebas, cero fallos/errores/omitidas. Validó migración, Hibernate,
+  roundtrip JPA de monedas/fechas, aislamiento de scope, exclusión de OOS y
+  registros liberados, y solapamientos OOO contados una vez por Room/noche.
+- **Artefacto:** JAR empaquetado con los cinco tipos de dominio y sus cinco
+  repositorios; no se añadieron cambios a Liquibase.
+- **Revisión local:** `git diff --check` PASS. Sin PR ni publicación remota.
+- **Siguiente paso:** Fase 3 (motor ATS) requiere la coordinación de consumo por
+  ReservationStay con BD3 y control atómico antes de habilitar overbooking cero.
+
 ## BD2-001 — Fase 1 completada
 
 - **Rama:** `feature/bd2-foundation-contracts`.
