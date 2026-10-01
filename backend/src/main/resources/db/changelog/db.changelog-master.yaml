@@ -14,3 +14,8 @@ databaseChangeLog:
   - include:
       file: 004ServiceReservations/db.changelog.yaml
       relativeToChangelogFile: true
+  # BD3 operations (housekeeping, maintenance). References properties, rooms
+  # and staff actors; runs after reservations.
+  - include:
+      file: 005ServiceOperations/db.changelog.yaml
+      relativeToChangelogFile: true
