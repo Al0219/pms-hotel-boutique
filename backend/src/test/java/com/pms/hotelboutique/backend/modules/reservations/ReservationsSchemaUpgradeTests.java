@@ -40,17 +40,18 @@ class ReservationsSchemaUpgradeTests {
                 migrate(schema, "classpath:db/changelog/db.changelog-master.yaml");
                 try (var result = sql.executeQuery("SELECT count(*) FROM " + schema + ".databasechangelog")) {
                     assertTrue(result.next());
-                    assertEquals(12, result.getInt(1));
+                    assertEquals(13, result.getInt(1));
                 }
                 // Re-applying must be a no-op, including all pre-existing checksums.
                 migrate(schema, "classpath:db/changelog/db.changelog-master.yaml");
                 try (var result = sql.executeQuery("SELECT count(*) FROM " + schema + ".databasechangelog")) {
                     assertTrue(result.next());
-                    assertEquals(12, result.getInt(1));
+                    assertEquals(13, result.getInt(1));
                 }
                 for (String table : new String[]{"guest_profiles", "reservations", "reservation_stays",
                         "reservation_guests", "folios", "folio_movements", "reservation_audit_events",
-                        "hk_room_states", "maintenance_orders"}) {
+                        "hk_room_states", "maintenance_orders", "service_requests",
+                        "service_messages", "hk_discrepancies"}) {
                     try (var result = sql.executeQuery(
                             "SELECT count(*) FROM " + schema + "." + table)) {
                         assertTrue(result.next());

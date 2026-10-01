@@ -2,3 +2,6 @@ databaseChangeLog:
   - include:
       file: 001-housekeeping-maintenance.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 002-service-requests.yaml
+      relativeToChangelogFile: true
