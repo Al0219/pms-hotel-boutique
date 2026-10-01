@@ -62,6 +62,10 @@ export {
 } from "./service/payment.service";
 
 export {
+  PaymentsPage,
+} from "./components/payments-page";
+
+export {
   PaymentListCard,
   type PaymentListCardProps,
 } from "./components/payment-list-card";
