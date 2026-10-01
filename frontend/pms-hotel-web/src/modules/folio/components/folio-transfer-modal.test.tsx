@@ -6,13 +6,13 @@ import type { FolioCharge } from "../model/folio";
 describe("FolioTransferModal Component", () => {
   const mockCharge: FolioCharge = {
     chargeId: "chg_02",
-    folioId: "fol_guest_101",
     description: "Servicio Room Service Cena",
-    category: "ROOM_SERVICE",
+    category: "RESTAURANT",
     amount: 85.5,
     currency: "USD",
     postedAt: new Date("2026-10-01T20:00:00Z"),
-    status: "POSTED",
+    postedBy: "staff_roomservice",
+    isVoided: false,
   };
 
   it("renders charge information and transfer fields", () => {

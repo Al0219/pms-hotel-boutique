@@ -6,6 +6,11 @@ import type {
   UpdateSellLimitRequestDto,
   SellLimitDto,
 } from "../dtos/sell-limit.dto";
+import type { SellLimit, UpdateSellLimitParams } from "../model/sell-limit";
+import {
+  toDomainSellLimit,
+  toDtoUpdateSellLimit,
+} from "../mappers/sell-limit.mapper";
 
 export async function fetchSellLimitsDto(
   query: SellLimitListQueryDto,
@@ -36,7 +41,35 @@ export async function updateSellLimitDto(
   return httpRequest<SellLimitDto>({
     path: "/api/v1/private/inventory/sell-limits",
     method: "POST",
-    body: payload,
+    json: payload,
     signal,
   });
+}
+
+export async function fetchSellLimits(
+  propertyId: string,
+  startDate?: string,
+  endDate?: string,
+  roomTypeId?: string,
+  signal?: AbortSignal
+): Promise<SellLimit[]> {
+  const response = await fetchSellLimitsDto(
+    {
+      property_id: propertyId,
+      start_date: startDate,
+      end_date: endDate,
+      room_type_id: roomTypeId,
+    },
+    signal
+  );
+  return response.items.map(toDomainSellLimit);
+}
+
+export async function updateSellLimit(
+  params: UpdateSellLimitParams,
+  signal?: AbortSignal
+): Promise<SellLimit> {
+  const dto = toDtoUpdateSellLimit(params);
+  const result = await updateSellLimitDto(dto, signal);
+  return toDomainSellLimit(result);
 }

@@ -95,12 +95,10 @@ describe("rate-restriction.mapper", () => {
   it("throws DomainMappingError when DTO is invalid or incomplete", () => {
     // @ts-expect-error test invalid payload
     expect(() => toDomainRateRestriction(null)).toThrow();
-    // @ts-expect-error test incomplete payload
     expect(() => toDomainRateRestriction({ restriction_id: "" } as RateRestrictionDto)).toThrow();
   });
 
   it("throws DomainMappingError when query filter is missing required fields", () => {
-    // @ts-expect-error test incomplete filter
     expect(() => toDtoRateRestrictionQuery({ propertyId: "" } as unknown as Parameters<typeof toDtoRateRestrictionQuery>[0])).toThrow();
   });
 });

@@ -6,13 +6,13 @@ import type { FolioCharge } from "../model/folio";
 describe("FolioSplitModal Component", () => {
   const mockCharge: FolioCharge = {
     chargeId: "chg_01",
-    folioId: "fol_guest_101",
     description: "Noche Deluxe Suite",
-    category: "ROOM",
+    category: "ROOM_NIGHT",
     amount: 200,
     currency: "USD",
     postedAt: new Date("2026-10-01T10:00:00Z"),
-    status: "POSTED",
+    postedBy: "staff_frontdesk",
+    isVoided: false,
   };
 
   it("renders charge description and amount", () => {

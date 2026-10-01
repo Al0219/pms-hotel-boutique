@@ -244,6 +244,9 @@ function handleGetFolioById({ params }: { params: Record<string, string | readon
   if (folioId === "error_folio") {
     return HttpResponse.json({ error: "Folio Internal Error" }, { status: 500 });
   }
+  if (folioId === "fol_unauthorized") {
+    return HttpResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   if (folioId === "missing_folio") {
     return HttpResponse.json({ error: "Folio Not Found" }, { status: 404 });
   }

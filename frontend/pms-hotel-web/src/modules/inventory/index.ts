@@ -27,6 +27,8 @@ export {
 export {
   fetchSellLimitsDto,
   updateSellLimitDto,
+  fetchSellLimits,
+  updateSellLimit,
 } from "./service/sell-limit.service";
 
 export {
