@@ -19,3 +19,8 @@ databaseChangeLog:
   - include:
       file: 005ServiceOperations/db.changelog.yaml
       relativeToChangelogFile: true
+  # BD3 commercial B2B base (companies, agencies). Property-scoped; runs
+  # after operations. No links to reservations/folios yet (F13/F14).
+  - include:
+      file: 006ServiceCommercial/db.changelog.yaml
+      relativeToChangelogFile: true

@@ -1,0 +1,69 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-commercial-001
+      author: juan-bd3
+      changes:
+        - createTable:
+            tableName: companies
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: property_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_companies_property, references: properties(id) } }
+              - column: { name: code, type: varchar(64), constraints: { nullable: false } }
+              - column: { name: name, type: varchar(160), constraints: { nullable: false } }
+              - column: { name: tax_id, type: varchar(64) }
+              - column: { name: email, type: varchar(320) }
+              - column: { name: phone, type: varchar(32) }
+              - column: { name: status, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: updated_at, type: timestamptz, constraints: { nullable: false } }
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE companies ADD CONSTRAINT ck_companies_status CHECK (status IN ('ACTIVE', 'INACTIVE'))
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE companies ADD CONSTRAINT ck_companies_code CHECK (btrim(code) <> '')
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE companies ADD CONSTRAINT ck_companies_name CHECK (btrim(name) <> '')
+        - addUniqueConstraint:
+            tableName: companies
+            columnNames: property_id, code
+            constraintName: uq_companies_property_code
+        - createIndex: { tableName: companies, indexName: ix_companies_property, columns: [ { column: { name: property_id } } ] }
+        - createTable:
+            tableName: agencies
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: property_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_agencies_property, references: properties(id) } }
+              - column: { name: code, type: varchar(64), constraints: { nullable: false } }
+              - column: { name: name, type: varchar(160), constraints: { nullable: false } }
+              - column: { name: commission_model, type: varchar(16) }
+              - column: { name: email, type: varchar(320) }
+              - column: { name: phone, type: varchar(32) }
+              - column: { name: status, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: updated_at, type: timestamptz, constraints: { nullable: false } }
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE agencies ADD CONSTRAINT ck_agencies_status CHECK (status IN ('ACTIVE', 'INACTIVE'))
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE agencies ADD CONSTRAINT ck_agencies_code CHECK (btrim(code) <> '')
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE agencies ADD CONSTRAINT ck_agencies_name CHECK (btrim(name) <> '')
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE agencies ADD CONSTRAINT ck_agencies_commission CHECK (commission_model IS NULL OR commission_model IN ('PERCENT', 'FIXED'))
+        - addUniqueConstraint:
+            tableName: agencies
+            columnNames: property_id, code
+            constraintName: uq_agencies_property_code
+        - createIndex: { tableName: agencies, indexName: ix_agencies_property, columns: [ { column: { name: property_id } } ] }
+      rollback:
+        - sql:
+            dbms: postgresql
+            sql: DROP TABLE agencies
+        - sql:
+            dbms: postgresql
+            sql: DROP TABLE companies
