@@ -146,8 +146,60 @@ dependencias; un perfil parcial incluye solo su módulo y sus dependencias.
 - **Fuera de alcance:** servicios CRUD, endpoints, disponibilidad ATS real, reservas,
   cambios de permisos y flujo de liberación/auditoría OOO/OOS.
 
-Fases siguientes: motor ATS con integración BD3; APIs y scope;
-integración y concurrencia. Sus contratos y DoR se concretarán antes de implementarlas.
+### BD2-003 — Fase 3: motor ATS MVP
+
+- **Estado:** COMPLETADA — implementación, acceptance y DoD local PASS.
+- **Owner:** BD2.
+- **Rama:** `feature/bd2-availability-engine`, desde `origin/main` en `8e67b7d`.
+- **Commit/push:** `ec8c68f` publicado en `origin/feature/bd2-availability-engine`.
+- **Dependencias:** BD2-002 integrada en PR #61; contrato y ciclo de vida de
+  `ReservationStay` revisados en `origin/feature/bd3-foundation` (aún no integrada).
+- **DoR:** Fase 3 autorizada por el usuario. El contrato BD2 existente define
+  mínimo de ATS por noche, `[arrival, departure)`, OOO descuenta y OOS no;
+  el ciclo de vida de ReservationStay fue verificado en la rama BD3.
+- **Entregado:** `AvailabilityService` devuelve el mínimo nocturno de físico -
+  OOO - ReservationStay consumidor; `[arrival, departure)` local; fechas
+  convertibles a límites UTC con `ZoneId`.
+- **Estados de consumo:** `RESERVED`/`IN_HOUSE` consumen; `CANCELLED`,
+  `NO_SHOW` y `CHECKED_OUT` liberan. El query excluye además el padre
+  `Reservation` en estado `CANCELLED`, pues BD3 deliberadamente no propaga la
+  cancelación a las estancias.
+- **Scope:** el query de ATS siempre filtra por el `propertyId` solicitado y el
+  puerto exige que el llamante haya autorizado previamente la propiedad. La
+  capa HTTP debe resolver y comprobar `PROPERTY`/`ALL_PROPERTIES` antes de
+  invocarlo; no se ejecutan consultas globales ni filtrado posterior.
+- **DoD:** suite completa PostgreSQL + build PASS, test del query SQL y
+  límites UTC/DST, diff revisado. El runtime necesita las tablas de BD3 al
+  invocar el cálculo; éstas están en la rama BD3 aún no integrada. El precheck
+  ATS no hace admisión atómica y no garantiza por sí solo cero sobreventa concurrente.
+
+Fases siguientes: exponer ATS por API solo después de confirmar el contrato
+externo y autorización; integración y concurrencia tras acordar la admisión atómica.
+
+### BD2-CI-001 — Corrección del test de upgrade de inventario
+
+- **Estado:** EN_QA; corrección BD2 lista para revisión, integración pendiente de BD3.
+- **Owner:** BD2.
+- **Rama:** `feature/bd2-availability-engine`; corrección publicada en `277390d`.
+- **DoR:** investigación y corrección de CI autorizadas por el usuario;
+  mantener rama, sin merge/rebase y sin deshabilitar tests.
+- **Alcance:** comparar upgrade con instalación limpia vigente, verificar el
+  changeset de inventario y conservar validaciones de idempotencia/Property.
+- **DoD:** `./mvnw -B verify` con Java 21/PostgreSQL 17, revisión de diff y
+  seguimiento de la dependencia de integración en `AlanHandoff.md`.
+
+### BD2-004 — API Staff de disponibilidad (Fase 4)
+
+- **Estado:** COMPLETADA para entrega BD2; publicación autorizada, revisión del PR pendiente. Owner BD2.
+- **Rama:** `feature/bd2-availability-api`, dependiente de BD2 Fase 3 en `277390d`.
+- **DoR:** Fase 4 y uso de servicios BD1 disponibles autorizados; contrato en
+  `12_BD2_AVAILABILITY_API_CONTRACT.md`; permisos existentes C2 y scope explícito.
+- **Alcance:** controlador/DTO, cadena Staff limitada a disponibilidad, guard de
+  método con sesión/permiso/property scope, errores y OpenAPI. Sin cambios BD3.
+- **DoD:** verify completo y pruebas HTTP de JWT Staff/Guest, sesión revocada,
+  permisos, aislamiento de propiedad, validación de fechas, ATS y documentación.
+- **Validación:** `./mvnw -B verify` PASS en Java 21/PostgreSQL 17;
+  36 pruebas, cero fallos/errores/omitidas. Integración final dependiente de BD3.
 
 ## Entorno de validación
 

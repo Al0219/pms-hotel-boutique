@@ -1,5 +1,69 @@
 # AlanHandoff — Seguimiento Backend
 
+## BD2-004 — API Staff de disponibilidad (Fase 4)
+
+- **Rama:** `feature/bd2-availability-api`, dependiente de BD2 Fase 3 en `277390d`.
+- **Estado:** COMPLETADA para entrega BD2; publicación autorizada por el usuario.
+- **Contrato:** `12_BD2_AVAILABILITY_API_CONTRACT.md`; consulta Staff por
+  property/room type y fechas locales, mínimo ATS, sin precios ni reserva.
+- **Seguridad:** servicios JWT/sesión/permiso/scope C2 reutilizados; cadena BD2
+  limitada a la ruta de disponibilidad y autorización por método. No se cambia BD1.
+- **Dependencia:** las tablas BD3 ya están en `origin/main` (`7c060c9`), pero
+  todavía no forman parte de esta rama dependiente; sus correcciones de tests
+  permanecen fuera de esta rama.
+- **QA:** `./mvnw -B verify` BUILD SUCCESS con Java 21, PostgreSQL 17 y Maven
+  3.9.16 del wrapper; 36 pruebas, cero fallos/errores/omitidas. Incluye 11 pruebas
+  HTTP con JWT firmado, separación Guest/Staff, sesión revocada, permisos vivos,
+  scope antes de ATS, cero unidades, errores 400/404 y schemas OpenAPI.
+  El puerto ATS se sustituye solo en el contexto de pruebas HTTP; el query SQL
+  real se mantiene cubierto por las pruebas de Fase 3. No sustituye Fase 5.
+- **Siguiente paso:** PR de Fase 4 dependiente de Fase 3; iniciar Fase 5 con
+  validación aislada contra `origin/main` y revalidar cuando BD3 ajuste sus tests.
+
+## BD2-CI-001 — Entrega de corrección BD2
+
+- **Rama:** `feature/bd2-availability-engine`; corrección publicada en `277390d`.
+  Fase 3 ya publicada en `ec8c68f` y `99fe5a0`.
+- **Corrección:** validar upgrade contra el total del master instalado en limpio;
+  comprobar el changeset `002-management-002` y conservar idempotencia/Property.
+- **Validación:** `./mvnw -B verify` PASS, 25 pruebas, cero fallos/errores/omitidas;
+  Java 21, PostgreSQL 17 y Maven 3.9.16 del wrapper. Diff revisado.
+- **Dependencia:** BD3 debe ajustar sus contextos de pruebas al motor ATS real;
+  la referencia combinada del PR `a7b9b14` falla en sus dos pruebas de booking.
+- **Retomar:** cuando BD3 integre sus correcciones, revalidar el PR BD2. Tras
+  integrar BD2, iniciar la siguiente tarea desde `origin/main` actualizado.
+  Pendientes de BD2: Fase 4 (API/contrato/scope) y Fase 5 (integración transaccional).
+
+## BD2-003 — Fase 3 completada (entrega BD2)
+
+- **Rama:** `feature/bd2-availability-engine`, basada en `origin/main` `8e67b7d`.
+- **Commit/push:** `ec8c68f` publicado en `origin/feature/bd2-availability-engine`.
+- **Estado:** COMPLETADA para entrega BD2; lista para PR/revisión del equipo.
+- **Entregado:** `AvailabilityService` calcula el mínimo de unidades vendibles
+  por noche como `max(0, físico - OOO - ReservationStay consumidor)`. El query
+  usa IDs explícitos de propiedad/tipo, cuenta habitaciones OOO distintas y
+  excluye Reservation padre cancelada.
+- **Consumo BD3 verificado en** `origin/feature/bd3-foundation` (`d1cb2b7`):
+  `RESERVED`/`IN_HOUSE` consumen; `CANCELLED`/`NO_SHOW`/`CHECKED_OUT` liberan.
+  Cancelar Reservation no cascada a stays; el `EXISTS` contra el padre cubre
+  deliberadamente ese caso. BD3 ya tiene tests de ciclo de vida para esos estados.
+- **Entregado:** `PropertyStayTime` y `UtcStayInstantRange` convierten límites
+  locales `[arrival, departure)` a UTC con `ZoneId`, incluyendo cambios DST.
+- **Scope:** SQL limitado por `propertyId`; de acuerdo con el contrato existente,
+  la capa de aplicación/HTTP debe autorizar la propiedad antes de llamar al puerto.
+  No se agrega autenticación al query interno.
+- **Validación:** `docker compose -p pms-bd2-phase1 -f
+  backend/compose.bd2-test.yaml up --abort-on-container-exit --exit-code-from
+  verify` — BUILD SUCCESS en PostgreSQL 17/Temurin 21; 25 pruebas, cero
+  fallos/errores/omitidas. Incluye prueba SQL con estados consumidores,
+  fechas `[arrival, departure)` y Reservation padre cancelada; ATS por
+  mínimo/no negativo; y límites UTC a través de DST.
+- **Dependencia de integración:** el query requiere las tablas BD3 `reservations`
+  y `reservation_stays`, presentes en `origin/feature/bd3-foundation`, todavía
+  no integradas a `main`; el ATS entra en funcionamiento cuando BD3 se integre.
+- **Límite:** el precheck no bloquea ni serializa admisiones concurrentes; la
+  garantía de sobreventa cero requiere el trabajo transaccional posterior.
+
 ## BD2-002 — Fase 2 completada
 
 - **Rama:** `feature/bd2-entities-repositories`.
