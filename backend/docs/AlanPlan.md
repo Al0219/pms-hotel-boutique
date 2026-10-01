@@ -180,13 +180,26 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
 
 - **Estado:** EN_QA; corrección BD2 lista para revisión, integración pendiente de BD3.
 - **Owner:** BD2.
-- **Rama:** `feature/bd2-availability-engine`; sin commit/push de esta corrección.
+- **Rama:** `feature/bd2-availability-engine`; corrección publicada en `277390d`.
 - **DoR:** investigación y corrección de CI autorizadas por el usuario;
   mantener rama, sin merge/rebase y sin deshabilitar tests.
 - **Alcance:** comparar upgrade con instalación limpia vigente, verificar el
   changeset de inventario y conservar validaciones de idempotencia/Property.
 - **DoD:** `./mvnw -B verify` con Java 21/PostgreSQL 17, revisión de diff y
   seguimiento de la dependencia de integración en `AlanHandoff.md`.
+
+### BD2-004 — API Staff de disponibilidad (Fase 4)
+
+- **Estado:** COMPLETADA para entrega BD2; publicación autorizada, revisión del PR pendiente. Owner BD2.
+- **Rama:** `feature/bd2-availability-api`, dependiente de BD2 Fase 3 en `277390d`.
+- **DoR:** Fase 4 y uso de servicios BD1 disponibles autorizados; contrato en
+  `12_BD2_AVAILABILITY_API_CONTRACT.md`; permisos existentes C2 y scope explícito.
+- **Alcance:** controlador/DTO, cadena Staff limitada a disponibilidad, guard de
+  método con sesión/permiso/property scope, errores y OpenAPI. Sin cambios BD3.
+- **DoD:** verify completo y pruebas HTTP de JWT Staff/Guest, sesión revocada,
+  permisos, aislamiento de propiedad, validación de fechas, ATS y documentación.
+- **Validación:** `./mvnw -B verify` PASS en Java 21/PostgreSQL 17;
+  36 pruebas, cero fallos/errores/omitidas. Integración final dependiente de BD3.
 
 ## Entorno de validación
 

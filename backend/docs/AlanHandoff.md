@@ -1,9 +1,29 @@
 # AlanHandoff — Seguimiento Backend
 
+## BD2-004 — API Staff de disponibilidad (Fase 4)
+
+- **Rama:** `feature/bd2-availability-api`, dependiente de BD2 Fase 3 en `277390d`.
+- **Estado:** COMPLETADA para entrega BD2; publicación autorizada por el usuario.
+- **Contrato:** `12_BD2_AVAILABILITY_API_CONTRACT.md`; consulta Staff por
+  property/room type y fechas locales, mínimo ATS, sin precios ni reserva.
+- **Seguridad:** servicios JWT/sesión/permiso/scope C2 reutilizados; cadena BD2
+  limitada a la ruta de disponibilidad y autorización por método. No se cambia BD1.
+- **Dependencia:** las tablas BD3 ya están en `origin/main` (`7c060c9`), pero
+  todavía no forman parte de esta rama dependiente; sus correcciones de tests
+  permanecen fuera de esta rama.
+- **QA:** `./mvnw -B verify` BUILD SUCCESS con Java 21, PostgreSQL 17 y Maven
+  3.9.16 del wrapper; 36 pruebas, cero fallos/errores/omitidas. Incluye 11 pruebas
+  HTTP con JWT firmado, separación Guest/Staff, sesión revocada, permisos vivos,
+  scope antes de ATS, cero unidades, errores 400/404 y schemas OpenAPI.
+  El puerto ATS se sustituye solo en el contexto de pruebas HTTP; el query SQL
+  real se mantiene cubierto por las pruebas de Fase 3. No sustituye Fase 5.
+- **Siguiente paso:** PR de Fase 4 dependiente de Fase 3; iniciar Fase 5 con
+  validación aislada contra `origin/main` y revalidar cuando BD3 ajuste sus tests.
+
 ## BD2-CI-001 — Entrega de corrección BD2
 
-- **Rama:** `feature/bd2-availability-engine`; corrección pendiente de revisión
-  y commit/push del usuario. Fase 3 ya publicada en `ec8c68f` y `99fe5a0`.
+- **Rama:** `feature/bd2-availability-engine`; corrección publicada en `277390d`.
+  Fase 3 ya publicada en `ec8c68f` y `99fe5a0`.
 - **Corrección:** validar upgrade contra el total del master instalado en limpio;
   comprobar el changeset `002-management-002` y conservar idempotencia/Property.
 - **Validación:** `./mvnw -B verify` PASS, 25 pruebas, cero fallos/errores/omitidas;
