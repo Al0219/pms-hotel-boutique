@@ -1,6 +1,7 @@
 package com.pms.hotelboutique.backend.modules.inventory;
 
 import com.pms.hotelboutique.backend.modules.inventory.application.AvailabilityPort;
+import com.pms.hotelboutique.backend.modules.inventory.application.AvailabilityService;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.UUID;
@@ -108,8 +109,9 @@ class InventorySchemaIntegrationTests {
     }
 
     @Test
-    void defaultRuntimeHasNoFakeAvailability() {
-        assertTrue(context.getBeansOfType(AvailabilityPort.class).isEmpty());
+    void defaultRuntimeUsesRealAvailabilityServiceInsteadOfTestStub() {
+        assertInstanceOf(AvailabilityService.class, context.getBean(AvailabilityPort.class));
+        assertEquals(1, context.getBeansOfType(AvailabilityPort.class).size());
     }
 
     @Test

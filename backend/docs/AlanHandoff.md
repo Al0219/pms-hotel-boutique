@@ -1,5 +1,35 @@
 # AlanHandoff — Seguimiento Backend
 
+## BD2-003 — Fase 3 en progreso
+
+- **Rama:** `feature/bd2-availability-engine`, basada en `origin/main` `8e67b7d`.
+- **Estado:** EN_QA; implementación, pruebas y revisión local completadas,
+  commit/push de BD2 pendientes.
+- **Entregado:** `AvailabilityService` calcula el mínimo de unidades vendibles
+  por noche como `max(0, físico - OOO - ReservationStay consumidor)`. El query
+  usa IDs explícitos de propiedad/tipo, cuenta habitaciones OOO distintas y
+  excluye Reservation padre cancelada.
+- **Consumo BD3 verificado en** `origin/feature/bd3-foundation` (`d1cb2b7`):
+  `RESERVED`/`IN_HOUSE` consumen; `CANCELLED`/`NO_SHOW`/`CHECKED_OUT` liberan.
+  Cancelar Reservation no cascada a stays; el `EXISTS` contra el padre cubre
+  deliberadamente ese caso. BD3 ya tiene tests de ciclo de vida para esos estados.
+- **Entregado:** `PropertyStayTime` y `UtcStayInstantRange` convierten límites
+  locales `[arrival, departure)` a UTC con `ZoneId`, incluyendo cambios DST.
+- **Scope:** SQL limitado por `propertyId`; de acuerdo con el contrato existente,
+  la capa de aplicación/HTTP debe autorizar la propiedad antes de llamar al puerto.
+  No se agrega autenticación al query interno.
+- **Validación:** `docker compose -p pms-bd2-phase1 -f
+  backend/compose.bd2-test.yaml up --abort-on-container-exit --exit-code-from
+  verify` — BUILD SUCCESS en PostgreSQL 17/Temurin 21; 25 pruebas, cero
+  fallos/errores/omitidas. Incluye prueba SQL con estados consumidores,
+  fechas `[arrival, departure)` y Reservation padre cancelada; ATS por
+  mínimo/no negativo; y límites UTC a través de DST.
+- **Dependencia de integración:** el query requiere las tablas BD3 `reservations`
+  y `reservation_stays`, presentes en `origin/feature/bd3-foundation`, todavía
+  no integradas a `main`.
+- **Límite:** el precheck no bloquea ni serializa admisiones concurrentes; la
+  garantía de sobreventa cero requiere el trabajo transaccional posterior.
+
 ## BD2-002 — Fase 2 completada
 
 - **Rama:** `feature/bd2-entities-repositories`.

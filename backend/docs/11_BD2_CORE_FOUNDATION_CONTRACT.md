@@ -106,3 +106,16 @@ una reconstrucción histórica del inventario anterior a la liberación.
 Migración completa contra PostgreSQL vacío y existente; FK cruzadas, importe
 negativo y períodos inválidos rechazados; roundtrip exacto monetario y rango de
 noches. No se declara implementada disponibilidad real ni prevención de sobreventa.
+
+### Fase 3 — límites UTC de una estancia
+
+`PropertyStayTime.toUtc` transforma los dos límites de `StayDateRange` con
+`LocalDate.atStartOfDay(propertyZone).toInstant()`. Se usa la zona IANA cargada
+desde Property y se conserva el límite de salida exclusivo. La duración UTC puede
+ser de 23 o 25 horas durante cambios DST; no se suma una duración fija de 24 horas.
+La conversión no reemplaza el cálculo de disponibilidad basado en noches locales.
+El cálculo ATS consume `ReservationStay` por noche según los estados del ciclo
+de vida confirmados en `origin/feature/bd3-foundation`: `RESERVED` e `IN_HOUSE`
+cuentan como ocupación; `CANCELLED`, `NO_SHOW` y `CHECKED_OUT` liberan. Se
+excluyen además las estancias cuyo padre Reservation esté `CANCELLED`, dado que
+el servicio BD3 no propaga esa cancelación a cada estancia.

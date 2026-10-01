@@ -146,8 +146,34 @@ dependencias; un perfil parcial incluye solo su módulo y sus dependencias.
 - **Fuera de alcance:** servicios CRUD, endpoints, disponibilidad ATS real, reservas,
   cambios de permisos y flujo de liberación/auditoría OOO/OOS.
 
-Fases siguientes: motor ATS con integración BD3; APIs y scope;
-integración y concurrencia. Sus contratos y DoR se concretarán antes de implementarlas.
+### BD2-003 — Fase 3: motor ATS MVP
+
+- **Estado:** EN_QA — implementación local y acceptance/DoD PASS; commit/push pendientes.
+- **Owner:** BD2.
+- **Rama:** `feature/bd2-availability-engine`, desde `origin/main` en `8e67b7d`.
+- **Dependencias:** BD2-002 integrada en PR #61; contrato y ciclo de vida de
+  `ReservationStay` revisados en `origin/feature/bd3-foundation` (aún no integrada).
+- **DoR:** Fase 3 autorizada por el usuario. El contrato BD2 existente define
+  mínimo de ATS por noche, `[arrival, departure)`, OOO descuenta y OOS no;
+  el ciclo de vida de ReservationStay fue verificado en la rama BD3.
+- **Entregado:** `AvailabilityService` devuelve el mínimo nocturno de físico -
+  OOO - ReservationStay consumidor; `[arrival, departure)` local; fechas
+  convertibles a límites UTC con `ZoneId`.
+- **Estados de consumo:** `RESERVED`/`IN_HOUSE` consumen; `CANCELLED`,
+  `NO_SHOW` y `CHECKED_OUT` liberan. El query excluye además el padre
+  `Reservation` en estado `CANCELLED`, pues BD3 deliberadamente no propaga la
+  cancelación a las estancias.
+- **Scope:** el query de ATS siempre filtra por el `propertyId` solicitado y el
+  puerto exige que el llamante haya autorizado previamente la propiedad. La
+  capa HTTP debe resolver y comprobar `PROPERTY`/`ALL_PROPERTIES` antes de
+  invocarlo; no se ejecutan consultas globales ni filtrado posterior.
+- **DoD local:** suite completa PostgreSQL + build PASS, test del query SQL y
+  límites UTC/DST, diff revisado. El runtime necesita las tablas de BD3 al
+  invocar el cálculo; éstas están en la rama BD3 aún no integrada. El precheck
+  ATS no hace admisión atómica y no garantiza por sí solo cero sobreventa concurrente.
+
+Fases siguientes: exponer ATS por API solo después de confirmar el contrato
+externo y autorización; integración y concurrencia tras acordar la admisión atómica.
 
 ## Entorno de validación
 
