@@ -128,7 +128,25 @@ dependencias; un perfil parcial incluye solo su módulo y sus dependencias.
   evidencia y límites en AlanHandoff.
 - **Fuera de alcance:** entidades operativas, CRUD, cálculo real, endpoints y reservas.
 
-Fases siguientes: entidades/repositorios; motor ATS con integración BD3; APIs y scope;
+### BD2-002 — Fase 2: entidades y repositorios
+
+- **Estado:** COMPLETADA
+- **Owner:** BD2
+- **Rama:** `feature/bd2-entities-repositories`, desde `origin/main` en `a59a235`.
+- **Dependencia:** BD2-001 COMPLETADA e integrada en PR #60.
+- **DoR:** Fase 2 autorizada por el usuario; esquema y reglas OOO/OOS definidos en
+  `11_BD2_CORE_FOUNDATION_CONTRACT.md`; autorización C2 disponible.
+- **Alcance:** entidades Property, RoomType, Room, RatePlan y OutOfOrderRecord;
+  repositorios JPA, lecturas con scope y conteo OOO por noche.
+- **Aceptación:** Hibernate valida el esquema sin migraciones nuevas; roundtrip JPA
+  exacto de dinero/fechas; lecturas restringidas a organización y properties del scope;
+  OOS/liberados excluidos, OOO duplicados contados una vez por Room/noche.
+- **DoD:** suite completa PostgreSQL + build PASS, pruebas de persistencia y límites
+  temporales/scope, revisión local y evidencia en AlanHandoff.
+- **Fuera de alcance:** servicios CRUD, endpoints, disponibilidad ATS real, reservas,
+  cambios de permisos y flujo de liberación/auditoría OOO/OOS.
+
+Fases siguientes: motor ATS con integración BD3; APIs y scope;
 integración y concurrencia. Sus contratos y DoR se concretarán antes de implementarlas.
 
 ## Entorno de validación
