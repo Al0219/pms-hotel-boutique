@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { HttpStatusError } from "@/lib/http";
 
-import { fetchFolioByIdDto } from "./folio.service";
+import { fetchFolioByIdDto, createChargeRoutingRuleDto } from "./folio.service";
 
 describe("Folio Service", () => {
   it("fetches folio DTO successfully by ID", async () => {
@@ -22,5 +22,19 @@ describe("Folio Service", () => {
 
   it("throws HttpStatusError when server returns 500", async () => {
     await expect(fetchFolioByIdDto("error_folio")).rejects.toThrow(HttpStatusError);
+  });
+
+  it("creates charge routing rule DTO successfully", async () => {
+    const payload = {
+      target_folio_id: "fol_target_202",
+      charge_category: "ROOM" as const,
+      split_percentage: 100,
+    };
+
+    const result = await createChargeRoutingRuleDto("fol_guest_101", payload);
+    expect(result).toBeDefined();
+    expect(result.rule_id).toBeDefined();
+    expect(result.target_folio_id).toBe("fol_target_202");
+    expect(result.charge_category).toBe("ROOM");
   });
 });

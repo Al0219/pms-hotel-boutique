@@ -74,9 +74,11 @@ export interface PaymentGuaranteeResponseDto {
 }
 
 export interface PaymentListFiltersDto {
+  property_id?: string;
   folio_id?: string;
   reservation_id?: string;
   status?: PaymentStatusDto;
+  payment_method?: PaymentMethodDto;
   from_date?: string;
   to_date?: string;
 }

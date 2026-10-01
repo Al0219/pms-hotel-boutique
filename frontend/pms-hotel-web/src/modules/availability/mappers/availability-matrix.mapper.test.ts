@@ -5,6 +5,7 @@ import {
   mapAvailabilityMatrixQueryToDto,
   mapAvailabilityMatrixResponseToDomain,
   mapDailyRoomTypeAvailabilityDtoToDomain,
+  mapPropertyDailySummaryDtoToDomain,
   mapRoomTypeMatrixDtoToDomain,
 } from "./availability-matrix.mapper";
 
@@ -153,6 +154,29 @@ describe("Availability Matrix Mappers", () => {
       expect(domain.matrix).toHaveLength(1);
       expect(domain.totalPropertyPhysicalRooms).toBe(10);
       expect(domain.dailySummaries).toHaveLength(1);
+    });
+  });
+
+  describe("mapPropertyDailySummaryDtoToDomain", () => {
+    it("maps property daily summary DTO to domain model directly", () => {
+      const dto = {
+        date: "2026-10-01",
+        total_physical: 25,
+        total_sold: 10,
+        total_ooo: 2,
+        total_oos: 1,
+        total_ats: 12,
+        average_occupancy_rate: 40,
+      };
+
+      const domain = mapPropertyDailySummaryDtoToDomain(dto);
+      expect(domain.date).toBe("2026-10-01");
+      expect(domain.totalPhysical).toBe(25);
+      expect(domain.totalSold).toBe(10);
+      expect(domain.totalOoo).toBe(2);
+      expect(domain.totalOos).toBe(1);
+      expect(domain.totalAts).toBe(12);
+      expect(domain.averageOccupancyRate).toBe(40);
     });
   });
 });

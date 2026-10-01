@@ -1,21 +1,16 @@
-import {
-  RateRestrictionFilter,
-  RateRestriction,
-  BatchUpdateRateRestrictionsParams,
-  RateRestrictionBatchResult,
-} from "../model/rate-restriction";
-import {
-  toDtoRateRestrictionQuery,
-  toDomainRateRestriction,
-  toDtoBatchUpdatePayload,
-  toDomainRateRestrictionBatchResult,
-} from "../mappers/rate-restriction.mapper";
-import { RateRestrictionDto, RateRestrictionBatchResultDto } from "../dtos/rate-restriction.dto";
+import { httpRequest } from "@/lib/http";
 
-export async function fetchRateRestrictions(
-  filter: RateRestrictionFilter
-): Promise<RateRestriction[]> {
-  const queryDto = toDtoRateRestrictionQuery(filter);
+import type {
+  RateRestrictionQueryDto,
+  RateRestrictionListResponseDto,
+  BatchUpdateRateRestrictionsPayloadDto,
+  RateRestrictionBatchResultDto,
+} from "../dtos/rate-restriction.dto";
+
+export async function fetchRateRestrictionsDto(
+  queryDto: RateRestrictionQueryDto,
+  signal?: AbortSignal
+): Promise<RateRestrictionListResponseDto> {
   const params = new URLSearchParams();
   params.set("property_id", queryDto.property_id);
   params.set("start_date", queryDto.start_date);
@@ -23,30 +18,26 @@ export async function fetchRateRestrictions(
   if (queryDto.rate_plan_id) params.set("rate_plan_id", queryDto.rate_plan_id);
   if (queryDto.room_type_id) params.set("room_type_id", queryDto.room_type_id);
 
-  const res = await fetch(`/api/v1/private/rates/restrictions?${params.toString()}`);
-  if (!res.ok) {
-    throw new Error(`Error al consultar restricciones tarifarias: ${res.statusText}`);
-  }
-  const data: { restrictions: RateRestrictionDto[] } = await res.json();
-  return (data.restrictions || []).map(toDomainRateRestriction);
+  const queryString = params.toString();
+  const path = queryString
+    ? `/api/v1/private/rates/restrictions?${queryString}`
+    : "/api/v1/private/rates/restrictions";
+
+  return httpRequest<RateRestrictionListResponseDto>({
+    path,
+    method: "GET",
+    signal,
+  });
 }
 
-export async function batchUpdateRateRestrictions(
-  params: BatchUpdateRateRestrictionsParams
-): Promise<RateRestrictionBatchResult> {
-  const payload = toDtoBatchUpdatePayload(params);
-  const res = await fetch(`/api/v1/private/rates/restrictions`, {
+export async function batchUpdateRateRestrictionsDto(
+  payload: BatchUpdateRateRestrictionsPayloadDto,
+  signal?: AbortSignal
+): Promise<RateRestrictionBatchResultDto> {
+  return httpRequest<RateRestrictionBatchResultDto>({
+    path: "/api/v1/private/rates/restrictions",
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
+    body: payload,
+    signal,
   });
-
-  if (!res.ok) {
-    throw new Error(`Error al actualizar restricciones: ${res.statusText}`);
-  }
-
-  const data: RateRestrictionBatchResultDto = await res.json();
-  return toDomainRateRestrictionBatchResult(data);
 }

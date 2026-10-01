@@ -47,6 +47,11 @@ export {
 } from "./mappers/payment.mapper";
 
 export {
+  usePayments,
+  type UsePaymentsResult,
+} from "./hooks/use-payments";
+
+export {
   authorizePaymentDto,
   capturePaymentDto,
   createPaymentGuaranteeDto,

@@ -6,8 +6,12 @@
 export type {
   AvailabilityMatrixQueryDto,
   AvailabilityMatrixResponseDto,
+  AvailabilityResponseDto,
+  AvailabilitySearchQueryDto,
+  AvailableRoomTypeDto,
   DailyRoomTypeAvailabilityDto,
   PropertyDailySummaryDto,
+  RatePlanOptionDto,
   RoomTypeMatrixDto,
 } from "./dtos/availability.dto";
 

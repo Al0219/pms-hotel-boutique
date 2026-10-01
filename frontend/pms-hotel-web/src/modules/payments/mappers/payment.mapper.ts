@@ -180,9 +180,11 @@ export function mapPaymentListFiltersToDto(filters?: PaymentListFilters): Paymen
   if (!filters) return undefined;
 
   return {
+    property_id: filters.propertyId?.trim(),
     folio_id: filters.folioId?.trim(),
     reservation_id: filters.reservationId?.trim(),
     status: filters.status as PaymentStatusDto,
+    payment_method: filters.paymentMethod as PaymentMethodDto,
     from_date: filters.fromDate,
     to_date: filters.toDate,
   };

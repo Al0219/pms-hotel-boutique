@@ -1,17 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { RevenueDashboard } from './RevenueDashboard';
-import { fetchRevenueKpis } from '../service/revenue-kpi.service';
+import { fetchRevenueKpisDto } from '../service/revenue-kpi.service';
 
 vi.mock('../service/revenue-kpi.service', () => ({
-  fetchRevenueKpis: vi.fn(),
+  fetchRevenueKpisDto: vi.fn(),
 }));
 
 // Mock recharts as it uses SVG which can be problematic in JSDOM
 vi.mock('recharts', () => {
-  const OriginalModule = vi.importActual('recharts');
   return {
-    ...OriginalModule,
     ResponsiveContainer: ({ children }: any) => <div>{children}</div>,
     LineChart: () => <div data-testid="line-chart"></div>,
     Line: () => null,
@@ -29,17 +27,16 @@ describe('RevenueDashboard', () => {
   });
 
   it('renders loading state initially', () => {
-    vi.mocked(fetchRevenueKpis).mockReturnValue(new Promise(() => {})); // pending promise
-    render(<RevenueDashboard propertyId="prop-1" />);
+    vi.mocked(fetchRevenueKpisDto).mockReturnValue(new Promise(() => {})); // pending promise
+    const { container } = render(<RevenueDashboard propertyId="prop-1" />);
     
     // Check if pulse animation container exists
-    expect(screen.getByText((content, element) => {
-      return element?.className.includes('animate-pulse') || false;
-    })).toBeInTheDocument();
+    const pulseElement = container.querySelector('.animate-pulse');
+    expect(pulseElement).toBeInTheDocument();
   });
 
   it('renders error state if fetch fails', async () => {
-    vi.mocked(fetchRevenueKpis).mockRejectedValue(new Error('Network error'));
+    vi.mocked(fetchRevenueKpisDto).mockRejectedValue(new Error('Network error'));
     render(<RevenueDashboard propertyId="prop-1" />);
     
     await waitFor(() => {
@@ -49,18 +46,18 @@ describe('RevenueDashboard', () => {
   });
 
   it('renders data correctly after fetch', async () => {
-    vi.mocked(fetchRevenueKpis).mockResolvedValue({
-      propertyId: 'prop-1',
+    vi.mocked(fetchRevenueKpisDto).mockResolvedValue({
+      property_id: 'prop-1',
       currency: 'USD',
       summary: {
-        occupancyPercent: 80,
+        occupancy_percent: 80,
         adr: 150,
-        revPar: 120,
+        rev_par: 120,
         pickup: 5,
         pace: 2,
-        totalRoomsSold: 80,
-        totalRoomsAvailable: 100,
-        totalRevenue: 12000,
+        total_rooms_sold: 80,
+        total_rooms_available: 100,
+        total_revenue: 12000,
       },
       daily: [],
     });
