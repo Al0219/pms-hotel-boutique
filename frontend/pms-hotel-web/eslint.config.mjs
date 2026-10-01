@@ -25,6 +25,8 @@ export default defineConfig([
         { type: "app", pattern: "src/app", mode: "folder" },
         { type: "module", pattern: "src/modules/*", mode: "folder", capture: ["module"] },
         { type: "shared", pattern: "src/shared", mode: "folder" },
+        { type: "components", pattern: "src/components", mode: "folder" },
+        { type: "hooks", pattern: "src/hooks", mode: "folder" },
         { type: "lib", pattern: "src/lib", mode: "folder" },
         { type: "data", pattern: "src/data", mode: "folder" },
       ],

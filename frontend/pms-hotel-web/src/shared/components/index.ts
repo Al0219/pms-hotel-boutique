@@ -30,3 +30,5 @@ export type { ErrorStateProps } from "./error-state";
 
 export { EmptyState } from "./empty-state";
 export type { EmptyStateProps } from "./empty-state";
+
+export { NotificationBell } from "@/components/NotificationBell";
