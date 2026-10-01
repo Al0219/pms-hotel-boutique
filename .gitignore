@@ -1,6 +1,7 @@
 # Node / Next
 **/node_modules/
 **/.next/
+**/.wrangler/
 **/out/
 **/dist/
 **/coverage/

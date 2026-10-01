@@ -12,3 +12,5 @@ export type {
   StatusBadgeSize,
   StatusBadgeVariant,
 } from "./status-badge";
+export { NotificationBell } from "@/components/NotificationBell";
+
