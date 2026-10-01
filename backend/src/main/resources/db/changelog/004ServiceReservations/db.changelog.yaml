@@ -11,3 +11,6 @@ databaseChangeLog:
   - include:
       file: 004-folio.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 005-audit-trail.yaml
+      relativeToChangelogFile: true
