@@ -1,5 +1,19 @@
 # AlanHandoff — Seguimiento Backend
 
+## BD2-CI-001 — Entrega de corrección BD2
+
+- **Rama:** `feature/bd2-availability-engine`; corrección pendiente de revisión
+  y commit/push del usuario. Fase 3 ya publicada en `ec8c68f` y `99fe5a0`.
+- **Corrección:** validar upgrade contra el total del master instalado en limpio;
+  comprobar el changeset `002-management-002` y conservar idempotencia/Property.
+- **Validación:** `./mvnw -B verify` PASS, 25 pruebas, cero fallos/errores/omitidas;
+  Java 21, PostgreSQL 17 y Maven 3.9.16 del wrapper. Diff revisado.
+- **Dependencia:** BD3 debe ajustar sus contextos de pruebas al motor ATS real;
+  la referencia combinada del PR `a7b9b14` falla en sus dos pruebas de booking.
+- **Retomar:** cuando BD3 integre sus correcciones, revalidar el PR BD2. Tras
+  integrar BD2, iniciar la siguiente tarea desde `origin/main` actualizado.
+  Pendientes de BD2: Fase 4 (API/contrato/scope) y Fase 5 (integración transaccional).
+
 ## BD2-003 — Fase 3 completada (entrega BD2)
 
 - **Rama:** `feature/bd2-availability-engine`, basada en `origin/main` `8e67b7d`.

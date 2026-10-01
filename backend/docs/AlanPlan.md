@@ -176,6 +176,18 @@ dependencias; un perfil parcial incluye solo su módulo y sus dependencias.
 Fases siguientes: exponer ATS por API solo después de confirmar el contrato
 externo y autorización; integración y concurrencia tras acordar la admisión atómica.
 
+### BD2-CI-001 — Corrección del test de upgrade de inventario
+
+- **Estado:** EN_QA; corrección BD2 lista para revisión, integración pendiente de BD3.
+- **Owner:** BD2.
+- **Rama:** `feature/bd2-availability-engine`; sin commit/push de esta corrección.
+- **DoR:** investigación y corrección de CI autorizadas por el usuario;
+  mantener rama, sin merge/rebase y sin deshabilitar tests.
+- **Alcance:** comparar upgrade con instalación limpia vigente, verificar el
+  changeset de inventario y conservar validaciones de idempotencia/Property.
+- **DoD:** `./mvnw -B verify` con Java 21/PostgreSQL 17, revisión de diff y
+  seguimiento de la dependencia de integración en `AlanHandoff.md`.
+
 ## Entorno de validación
 
 En la validación original, el host tenía Java Runtime 25 sin `javac`. La validación reproducible de
