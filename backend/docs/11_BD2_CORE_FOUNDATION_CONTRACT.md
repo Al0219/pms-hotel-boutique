@@ -72,7 +72,36 @@ Las noches/períodos hoteleros usan DATE local y timezone de Property. Cuando un
 caso requiera límites Instant se convertirán ambos extremos con esa zona, sin
 asumir días de 24 horas. La utilidad corresponde a Fase 3.
 
-## Validación
+## Fase 2 — Entidades y repositorios (BD2-002)
+
+Se mapean Property, RoomType, Room, RatePlan y OutOfOrderRecord en
+`modules/inventory/domain`, sin cambiar tablas ni changesets aplicados. Las
+referencias entre agregados son UUID; las FK existentes garantizan integridad.
+No se añaden cascadas JPA ni colecciones que carguen todo el inventario.
+Los timestamps son Instant y los períodos son LocalDate. RatePlan usa los dos
+converters de Fase 1 y reconstruye MonetaryAmount al leer; no tiene stock.
+
+Los repositorios JpaRepository son infraestructura interna. Sus métodos
+`findAllInScope`/`findByIdInScope` reciben AuthorizedPropertyScope y restringen
+organización y IDs autorizados en SQL/JPQL antes de devolver datos. Los métodos
+heredados sin scope (`findAll`, `findById`, `delete`, etc.) no son operaciones
+autorizadas de aplicación ni deben usarse desde futuros servicios operativos.
+La autorización de escrituras y la auditoría pertenecen a esos servicios futuros;
+no se publica CRUD HTTP ni se implementa borrado/liberación en esta fase.
+
+`RoomRepository.countPhysicalRooms` cuenta Rooms del RoomType/Property autorizado,
+sin restar OOO/OOS. `OutOfOrderRepository.countOutOfOrderByNight` devuelve una fila
+por noche de `[arrival, departure)` con `night` y `roomCount`. Cuenta Room distintos
+con tipo OOO, sin liberación y con start_date <= night < end_date. Excluye OOS,
+otros tipos/propiedades y registra cero en noches sin OOO para un tipo existente.
+Un tipo inexistente o fuera de scope devuelve lista vacía; no se interpreta como
+disponibilidad cero ni como permiso concedido. Un scope nulo falla cerrado.
+
+No se suma el conteo de todo el rango: habitaciones afectadas en noches distintas
+no deben descontarse juntas. Esta es una consulta de condiciones vigentes, no
+una reconstrucción histórica del inventario anterior a la liberación.
+
+### Validación de Fase 1
 
 Migración completa contra PostgreSQL vacío y existente; FK cruzadas, importe
 negativo y períodos inválidos rechazados; roundtrip exacto monetario y rango de
