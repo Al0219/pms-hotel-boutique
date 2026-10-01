@@ -1,10 +1,12 @@
 package com.pms.hotelboutique.backend.modules.reservations;
 
 import com.pms.hotelboutique.backend.modules.reservations.application.CreateReservationCommand;
+import com.pms.hotelboutique.backend.modules.reservations.application.AuditService;
 import com.pms.hotelboutique.backend.modules.reservations.application.FolioException;
 import com.pms.hotelboutique.backend.modules.reservations.application.FolioService;
 import com.pms.hotelboutique.backend.modules.reservations.application.FolioView;
 import com.pms.hotelboutique.backend.modules.reservations.domain.Folio;
+import com.pms.hotelboutique.backend.modules.reservations.support.TestConnections;
 import com.pms.hotelboutique.backend.modules.reservations.infrastructure.persistence.FolioMovementRepository;
 import com.pms.hotelboutique.backend.modules.reservations.application.ReservationService;
 import com.pms.hotelboutique.backend.shared.money.MinorUnits;
@@ -37,6 +39,9 @@ class FolioServiceIntegrationTests {
 
     @Autowired
     FolioMovementRepository movements;
+
+    @Autowired
+    AuditService audit;
 
     @Autowired
     DataSource dataSource;
@@ -141,10 +146,23 @@ class FolioServiceIntegrationTests {
     }
 
     @Test
+    void recordsAuditTrailForPostingsAndTransitions() {
+        FolioView folio = folios.openFolio(openGuest());
+        FolioView.MovementView movement = folios.postCharge(folio.id(), charge(10000, "Room"), null);
+        folios.settle(folio.id());
+
+        assertEquals(1, audit.findByEntity("FOLIO_MOVEMENT", movement.id()).size());
+        var folioEvents = audit.findByEntity("FOLIO", folio.id());
+        assertEquals(2, folioEvents.size());
+        assertEquals("FOLIO_OPENED", folioEvents.get(0).action());
+        assertEquals("FOLIO_SETTLED", folioEvents.get(1).action());
+    }
+
+    @Test
     void databaseRejectsMovementMutation() throws Exception {
         // Self-contained on one manual transaction (service rows would be
         // invisible here until commit): fixtures roll back with the test.
-        try (var connection = dataSource.getConnection()) {
+        try (var connection = TestConnections.publicConnection(dataSource)) {
             connection.setAutoCommit(false);
             try {
                 UUID folioId = UUID.randomUUID();

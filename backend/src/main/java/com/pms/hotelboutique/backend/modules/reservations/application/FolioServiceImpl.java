@@ -3,6 +3,7 @@ package com.pms.hotelboutique.backend.modules.reservations.application;
 import com.pms.hotelboutique.backend.modules.reservations.domain.Folio;
 import com.pms.hotelboutique.backend.modules.reservations.domain.FolioMovement;
 import com.pms.hotelboutique.backend.modules.reservations.domain.Reservation;
+import com.pms.hotelboutique.backend.modules.reservations.domain.ReservationAuditEvent;
 import com.pms.hotelboutique.backend.modules.reservations.domain.ReservationStay;
 import com.pms.hotelboutique.backend.modules.reservations.infrastructure.persistence.FolioMovementRepository;
 import com.pms.hotelboutique.backend.modules.reservations.infrastructure.persistence.FolioRepository;
@@ -28,13 +29,16 @@ public class FolioServiceImpl implements FolioService {
     private final FolioMovementRepository movements;
     private final ReservationRepository reservations;
     private final ReservationStayRepository stays;
+    private final AuditService audit;
 
     public FolioServiceImpl(FolioRepository folios, FolioMovementRepository movements,
-            ReservationRepository reservations, ReservationStayRepository stays) {
+            ReservationRepository reservations, ReservationStayRepository stays,
+            AuditService audit) {
         this.folios = folios;
         this.movements = movements;
         this.reservations = reservations;
         this.stays = stays;
+        this.audit = audit;
     }
 
     @Override
@@ -62,7 +66,10 @@ public class FolioServiceImpl implements FolioService {
         }
         // Property existence is enforced by the FK (BD1 owns properties, no
         // JPA read model to reuse); no parallel lookup is kept here.
-        return FolioView.from(folios.save(folio));
+        FolioView opened = FolioView.from(folios.save(folio));
+        record("FOLIO_OPENED", "FOLIO", opened.id(), opened.propertyId(), null,
+                "{\"status\":\"OPEN\"}", null, null);
+        return opened;
     }
 
     @Override
@@ -154,7 +161,10 @@ public class FolioServiceImpl implements FolioService {
         try {
             FolioMovement movement = new FolioMovement(UUID.randomUUID(), folio, kind, amount,
                     description, reverses, actorId, Instant.now());
-            return FolioView.MovementView.from(movements.save(movement));
+            FolioView.MovementView posted = FolioView.MovementView.from(movements.save(movement));
+            record("FOLIO_MOVEMENT_POSTED", "FOLIO_MOVEMENT", posted.id(), folio.getPropertyId(),
+                    null, "{\"kind\":\"" + kind + "\"}", actorId, null);
+            return posted;
         } catch (IllegalArgumentException e) {
             throw new FolioException(e.getMessage(), e);
         }
@@ -170,12 +180,27 @@ public class FolioServiceImpl implements FolioService {
 
     private FolioView transition(UUID folioId, String action, FolioTransition transition) {
         Folio folio = existing(folioId);
+        Folio.Status before = folio.getStatus();
         try {
             transition.apply(folio, Instant.now());
         } catch (IllegalStateException | IllegalArgumentException e) {
             throw new FolioException("cannot " + action + ": " + e.getMessage(), e);
         }
-        return FolioView.from(folio);
+        FolioView view = FolioView.from(folio);
+        record("FOLIO_" + view.status(), "FOLIO", folio.getId(), folio.getPropertyId(),
+                "{\"status\":\"" + before + "\"}", "{\"status\":\"" + view.status() + "\"}", null, null);
+        return view;
+    }
+
+    private void record(String action, String entityType, UUID entityId, UUID propertyId,
+            String before, String after, UUID actorId, UUID correlation) {
+        // The actor is STAFF when a caller supplies one, else SYSTEM: no
+        // authenticated principal reaches the service layer yet.
+        ReservationAuditEvent.ActorType type = actorId == null
+                ? ReservationAuditEvent.ActorType.SYSTEM
+                : ReservationAuditEvent.ActorType.STAFF;
+        audit.record(new AuditService.RecordAuditCommand(type, actorId, action, entityType,
+                entityId, propertyId, before, after, null, correlation));
     }
 
     private Folio existing(UUID folioId) {

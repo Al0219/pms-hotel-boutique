@@ -7,6 +7,7 @@ import com.pms.hotelboutique.backend.modules.reservations.application.GuestProfi
 import com.pms.hotelboutique.backend.modules.reservations.application.GuestProfileService;
 import com.pms.hotelboutique.backend.modules.reservations.application.UpdateGuestProfileCommand;
 import com.pms.hotelboutique.backend.modules.reservations.infrastructure.persistence.GuestProfileRepository;
+import com.pms.hotelboutique.backend.modules.reservations.support.TestConnections;
 import jakarta.validation.ConstraintViolationException;
 import java.time.Instant;
 import java.util.UUID;
@@ -75,7 +76,7 @@ class GuestProfileServiceIntegrationTests {
     @Test
     void rejectsDisabledAccount() throws Exception {
         UUID accountId = UUID.randomUUID();
-        try (var connection = dataSource.getConnection();
+        try (var connection = TestConnections.publicConnection(dataSource);
                 var statement = connection.prepareStatement(
                         "INSERT INTO guest_accounts(id,email,email_verified_at,status,created_at,updated_at)"
                                 + " VALUES (?,?,'2026-09-30T12:00:00Z','DISABLED',now(),now())")) {
@@ -89,7 +90,7 @@ class GuestProfileServiceIntegrationTests {
         try {
             assertThrows(GuestProfileException.class, () -> service.create(command));
         } finally {
-            try (var connection = dataSource.getConnection();
+            try (var connection = TestConnections.publicConnection(dataSource);
                     var statement = connection.prepareStatement("DELETE FROM guest_accounts WHERE id=?")) {
                 statement.setObject(1, accountId);
                 statement.executeUpdate();
@@ -116,7 +117,7 @@ class GuestProfileServiceIntegrationTests {
 
     @Test
     void rejectsBlankNameOnSchemaLevel() throws Exception {
-        try (var connection = dataSource.getConnection();
+        try (var connection = TestConnections.publicConnection(dataSource);
                 var statement = connection.prepareStatement(
                         "INSERT INTO guest_profiles(id,first_name,last_name,status,created_at,updated_at)"
                                 + " VALUES (?,'   ','Lopez','ACTIVE',now(),now())")) {

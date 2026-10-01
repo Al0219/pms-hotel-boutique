@@ -3,6 +3,7 @@ package com.pms.hotelboutique.backend.modules.reservations;
 import com.pms.hotelboutique.backend.modules.reservations.application.AuditException;
 import com.pms.hotelboutique.backend.modules.reservations.application.AuditService;
 import com.pms.hotelboutique.backend.modules.reservations.domain.ReservationAuditEvent;
+import com.pms.hotelboutique.backend.modules.reservations.support.TestConnections;
 import jakarta.validation.ConstraintViolationException;
 import java.util.UUID;
 import javax.sql.DataSource;
@@ -61,7 +62,7 @@ class AuditServiceIntegrationTests {
     void databaseRejectsAuditMutation() throws Exception {
         // Self-contained on one manual transaction: the trigger rejects the
         // write and the savepoint rollback keeps the connection usable.
-        try (var connection = dataSource.getConnection()) {
+        try (var connection = TestConnections.publicConnection(dataSource)) {
             connection.setAutoCommit(false);
             try {
                 UUID id = UUID.randomUUID();

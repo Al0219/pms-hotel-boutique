@@ -2,6 +2,7 @@ package com.pms.hotelboutique.backend.modules.reservations.application;
 
 import com.pms.hotelboutique.backend.modules.inventory.application.AvailabilityPort;
 import com.pms.hotelboutique.backend.modules.inventory.application.StayDateRange;
+import com.pms.hotelboutique.backend.modules.reservations.domain.ReservationAuditEvent;
 import jakarta.validation.Valid;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,25 +20,35 @@ public class ReservationBookingServiceImpl implements ReservationBookingService 
     private final ReservationService reservations;
     private final ReservationStayService stays;
     private final GuestProfileService profiles;
+    private final AuditService audit;
     private final ObjectProvider<AvailabilityPort> availability;
 
     public ReservationBookingServiceImpl(ReservationService reservations,
-            ReservationStayService stays, GuestProfileService profiles,
+            ReservationStayService stays, GuestProfileService profiles, AuditService audit,
             ObjectProvider<AvailabilityPort> availability) {
         this.reservations = reservations;
         this.stays = stays;
         this.profiles = profiles;
+        this.audit = audit;
         this.availability = availability;
     }
 
     @Override
     public BookingView createBooking(@Valid CreateBookingCommand command) {
         precheckAvailability(command);
+        // One correlation id links every event of this flow. The actor is
+        // SYSTEM: no authenticated principal reaches the service layer yet;
+        // controllers will supply the real actor in a later contract.
+        UUID correlation = UUID.randomUUID();
         try {
             UUID bookingGuestId = resolveBooker(command);
             ReservationView reservation = reservations.create(new CreateReservationCommand(
                     command.propertyId(), bookingGuestId, command.currency(),
                     command.sourceChannel(), command.sourceReference(), command.notes()));
+            audit.record(new AuditService.RecordAuditCommand(
+                    ReservationAuditEvent.ActorType.SYSTEM, null, "RESERVATION_CREATED",
+                    "RESERVATION", reservation.id(), reservation.propertyId(), null,
+                    "{\"status\":\"" + reservation.status() + "\"}", null, correlation));
             List<ReservationStayView> created = new ArrayList<>();
             for (CreateBookingCommand.StayBookingCommand stay : command.stays()) {
                 ReservationStayView createdStay = stays.addStay(new CreateStayCommand(
@@ -48,9 +59,13 @@ public class ReservationBookingServiceImpl implements ReservationBookingService 
                     stays.addOccupant(createdStay.id(), profileId, occupant.primary());
                 }
                 created.add(stays.get(createdStay.id()));
+                audit.record(new AuditService.RecordAuditCommand(
+                        ReservationAuditEvent.ActorType.SYSTEM, null, "RESERVATION_STAY_ADDED",
+                        "RESERVATION_STAY", createdStay.id(), reservation.propertyId(), null,
+                        "{\"status\":\"" + createdStay.status() + "\"}", null, correlation));
             }
             return new BookingView(reservation, List.copyOf(created));
-        } catch (GuestProfileException | ReservationException | ReservationStayException e) {
+        } catch (GuestProfileException | ReservationException | ReservationStayException | AuditException e) {
             throw new ReservationBookingException(e.getMessage(), e);
         }
     }

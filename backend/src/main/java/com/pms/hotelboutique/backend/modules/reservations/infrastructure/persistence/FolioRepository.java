@@ -2,10 +2,17 @@ package com.pms.hotelboutique.backend.modules.reservations.infrastructure.persis
 
 import com.pms.hotelboutique.backend.modules.reservations.domain.Folio;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface FolioRepository extends JpaRepository<Folio, UUID> {
 
     List<Folio> findByReservation_Id(UUID reservationId);
+
+    /**
+     * Scope-aware listing: the authorized property ids go straight into the
+     * SQL predicate (C2 rule). Never query globally and filter in memory.
+     */
+    List<Folio> findByPropertyIdIn(Set<UUID> propertyIds);
 }

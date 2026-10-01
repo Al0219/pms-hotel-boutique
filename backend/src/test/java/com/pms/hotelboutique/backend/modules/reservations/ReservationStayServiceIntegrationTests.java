@@ -9,6 +9,7 @@ import com.pms.hotelboutique.backend.modules.reservations.application.Reservatio
 import com.pms.hotelboutique.backend.modules.reservations.application.ReservationStayService;
 import com.pms.hotelboutique.backend.modules.reservations.domain.ReservationStay;
 import com.pms.hotelboutique.backend.modules.reservations.infrastructure.persistence.ReservationStayRepository;
+import com.pms.hotelboutique.backend.modules.reservations.support.TestConnections;
 import jakarta.validation.ConstraintViolationException;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -207,7 +208,7 @@ class ReservationStayServiceIntegrationTests {
     void enforcesStayConstraintsOnSchemaLevel() throws Exception {
         // Dedicated transaction with savepoints (mirrors the BD2 schema tests):
         // fixtures and negative inserts roll back together, leaving no residue.
-        try (var connection = dataSource.getConnection()) {
+        try (var connection = TestConnections.publicConnection(dataSource)) {
             connection.setAutoCommit(false);
             try {
                 UUID type = UUID.randomUUID();

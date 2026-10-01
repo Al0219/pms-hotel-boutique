@@ -7,6 +7,7 @@ import com.pms.hotelboutique.backend.modules.reservations.application.Reservatio
 import com.pms.hotelboutique.backend.modules.reservations.application.ReservationService;
 import com.pms.hotelboutique.backend.modules.reservations.domain.Reservation;
 import com.pms.hotelboutique.backend.modules.reservations.infrastructure.persistence.ReservationRepository;
+import com.pms.hotelboutique.backend.modules.reservations.support.TestConnections;
 import jakarta.validation.ConstraintViolationException;
 import java.util.HashSet;
 import java.util.Set;
@@ -126,7 +127,7 @@ class ReservationServiceIntegrationTests {
 
     @Test
     void enforcesSchemaConstraints() throws Exception {
-        try (var connection = dataSource.getConnection();
+        try (var connection = TestConnections.publicConnection(dataSource);
                 var statement = connection.prepareStatement(
                         "INSERT INTO reservations(id,property_id,confirmation_code,status,currency,"
                                 + "source_channel,created_at,updated_at)"
@@ -150,7 +151,7 @@ class ReservationServiceIntegrationTests {
         }
         // Duplicate confirmation code: insert the same code twice on one
         // connection; the second insert must fail, then clean up.
-        try (var connection = dataSource.getConnection();
+        try (var connection = TestConnections.publicConnection(dataSource);
                 var statement = connection.prepareStatement(
                         "INSERT INTO reservations(id,property_id,confirmation_code,status,currency,"
                                 + "source_channel,created_at,updated_at)"

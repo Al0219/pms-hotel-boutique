@@ -1,6 +1,7 @@
 package com.pms.hotelboutique.backend.modules.reservations;
 
 import com.pms.hotelboutique.backend.modules.reservations.application.BookingView;
+import com.pms.hotelboutique.backend.modules.reservations.application.AuditService;
 import com.pms.hotelboutique.backend.modules.reservations.application.CreateBookingCommand;
 import com.pms.hotelboutique.backend.modules.reservations.application.CreateGuestProfileCommand;
 import com.pms.hotelboutique.backend.modules.reservations.application.GuestProfileService;
@@ -13,6 +14,7 @@ import com.pms.hotelboutique.backend.modules.reservations.infrastructure.persist
 import com.pms.hotelboutique.backend.modules.reservations.infrastructure.persistence.ReservationRepository;
 import com.pms.hotelboutique.backend.modules.reservations.infrastructure.persistence.ReservationStayRepository;
 import com.pms.hotelboutique.backend.modules.reservations.support.ControllableAvailabilityConfiguration;
+import com.pms.hotelboutique.backend.modules.reservations.support.TestConnections;
 import jakarta.validation.ConstraintViolationException;
 import java.time.LocalDate;
 import java.util.List;
@@ -53,6 +55,9 @@ class ReservationBookingServiceIntegrationTests {
     GuestProfileRepository guestProfiles;
 
     @Autowired
+    AuditService audit;
+
+    @Autowired
     JdbcTemplate jdbc;
 
     @Autowired
@@ -83,7 +88,7 @@ class ReservationBookingServiceIntegrationTests {
 
     /** Committed-only row count (separate connection, unaffected by the test transaction). */
     private long committedCount(String table) throws Exception {
-        try (var connection = dataSource.getConnection();
+        try (var connection = TestConnections.publicConnection(dataSource);
                 var statement = connection.prepareStatement("SELECT count(*) FROM " + table);
                 var result = statement.executeQuery()) {
             result.next();
@@ -194,5 +199,23 @@ class ReservationBookingServiceIntegrationTests {
                                 LocalDate.parse("2026-11-01"), LocalDate.parse("2026-11-02"),
                                 List.of(new CreateBookingCommand.OccupantBooking(existing.id(),
                                         newProfile("Eva", "+502 5555 0411"), false)))))));
+    }
+
+    @Test
+    void recordsCorrelatedAuditTrail() {
+        BookingView created = booking.createBooking(new CreateBookingCommand(SEED_PROPERTY,
+                new CreateBookingCommand.BookerBooking(null, newProfile("Ana", "+502 5555 0420")),
+                "GTQ", "WEB_DIRECTA", null, null,
+                List.of(new CreateBookingCommand.StayBookingCommand(roomType, null,
+                        LocalDate.parse("2026-11-01"), LocalDate.parse("2026-11-02"),
+                        List.of()))));
+
+        var reservationEvents = audit.findByEntity("RESERVATION", created.reservation().id());
+        assertEquals(1, reservationEvents.size());
+        var stayEvents = audit.findByEntity("RESERVATION_STAY", created.stays().get(0).id());
+        assertEquals(1, stayEvents.size());
+        // Both events share the flow correlation id.
+        assertNotNull(reservationEvents.get(0).correlationId());
+        assertEquals(reservationEvents.get(0).correlationId(), stayEvents.get(0).correlationId());
     }
 }
