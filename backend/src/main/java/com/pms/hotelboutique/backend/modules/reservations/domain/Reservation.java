@@ -64,6 +64,17 @@ public class Reservation {
     @Column(name = "source_reference")
     private String sourceReference;
 
+    /**
+     * Group pickup wiring (F13). Raw ids on purpose: the group/block live in
+     * BD3's commercial module. Both nullable: direct reservations carry
+     * neither. When a block is set, its group is always set too.
+     */
+    @Column(name = "group_id")
+    private UUID groupId;
+
+    @Column(name = "room_block_id")
+    private UUID roomBlockId;
+
     @Column(name = "notes")
     private String notes;
 
@@ -105,6 +116,22 @@ public class Reservation {
             throw new IllegalArgumentException("bookingGuest is required");
         }
         this.bookingGuest = bookingGuest;
+    }
+
+    public void linkBlock(UUID groupId, UUID roomBlockId) {
+        if (groupId == null || roomBlockId == null) {
+            throw new IllegalArgumentException("group and block ids are required");
+        }
+        if (status == Status.CANCELLED) {
+            throw new IllegalStateException("a CANCELLED reservation cannot join a block");
+        }
+        this.groupId = groupId;
+        this.roomBlockId = roomBlockId;
+    }
+
+    public void unlinkBlock() {
+        this.groupId = null;
+        this.roomBlockId = null;
     }
 
     public void updateSource(String sourceReference, String notes, Instant now) {
@@ -186,6 +213,14 @@ public class Reservation {
 
     public String getSourceReference() {
         return sourceReference;
+    }
+
+    public UUID getGroupId() {
+        return groupId;
+    }
+
+    public UUID getRoomBlockId() {
+        return roomBlockId;
     }
 
     public String getNotes() {

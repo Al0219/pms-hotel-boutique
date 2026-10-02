@@ -10,6 +10,8 @@ public interface FolioRepository extends JpaRepository<Folio, UUID> {
 
     List<Folio> findByReservation_Id(UUID reservationId);
 
+    List<Folio> findByGroupId(UUID groupId);
+
     /**
      * Scope-aware listing: the authorized property ids go straight into the
      * SQL predicate (C2 rule). Never query globally and filter in memory.

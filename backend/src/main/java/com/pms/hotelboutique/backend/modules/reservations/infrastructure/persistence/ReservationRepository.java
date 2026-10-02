@@ -11,6 +11,10 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
 
     Optional<Reservation> findByConfirmationCode(String confirmationCode);
 
+    List<Reservation> findByGroupId(UUID groupId);
+
+    List<Reservation> findByRoomBlockId(UUID roomBlockId);
+
     /**
      * Scope-aware listing: the authorized property ids go straight into the
      * SQL predicate (C2 rule). Never query globally and filter in memory.

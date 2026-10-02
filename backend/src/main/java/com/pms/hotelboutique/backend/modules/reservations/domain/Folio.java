@@ -64,6 +64,14 @@ public class Folio {
     @Column(name = "holder_label")
     private String holderLabel;
 
+    /**
+     * Owning group for MASTER folios (F13). Raw id on purpose: the group lives
+     * in BD3's commercial module; at most one MASTER folio per group is
+     * enforced by a partial unique index. Null for non-group folios.
+     */
+    @Column(name = "group_id")
+    private UUID groupId;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -112,6 +120,16 @@ public class Folio {
 
     public void labelHolder(String holderLabel) {
         this.holderLabel = holderLabel;
+    }
+
+    public void linkGroup(UUID groupId) {
+        if (groupId == null) {
+            throw new IllegalArgumentException("groupId is required");
+        }
+        if (type != Type.MASTER) {
+            throw new IllegalStateException("only a MASTER folio can link a group");
+        }
+        this.groupId = groupId;
     }
 
     public void settle(Instant now) {
@@ -185,6 +203,10 @@ public class Folio {
 
     public String getHolderLabel() {
         return holderLabel;
+    }
+
+    public UUID getGroupId() {
+        return groupId;
     }
 
     public Instant getCreatedAt() {

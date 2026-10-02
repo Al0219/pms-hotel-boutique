@@ -16,7 +16,7 @@ import org.springframework.jdbc.datasource.DelegatingDataSource;
 
 /**
  * BD3 migration validation: a pre-BD3 schema (6 changesets) upgrades to the
- * full master (15 changesets) without touching pre-existing tables, and
+ * full master (16 changesets) without touching pre-existing tables, and
  * re-applying the master is a no-op.
  */
 @SpringBootTest
@@ -40,19 +40,20 @@ class ReservationsSchemaUpgradeTests {
                 migrate(schema, "classpath:db/changelog/db.changelog-master.yaml");
                 try (var result = sql.executeQuery("SELECT count(*) FROM " + schema + ".databasechangelog")) {
                     assertTrue(result.next());
-                    assertEquals(15, result.getInt(1));
+                    assertEquals(16, result.getInt(1));
                 }
                 // Re-applying must be a no-op, including all pre-existing checksums.
                 migrate(schema, "classpath:db/changelog/db.changelog-master.yaml");
                 try (var result = sql.executeQuery("SELECT count(*) FROM " + schema + ".databasechangelog")) {
                     assertTrue(result.next());
-                    assertEquals(15, result.getInt(1));
+                    assertEquals(16, result.getInt(1));
                 }
                 for (String table : new String[]{"guest_profiles", "reservations", "reservation_stays",
                         "reservation_guests", "folios", "folio_movements", "reservation_audit_events",
                         "hk_room_states", "maintenance_orders", "service_requests",
                         "service_messages", "hk_discrepancies", "business_days",
-                        "night_audit_runs", "companies", "agencies"}) {
+                        "night_audit_runs", "companies", "agencies",
+                        "event_groups", "room_blocks"}) {
                     try (var result = sql.executeQuery(
                             "SELECT count(*) FROM " + schema + "." + table)) {
                         assertTrue(result.next());

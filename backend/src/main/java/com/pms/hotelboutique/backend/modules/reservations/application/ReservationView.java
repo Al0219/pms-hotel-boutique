@@ -15,6 +15,8 @@ public record ReservationView(
         String sourceChannel,
         String sourceReference,
         String notes,
+        UUID groupId,
+        UUID roomBlockId,
         Instant createdAt,
         Instant updatedAt) {
 
@@ -32,6 +34,8 @@ public record ReservationView(
                 reservation.getSourceChannel(),
                 reservation.getSourceReference(),
                 reservation.getNotes(),
+                reservation.getGroupId(),
+                reservation.getRoomBlockId(),
                 reservation.getCreatedAt(),
                 reservation.getUpdatedAt());
     }
