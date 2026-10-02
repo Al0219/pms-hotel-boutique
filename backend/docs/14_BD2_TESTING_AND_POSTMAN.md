@@ -187,3 +187,14 @@ comprueban además scope/permisos/Guest/revocación, ATS sin inventario, referen
 físicas y tarifas, auditoría y rollback real, así como timestamps entre requests.
 La colección publicada es una ayuda manual; su publicación no implica que Newman
 haya sido ejecutado. El verify completo sigue siendo obligatorio.
+
+## Rooms
+
+Importar `BD2-Rooms.postman_collection.json` con el mismo environment privado.
+Configurar `propertyId` y `roomTypeId` existente en esa propiedad (por ejemplo,
+el tipo generado por la colección RoomTypes). Requiere `COMMERCIAL_MANAGE`.
+Alta: roomTypeId/código; PATCH: solo código. La colección crea una habitación
+física y la conserva, por lo que aumenta capacidad en QA. No ejecutar en producción.
+Prueba alta, lista, lectura, edición, no-op, campos inmutables y duplicado 409.
+No valida por sí sola concurrencia ni rollback: las pruebas Java cubren esos casos.
+No hay DELETE, cambio de tipo/propiedad ni status de Room.

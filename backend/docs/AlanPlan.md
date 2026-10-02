@@ -281,6 +281,18 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
 
 - **Evidencia BD2-007B:** verify enfocado BUILD SUCCESS, 9 tests (API, rollback y HTTP real). Verify completo: 198 tests, 0 failures, 8 errors BD3, 0 skipped; ejecutado antes de añadir la prueba HTTP final. Colección Postman publicada, ejecución Newman pendiente.
 
+### BD2-008 — Rooms C/R/U
+
+- **Estado:** EN_QA. Owner BD2; rama dependiente `feature/bd2-rooms-crud`.
+- **DoR:** RoomTypes `1c0ed07`, esquema Room, C2 y auditoría existentes;
+  continuación de CRUD autorizada por el usuario. Contrato 17 publicado.
+- **Alcance:** alta física, consultas y edición exclusiva de código; no baja,
+  reclasificación ni cambios BD3. Aceptación/DoD según contrato 17.
+- **QA enfocada:** BUILD SUCCESS, 15 tests (9 Rooms y 6 de regresión RoomTypes).
+  Incluye capacidad +1, locks reales, scope, validación, auditoría, rollback y HTTP.
+- **Verify completo:** BUILD FAILURE, 208 tests, 0 failures, 8 errors solo BD3, 0 skipped.
+
+
 ## Entorno de validación
 
 En la validación original, el host tenía Java Runtime 25 sin `javac`. La validación reproducible de

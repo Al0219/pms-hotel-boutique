@@ -1,5 +1,18 @@
 # AlanHandoff — Seguimiento Backend
 
+## BD2-008 — Rooms
+
+- **Rama/base:** `feature/bd2-rooms-crud`, RoomTypes `1c0ed07` ya publicado.
+- **Estado:** EN_QA. Contrato 17 publicado antes de crear las APIs.
+- **Dependencias:** C2/AuditService y schema existentes. No requiere cambios BD3.
+- **Entregado:** alta física, consultas scoped y PATCH de código, permisos C2,
+  bloqueo de RoomType compatible con admisión, row lock de edición y audit.
+- **QA enfocada:** BUILD SUCCESS, 15 tests; 9 Rooms y 6 regresiones RoomTypes.
+  Capacidad +1, no-op, tipos cruzados, 409, lock NOWAIT, rollback y HTTP real.
+- **Postman:** colección Rooms y guía publicadas; ejecución Newman pendiente.
+- **Verify completo:** BUILD FAILURE, 208 tests, 0 failures, 8 errors solo BD3, 0 skipped.
+- **Publicación:** commit/push autorizado. Siguiente entrega RatePlans; sin DELETE/reclasificación.
+
 ## BD2-007B — RoomTypes: implementación
 
 - **Rama:** `feature/bd2-room-types-crud`. Contrato 16 autorizado por el usuario.

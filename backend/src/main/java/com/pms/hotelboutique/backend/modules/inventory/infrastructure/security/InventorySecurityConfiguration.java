@@ -23,7 +23,8 @@ public class InventorySecurityConfiguration {
         return http
                 .securityMatcher("/api/v1/properties", "/api/v1/properties/*",
                         "/api/v1/properties/*/availability", "/api/v1/properties/*/room-types",
-                        "/api/v1/properties/*/room-types/*")
+                        "/api/v1/properties/*/room-types/*", "/api/v1/properties/*/rooms",
+                        "/api/v1/properties/*/rooms/*")
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(errors -> errors

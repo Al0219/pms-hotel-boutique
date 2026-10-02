@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-@RestControllerAdvice(assignableTypes = RoomTypeController.class)
+@RestControllerAdvice(assignableTypes = {RoomTypeController.class, RoomController.class})
 public class CatalogExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler({IllegalArgumentException.class, ArithmeticException.class})
     ProblemDetail invalid(RuntimeException exception) { return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Invalid catalog data"); }
@@ -21,7 +21,7 @@ public class CatalogExceptionHandler extends ResponseEntityExceptionHandler {
     ProblemDetail integrity(DataIntegrityViolationException exception) {
         for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
             if (cause instanceof ConstraintViolationException constraint
-                    && "uq_room_types_property_code".equals(constraint.getConstraintName())) {
+                    && java.util.Set.of("uq_room_types_property_code", "uq_rooms_property_code").contains(constraint.getConstraintName())) {
                 return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Code already exists in this catalog");
             }
         }
