@@ -190,7 +190,7 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
 
 ### BD2-004 — API Staff de disponibilidad (Fase 4)
 
-- **Estado:** COMPLETADA para entrega BD2; publicación autorizada, revisión del PR pendiente. Owner BD2.
+- **Estado:** COMPLETADA para entrega BD2; publicada en `0dbaa74`, revisión del PR pendiente. Owner BD2.
 - **Rama:** `feature/bd2-availability-api`, dependiente de BD2 Fase 3 en `277390d`.
 - **DoR:** Fase 4 y uso de servicios BD1 disponibles autorizados; contrato en
   `12_BD2_AVAILABILITY_API_CONTRACT.md`; permisos existentes C2 y scope explícito.
@@ -200,6 +200,30 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
   permisos, aislamiento de propiedad, validación de fechas, ATS y documentación.
 - **Validación:** `./mvnw -B verify` PASS en Java 21/PostgreSQL 17;
   36 pruebas, cero fallos/errores/omitidas. Integración final dependiente de BD3.
+
+### BD2-005 — Admisión e integración de disponibilidad (Fase 5)
+
+- **Estado:** EN_QA — alcance BD2 validado; conexión y CI combinada pendientes de BD3.
+- **Owner:** BD2; revisión cross-domain requerida de BD3.
+- **Rama:** `feature/bd2-inventory-admission`, dependiente de Fase 4 en `0dbaa74`.
+- **Entrega:** publicación autorizada; PR hacia `main`, que ya contiene Fase 4
+  mediante PR #64 (`a4dc6b0`). Mantener EN_QA hasta cerrar integración BD3.
+- **DoR:** Fase 5 autorizada; motor ATS y API publicados. Tablas BD3 disponibles
+  en `origin/main`; no modificar su booking ni sus fixtures sin autorización.
+- **Alcance BD2:** puerto de admisión transaccional, demanda conjunta por noche,
+  bloqueo por property/room type y excepción de inventario agotado; pruebas
+  PostgreSQL de concurrencia/rollback y guía de pruebas API/Postman. QA HTTP
+  corrige en la cadena BD2 el 403 que se convertía en 401 por error dispatch.
+- **Aceptación:** una unidad consumida reduce ATS exactamente uno; demanda
+  superior a ATS no ejecuta la escritura; dos admisiones para la última unidad
+  no pueden confirmar ambas; rollback libera capacidad y bloqueos.
+- **DoD:** verify completo, evidencia de integración aislada contra `origin/main`,
+  límites y conexión pendiente con BD3 registrados, diff revisado.
+- **Límite:** implementar el puerto no protege escrituras que no lo utilicen;
+  la conexión mínima de BD3 requiere autorización por su ownership.
+- **Validación BD2:** `./mvnw -B verify` BUILD SUCCESS, 46 pruebas sin
+  fallos/errores/omitidas; colección Postman ejecutada con Newman: 8 solicitudes
+  y 13 assertions PASS. Booking real validado en copia aislada (4 pruebas PASS).
 
 ## Entorno de validación
 

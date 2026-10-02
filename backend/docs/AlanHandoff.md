@@ -1,9 +1,50 @@
 # AlanHandoff — Seguimiento Backend
 
+## BD2-005 — Admisión e integración (Fase 5)
+
+- **Rama:** `feature/bd2-inventory-admission`, desde Fase 4 publicada en `0dbaa74`.
+- **Estado:** EN_QA; entrega BD2 validada, conexión BD3 pendiente. Publicación autorizada.
+- **PR objetivo:** `main`; Fase 4 integrada mediante PR #64 en `a4dc6b0`.
+  El fetch previo a esta entrega confirma que sus fixtures BD3 no cambiaron.
+- **DoR:** motor/API BD2 disponibles y esquema BD3 integrado en `origin/main`.
+- **Hallazgo:** booking BD3 comprueba cada stay antes de escribir; no acumula
+  demanda multi-room ni serializa dos transacciones que venden la última unidad.
+- **Entregado:** `InventoryAdmissionPort`, demanda conjunta, locks PostgreSQL
+  por property/RoomType, excepción de agotamiento y rollback. Contrato en
+  `13_BD2_INVENTORY_ADMISSION_CONTRACT.md`; guía y colección Postman en
+  `14_BD2_TESTING_AND_POSTMAN.md` y `../postman/BD2-Inventory.postman_collection.json`.
+- **QA BD2:** `./mvnw -B verify` BUILD SUCCESS, Java 21/PostgreSQL 17;
+  46 pruebas, cero fallos/errores/omitidas. Incluye 8 pruebas de admisión real
+  y 2 con servidor HTTP real. Log TEMP: `pms-bd2-phase5-verify-http-fix.log`.
+- **Corrección HTTP:** `sendError(403)` provocaba error dispatch a `/error`,
+  protegido por la cadena global; se reemplaza por `setStatus` solo en BD2.
+  No se cambian Auth BD1 ni rutas globales. Regresión cubierta con HTTP real.
+- **Postman:** Newman PASS, 8 solicitudes/13 assertions contra runtime combinado
+  con login/scope reales; fixture de una habitación, credenciales efímeras.
+  Runtime detenido y credenciales/reporte privado eliminados de TEMP.
+- **Integración real aislada:** fuentes BD3 de `origin/main` `7c060c9` intactas,
+  con cuatro tests temporales que envuelven `ReservationBookingService` en el
+  puerto nuevo: ATS disminuye exactamente uno, cancelación libera sin borrar
+  stay, demanda multi-room se rechaza antes de crear y consumo JPA pendiente
+  se observa en la siguiente admisión. Cuatro PASS, sin mock ATS ni booking.
+  Esta envoltura pertenece a la validación; no conecta el booking productivo.
+- **Verify combinado:** BUILD FAILURE, 181 pruebas incluyendo las 4 temporales;
+  cero failures, 8 errors, cero omitidas. Siete errores en el contexto de
+  `ReservationBookingServiceIntegrationTests` por beans `availabilityService`
+  y `availabilityPort` competidores; uno en
+  `ReservationBookingWithoutAvailabilityTests` por presencia del ATS real.
+  Los demás tests, incluidos todos los BD2, pasan. Fuentes/fixtures BD3 intactos.
+  Log TEMP: `pms-bd2-phase5-combined-http-fix.log`.
+- **Límite:** los escritores que no utilicen el puerto siguen fuera de su
+  garantía. No declarar sobreventa cero global ni Fase 5 COMPLETADA todavía.
+- **Siguiente paso BD3:** resolver el mock `AvailabilityPort` no primario y el
+  contexto que supone que no hay puerto; conectar el booking al callback del
+  puerto de admisión, con validación y revisión del owner, antes de cerrar Fase 5.
+
 ## BD2-004 — API Staff de disponibilidad (Fase 4)
 
 - **Rama:** `feature/bd2-availability-api`, dependiente de BD2 Fase 3 en `277390d`.
-- **Estado:** COMPLETADA para entrega BD2; publicación autorizada por el usuario.
+- **Estado:** COMPLETADA para entrega BD2; publicada en `0dbaa74`.
 - **Contrato:** `12_BD2_AVAILABILITY_API_CONTRACT.md`; consulta Staff por
   property/room type y fechas locales, mínimo ATS, sin precios ni reserva.
 - **Seguridad:** servicios JWT/sesión/permiso/scope C2 reutilizados; cadena BD2
