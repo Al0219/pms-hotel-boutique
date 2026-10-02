@@ -1,6 +1,7 @@
 package com.pms.hotelboutique.backend.modules.reservations;
 
 import com.pms.hotelboutique.backend.modules.inventory.application.AvailabilityPort;
+import com.pms.hotelboutique.backend.modules.inventory.application.InventoryAdmissionPort;
 import com.pms.hotelboutique.backend.modules.reservations.application.AuditService;
 import com.pms.hotelboutique.backend.modules.reservations.application.BookingView;
 import com.pms.hotelboutique.backend.modules.reservations.application.CreateBookingCommand;
@@ -31,15 +32,16 @@ import static org.mockito.Mockito.when;
 import org.springframework.beans.factory.ObjectProvider;
 
 /**
- * BD3-only fail-open contract: when no {@code AvailabilityPort} bean exists,
- * the booking proceeds without ATS precheck.
+ * BD3-only fail-open contract: when neither {@code AvailabilityPort} nor
+ * {@code InventoryAdmissionPort} beans exist, the booking proceeds without
+ * ATS precheck or atomic admission.
  *
- * <p>No Spring context is started here on purpose, so the real ATS engine
- * (BD2) is never loaded. No stub is imported either
+ * <p>No Spring context is started here on purpose, so the real ATS/admission
+ * engine (BD2) is never loaded. No stub is imported either
  * ({@code ControllableAvailabilityConfiguration} nor {@code AvailabilityStubConfiguration}),
- * so this suite proves the port is truly optional at the service level.
+ * so this suite proves both ports are truly optional at the service level.
  * Production is untouched: {@code ReservationBookingServiceImpl} already
- * resolves the port via {@code ObjectProvider.getIfAvailable()}.</p>
+ * resolves both ports via {@code ObjectProvider.getIfAvailable()}.</p>
  */
 class ReservationBookingNoPortTests {
 
@@ -51,7 +53,10 @@ class ReservationBookingNoPortTests {
             AuditService audit) {
         ObjectProvider<AvailabilityPort> availability = mock(ObjectProvider.class);
         when(availability.getIfAvailable()).thenReturn(null);
-        return new ReservationBookingServiceImpl(reservations, stays, profiles, audit, availability);
+        ObjectProvider<InventoryAdmissionPort> admission = mock(ObjectProvider.class);
+        when(admission.getIfAvailable()).thenReturn(null);
+        return new ReservationBookingServiceImpl(
+                reservations, stays, profiles, audit, availability, admission);
     }
 
     private static CreateBookingCommand command(UUID propertyId, UUID roomTypeId) {
@@ -69,8 +74,12 @@ class ReservationBookingNoPortTests {
         @SuppressWarnings("unchecked")
         ObjectProvider<AvailabilityPort> availability = mock(ObjectProvider.class);
         when(availability.getIfAvailable()).thenReturn(null);
+        @SuppressWarnings("unchecked")
+        ObjectProvider<InventoryAdmissionPort> admission = mock(ObjectProvider.class);
+        when(admission.getIfAvailable()).thenReturn(null);
 
         assertNull(availability.getIfAvailable());
+        assertNull(admission.getIfAvailable());
     }
 
     @Test

@@ -1,6 +1,9 @@
 package com.pms.hotelboutique.backend.modules.reservations.application;
 
 import com.pms.hotelboutique.backend.modules.inventory.application.AvailabilityPort;
+import com.pms.hotelboutique.backend.modules.inventory.application.InventoryAdmissionPort;
+import com.pms.hotelboutique.backend.modules.inventory.application.InventoryDemand;
+import com.pms.hotelboutique.backend.modules.inventory.application.InventoryExhaustedException;
 import com.pms.hotelboutique.backend.modules.inventory.application.StayDateRange;
 import com.pms.hotelboutique.backend.modules.reservations.domain.ReservationAuditEvent;
 import jakarta.validation.Valid;
@@ -22,24 +25,51 @@ public class ReservationBookingServiceImpl implements ReservationBookingService 
     private final GuestProfileService profiles;
     private final AuditService audit;
     private final ObjectProvider<AvailabilityPort> availability;
+    private final ObjectProvider<InventoryAdmissionPort> admission;
 
     public ReservationBookingServiceImpl(ReservationService reservations,
             ReservationStayService stays, GuestProfileService profiles, AuditService audit,
-            ObjectProvider<AvailabilityPort> availability) {
+            ObjectProvider<AvailabilityPort> availability,
+            ObjectProvider<InventoryAdmissionPort> admission) {
         this.reservations = reservations;
         this.stays = stays;
         this.profiles = profiles;
         this.audit = audit;
         this.availability = availability;
+        this.admission = admission;
     }
 
     @Override
     public BookingView createBooking(@Valid CreateBookingCommand command) {
+        validateStayDates(command);
         precheckAvailability(command);
         // One correlation id links every event of this flow. The actor is
         // SYSTEM: no authenticated principal reaches the service layer yet;
         // controllers will supply the real actor in a later contract.
         UUID correlation = UUID.randomUUID();
+        List<InventoryDemand> demand = command.stays().stream()
+                .map(stay -> new InventoryDemand(stay.roomTypeId(),
+                        new StayDateRange(stay.arrival(), stay.departure()), 1))
+                .toList();
+        InventoryAdmissionPort admissionPort = admission.getIfAvailable();
+        if (admissionPort == null) {
+            // No admission engine wired: persist directly. Same fail-open
+            // posture as the ATS precheck when its port is absent.
+            return persistBooking(command, correlation);
+        }
+        try {
+            // The whole booking persists inside the admission callback, in the
+            // same READ_COMMITTED transaction while BD2 holds the room-type
+            // locks. No REQUIRES_NEW, async work or external side effects.
+            return admissionPort.admit(command.propertyId(), demand,
+                    () -> persistBooking(command, correlation));
+        } catch (InventoryExhaustedException e) {
+            throw new ReservationBookingException(
+                    "no availability for the requested stays", e);
+        }
+    }
+
+    private BookingView persistBooking(CreateBookingCommand command, UUID correlation) {
         try {
             UUID bookingGuestId = resolveBooker(command);
             ReservationView reservation = reservations.create(new CreateReservationCommand(
@@ -98,6 +128,15 @@ public class ReservationBookingServiceImpl implements ReservationBookingService 
             return profiles.create(occupant.newProfile()).id();
         }
         throw new ReservationBookingException("occupant must be an existing profile or a new one");
+    }
+
+    private void validateStayDates(CreateBookingCommand command) {
+        for (CreateBookingCommand.StayBookingCommand stay : command.stays()) {
+            if (stay.arrival() == null || stay.departure() == null
+                    || !stay.arrival().isBefore(stay.departure())) {
+                throw new ReservationBookingException("arrival must precede departure");
+            }
+        }
     }
 
     private void precheckAvailability(CreateBookingCommand command) {
