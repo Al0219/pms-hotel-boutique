@@ -269,7 +269,7 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
 
 ### BD2-007B — RoomTypes: altas, consultas y edición descriptiva
 
-- **Estado:** PENDIENTE — contrato operativo por confirmar.
+- **Estado:** EN_QA — C/R/U RoomTypes validado; CI global pendiente de fixtures BD3.
 - **Owner:** BD2; reviewer BD1 para permisos/scope.
 - **Dependencias/DoR:** BD2-007A completada y contrato operativo aprobado;
   esquema/fundación BD2-002, C2 y auditoría existentes. No depende de que BD3
@@ -278,6 +278,8 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
   bloqueo de fila, auditoría transaccional y colección Postman.
 - **Aceptación/DoD:** definidos en el contrato propuesto 16; PostgreSQL/HTTP,
   verify completo con errores ajenos visibles, diff revisado, commit/push/handoff.
+
+- **Evidencia BD2-007B:** verify enfocado BUILD SUCCESS, 9 tests (API, rollback y HTTP real). Verify completo: 198 tests, 0 failures, 8 errors BD3, 0 skipped; ejecutado antes de añadir la prueba HTTP final. Colección Postman publicada, ejecución Newman pendiente.
 
 ## Entorno de validación
 

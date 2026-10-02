@@ -1,5 +1,21 @@
 # AlanHandoff — Seguimiento Backend
 
+## BD2-007B — RoomTypes: implementación
+
+- **Rama:** `feature/bd2-room-types-crud`. Contrato 16 autorizado por el usuario.
+- **Estado:** EN_QA; C/R/U validado. Scope C2 antes de SQL, permisos vigentes,
+  bloqueo de fila, auditoría transaccional y OpenAPI tipado; sin DELETE/status.
+- **QA:** verify enfocado BUILD SUCCESS, 9 tests sin fallos/errores/omitidas.
+  Incluye PostgreSQL, rollback real de auditoría, referencias, ATS sin Rooms,
+  HTTP entre transacciones, JWT Guest/revocación y permisos negativos.
+- **Verify completo:** 198 tests, 0 failures, 8 errors BD3, 0 skipped; ejecutado
+  antes de añadir la prueba HTTP final. Sin cambios BD3 ni exclusiones de tests.
+- **Postman:** colección RoomTypes publicada y guía; Newman aún no ejecutado.
+- **Publicación:** commit/push autorizado. Main incorporó solo la propuesta
+  documental en PR #68 (`302080b`); no trae correcciones de fixtures BD3.
+- **Siguiente paso:** Rooms y RatePlans en ramas dependientes separadas.
+  Baja/retención sigue pendiente de política; no se inventan borrados.
+
 ## BD2-007A — Preparación de RoomTypes
 
 - **Rama/base:** `feature/bd2-room-types-crud`, `origin/main` `c2699ff`.

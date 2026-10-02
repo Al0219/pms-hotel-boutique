@@ -171,3 +171,19 @@ y PostgreSQL 17 configurado mediante `PMS_DATABASE_*`:
 Esta comprobación enfocada no sustituye `./mvnw -B verify` ni cambia la selección
 del workflow. Ejecutar el verify completo antes de publicar y distinguir los
 errores existentes de integración BD3 de los resultados propios de Properties.
+
+## RoomTypes
+
+Importar `backend/postman/BD2-RoomTypes.postman_collection.json`. Reutilizar el
+environment privado y configurar `propertyId` con una propiedad autorizada.
+La colección hace login Staff y prueba POST, lista, consulta, PATCH, repetición
+sin cambios, campo inmutable 400 y código duplicado 409. Requiere
+`COMMERCIAL_MANAGE` para escribir; no contiene credenciales ni JWT reales.
+Ejecutar solo en QA: conserva el tipo creado y no añade habitaciones.
+
+Las pruebas Java `RoomTypeApiIntegrationTests`,
+`RoomTypeAuditRollbackIntegrationTests` y `RoomTypeHttpIntegrationTests`
+comprueban además scope/permisos/Guest/revocación, ATS sin inventario, referencias
+físicas y tarifas, auditoría y rollback real, así como timestamps entre requests.
+La colección publicada es una ayuda manual; su publicación no implica que Newman
+haya sido ejecutado. El verify completo sigue siendo obligatorio.
