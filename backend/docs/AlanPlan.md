@@ -252,6 +252,33 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
   assertions PASS. Verify completo final: 190 tests, 0 failures, 8 errors BD3,
   0 skipped; las pruebas Properties pasan. El workflow permanece íntegro.
 
+### BD2-007A — Contrato de administración de RoomTypes
+
+- **Estado:** COMPLETADA — propuesta RoomTypes preparada y revisada; aprobación API pendiente.
+- **Owner:** BD2; reviewer de seguridad/scope: BD1.
+- **Rama:** `feature/bd2-room-types-crud`, desde `origin/main` `c2699ff`.
+- **Dependencias/DoR:** BD2-002 completada (entidad/esquema/repositorio), C2 y
+  AuditService existentes; CRUD BD2 pendientes autorizados por el usuario.
+  La integración pendiente de booking BD3 no interviene en esta preparación.
+- **Alcance:** publicar una propuesta de contrato C/R/U descriptivo, permisos,
+  aislamiento, auditoría, límites de baja y criterios verificables.
+- **Aceptación/DoD:** conservar el modelo, distinguir propuesta de API aprobada,
+  confirmar unicidad y referencias, revisar diff y publicar commit/push.
+- **Evidencia:** contrato 16 contrastado con dominio, SQL, scope C2 y admisión;
+  diff/check revisados. Entrega documental, sin nueva ejecución Maven ni cambios BD3.
+
+### BD2-007B — RoomTypes: altas, consultas y edición descriptiva
+
+- **Estado:** PENDIENTE — contrato operativo por confirmar.
+- **Owner:** BD2; reviewer BD1 para permisos/scope.
+- **Dependencias/DoR:** BD2-007A completada y contrato operativo aprobado;
+  esquema/fundación BD2-002, C2 y auditoría existentes. No depende de que BD3
+  conecte su booking al puerto de admisión: no modifica capacidad física.
+- **Alcance propuesto:** servicio/DTO/REST/OpenAPI, scope antes de SQL,
+  bloqueo de fila, auditoría transaccional y colección Postman.
+- **Aceptación/DoD:** definidos en el contrato propuesto 16; PostgreSQL/HTTP,
+  verify completo con errores ajenos visibles, diff revisado, commit/push/handoff.
+
 ## Entorno de validación
 
 En la validación original, el host tenía Java Runtime 25 sin `javac`. La validación reproducible de

@@ -1,5 +1,21 @@
 # AlanHandoff — Seguimiento Backend
 
+## BD2-007A — Preparación de RoomTypes
+
+- **Rama/base:** `feature/bd2-room-types-crud`, `origin/main` `c2699ff`.
+  Properties fue incorporado mediante PR #67; su código está conservado.
+- **Estado:** preparación COMPLETADA; BD2-007B pendiente de confirmar contrato API.
+- **Dependencias:** fundación BD2-002 completada, C2 y AuditService existentes.
+  Los fixtures/booking pendientes de BD3 no son dependencia de este incremento.
+- **Entregado:** contrato 16 con rutas/permisos propuestos, DTO, scope SQL,
+  unicidad por propiedad, auditoría transaccional, UTC y aceptación verificable.
+- **Revisión:** contrastado con schema/JPA/C2 y los locks de admisión. Código único
+  por propiedad; nombre puede repetirse. No añade Rooms ni modifica ATS.
+  Solo documentación; diff/check revisados, sin nueva ejecución Maven.
+- **Publicación:** commit/push autorizado de estos tres archivos en esta rama.
+- **Siguiente paso:** confirmar contrato y comenzar BD2-007B. No hay DELETE,
+  baja/status ni cambio de propiedad; sus políticas requieren otra definición.
+
 ## BD2-006B — Properties: contrato aprobado y APIs
 
 - **Rama:** `feature/bd2-properties-crud`; contrato 15 aprobado por el usuario.
