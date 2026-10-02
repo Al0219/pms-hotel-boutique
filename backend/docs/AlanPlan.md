@@ -279,7 +279,7 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
 - **Aceptación/DoD:** definidos en el contrato propuesto 16; PostgreSQL/HTTP,
   verify completo con errores ajenos visibles, diff revisado, commit/push/handoff.
 
-- **Evidencia BD2-007B:** verify enfocado BUILD SUCCESS, 9 tests (API, rollback y HTTP real). Verify completo: 198 tests, 0 failures, 8 errors BD3, 0 skipped; ejecutado antes de añadir la prueba HTTP final. Colección Postman publicada, ejecución Newman pendiente.
+- **Evidencia BD2-007B:** verify enfocado BUILD SUCCESS, 9 tests (API, rollback y HTTP real). Verify completo: 198 tests, 0 failures, 8 errors BD3, 0 skipped; ejecutado antes de añadir la prueba HTTP final. Newman RoomTypes: 8 solicitudes/11 assertions PASS en la validación final de catálogos.
 
 ### BD2-008 — Rooms C/R/U
 
@@ -292,6 +292,20 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
   Incluye capacidad +1, locks reales, scope, validación, auditoría, rollback y HTTP.
 - **Verify completo:** BUILD FAILURE, 208 tests, 0 failures, 8 errors solo BD3, 0 skipped.
 
+### BD2-009 — RatePlans C/R/U
+
+- **Estado:** EN_QA. Owner BD2; `feature/bd2-rate-plans-crud`.
+- **DoR:** Rooms `4cea3db`, esquema/MonetaryAmount/C2/AuditService existentes;
+  continuación CRUD autorizada. Contrato 18 publicado antes de crear API.
+- **Alcance:** catálogo de tarifas y precios exactos; sin inventario, baja ni
+  reescritura de reservas/folios. Aceptación/DoD: contrato 18.
+- **QA enfocada:** BUILD SUCCESS, 21 tests; 9 RatePlans y 12 regresiones Rooms/RoomTypes.
+- **Verify completo final:** BUILD FAILURE, 217 tests, 0 failures, 8 errors solo BD3, 0 skipped.
+  Las 40 pruebas de los cuatro catálogos BD2 pasan. Sin exclusiones ni cambios BD3.
+- **Newman:** los cuatro catálogos suman 40 solicitudes/58 assertions PASS.
+  SQL confirmó unicidad, audit real/no-op y precio exacto; ATS de tarifas permanece 1.
+- **Pendiente de cierre global:** fixtures/admisión BD3 e integración PR; políticas
+  de baja/retención/reclasificación aún no definidas, fuera del C/R/U entregado.
 
 ## Entorno de validación
 
