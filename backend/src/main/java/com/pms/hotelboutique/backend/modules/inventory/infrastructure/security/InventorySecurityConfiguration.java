@@ -25,8 +25,8 @@ public class InventorySecurityConfiguration {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(errors -> errors
-                        .authenticationEntryPoint((request, response, exception) -> response.sendError(401))
-                        .accessDeniedHandler((request, response, exception) -> response.sendError(403)))
+                        .authenticationEntryPoint((request, response, exception) -> response.setStatus(401))
+                        .accessDeniedHandler((request, response, exception) -> response.setStatus(403)))
                 .authorizeHttpRequests(requests -> requests.anyRequest().authenticated())
                 .addFilterBefore(new InventoryStaffFilter(jwt, sessions), UsernamePasswordAuthenticationFilter.class)
                 .build();
