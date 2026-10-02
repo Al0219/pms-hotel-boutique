@@ -23,17 +23,17 @@ No usa el contenedor ni el volumen de la base de la aplicación.
 Sí, Postman permite login Staff, sesión/scope, consulta ATS y respuestas
 400/401/403/404. Importar `../postman/BD2-Inventory.postman_collection.json`.
 
-Los repositorios JPA no son endpoints CRUD. Tampoco existe actualmente un
-controlador REST de booking en las fuentes BD3 revisadas en `origin/main`
-`7c060c9`. La creación real, su efecto en ATS y la admisión concurrente se
-prueban mediante servicios Java. No usar un supuesto `POST /reservations`.
+Esta rama incluye APIs C/R/U de Properties, RoomTypes, Rooms y RatePlans,
+descritas más abajo. No existe aquí un controlador REST de booking; la creación
+de reservas y admisión concurrente se prueban mediante servicios Java.
+No usar un supuesto `POST /reservations`.
 
 ## Requisitos del runtime
 
-Usar un checkout de integración que contenga Fases 3/4 BD2 y las migraciones
-BD3 de `main`. La rama dependiente BD2 por sí sola aún no contiene las tablas
-`reservations`/`reservation_stays`; login puede funcionar, pero ATS fallará
-sin ellas. No crearlas manualmente: deben llegar por Liquibase al integrar BD3.
+La cadena RoomTypes → Rooms → RatePlans parte de main e incluye las migraciones
+BD3 y las tablas reservations/reservation_stays necesarias para ATS. Levantar
+la rama que contenga la entrega deseada; Liquibase aplica el esquema. No crear
+esas tablas manualmente ni incorporar fixtures de BD3 para ocultar errores.
 
 Debe existir un Staff provisionado con `RESERVATION_MANAGE` o
 `COMMERCIAL_MANAGE` y acceso a la propiedad. Se puede usar un SUPER_ADMIN local
@@ -73,29 +73,12 @@ Health: `http://127.0.0.1:18080/actuator/health`.
 
 ## Datos mínimos de desarrollo
 
-No hay endpoint para crear RoomType/Rooms en esta entrega. En una base local
-de integración migrada, cargar solo estas filas de prueba a través de `psql`
-o el cliente SQL. La propiedad demo de Liquibase es
-`3dcd0a8e-5c6a-46e7-8d51-7c95d86b232d`.
-
-```sql
-BEGIN;
-INSERT INTO room_types(id, property_id, code, name)
-VALUES ('11111111-1111-4111-8111-111111111111',
-        '3dcd0a8e-5c6a-46e7-8d51-7c95d86b232d', 'BD2-DEMO', 'Postman demo')
-ON CONFLICT (id) DO NOTHING;
-INSERT INTO rooms(id, property_id, room_type_id, code)
-VALUES ('11111111-1111-4111-8111-111111111112',
-        '3dcd0a8e-5c6a-46e7-8d51-7c95d86b232d',
-        '11111111-1111-4111-8111-111111111111', 'BD2-DEMO-01')
-ON CONFLICT (id) DO NOTHING;
-COMMIT;
-```
-
-Por ejemplo, abrir `docker compose exec postgres psql -U pms_app -d pms_hotel`
-y pegar el SQL. Son datos de desarrollo, no migraciones ni cambios de esquema.
-En una base limpia, sin stays consumidores ni OOO para esas noches, ATS debe ser
-1. Los datos reales pueden producir otro resultado válido.
+Crear datos mediante Properties → RoomTypes → Rooms usando las colecciones
+incluidas. Properties guarda createdPropertyId: copiarlo a propertyId del
+environment; RoomTypes guarda roomTypeId. También puede usarse la propiedad demo
+autorizada `3dcd0a8e-5c6a-46e7-8d51-7c95d86b232d`. Ya no es necesario insertar
+tipos/habitaciones manualmente. Un tipo nuevo sin Rooms tiene ATS=0; con una
+Room y sin stays consumidores/OOO en esas noches, ATS=1. OOS no resta inventario.
 
 ## Secuencia Postman
 
@@ -116,7 +99,7 @@ La colección no contiene contraseñas ni JWT reales.
        ?roomTypeId={{roomTypeId}}&arrival={{arrival}}&departure={{departure}}
    ```
 
-   Valores demo: `roomTypeId=11111111-1111-4111-8111-111111111111`,
+   Usar roomTypeId generado por RoomTypes; fechas de ejemplo:
    `arrival=2026-11-01`, `departure=2026-11-03`.
    Esperar 200 con IDs, fechas locales y `availableUnits` entero no negativo.
 4. Ejecutar las solicitudes negativas: sin token o token inválido → 401;
@@ -185,8 +168,8 @@ Las pruebas Java `RoomTypeApiIntegrationTests`,
 `RoomTypeAuditRollbackIntegrationTests` y `RoomTypeHttpIntegrationTests`
 comprueban además scope/permisos/Guest/revocación, ATS sin inventario, referencias
 físicas y tarifas, auditoría y rollback real, así como timestamps entre requests.
-La colección publicada es una ayuda manual; su publicación no implica que Newman
-haya sido ejecutado. El verify completo sigue siendo obligatorio.
+La colección fue ejecutada con Newman: 8 solicitudes y 11 assertions PASS.
+El verify completo sigue siendo obligatorio.
 
 ## Rooms
 
@@ -198,3 +181,37 @@ física y la conserva, por lo que aumenta capacidad en QA. No ejecutar en produc
 Prueba alta, lista, lectura, edición, no-op, campos inmutables y duplicado 409.
 No valida por sí sola concurrencia ni rollback: las pruebas Java cubren esos casos.
 No hay DELETE, cambio de tipo/propiedad ni status de Room.
+
+## RatePlans
+
+Importar `BD2-RatePlans.postman_collection.json`. Usar el mismo environment con
+`propertyId` y `roomTypeId` autorizados; Staff con `COMMERCIAL_MANAGE`.
+El precio es un objeto con `amount` como texto decimal y `currency` ISO:
+`{"amount":"125.50","currency":"GTQ"}`. No usar números JSON ni floats.
+La colección crea una tarifa, comprueba lectura/lista, edición de precio/nombre,
+no-op, campos inmutables y duplicado 409. Conserva la tarifa en QA; no añade Rooms.
+La precisión monetaria, rechazo de redondeo/overflow/negativos, scope y rollback
+se verifican en Java con PostgreSQL. Las tres clases RatePlan*IntegrationTests
+incluyen HTTP real y auditoría. No se modifican precios históricos de reservas.
+
+Secuencia de pruebas manuales: Properties → RoomTypes → Rooms → RatePlans.
+Después de Properties, copiar `createdPropertyId` a `propertyId`; RoomTypes
+guarda `roomTypeId`. Las colecciones de catálogos hacen su propio login.
+Ver contratos 16/17/18 y Swagger para los cuerpos/respuestas completos.
+
+## Evidencia de la entrega de catálogos
+
+Java 21/PostgreSQL 17: las 40 pruebas de Properties/RoomTypes/Rooms/RatePlans
+pasan (27 nuevas en los últimos tres catálogos). Verify completo final:
+217 tests, 0 failures, 8 errors BD3, 0 skipped, BUILD FAILURE. Los fixtures de
+booking siguen pendientes; no se cambió workflow ni se excluyó ninguna prueba.
+
+Newman con login/scope reales: Properties 14 solicitudes/20 assertions;
+RoomTypes 8/11; Rooms 8/11; RatePlans 10/16. Total 40 solicitudes y 58 assertions,
+sin fallos. SQL confirmó una fila por catálogo pese a duplicados 409 y exactamente
+un evento de alta y uno de edición por entidad, todos con el actor Staff real.
+El precio final fue 9999 unidades menores GTQ; ATS antes/después de tarifas=1.
+Swagger real confirmó amount como string y la respuesta RatePlanView.
+Runtime, credenciales/environments y reportes privados fueron temporales, fuera
+del repositorio. La API usada en QA se retiró; levantar el runtime local para
+repetir las colecciones.

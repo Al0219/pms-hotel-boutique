@@ -53,4 +53,18 @@ public class RatePlan extends InventoryEntity {
     public String getCode() { return code; }
     public String getName() { return name; }
     public MonetaryAmount getBasePrice() { return new MonetaryAmount(baseAmountMinor, currency); }
+
+    public boolean revise(String code, String name, MonetaryAmount price, Instant now) {
+        String nextCode = InventoryValues.text(code, "code", 64);
+        String nextName = InventoryValues.text(name, "name", 160);
+        Objects.requireNonNull(price, "price");
+        if (price.minorUnits().value() < 0) { throw new IllegalArgumentException("Base price cannot be negative"); }
+        if (this.code.equals(nextCode) && this.name.equals(nextName) && getBasePrice().equals(price)) { return false; }
+        this.code = nextCode;
+        this.name = nextName;
+        this.baseAmountMinor = price.minorUnits();
+        this.currency = price.currency();
+        touch(now);
+        return true;
+    }
 }
