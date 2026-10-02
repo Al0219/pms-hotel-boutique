@@ -27,6 +27,15 @@ public class RoomType extends InventoryEntity {
     }
 
     public UUID getPropertyId() { return propertyId; }
+    public boolean rename(String code, String name, Instant now) {
+        String nextCode = InventoryValues.text(code, "code", 64);
+        String nextName = InventoryValues.text(name, "name", 160);
+        if (this.code.equals(nextCode) && this.name.equals(nextName)) { return false; }
+        this.code = nextCode;
+        this.name = nextName;
+        touch(now);
+        return true;
+    }
     public String getCode() { return code; }
     public String getName() { return name; }
 }

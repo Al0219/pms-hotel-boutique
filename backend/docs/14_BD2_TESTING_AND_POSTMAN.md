@@ -171,3 +171,30 @@ y PostgreSQL 17 configurado mediante `PMS_DATABASE_*`:
 Esta comprobación enfocada no sustituye `./mvnw -B verify` ni cambia la selección
 del workflow. Ejecutar el verify completo antes de publicar y distinguir los
 errores existentes de integración BD3 de los resultados propios de Properties.
+
+## RoomTypes
+
+Importar `backend/postman/BD2-RoomTypes.postman_collection.json`. Reutilizar el
+environment privado y configurar `propertyId` con una propiedad autorizada.
+La colección hace login Staff y prueba POST, lista, consulta, PATCH, repetición
+sin cambios, campo inmutable 400 y código duplicado 409. Requiere
+`COMMERCIAL_MANAGE` para escribir; no contiene credenciales ni JWT reales.
+Ejecutar solo en QA: conserva el tipo creado y no añade habitaciones.
+
+Las pruebas Java `RoomTypeApiIntegrationTests`,
+`RoomTypeAuditRollbackIntegrationTests` y `RoomTypeHttpIntegrationTests`
+comprueban además scope/permisos/Guest/revocación, ATS sin inventario, referencias
+físicas y tarifas, auditoría y rollback real, así como timestamps entre requests.
+La colección publicada es una ayuda manual; su publicación no implica que Newman
+haya sido ejecutado. El verify completo sigue siendo obligatorio.
+
+## Rooms
+
+Importar `BD2-Rooms.postman_collection.json` con el mismo environment privado.
+Configurar `propertyId` y `roomTypeId` existente en esa propiedad (por ejemplo,
+el tipo generado por la colección RoomTypes). Requiere `COMMERCIAL_MANAGE`.
+Alta: roomTypeId/código; PATCH: solo código. La colección crea una habitación
+física y la conserva, por lo que aumenta capacidad en QA. No ejecutar en producción.
+Prueba alta, lista, lectura, edición, no-op, campos inmutables y duplicado 409.
+No valida por sí sola concurrencia ni rollback: las pruebas Java cubren esos casos.
+No hay DELETE, cambio de tipo/propiedad ni status de Room.
