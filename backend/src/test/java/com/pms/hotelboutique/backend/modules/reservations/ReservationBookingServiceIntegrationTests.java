@@ -77,6 +77,10 @@ class ReservationBookingServiceIntegrationTests {
                 roomType, SEED_PROPERTY);
         jdbc.update("INSERT INTO rooms(id,property_id,room_type_id,code) VALUES (?,?,?,'101')",
                 room, SEED_PROPERTY, roomType);
+        // Two overlapping stays of the same type sum their demand inside the
+        // admission port, so the fixture provides two physical rooms.
+        jdbc.update("INSERT INTO rooms(id,property_id,room_type_id,code) VALUES (?,?,?,'102')",
+                UUID.randomUUID(), SEED_PROPERTY, roomType);
         jdbc.update("INSERT INTO room_types(id,property_id,code,name) VALUES (?,?,'SOLD','Sold out')",
                 soldOutType, SEED_PROPERTY);
         ControllableAvailabilityConfiguration.setStock(soldOutType, 0);

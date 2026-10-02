@@ -16,7 +16,7 @@ import org.springframework.jdbc.datasource.DelegatingDataSource;
 
 /**
  * BD3 migration validation: a pre-BD3 schema (6 changesets) upgrades to the
- * full master (11 changesets) without touching pre-existing tables, and
+ * full master (17 changesets) without touching pre-existing tables, and
  * re-applying the master is a no-op.
  */
 @SpringBootTest
@@ -40,19 +40,20 @@ class ReservationsSchemaUpgradeTests {
                 migrate(schema, "classpath:db/changelog/db.changelog-master.yaml");
                 try (var result = sql.executeQuery("SELECT count(*) FROM " + schema + ".databasechangelog")) {
                     assertTrue(result.next());
-                    assertEquals(14, result.getInt(1));
+                    assertEquals(17, result.getInt(1));
                 }
                 // Re-applying must be a no-op, including all pre-existing checksums.
                 migrate(schema, "classpath:db/changelog/db.changelog-master.yaml");
                 try (var result = sql.executeQuery("SELECT count(*) FROM " + schema + ".databasechangelog")) {
                     assertTrue(result.next());
-                    assertEquals(14, result.getInt(1));
+                    assertEquals(17, result.getInt(1));
                 }
                 for (String table : new String[]{"guest_profiles", "reservations", "reservation_stays",
                         "reservation_guests", "folios", "folio_movements", "reservation_audit_events",
                         "hk_room_states", "maintenance_orders", "service_requests",
                         "service_messages", "hk_discrepancies", "business_days",
-                        "night_audit_runs"}) {
+                        "night_audit_runs", "companies", "agencies",
+                        "event_groups", "room_blocks", "promotions", "reward_ledger"}) {
                     try (var result = sql.executeQuery(
                             "SELECT count(*) FROM " + schema + "." + table)) {
                         assertTrue(result.next());
@@ -66,8 +67,8 @@ class ReservationsSchemaUpgradeTests {
                         triggers.add(result.getString(1));
                     }
                 }
-                assertEquals(java.util.Set.of("trg_folio_movements_append_only", "trg_audit_append_only"),
-                        triggers);
+                assertEquals(java.util.Set.of("trg_folio_movements_append_only",
+                        "trg_audit_append_only", "trg_reward_ledger_append_only"), triggers);
                 try (var result = sql.executeQuery("SELECT code FROM " + schema + ".properties")) {
                     assertTrue(result.next());
                     assertEquals("HB-GT-001", result.getString(1));
