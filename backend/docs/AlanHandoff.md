@@ -1,5 +1,178 @@
 # AlanHandoff — Seguimiento Backend
 
+## BD2-007A — Preparación de RoomTypes
+
+- **Rama/base:** `feature/bd2-room-types-crud`, `origin/main` `c2699ff`.
+  Properties fue incorporado mediante PR #67; su código está conservado.
+- **Estado:** preparación COMPLETADA; BD2-007B pendiente de confirmar contrato API.
+- **Dependencias:** fundación BD2-002 completada, C2 y AuditService existentes.
+  Los fixtures/booking pendientes de BD3 no son dependencia de este incremento.
+- **Entregado:** contrato 16 con rutas/permisos propuestos, DTO, scope SQL,
+  unicidad por propiedad, auditoría transaccional, UTC y aceptación verificable.
+- **Revisión:** contrastado con schema/JPA/C2 y los locks de admisión. Código único
+  por propiedad; nombre puede repetirse. No añade Rooms ni modifica ATS.
+  Solo documentación; diff/check revisados, sin nueva ejecución Maven.
+- **Publicación:** commit/push autorizado de estos tres archivos en esta rama.
+- **Siguiente paso:** confirmar contrato y comenzar BD2-007B. No hay DELETE,
+  baja/status ni cambio de propiedad; sus políticas requieren otra definición.
+
+## BD2-006B — Properties: contrato aprobado y APIs
+
+- **Rama:** `feature/bd2-properties-crud`; contrato 15 aprobado por el usuario.
+- **DoR:** C2, esquema Property y AuditService disponibles; no modificar BD3.
+- **Estado:** EN_QA; alcance BD2 validado, CI global pendiente de fixtures BD3.
+  Publicación por commit/push autorizada.
+- **Entregado:** POST/GET de Properties y GET/PATCH por ID; permisos existentes
+  por método, sesión vigente y scope aplicado en SQL; edición de nombre/código
+  con bloqueo de fila y auditoría before/after transaccional. No-op sin cambios
+  de timestamps/eventos. Validación estricta, 409 por unicidad y OpenAPI.
+- **QA enfocada:** wrapper verify con selección explícita de las tres clases
+  Properties: BUILD SUCCESS, 13 tests sin fallos/errores/omitidas y JAR empaquetado.
+  Incluye PostgreSQL, rollback real de auditoría, bloqueo NOWAIT, aislamiento,
+  permisos, JWT Guest/revocación y escrituras HTTP entre transacciones separadas.
+- **Postman/Newman:** 14 solicitudes y 20 assertions PASS con login/C2 reales.
+  SQL confirmó dos eventos (alta/edición), actor Staff real, property/correlation
+  correctos y una sola propiedad pese al intento duplicado.
+- **Correcciones QA:** precisión PostgreSQL de microsegundos preserva timestamps
+  entre requests; OpenAPI declara 200/201 con DTO y errores con ProblemDetail.
+  Live Swagger confirmó los schemas; se conservan pruebas de regresión.
+- **Verify completo final:** `./mvnw -B verify`, Java 21/PostgreSQL 17:
+  BUILD FAILURE, 190 tests, 0 failures, 8 errors, 0 skipped. Las 13 pruebas
+  Properties pasan también en esta ejecución; los errores pertenecen solo a
+  ReservationBookingServiceIntegrationTests (7, dos beans AvailabilityPort) y
+  ReservationBookingWithoutAvailabilityTests (1, ATS real en supuesto sin puerto).
+  No se cambió BD3, el workflow ni la selección de tests del verify completo.
+  Logs de evidencia fuera del repositorio: pms-bd2-properties-focused.log y
+  pms-bd2-properties-verify-final.log.
+- **Base actualizada:** `origin/main` `c05a091` integró PR #66 (propuesta).
+  Su árbol es idéntico a `73c6f9f`; el código combinado no añade diferencias
+  de ejecución. Esta entrega funcional necesitará un nuevo PR.
+- **Siguiente paso:** abrir PR funcional desde esta rama hacia main; resolver
+  los fixtures de BD3 en su rama responsable y continuar con contrato RoomTypes.
+  Baja/reactivación y cambios de moneda/zona permanecen fuera de esta entrega.
+
+## BD2-006A — Propuesta de administración de propiedades
+
+- **Rama/base:** `feature/bd2-properties-crud`, `origin/main` `9552325`.
+  Fase 5 integrada por PR #65; su conexión productiva BD3 continúa pendiente.
+- **Estado histórico:** preparación de propuesta COMPLETADA; aprobación e
+  implementación posteriores registradas arriba en BD2-006B.
+- **Entregado:** `15_BD2_PROPERTIES_CRUD_CONTRACT_PROPOSAL.md`; primera entrega
+  C/R/U de Properties y secuencia RoomTypes/Rooms/RatePlans/bajas, con ownership BD2.
+- **Decisiones al preparar la propuesta:** rutas/permisos operativos, alta limitada al
+  SUPER_ADMIN de su organización y edición solo de nombre/código. Baja y
+  reactivación necesitan definición de acceso a properties inactivas bajo C2.
+- **Revisión:** coherencia con C2, modelo/schema existentes y reglas de dominio;
+  distinguir propuesta de contrato confirmado. Diff/whitespace revisados.
+  Solo documentación; no se declara una nueva ejecución Maven ni una API creada.
+- **Siguiente paso:** confirmar propuesta, implementar BD2-006B y validar
+  PostgreSQL/HTTP/OpenAPI/Postman antes de su commit/push. No modificar fixtures BD3.
+
+## BD2-005 — Admisión e integración (Fase 5)
+
+- **Rama:** `feature/bd2-inventory-admission`, desde Fase 4 publicada en `0dbaa74`.
+- **Estado:** EN_QA; entrega BD2 validada, conexión BD3 pendiente. Publicación autorizada.
+- **PR objetivo:** `main`; Fase 4 integrada mediante PR #64 en `a4dc6b0`.
+  El fetch previo a esta entrega confirma que sus fixtures BD3 no cambiaron.
+- **DoR:** motor/API BD2 disponibles y esquema BD3 integrado en `origin/main`.
+- **Hallazgo:** booking BD3 comprueba cada stay antes de escribir; no acumula
+  demanda multi-room ni serializa dos transacciones que venden la última unidad.
+- **Entregado:** `InventoryAdmissionPort`, demanda conjunta, locks PostgreSQL
+  por property/RoomType, excepción de agotamiento y rollback. Contrato en
+  `13_BD2_INVENTORY_ADMISSION_CONTRACT.md`; guía y colección Postman en
+  `14_BD2_TESTING_AND_POSTMAN.md` y `../postman/BD2-Inventory.postman_collection.json`.
+- **QA BD2:** `./mvnw -B verify` BUILD SUCCESS, Java 21/PostgreSQL 17;
+  46 pruebas, cero fallos/errores/omitidas. Incluye 8 pruebas de admisión real
+  y 2 con servidor HTTP real. Log TEMP: `pms-bd2-phase5-verify-http-fix.log`.
+- **Corrección HTTP:** `sendError(403)` provocaba error dispatch a `/error`,
+  protegido por la cadena global; se reemplaza por `setStatus` solo en BD2.
+  No se cambian Auth BD1 ni rutas globales. Regresión cubierta con HTTP real.
+- **Postman:** Newman PASS, 8 solicitudes/13 assertions contra runtime combinado
+  con login/scope reales; fixture de una habitación, credenciales efímeras.
+  Runtime detenido y credenciales/reporte privado eliminados de TEMP.
+- **Integración real aislada:** fuentes BD3 de `origin/main` `7c060c9` intactas,
+  con cuatro tests temporales que envuelven `ReservationBookingService` en el
+  puerto nuevo: ATS disminuye exactamente uno, cancelación libera sin borrar
+  stay, demanda multi-room se rechaza antes de crear y consumo JPA pendiente
+  se observa en la siguiente admisión. Cuatro PASS, sin mock ATS ni booking.
+  Esta envoltura pertenece a la validación; no conecta el booking productivo.
+- **Verify combinado:** BUILD FAILURE, 181 pruebas incluyendo las 4 temporales;
+  cero failures, 8 errors, cero omitidas. Siete errores en el contexto de
+  `ReservationBookingServiceIntegrationTests` por beans `availabilityService`
+  y `availabilityPort` competidores; uno en
+  `ReservationBookingWithoutAvailabilityTests` por presencia del ATS real.
+  Los demás tests, incluidos todos los BD2, pasan. Fuentes/fixtures BD3 intactos.
+  Log TEMP: `pms-bd2-phase5-combined-http-fix.log`.
+- **Límite:** los escritores que no utilicen el puerto siguen fuera de su
+  garantía. No declarar sobreventa cero global ni Fase 5 COMPLETADA todavía.
+- **Siguiente paso BD3:** resolver el mock `AvailabilityPort` no primario y el
+  contexto que supone que no hay puerto; conectar el booking al callback del
+  puerto de admisión, con validación y revisión del owner, antes de cerrar Fase 5.
+
+## BD2-004 — API Staff de disponibilidad (Fase 4)
+
+- **Rama:** `feature/bd2-availability-api`, dependiente de BD2 Fase 3 en `277390d`.
+- **Estado:** COMPLETADA para entrega BD2; publicada en `0dbaa74`.
+- **Contrato:** `12_BD2_AVAILABILITY_API_CONTRACT.md`; consulta Staff por
+  property/room type y fechas locales, mínimo ATS, sin precios ni reserva.
+- **Seguridad:** servicios JWT/sesión/permiso/scope C2 reutilizados; cadena BD2
+  limitada a la ruta de disponibilidad y autorización por método. No se cambia BD1.
+- **Dependencia:** las tablas BD3 ya están en `origin/main` (`7c060c9`), pero
+  todavía no forman parte de esta rama dependiente; sus correcciones de tests
+  permanecen fuera de esta rama.
+- **QA:** `./mvnw -B verify` BUILD SUCCESS con Java 21, PostgreSQL 17 y Maven
+  3.9.16 del wrapper; 36 pruebas, cero fallos/errores/omitidas. Incluye 11 pruebas
+  HTTP con JWT firmado, separación Guest/Staff, sesión revocada, permisos vivos,
+  scope antes de ATS, cero unidades, errores 400/404 y schemas OpenAPI.
+  El puerto ATS se sustituye solo en el contexto de pruebas HTTP; el query SQL
+  real se mantiene cubierto por las pruebas de Fase 3. No sustituye Fase 5.
+- **Siguiente paso:** PR de Fase 4 dependiente de Fase 3; iniciar Fase 5 con
+  validación aislada contra `origin/main` y revalidar cuando BD3 ajuste sus tests.
+
+## BD2-CI-001 — Entrega de corrección BD2
+
+- **Rama:** `feature/bd2-availability-engine`; corrección publicada en `277390d`.
+  Fase 3 ya publicada en `ec8c68f` y `99fe5a0`.
+- **Corrección:** validar upgrade contra el total del master instalado en limpio;
+  comprobar el changeset `002-management-002` y conservar idempotencia/Property.
+- **Validación:** `./mvnw -B verify` PASS, 25 pruebas, cero fallos/errores/omitidas;
+  Java 21, PostgreSQL 17 y Maven 3.9.16 del wrapper. Diff revisado.
+- **Dependencia:** BD3 debe ajustar sus contextos de pruebas al motor ATS real;
+  la referencia combinada del PR `a7b9b14` falla en sus dos pruebas de booking.
+- **Retomar:** cuando BD3 integre sus correcciones, revalidar el PR BD2. Tras
+  integrar BD2, iniciar la siguiente tarea desde `origin/main` actualizado.
+  Pendientes de BD2: Fase 4 (API/contrato/scope) y Fase 5 (integración transaccional).
+
+## BD2-003 — Fase 3 completada (entrega BD2)
+
+- **Rama:** `feature/bd2-availability-engine`, basada en `origin/main` `8e67b7d`.
+- **Commit/push:** `ec8c68f` publicado en `origin/feature/bd2-availability-engine`.
+- **Estado:** COMPLETADA para entrega BD2; lista para PR/revisión del equipo.
+- **Entregado:** `AvailabilityService` calcula el mínimo de unidades vendibles
+  por noche como `max(0, físico - OOO - ReservationStay consumidor)`. El query
+  usa IDs explícitos de propiedad/tipo, cuenta habitaciones OOO distintas y
+  excluye Reservation padre cancelada.
+- **Consumo BD3 verificado en** `origin/feature/bd3-foundation` (`d1cb2b7`):
+  `RESERVED`/`IN_HOUSE` consumen; `CANCELLED`/`NO_SHOW`/`CHECKED_OUT` liberan.
+  Cancelar Reservation no cascada a stays; el `EXISTS` contra el padre cubre
+  deliberadamente ese caso. BD3 ya tiene tests de ciclo de vida para esos estados.
+- **Entregado:** `PropertyStayTime` y `UtcStayInstantRange` convierten límites
+  locales `[arrival, departure)` a UTC con `ZoneId`, incluyendo cambios DST.
+- **Scope:** SQL limitado por `propertyId`; de acuerdo con el contrato existente,
+  la capa de aplicación/HTTP debe autorizar la propiedad antes de llamar al puerto.
+  No se agrega autenticación al query interno.
+- **Validación:** `docker compose -p pms-bd2-phase1 -f
+  backend/compose.bd2-test.yaml up --abort-on-container-exit --exit-code-from
+  verify` — BUILD SUCCESS en PostgreSQL 17/Temurin 21; 25 pruebas, cero
+  fallos/errores/omitidas. Incluye prueba SQL con estados consumidores,
+  fechas `[arrival, departure)` y Reservation padre cancelada; ATS por
+  mínimo/no negativo; y límites UTC a través de DST.
+- **Dependencia de integración:** el query requiere las tablas BD3 `reservations`
+  y `reservation_stays`, presentes en `origin/feature/bd3-foundation`, todavía
+  no integradas a `main`; el ATS entra en funcionamiento cuando BD3 se integre.
+- **Límite:** el precheck no bloquea ni serializa admisiones concurrentes; la
+  garantía de sobreventa cero requiere el trabajo transaccional posterior.
+
 ## BD2-002 — Fase 2 completada
 
 - **Rama:** `feature/bd2-entities-repositories`.

@@ -1,6 +1,7 @@
 package com.pms.hotelboutique.backend.modules.inventory;
 
 import com.pms.hotelboutique.backend.modules.inventory.application.AvailabilityPort;
+import com.pms.hotelboutique.backend.modules.inventory.application.AvailabilityService;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.UUID;
@@ -108,8 +109,9 @@ class InventorySchemaIntegrationTests {
     }
 
     @Test
-    void defaultRuntimeHasNoFakeAvailability() {
-        assertTrue(context.getBeansOfType(AvailabilityPort.class).isEmpty());
+    void defaultRuntimeUsesRealAvailabilityServiceInsteadOfTestStub() {
+        assertInstanceOf(AvailabilityService.class, context.getBean(AvailabilityPort.class));
+        assertEquals(1, context.getBeansOfType(AvailabilityPort.class).size());
     }
 
     @Test
@@ -117,6 +119,11 @@ class InventorySchemaIntegrationTests {
         // Generated identifier; never derived from user input or an existing schema.
         String schema = "bd2_upgrade_" + UUID.randomUUID().toString().replace("-", "");
         try (var isolated = dataSource.getConnection(); var sql = isolated.createStatement()) {
+            int currentChangesetCount;
+            try (var result = sql.executeQuery("SELECT count(*) FROM public.databasechangelog")) {
+                assertTrue(result.next());
+                currentChangesetCount = result.getInt(1);
+            }
             sql.execute("CREATE SCHEMA " + schema);
             try {
                 migrate(schema, "classpath:db/changelog/db.changelog-before-bd2.yaml");
@@ -125,11 +132,21 @@ class InventorySchemaIntegrationTests {
                     assertEquals(5, result.getInt(1));
                 }
                 migrate(schema, "classpath:db/changelog/db.changelog-master.yaml");
+                // An upgrade must match the fresh runtime schema, including newer modules.
+                try (var result = sql.executeQuery("SELECT count(*) FROM " + schema + ".databasechangelog")) {
+                    assertTrue(result.next());
+                    assertEquals(currentChangesetCount, result.getInt(1));
+                }
+                try (var result = sql.executeQuery("SELECT count(*) FROM " + schema
+                        + ".databasechangelog WHERE id='002-management-002'")) {
+                    assertTrue(result.next());
+                    assertEquals(1, result.getInt(1));
+                }
                 // Re-applying must be a no-op, including all pre-existing checksums.
                 migrate(schema, "classpath:db/changelog/db.changelog-master.yaml");
                 try (var result = sql.executeQuery("SELECT count(*) FROM " + schema + ".databasechangelog")) {
                     assertTrue(result.next());
-                    assertEquals(6, result.getInt(1));
+                    assertEquals(currentChangesetCount, result.getInt(1));
                 }
                 try (var result = sql.executeQuery("SELECT code FROM " + schema + ".properties")) {
                     assertTrue(result.next());

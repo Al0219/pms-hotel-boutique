@@ -46,6 +46,19 @@ public class Property extends InventoryEntity {
     }
 
     public UUID getOrganizationId() { return organizationId; }
+
+    /** Descriptive changes only; immutable operational settings need their own contract. */
+    public boolean rename(String code, String name, Instant now) {
+        String nextCode = InventoryValues.text(code, "code", 64);
+        String nextName = InventoryValues.text(name, "name", 160);
+        if (this.code.equals(nextCode) && this.name.equals(nextName)) {
+            return false;
+        }
+        this.code = nextCode;
+        this.name = nextName;
+        touch(now);
+        return true;
+    }
     public String getCode() { return code; }
     public String getName() { return name; }
     public String getTimezone() { return timezone; }

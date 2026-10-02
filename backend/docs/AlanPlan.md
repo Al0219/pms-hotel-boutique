@@ -146,8 +146,138 @@ dependencias; un perfil parcial incluye solo su módulo y sus dependencias.
 - **Fuera de alcance:** servicios CRUD, endpoints, disponibilidad ATS real, reservas,
   cambios de permisos y flujo de liberación/auditoría OOO/OOS.
 
-Fases siguientes: motor ATS con integración BD3; APIs y scope;
-integración y concurrencia. Sus contratos y DoR se concretarán antes de implementarlas.
+### BD2-003 — Fase 3: motor ATS MVP
+
+- **Estado:** COMPLETADA — implementación, acceptance y DoD local PASS.
+- **Owner:** BD2.
+- **Rama:** `feature/bd2-availability-engine`, desde `origin/main` en `8e67b7d`.
+- **Commit/push:** `ec8c68f` publicado en `origin/feature/bd2-availability-engine`.
+- **Dependencias:** BD2-002 integrada en PR #61; contrato y ciclo de vida de
+  `ReservationStay` revisados en `origin/feature/bd3-foundation` (aún no integrada).
+- **DoR:** Fase 3 autorizada por el usuario. El contrato BD2 existente define
+  mínimo de ATS por noche, `[arrival, departure)`, OOO descuenta y OOS no;
+  el ciclo de vida de ReservationStay fue verificado en la rama BD3.
+- **Entregado:** `AvailabilityService` devuelve el mínimo nocturno de físico -
+  OOO - ReservationStay consumidor; `[arrival, departure)` local; fechas
+  convertibles a límites UTC con `ZoneId`.
+- **Estados de consumo:** `RESERVED`/`IN_HOUSE` consumen; `CANCELLED`,
+  `NO_SHOW` y `CHECKED_OUT` liberan. El query excluye además el padre
+  `Reservation` en estado `CANCELLED`, pues BD3 deliberadamente no propaga la
+  cancelación a las estancias.
+- **Scope:** el query de ATS siempre filtra por el `propertyId` solicitado y el
+  puerto exige que el llamante haya autorizado previamente la propiedad. La
+  capa HTTP debe resolver y comprobar `PROPERTY`/`ALL_PROPERTIES` antes de
+  invocarlo; no se ejecutan consultas globales ni filtrado posterior.
+- **DoD:** suite completa PostgreSQL + build PASS, test del query SQL y
+  límites UTC/DST, diff revisado. El runtime necesita las tablas de BD3 al
+  invocar el cálculo; éstas están en la rama BD3 aún no integrada. El precheck
+  ATS no hace admisión atómica y no garantiza por sí solo cero sobreventa concurrente.
+
+Fases siguientes: exponer ATS por API solo después de confirmar el contrato
+externo y autorización; integración y concurrencia tras acordar la admisión atómica.
+
+### BD2-CI-001 — Corrección del test de upgrade de inventario
+
+- **Estado:** EN_QA; corrección BD2 lista para revisión, integración pendiente de BD3.
+- **Owner:** BD2.
+- **Rama:** `feature/bd2-availability-engine`; corrección publicada en `277390d`.
+- **DoR:** investigación y corrección de CI autorizadas por el usuario;
+  mantener rama, sin merge/rebase y sin deshabilitar tests.
+- **Alcance:** comparar upgrade con instalación limpia vigente, verificar el
+  changeset de inventario y conservar validaciones de idempotencia/Property.
+- **DoD:** `./mvnw -B verify` con Java 21/PostgreSQL 17, revisión de diff y
+  seguimiento de la dependencia de integración en `AlanHandoff.md`.
+
+### BD2-004 — API Staff de disponibilidad (Fase 4)
+
+- **Estado:** COMPLETADA para entrega BD2; publicada en `0dbaa74`, revisión del PR pendiente. Owner BD2.
+- **Rama:** `feature/bd2-availability-api`, dependiente de BD2 Fase 3 en `277390d`.
+- **DoR:** Fase 4 y uso de servicios BD1 disponibles autorizados; contrato en
+  `12_BD2_AVAILABILITY_API_CONTRACT.md`; permisos existentes C2 y scope explícito.
+- **Alcance:** controlador/DTO, cadena Staff limitada a disponibilidad, guard de
+  método con sesión/permiso/property scope, errores y OpenAPI. Sin cambios BD3.
+- **DoD:** verify completo y pruebas HTTP de JWT Staff/Guest, sesión revocada,
+  permisos, aislamiento de propiedad, validación de fechas, ATS y documentación.
+- **Validación:** `./mvnw -B verify` PASS en Java 21/PostgreSQL 17;
+  36 pruebas, cero fallos/errores/omitidas. Integración final dependiente de BD3.
+
+### BD2-005 — Admisión e integración de disponibilidad (Fase 5)
+
+- **Estado:** EN_QA — alcance BD2 validado; conexión y CI combinada pendientes de BD3.
+- **Owner:** BD2; revisión cross-domain requerida de BD3.
+- **Rama:** `feature/bd2-inventory-admission`, dependiente de Fase 4 en `0dbaa74`.
+- **Entrega:** publicación autorizada; PR hacia `main`, que ya contiene Fase 4
+  mediante PR #64 (`a4dc6b0`). Mantener EN_QA hasta cerrar integración BD3.
+- **DoR:** Fase 5 autorizada; motor ATS y API publicados. Tablas BD3 disponibles
+  en `origin/main`; no modificar su booking ni sus fixtures sin autorización.
+- **Alcance BD2:** puerto de admisión transaccional, demanda conjunta por noche,
+  bloqueo por property/room type y excepción de inventario agotado; pruebas
+  PostgreSQL de concurrencia/rollback y guía de pruebas API/Postman. QA HTTP
+  corrige en la cadena BD2 el 403 que se convertía en 401 por error dispatch.
+- **Aceptación:** una unidad consumida reduce ATS exactamente uno; demanda
+  superior a ATS no ejecuta la escritura; dos admisiones para la última unidad
+  no pueden confirmar ambas; rollback libera capacidad y bloqueos.
+- **DoD:** verify completo, evidencia de integración aislada contra `origin/main`,
+  límites y conexión pendiente con BD3 registrados, diff revisado.
+- **Límite:** implementar el puerto no protege escrituras que no lo utilicen;
+  la conexión mínima de BD3 requiere autorización por su ownership.
+- **Validación BD2:** `./mvnw -B verify` BUILD SUCCESS, 46 pruebas sin
+  fallos/errores/omitidas; colección Postman ejecutada con Newman: 8 solicitudes
+  y 13 assertions PASS. Booking real validado en copia aislada (4 pruebas PASS).
+
+### BD2-006A — Preparación del contrato de propiedades
+
+- **Estado:** COMPLETADA — propuesta preparada y revisada localmente; no implica aprobación API.
+- **Owner:** BD2; reviewer de seguridad/scope previsto: BD1.
+- **Rama:** `feature/bd2-properties-crud`, desde `origin/main` `9552325`.
+- **DoR:** CRUD pendientes autorizados; base de inventario/Auth integrada.
+- **Alcance:** propuesta de rutas, campos y permisos; auditoría, límites de
+  baja/reactivación y secuencia pendiente; sin cambios funcionales.
+- **Aceptación/DoD:** distinguir reglas confirmadas de propuestas; no añadir
+  roles/permisos ni ampliar scope; revisión de referencias y diff; publicación
+  de la propuesta y evidencia en AlanHandoff.
+
+### BD2-006B — Properties: altas, consultas y edición descriptiva
+
+- **Estado:** EN_QA — Properties validado; CI global pendiente de fixtures BD3.
+- **Owner:** BD2.
+- **Dependencias:** BD2-006A; autorización C2 y AuditService existentes.
+- **DoR:** contrato `15_BD2_PROPERTIES_CRUD_CONTRACT_PROPOSAL.md` aprobado;
+  rutas/permisos confirmados, sin baja/reactivación ni cambios de timezone/moneda.
+- **Alcance:** servicios/DTO/REST/OpenAPI, guard Staff por método,
+  repositorios scoped, auditoría transaccional y extensión de Postman.
+- **Aceptación/DoD:** definidos en el contrato aprobado; pruebas PostgreSQL/HTTP real,
+  verify completo, diff revisado, commit/push y handoff.
+- **Evidencia:** QA enfocada BUILD SUCCESS (13 tests); Postman 14 requests/20
+  assertions PASS. Verify completo final: 190 tests, 0 failures, 8 errors BD3,
+  0 skipped; las pruebas Properties pasan. El workflow permanece íntegro.
+
+### BD2-007A — Contrato de administración de RoomTypes
+
+- **Estado:** COMPLETADA — propuesta RoomTypes preparada y revisada; aprobación API pendiente.
+- **Owner:** BD2; reviewer de seguridad/scope: BD1.
+- **Rama:** `feature/bd2-room-types-crud`, desde `origin/main` `c2699ff`.
+- **Dependencias/DoR:** BD2-002 completada (entidad/esquema/repositorio), C2 y
+  AuditService existentes; CRUD BD2 pendientes autorizados por el usuario.
+  La integración pendiente de booking BD3 no interviene en esta preparación.
+- **Alcance:** publicar una propuesta de contrato C/R/U descriptivo, permisos,
+  aislamiento, auditoría, límites de baja y criterios verificables.
+- **Aceptación/DoD:** conservar el modelo, distinguir propuesta de API aprobada,
+  confirmar unicidad y referencias, revisar diff y publicar commit/push.
+- **Evidencia:** contrato 16 contrastado con dominio, SQL, scope C2 y admisión;
+  diff/check revisados. Entrega documental, sin nueva ejecución Maven ni cambios BD3.
+
+### BD2-007B — RoomTypes: altas, consultas y edición descriptiva
+
+- **Estado:** PENDIENTE — contrato operativo por confirmar.
+- **Owner:** BD2; reviewer BD1 para permisos/scope.
+- **Dependencias/DoR:** BD2-007A completada y contrato operativo aprobado;
+  esquema/fundación BD2-002, C2 y auditoría existentes. No depende de que BD3
+  conecte su booking al puerto de admisión: no modifica capacidad física.
+- **Alcance propuesto:** servicio/DTO/REST/OpenAPI, scope antes de SQL,
+  bloqueo de fila, auditoría transaccional y colección Postman.
+- **Aceptación/DoD:** definidos en el contrato propuesto 16; PostgreSQL/HTTP,
+  verify completo con errores ajenos visibles, diff revisado, commit/push/handoff.
 
 ## Entorno de validación
 
