@@ -314,7 +314,8 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
 
 ### BD2-010 — Cierre de integración con BD3
 
-- **Estado:** COMPLETADA — aceptación, DoD y revisión local PASS; PR de cierre pendiente.
+- **Estado:** COMPLETADA — integrada mediante PR #72 en main `9eb2380`;
+  revisión y checks exitosos confirmados por el usuario.
 - **Owner/rama:** BD2; `feature/bd2-integration-closeout`.
 - **DoR:** main `345481b` integra catálogos BD2, correcciones de fixtures BD3
   y admisión transaccional (`faa7876`). Usuario autoriza revisar y cerrar tareas.
@@ -326,6 +327,51 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
 - **Evidencia:** verify Java 21/PostgreSQL 17 BUILD SUCCESS; main base 248 tests,
   rama final 254 tests, cero failures/errors/skipped. Seis regresiones reales nuevas.
   Detalle, límites y revisión en AlanHandoff BD2-010.
+
+## BD2 — Folio/Payments y lifecycle de reservas
+
+### BD2-FP-000 — Fase 0: revisión y contratos
+
+- **Estado:** COMPLETADA — preparación documental, aceptación y revisión local PASS.
+- **Owner:** José / BD2. Los contratos nuevos continúan PROPOSED.
+- **Rama/base:** `feature/bd2-finance-lifecycle-contracts`, origin/main `9eb2380`.
+- **Dependencias:** BD2-010 integrada mediante PR #72; servicios base Reservations,
+  Folio, Audit, dinero, C2 y admisión disponibles.
+- **DoR:** usuario autoriza nuevo reparto, plan modular e inicio de fase 0.
+- **Alcance:** inventario de capacidades/brechas, contrato propuesto, decisiones
+  pendientes y coordinación con BD1/BD3. Registro del reparto; entrega documental.
+- **Aceptación:** fuentes y capacidades contrastadas; todos los flujos del nuevo
+  alcance mapeados; decisiones aprobadas diferenciadas de propuestas; dependencias
+  y criterios de aceptación verificables; siguiente entrega identificada.
+- **DoD:** revisión local de documentos, referencias y diff; seguimiento/handoff,
+  commit/push por entrega. No aprobar automáticamente contratos de fases siguientes.
+- **Evidencia:** documentos 19/20; 11 referencias locales verificadas, 12 entregas
+  mapeadas, fuentes/código contrastados y diff --check limpio. Sin cambios de
+  runtime; no nueva ejecución Maven en esta entrega documental.
+- **Siguiente paso:** revisar SH-D01 (idempotencia, fase 1) y FP-D02 (lectura folio).
+  Proveedor, políticas y contratos de otras interfaces siguen pendientes.
+
+### Próximas entregas financieras y lifecycle
+
+Owner José / BD2; reviewers del dominio afectado según contrato. Fuente de
+aceptación, archivos previstos y dependencias por tarea:
+`19_BD2_FINANCE_LIFECYCLE_PHASE0.md`, sección Entregas. DoR siempre exige el
+contrato aplicable aprobado y dependencias COMPLETADAS; no implementar desde mocks.
+
+| ID / módulo | Estado | Dependencias y decisión que falta |
+| --- | --- | --- |
+| BD2-FP-001 / 1 base transaccional | PENDIENTE | FP-000; SH-D01/persistencia, SH-D03 si nace módulo |
+| BD2-FP-002 / 2A lectura folio | PENDIENTE | FP-000; FP-D02 (propuesta en documento 20) |
+| BD2-FP-003 / 2B escritura folio | PENDIENTE | FP-001; FP-D04/contrato de escritura |
+| BD2-FP-004 / 3 pagos/garantía | PENDIENTE | FP-001/003; FP-D01/03 y SPI BD1 |
+| BD2-FP-005 / 4A distribución | PENDIENTE | FP-003/004; FP-D05 y master/direct bill |
+| BD2-FP-006 / 4B invoices | PENDIENTE | FP-003/004; FP-D06 |
+| BD2-LC-001 / 5A cancelación | PENDIENTE | FP-003/004; LC-D01 |
+| BD2-LC-002 / 5B no-show | PENDIENTE | FP-003/004; LC-D02/night audit |
+| BD2-LC-003 / 6 waitlist | PENDIENTE | FP-001; LC-D03/cotización/admisión |
+| BD2-LC-004 / 7A room move | PENDIENTE | FP-001/003; LC-D04/SH-D02/HK |
+| BD2-LC-005 / 7B extensión | PENDIENTE | FP-001/003; LC-D05/SH-D02/cotización |
+| BD2-FP-LC-QA / 8 integración | PENDIENTE | Entregas incluidas y SPIs reales COMPLETADAS |
 
 ## Entorno de validación
 

@@ -173,6 +173,32 @@ Registrar ID, fecha, status, contexto, problema, decisión, alternativas, consec
 
 ## Backend — Foundation aprobada
 
+### DEC-B-008 — Reparto de la siguiente etapa Backend
+
+**Fecha:** 2026-10-02
+**Status:** APPROVED — reparto y plan modular autorizados por el usuario.
+**Responsables:** Alan / BD1, José / BD2 y Juan / BD3.
+
+**Contexto:** inventario/ATS/admisión y catálogos BD2 entregados; PR #72 revisado,
+checks exitosos según confirmación del usuario e integrado en main `9eb2380`.
+
+**Decisión:** BD2 asume Folio/Payments e invoices y lifecycle de reservas;
+BD3, Operaciones y Comercial/B2B; BD1, Integraciones/Analítica y Administración/
+Cumplimiento. Reutilizar modelos/servicios existentes y coordinar interfaces
+de pagos, master folio, housekeeping, night audit y cotización.
+
+**Alternativas:** mantener toda la ampliación de reservas/folios en BD3 concentra
+las dependencias; duplicar sus servicios genera dos autoridades financieras.
+El nuevo reparto distribuye la entrega conservando el motor único existente.
+
+**Consecuencias:** seguimiento en AlanPlan/AlanHandoff. La fase 0 BD2 publica
+inventario, brechas y propuestas; proveedor, garantía pública, políticas,
+contratos API y SPIs pendientes requieren confirmación antes de su implementación.
+No introduce nuevos módulos, roles, permisos ni cambios de scope. C1/C2/C3 y
+los modelos vigentes se conservan; cambios futuros se tramitan por Change Control.
+La ampliación del alcance administrativo (incluido MFA/roles) no modifica por
+sí sola las restricciones de los contratos de seguridad vigentes.
+
 ### DEC-B-007 — BD2 Fase 1: inventario y contrato interno
 
 **Fecha:** 2026-09-30

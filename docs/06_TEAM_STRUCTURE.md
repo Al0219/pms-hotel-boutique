@@ -197,7 +197,24 @@ Cambio significativo:
 
 # Backend
 
-Antes de iniciar se definirá nuevo reparto.
+## Reparto vigente — 2026-10-02
+
+Autorizado por el usuario tras el cierre de inventario BD2 (PR #72 integrado).
+
+| Integrante | Alcance de la siguiente etapa |
+| --- | --- |
+| Alan / BD1 | Integraciones y analítica; administración y cumplimiento |
+| José / BD2 | Folio y Payments: garantía pública, consultas, authorize/capture/void/refund, split/routing/transfer e invoices; lifecycle: cancelación, no-show, waitlist/conversión, room move y extensión |
+| Juan / BD3 | Operaciones: HK, mantenimiento, OOO/OOS, conserjería, valet, mensajería y night audit; Comercial/B2B: empresas/agencias, grupos/blocks/master folio, promociones/rewards, compras y cuentas por cobrar |
+
+Reutilizar servicios ya implementados. El motor financiero sigue siendo único:
+BD3 gestiona el vínculo comercial del master folio y BD2 sus movimientos/pagos.
+BD2 coordina lifecycle con BD3 para HK, night audit, tarifas y blocks, y con BD1
+para seguridad, integraciones y acceso Guest. Cambios compartidos requieren
+revisión del owner afectado; el reparto no aprueba nuevas reglas o contratos.
+
+Seguimiento Backend: `backend/docs/AlanPlan.md` y `AlanHandoff.md`.
+Detalle de fase 0: `backend/docs/19_BD2_FINANCE_LIFECYCLE_PHASE0.md`.
 
 No asumir automáticamente que ownership Frontend = ownership Backend.
 

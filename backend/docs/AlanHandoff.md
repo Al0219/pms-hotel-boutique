@@ -1,11 +1,38 @@
 # AlanHandoff — Seguimiento Backend
 
+## BD2-FP-000 — Fase 0 financiera y lifecycle (2026-10-02)
+
+- **Rama/base:** `feature/bd2-finance-lifecycle-contracts`, origin/main `9eb2380`.
+  Worktree aislado; checkout principal en main, limpio.
+- **Estado:** COMPLETADA — preparación documental y revisión local PASS.
+  Reparto/plan autorizados; contratos nuevos PROPOSED, sin aprobación implícita.
+- **Entregado:** documento 19 (capacidades/brechas, ownership, interfaces entre
+  equipos, decisiones pendientes, 12 tareas/dependencias/aceptación) y documento
+  20 (propuesta de lectura folio, DTO/errores/permisos, idempotencia y contratos
+  semánticos de todos los flujos). DEC-B-008 y Team Structure registran el reparto.
+- **Hallazgos:** reutilizar Folio/Query/Booking/Audit existentes; reforzar scope
+  en detalle, reversos concurrentes, posting/cierre, asignación física y snapshots
+  de tarifa/política. PAYMENT contable no sustituye capture/refund del proveedor.
+  Master folio comercial/HK/night audit siguen coordinados con BD3; integración
+  provider/Auth/callback con BD1. No se modificaron implementaciones ajenas.
+- **Validación:** lectura de docs globales/XLSX/AGENTS, revisión de fuentes actuales,
+  11 referencias locales existentes, 12 tareas cruzadas y Markdown/diff revisados.
+  git diff --check PASS. Sin cambios Java/SQL/workflow/dependencias; no se ejecutó
+  Maven nuevamente: los 254 tests PASS corresponden al cierre anterior integrado.
+- **Publicación:** commit/push de esta entrega documental conforme a autorización
+  vigente; PR hacia main. Reviewers BD1/BD3 y consumidores según alcance del contrato.
+- **Pendientes:** proveedor/sandbox, garantía pública, política de folio, invoices,
+  cancelación/no-show/waitlist/move/extensión y SPIs, sin asumir respuestas.
+- **Siguiente paso:** acordar SH-D01 para la fase 1 y FP-D02 para lecturas scoped;
+  completar DoR correspondiente antes de código. No todas las decisiones pendientes
+  deben resolverse para comenzar una entrega independiente.
+
 ## BD2-010 — Cierre de integración con BD3 (2026-10-02)
 
 - **Rama/base:** `feature/bd2-integration-closeout`, origin/main `345481b`.
   Worktree aislado; checkout principal en main sin modificaciones.
-- **Estado:** COMPLETADA, aceptación/DoD y revisión local PASS. Publicación
-  autorizada; integrar el PR de cierre a main tras sus checks y revisión del equipo.
+- **Estado:** COMPLETADA. PR #72 integrado en main `9eb2380`; el usuario confirma
+  revisión aprobada y checks GitHub exitosos. Evidencia local registrada abajo.
 - **BD3 confirmado:** `faa7876` conecta booking al InventoryAdmissionPort con
   demanda conjunta; su stub ATS es @Primary solo en tests. El contexto completo
   prueba el motor real y el contrato sin puerto se prueba separadamente sin Spring.
@@ -32,8 +59,8 @@
   política y contrato aparte. La garantía concurrente cubre el booking conectado;
   addStay directo y alta OOO, de otros módulos, deben coordinar el mismo protocolo.
   No se declara sobreventa cero para todos los escritores del PMS.
-- **Siguiente paso:** revisión/merge del PR de cierre. Para probar HTTP, seguir
-  `14_BD2_TESTING_AND_POSTMAN.md`; no existe aún un endpoint REST de booking.
+- **Siguiente paso:** nuevo alcance financiero/lifecycle en BD2-FP-000. Para probar
+  HTTP, seguir `14_BD2_TESTING_AND_POSTMAN.md`; no existe aún un endpoint REST de booking.
 
 Los registros siguientes son históricos; sus pendientes de fixtures y conexión
 BD3 quedan sustituidos por la evidencia de cierre anterior.
