@@ -225,6 +225,30 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
   fallos/errores/omitidas; colección Postman ejecutada con Newman: 8 solicitudes
   y 13 assertions PASS. Booking real validado en copia aislada (4 pruebas PASS).
 
+### BD2-006A — Preparación del contrato de propiedades
+
+- **Estado:** COMPLETADA — propuesta preparada y revisada localmente; no implica aprobación API.
+- **Owner:** BD2; reviewer de seguridad/scope previsto: BD1.
+- **Rama:** `feature/bd2-properties-crud`, desde `origin/main` `9552325`.
+- **DoR:** CRUD pendientes autorizados; base de inventario/Auth integrada.
+- **Alcance:** propuesta de rutas, campos y permisos; auditoría, límites de
+  baja/reactivación y secuencia pendiente; sin cambios funcionales.
+- **Aceptación/DoD:** distinguir reglas confirmadas de propuestas; no añadir
+  roles/permisos ni ampliar scope; revisión de referencias y diff; publicación
+  de la propuesta y evidencia en AlanHandoff.
+
+### BD2-006B — Properties: altas, consultas y edición descriptiva
+
+- **Estado:** PENDIENTE — contrato operativo por confirmar.
+- **Owner:** BD2.
+- **Dependencias:** BD2-006A; autorización C2 y AuditService existentes.
+- **DoR:** confirmar `15_BD2_PROPERTIES_CRUD_CONTRACT_PROPOSAL.md`, especialmente
+  rutas/permisos y alcance sin baja/reactivación ni cambios de timezone/moneda.
+- **Alcance propuesto:** servicios/DTO/REST/OpenAPI, guard Staff por método,
+  repositorios scoped, auditoría transaccional y extensión de Postman.
+- **Aceptación/DoD:** definidos en la propuesta; pruebas PostgreSQL/HTTP real,
+  verify completo, diff revisado, commit/push y handoff.
+
 ## Entorno de validación
 
 En la validación original, el host tenía Java Runtime 25 sin `javac`. La validación reproducible de
