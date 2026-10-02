@@ -1,13 +1,49 @@
 # AlanHandoff — Seguimiento Backend
 
+## BD2-006B — Properties: contrato aprobado y APIs
+
+- **Rama:** `feature/bd2-properties-crud`; contrato 15 aprobado por el usuario.
+- **DoR:** C2, esquema Property y AuditService disponibles; no modificar BD3.
+- **Estado:** EN_QA; alcance BD2 validado, CI global pendiente de fixtures BD3.
+  Publicación por commit/push autorizada.
+- **Entregado:** POST/GET de Properties y GET/PATCH por ID; permisos existentes
+  por método, sesión vigente y scope aplicado en SQL; edición de nombre/código
+  con bloqueo de fila y auditoría before/after transaccional. No-op sin cambios
+  de timestamps/eventos. Validación estricta, 409 por unicidad y OpenAPI.
+- **QA enfocada:** wrapper verify con selección explícita de las tres clases
+  Properties: BUILD SUCCESS, 13 tests sin fallos/errores/omitidas y JAR empaquetado.
+  Incluye PostgreSQL, rollback real de auditoría, bloqueo NOWAIT, aislamiento,
+  permisos, JWT Guest/revocación y escrituras HTTP entre transacciones separadas.
+- **Postman/Newman:** 14 solicitudes y 20 assertions PASS con login/C2 reales.
+  SQL confirmó dos eventos (alta/edición), actor Staff real, property/correlation
+  correctos y una sola propiedad pese al intento duplicado.
+- **Correcciones QA:** precisión PostgreSQL de microsegundos preserva timestamps
+  entre requests; OpenAPI declara 200/201 con DTO y errores con ProblemDetail.
+  Live Swagger confirmó los schemas; se conservan pruebas de regresión.
+- **Verify completo final:** `./mvnw -B verify`, Java 21/PostgreSQL 17:
+  BUILD FAILURE, 190 tests, 0 failures, 8 errors, 0 skipped. Las 13 pruebas
+  Properties pasan también en esta ejecución; los errores pertenecen solo a
+  ReservationBookingServiceIntegrationTests (7, dos beans AvailabilityPort) y
+  ReservationBookingWithoutAvailabilityTests (1, ATS real en supuesto sin puerto).
+  No se cambió BD3, el workflow ni la selección de tests del verify completo.
+  Logs de evidencia fuera del repositorio: pms-bd2-properties-focused.log y
+  pms-bd2-properties-verify-final.log.
+- **Base actualizada:** `origin/main` `c05a091` integró PR #66 (propuesta).
+  Su árbol es idéntico a `73c6f9f`; el código combinado no añade diferencias
+  de ejecución. Esta entrega funcional necesitará un nuevo PR.
+- **Siguiente paso:** abrir PR funcional desde esta rama hacia main; resolver
+  los fixtures de BD3 en su rama responsable y continuar con contrato RoomTypes.
+  Baja/reactivación y cambios de moneda/zona permanecen fuera de esta entrega.
+
 ## BD2-006A — Propuesta de administración de propiedades
 
 - **Rama/base:** `feature/bd2-properties-crud`, `origin/main` `9552325`.
   Fase 5 integrada por PR #65; su conexión productiva BD3 continúa pendiente.
-- **Estado:** preparación de propuesta COMPLETADA; implementación BD2-006B PENDIENTE.
+- **Estado histórico:** preparación de propuesta COMPLETADA; aprobación e
+  implementación posteriores registradas arriba en BD2-006B.
 - **Entregado:** `15_BD2_PROPERTIES_CRUD_CONTRACT_PROPOSAL.md`; primera entrega
   C/R/U de Properties y secuencia RoomTypes/Rooms/RatePlans/bajas, con ownership BD2.
-- **Decisiones pendientes:** rutas/permisos operativos, alta limitada al
+- **Decisiones al preparar la propuesta:** rutas/permisos operativos, alta limitada al
   SUPER_ADMIN de su organización y edición solo de nombre/código. Baja y
   reactivación necesitan definición de acceso a properties inactivas bajo C2.
 - **Revisión:** coherencia con C2, modelo/schema existentes y reglas de dominio;

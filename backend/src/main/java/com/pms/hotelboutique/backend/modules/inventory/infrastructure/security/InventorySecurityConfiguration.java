@@ -13,7 +13,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-/** Adapts BD1 Staff authentication only to the BD2 availability route. */
+/** Adapts BD1 Staff authentication only to the published BD2 property routes. */
 @Configuration
 public class InventorySecurityConfiguration {
     @Bean
@@ -21,7 +21,8 @@ public class InventorySecurityConfiguration {
     SecurityFilterChain inventorySecurityFilterChain(HttpSecurity http, StaffJwtService jwt,
             StaffAuthService sessions) throws Exception {
         return http
-                .securityMatcher("/api/v1/properties/*/availability")
+                .securityMatcher("/api/v1/properties", "/api/v1/properties/*",
+                        "/api/v1/properties/*/availability")
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(errors -> errors

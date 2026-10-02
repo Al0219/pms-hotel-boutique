@@ -138,3 +138,36 @@ El puerto nuevo necesita conectarse al flujo BD3 conforme a
 `13_BD2_INVENTORY_ADMISSION_CONTRACT.md`. Hasta entonces, el booking actual
 mantiene su precheck y no garantiza sobreventa cero. Sus dos fixtures de CI
 siguen siendo responsabilidad de BD3 y no se deshabilitan para pasar el build.
+
+## Properties: contrato aprobado BD2-006B
+
+Importar también `backend/postman/BD2-Properties.postman_collection.json` y usar
+el mismo environment privado (`baseUrl`, `staffUsername`, `staffPassword`).
+Ejecutar en una base de pruebas con SUPER_ADMIN y los permisos `STAFF_MANAGE`,
+`MULTI_PROPERTY_READ` y `COMMERCIAL_MANAGE`. La colección genera un código único,
+crea una propiedad y guarda su ID; no requiere insertar Properties manualmente.
+
+La secuencia comprueba alta 201/Location, scope actualizado, consulta, edición
+de nombre, PATCH repetido sin cambios, código duplicado 409, campos rechazados
+400, acceso sin token 401 y logout/revocación reales. El logout final exige
+nuevo login para seguir usando la sesión. La propiedad creada se conserva; esta entrega no
+define DELETE, baja/reactivación ni edición de timezone/moneda. Cada ejecución
+genera una propiedad nueva. Los negativos de rol, scope, Guest, revocación,
+auditoría, bloqueo y rollback se verifican también en las pruebas Java.
+
+Rutas disponibles: `POST/GET /api/v1/properties` y
+`GET/PATCH /api/v1/properties/{propertyId}`. PATCH admite exclusivamente `code`
+y/o `name`. Swagger muestra los DTOs, permisos, Bearer y respuestas; acceder a
+`{{baseUrl}}/swagger-ui.html`. La organización del POST viene de la sesión,
+nunca del body. Los timestamps se devuelven en UTC.
+
+Para repetir solo las pruebas de este incremento, desde `backend`, con Java 21
+y PostgreSQL 17 configurado mediante `PMS_DATABASE_*`:
+
+```sh
+./mvnw -B -Dtest=PropertyApiIntegrationTests,PropertyAuditRollbackIntegrationTests,PropertyHttpSecurityIntegrationTests test
+```
+
+Esta comprobación enfocada no sustituye `./mvnw -B verify` ni cambia la selección
+del workflow. Ejecutar el verify completo antes de publicar y distinguir los
+errores existentes de integración BD3 de los resultados propios de Properties.

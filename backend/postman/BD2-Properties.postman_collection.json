@@ -1,0 +1,433 @@
+{
+  "info": {
+    "name": "PMS BD2 — Properties",
+    "description": "Contrato 15 aprobado: altas, consultas y edición descriptiva Staff. Ejecutar solo en una base de pruebas: crea una propiedad activa y la conserva como evidencia; no hay DELETE. Requiere SUPER_ADMIN con STAFF_MANAGE, MULTI_PROPERTY_READ y COMMERCIAL_MANAGE. Credenciales/tokens en environment privado.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{staffAccessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:18080"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 — Login Staff",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/staff-auth/sessions",
+        "auth": {
+          "type": "noauth"
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"username\":\"{{staffUsername}}\",\"password\":\"{{staffPassword}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "if (pm.response.code === 201) pm.environment.set('staffAccessToken', pm.response.json().accessToken);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 — Crear propiedad",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/properties",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"code\":\"{{propertyCode}}\",\"name\":\"Postman Properties\",\"timezone\":\"America/Guatemala\",\"currency\":\"GTQ\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.environment.set('propertyCode', 'QA-' + pm.variables.replaceIn('{{$guid}}'));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "if (pm.response.code === 201) { const p = pm.response.json(); pm.environment.set('createdPropertyId', p.id); pm.environment.set('createdAt', p.createdAt); pm.test('ACTIVE and UTC', () => { pm.expect(p.status).to.equal('ACTIVE'); pm.expect(p.createdAt).to.match(/Z$/); }); pm.test('Location', () => pm.expect(pm.response.headers.get('Location')).to.equal('/api/v1/properties/' + p.id)); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 — Listar scope actualizado",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/properties"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('New property belongs to live C2 scope', () => pm.expect(pm.response.json().some(p => p.id === pm.environment.get('createdPropertyId'))).to.equal(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 — Consultar propiedad",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/properties/{{createdPropertyId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Currency and timezone', () => { const p=pm.response.json(); pm.expect(p.currency).to.equal('GTQ'); pm.expect(p.timezone).to.equal('America/Guatemala'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 — Editar nombre",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/api/v1/properties/{{createdPropertyId}}",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\":\"Postman Properties Editado\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "if (pm.response.code === 200) { const p=pm.response.json(); pm.environment.set('updatedAt',p.updatedAt); pm.test('Preserves creation timestamp', () => pm.expect(p.createdAt).to.equal(pm.environment.get('createdAt'))); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 — Repetir sin cambios",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/api/v1/properties/{{createdPropertyId}}",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\":\"Postman Properties Editado\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('No-op preserves updatedAt', () => pm.expect(pm.response.json().updatedAt).to.equal(pm.environment.get('updatedAt')));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 — Código duplicado",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/properties",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"code\":\"{{propertyCode}}\",\"name\":\"Postman Properties\",\"timezone\":\"America/Guatemala\",\"currency\":\"GTQ\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 409', () => pm.response.to.have.status(409));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 — PATCH vacío",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/api/v1/properties/{{createdPropertyId}}",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 — Moneda no editable",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/api/v1/properties/{{createdPropertyId}}",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"currency\":\"USD\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 — Nombre null",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/api/v1/properties/{{createdPropertyId}}",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\":null}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 — Organización inyectada",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/properties",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"code\":\"{{propertyCode}}\",\"name\":\"Postman Properties\",\"timezone\":\"America/Guatemala\",\"currency\":\"GTQ\",\"organizationId\":\"00000000-0000-4000-8000-000000000001\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 — Sin token",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/properties",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 401', () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/v1/staff-auth/session"
+      },
+      "name": "13 — Logout Staff",
+      "event": [
+        {
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Logout', () => pm.response.to.have.status(204));"
+            ]
+          },
+          "listen": "test"
+        }
+      ]
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/properties"
+      },
+      "name": "14 — Sesión revocada",
+      "event": [
+        {
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Revoked token', () => pm.response.to.have.status(401));"
+            ]
+          },
+          "listen": "test"
+        }
+      ]
+    }
+  ]
+}
