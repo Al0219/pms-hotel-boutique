@@ -5,3 +5,6 @@ databaseChangeLog:
   - include:
       file: 002-groups-blocks.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 003-promos-rewards.yaml
+      relativeToChangelogFile: true
