@@ -1,5 +1,43 @@
 # AlanHandoff — Seguimiento Backend
 
+## BD2-010 — Cierre de integración con BD3 (2026-10-02)
+
+- **Rama/base:** `feature/bd2-integration-closeout`, origin/main `345481b`.
+  Worktree aislado; checkout principal en main sin modificaciones.
+- **Estado:** COMPLETADA, aceptación/DoD y revisión local PASS. Publicación
+  autorizada; integrar el PR de cierre a main tras sus checks y revisión del equipo.
+- **BD3 confirmado:** `faa7876` conecta booking al InventoryAdmissionPort con
+  demanda conjunta; su stub ATS es @Primary solo en tests. El contexto completo
+  prueba el motor real y el contrato sin puerto se prueba separadamente sin Spring.
+  Las dos suites que bloqueaban la integración ahora pasan sin parches ajenos.
+- **Regresiones entregadas:** seis pruebas en InventoryBookingIntegrationTests,
+  con servicios BD2/BD3 y changelog completos en un schema PostgreSQL exclusivo.
+  ATS disminuye exactamente uno; padre cancelado libera; demanda solapada se suma;
+  noches adyacentes comparten capacidad; fallo tardío revierte perfil, reserva,
+  stays y auditoría; OOO resta y OOS conserva capacidad. Dos bookings concurrentes
+  para la última unidad esperan el lock hasta el commit exterior: solo uno confirma.
+- **Validación base:** main actualizado, `./mvnw -B verify`: BUILD SUCCESS,
+  248 tests, 0 failures, 0 errors, 0 skipped.
+- **Validación final:** rama de cierre sobre ese main, mismo comando sin filtros:
+  BUILD SUCCESS, 254 tests, 0 failures, 0 errors, 0 skipped; JAR empaquetado.
+  Docker Temurin 21/PostgreSQL 17, wrapper Maven del proyecto y variables de CI
+  en base desechable. Se incluyen esquema/upgrade/idempotencia, permisos/scope,
+  HTTP/OpenAPI, catálogos y todas las suites BD3; workflow intacto.
+- **Revisión:** diff limitado a la nueva suite BD2 y documentación; diff --check
+  limpio. Sin cambios en producción, migraciones, BD3, credenciales o configuración local.
+- **Cierre del alcance aprobado:** fases BD2 1–5 y C/R/U de Properties, RoomTypes,
+  Rooms y RatePlans. Las evidencias Newman previas (40 solicitudes/58 assertions)
+  se conservan abajo; no se repitieron en este cierre sin cambios de API.
+- **Límites conservados:** baja/retención/reactivación/reclasificación requieren
+  política y contrato aparte. La garantía concurrente cubre el booking conectado;
+  addStay directo y alta OOO, de otros módulos, deben coordinar el mismo protocolo.
+  No se declara sobreventa cero para todos los escritores del PMS.
+- **Siguiente paso:** revisión/merge del PR de cierre. Para probar HTTP, seguir
+  `14_BD2_TESTING_AND_POSTMAN.md`; no existe aún un endpoint REST de booking.
+
+Los registros siguientes son históricos; sus pendientes de fixtures y conexión
+BD3 quedan sustituidos por la evidencia de cierre anterior.
+
 ## BD2-009 — RatePlans y cierre C/R/U de catálogos BD2
 
 - **Rama/base:** `feature/bd2-rate-plans-crud`, Rooms `4cea3db` ya publicado.

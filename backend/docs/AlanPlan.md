@@ -111,6 +111,11 @@ dependencias; un perfil parcial incluye solo su módulo y sus dependencias.
 
 ## BD2 — Core PMS
 
+Los estados actuales incorporan el cierre BD2-010 sobre main `345481b`.
+Las cifras de las entregas anteriores se conservan como evidencia histórica;
+los errores de fixtures y la conexión de booking BD3 ya están resueltos.
+El alcance de catálogos aprobado es C/R/U: no incluye bajas ni reclasificación.
+
 ### BD2-001 — Fase 1: cimientos y contratos
 
 - **Estado:** COMPLETADA
@@ -178,7 +183,7 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
 
 ### BD2-CI-001 — Corrección del test de upgrade de inventario
 
-- **Estado:** EN_QA; corrección BD2 lista para revisión, integración pendiente de BD3.
+- **Estado:** COMPLETADA — integrada en main y revalidada en BD2-010.
 - **Owner:** BD2.
 - **Rama:** `feature/bd2-availability-engine`; corrección publicada en `277390d`.
 - **DoR:** investigación y corrección de CI autorizadas por el usuario;
@@ -190,7 +195,7 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
 
 ### BD2-004 — API Staff de disponibilidad (Fase 4)
 
-- **Estado:** COMPLETADA para entrega BD2; publicada en `0dbaa74`, revisión del PR pendiente. Owner BD2.
+- **Estado:** COMPLETADA — API integrada en main; regresión global BD2-010. Owner BD2.
 - **Rama:** `feature/bd2-availability-api`, dependiente de BD2 Fase 3 en `277390d`.
 - **DoR:** Fase 4 y uso de servicios BD1 disponibles autorizados; contrato en
   `12_BD2_AVAILABILITY_API_CONTRACT.md`; permisos existentes C2 y scope explícito.
@@ -199,15 +204,15 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
 - **DoD:** verify completo y pruebas HTTP de JWT Staff/Guest, sesión revocada,
   permisos, aislamiento de propiedad, validación de fechas, ATS y documentación.
 - **Validación:** `./mvnw -B verify` PASS en Java 21/PostgreSQL 17;
-  36 pruebas, cero fallos/errores/omitidas. Integración final dependiente de BD3.
+  36 pruebas, cero fallos/errores/omitidas en la entrega original; integración cerrada en BD2-010.
 
 ### BD2-005 — Admisión e integración de disponibilidad (Fase 5)
 
-- **Estado:** EN_QA — alcance BD2 validado; conexión y CI combinada pendientes de BD3.
+- **Estado:** COMPLETADA — booking real conectado por BD3; aceptación y QA global en BD2-010.
 - **Owner:** BD2; revisión cross-domain requerida de BD3.
 - **Rama:** `feature/bd2-inventory-admission`, dependiente de Fase 4 en `0dbaa74`.
 - **Entrega:** publicación autorizada; PR hacia `main`, que ya contiene Fase 4
-  mediante PR #64 (`a4dc6b0`). Mantener EN_QA hasta cerrar integración BD3.
+  mediante PR #64 (`a4dc6b0`). Admisión y conexión BD3 integradas en main `345481b`.
 - **DoR:** Fase 5 autorizada; motor ATS y API publicados. Tablas BD3 disponibles
   en `origin/main`; no modificar su booking ni sus fixtures sin autorización.
 - **Alcance BD2:** puerto de admisión transaccional, demanda conjunta por noche,
@@ -218,9 +223,9 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
   superior a ATS no ejecuta la escritura; dos admisiones para la última unidad
   no pueden confirmar ambas; rollback libera capacidad y bloqueos.
 - **DoD:** verify completo, evidencia de integración aislada contra `origin/main`,
-  límites y conexión pendiente con BD3 registrados, diff revisado.
+  límites y conexión con BD3 registrados, diff revisado.
 - **Límite:** implementar el puerto no protege escrituras que no lo utilicen;
-  la conexión mínima de BD3 requiere autorización por su ownership.
+  BD3 conectó createBooking en `faa7876`; otros escritores deben adoptar el protocolo.
 - **Validación BD2:** `./mvnw -B verify` BUILD SUCCESS, 46 pruebas sin
   fallos/errores/omitidas; colección Postman ejecutada con Newman: 8 solicitudes
   y 13 assertions PASS. Booking real validado en copia aislada (4 pruebas PASS).
@@ -239,7 +244,7 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
 
 ### BD2-006B — Properties: altas, consultas y edición descriptiva
 
-- **Estado:** EN_QA — Properties validado; CI global pendiente de fixtures BD3.
+- **Estado:** COMPLETADA — alcance C/R/U integrado en main; QA global en BD2-010.
 - **Owner:** BD2.
 - **Dependencias:** BD2-006A; autorización C2 y AuditService existentes.
 - **DoR:** contrato `15_BD2_PROPERTIES_CRUD_CONTRACT_PROPOSAL.md` aprobado;
@@ -254,7 +259,7 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
 
 ### BD2-007A — Contrato de administración de RoomTypes
 
-- **Estado:** COMPLETADA — propuesta RoomTypes preparada y revisada; aprobación API pendiente.
+- **Estado:** COMPLETADA — propuesta RoomTypes aprobada e implementada en BD2-007B.
 - **Owner:** BD2; reviewer de seguridad/scope: BD1.
 - **Rama:** `feature/bd2-room-types-crud`, desde `origin/main` `c2699ff`.
 - **Dependencias/DoR:** BD2-002 completada (entidad/esquema/repositorio), C2 y
@@ -269,7 +274,7 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
 
 ### BD2-007B — RoomTypes: altas, consultas y edición descriptiva
 
-- **Estado:** EN_QA — C/R/U RoomTypes validado; CI global pendiente de fixtures BD3.
+- **Estado:** COMPLETADA — C/R/U RoomTypes integrado en main; QA global en BD2-010.
 - **Owner:** BD2; reviewer BD1 para permisos/scope.
 - **Dependencias/DoR:** BD2-007A completada y contrato operativo aprobado;
   esquema/fundación BD2-002, C2 y auditoría existentes. No depende de que BD3
@@ -283,7 +288,7 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
 
 ### BD2-008 — Rooms C/R/U
 
-- **Estado:** EN_QA. Owner BD2; rama dependiente `feature/bd2-rooms-crud`.
+- **Estado:** COMPLETADA — C/R/U integrado en main; QA global en BD2-010. Owner BD2; rama `feature/bd2-rooms-crud`.
 - **DoR:** RoomTypes `1c0ed07`, esquema Room, C2 y auditoría existentes;
   continuación de CRUD autorizada por el usuario. Contrato 17 publicado.
 - **Alcance:** alta física, consultas y edición exclusiva de código; no baja,
@@ -294,7 +299,7 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
 
 ### BD2-009 — RatePlans C/R/U
 
-- **Estado:** EN_QA. Owner BD2; `feature/bd2-rate-plans-crud`.
+- **Estado:** COMPLETADA — C/R/U integrado en main; QA global en BD2-010. Owner BD2; `feature/bd2-rate-plans-crud`.
 - **DoR:** Rooms `4cea3db`, esquema/MonetaryAmount/C2/AuditService existentes;
   continuación CRUD autorizada. Contrato 18 publicado antes de crear API.
 - **Alcance:** catálogo de tarifas y precios exactos; sin inventario, baja ni
@@ -304,8 +309,23 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
   Las 40 pruebas de los cuatro catálogos BD2 pasan. Sin exclusiones ni cambios BD3.
 - **Newman:** los cuatro catálogos suman 40 solicitudes/58 assertions PASS.
   SQL confirmó unicidad, audit real/no-op y precio exacto; ATS de tarifas permanece 1.
-- **Pendiente de cierre global:** fixtures/admisión BD3 e integración PR; políticas
-  de baja/retención/reclasificación aún no definidas, fuera del C/R/U entregado.
+- **Fuera del alcance aprobado:** políticas de baja/retención/reclasificación aún
+  no definidas. Fixtures/admisión BD3 resueltos; evidencia global en BD2-010.
+
+### BD2-010 — Cierre de integración con BD3
+
+- **Estado:** COMPLETADA — aceptación, DoD y revisión local PASS; PR de cierre pendiente.
+- **Owner/rama:** BD2; `feature/bd2-integration-closeout`.
+- **DoR:** main `345481b` integra catálogos BD2, correcciones de fixtures BD3
+  y admisión transaccional (`faa7876`). Usuario autoriza revisar y cerrar tareas.
+- **Alcance:** pruebas BD2 contra booking/migraciones reales, consumo exacto,
+  demanda conjunta, rollback y concurrencia; verify sin exclusiones y contratos
+  actualizados. No modificar implementación ni fixtures de otros módulos.
+- **DoD:** suite completa verde, regresiones reales de admisión, diff revisado,
+  evidencia/handoff y commit/push de cierre. Bajas fuera del contrato C/R/U.
+- **Evidencia:** verify Java 21/PostgreSQL 17 BUILD SUCCESS; main base 248 tests,
+  rama final 254 tests, cero failures/errors/skipped. Seis regresiones reales nuevas.
+  Detalle, límites y revisión en AlanHandoff BD2-010.
 
 ## Entorno de validación
 

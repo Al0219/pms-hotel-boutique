@@ -1,6 +1,6 @@
 # BD2-006 — Contrato aprobado de administración de propiedades
 
-**Estado:** APROBADO por el usuario; implementación BD2-006B validada en QA BD2; CI global pendiente de BD3.
+**Estado:** APROBADO por el usuario; implementación BD2-006B integrada en main; cierre de QA global registrado en BD2-010.
 **Rama:** `feature/bd2-properties-crud`, desde `origin/main` `9552325`.
 **Owner:** BD2. Revisión de seguridad/scope: BD1.
 
