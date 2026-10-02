@@ -117,10 +117,13 @@ Consultar ATS=0 es 200, no `InventoryExhaustedException`. Esa excepción pertene
 a la admisión de escritura, no al GET. Postman no verifica por sí solo bloqueos,
 atomicidad o rollback; usar la suite PostgreSQL para esos casos.
 
-El puerto nuevo necesita conectarse al flujo BD3 conforme a
-`13_BD2_INVENTORY_ADMISSION_CONTRACT.md`. Hasta entonces, el booking actual
-mantiene su precheck y no garantiza sobreventa cero. Sus dos fixtures de CI
-siguen siendo responsabilidad de BD3 y no se deshabilitan para pasar el build.
+BD3 conectó el booking al puerto de admisión en `faa7876`, integrado en main
+`345481b`, y corrigió sus fixtures. La suite `InventoryBookingIntegrationTests`
+ejecuta ese servicio real con todas las migraciones: consumo, demanda conjunta,
+rollback y concurrencia. Ver `13_BD2_INVENTORY_ADMISSION_CONTRACT.md` para el
+protocolo y sus límites: otros escritores que aumenten demanda o reduzcan
+capacidad deben participar en el mismo bloqueo; no se garantiza sobreventa cero
+para rutas que lo evadan.
 
 ## Properties: contrato aprobado BD2-006B
 
@@ -152,8 +155,7 @@ y PostgreSQL 17 configurado mediante `PMS_DATABASE_*`:
 ```
 
 Esta comprobación enfocada no sustituye `./mvnw -B verify` ni cambia la selección
-del workflow. Ejecutar el verify completo antes de publicar y distinguir los
-errores existentes de integración BD3 de los resultados propios de Properties.
+del workflow. Ejecutar el verify completo antes de publicar.
 
 ## RoomTypes
 
@@ -199,12 +201,24 @@ Después de Properties, copiar `createdPropertyId` a `propertyId`; RoomTypes
 guarda `roomTypeId`. Las colecciones de catálogos hacen su propio login.
 Ver contratos 16/17/18 y Swagger para los cuerpos/respuestas completos.
 
-## Evidencia de la entrega de catálogos
+## Validación de cierre BD2-010 (2026-10-02)
+
+Main `345481b` con las correcciones BD3: `./mvnw -B verify`, BUILD SUCCESS,
+248 tests sin fallos, errores ni omisiones. La rama de cierre añade seis
+regresiones de booking real: verify completo BUILD SUCCESS, 254 tests,
+0 failures, 0 errors, 0 skipped, con Java 21/PostgreSQL 17 y JAR empaquetado.
+No se modificaron producción, migraciones, workflow ni tests de BD3.
+
+Para repetir solo la integración real, desde backend con la misma base de QA:
+`./mvnw -B -Dtest=InventoryBookingIntegrationTests verify`.
+Esta ejecución enfocada no sustituye el verify completo requerido por CI.
+
+## Evidencia histórica de la entrega de catálogos
 
 Java 21/PostgreSQL 17: las 40 pruebas de Properties/RoomTypes/Rooms/RatePlans
 pasan (27 nuevas en los últimos tres catálogos). Verify completo final:
 217 tests, 0 failures, 8 errors BD3, 0 skipped, BUILD FAILURE. Los fixtures de
-booking siguen pendientes; no se cambió workflow ni se excluyó ninguna prueba.
+booking estaban pendientes en esa entrega; no se cambió workflow ni se excluyó ninguna prueba.
 
 Newman con login/scope reales: Properties 14 solicitudes/20 assertions;
 RoomTypes 8/11; Rooms 8/11; RatePlans 10/16. Total 40 solicitudes y 58 assertions,

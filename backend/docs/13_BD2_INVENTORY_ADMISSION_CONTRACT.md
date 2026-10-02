@@ -41,32 +41,25 @@ del mismo tipo: compromiso simple para el MVP. No agrega tablas, contadores de
 stock, nuevas dependencias ni cambia migraciones aplicadas.
 
 **La garantía aplica únicamente a escritores que participen en el protocolo.**
-El booking BD3 actual, `addStay`, extensiones, reactivaciones, cambios de tipo,
+El booking BD3 usa este protocolo desde `faa7876`, integrado en main `345481b`.
+`addStay` fuera de booking, extensiones, reactivaciones, cambios de tipo,
 retiro de Rooms o alta OOO no quedan protegidos por el mero hecho de existir
 este bean. Cada escritor que pueda aumentar demanda o reducir capacidad debe
 coordinar el mismo bloqueo y su validación. No se declara sobreventa cero para
 todo el sistema mientras existan rutas que lo evadan.
 
-## Conexión mínima pendiente del owner BD3
+## Conexión BD3 implementada
 
-Sin copiar modelos ni modificar usuarios, folios o auditoría, el flujo completo
-de booking debe ejecutarse dentro del callback, después de validar su comando:
+`ReservationBookingServiceImpl.createBooking` construye una demanda por stay y
+llama a `InventoryAdmissionPort.admit` dentro de su transacción. El callback
+`persistBooking` crea perfil, Reservation, stays, ocupantes y AuditTrail en esa
+misma transacción. El rechazo de admisión se traduce a `ReservationBookingException`
+con `InventoryExhaustedException` como causa. El precheck se conserva, pero la
+suma de demandas y la comprobación protegida por locks las realiza la admisión.
 
-```java
-var demand = command.stays().stream()
-    .map(stay -> new InventoryDemand(stay.roomTypeId(),
-        new StayDateRange(stay.arrival(), stay.departure()), 1))
-    .toList();
-return admission.admit(command.propertyId(), demand,
-    () -> persistBooking(command));
-```
-
-`persistBooking` representa el cuerpo actual de creación de perfil, Reservation,
-stays, ocupantes y AuditTrail. El ejemplo no es un endpoint ni implementación
-entregada de BD3. El owner debe decidir su traducción de la excepción de negocio
-y adaptar sus fixtures; el motor real no debe quedar sustituido por un mock en
-producción. Retener únicamente el precheck actual no resuelve concurrencia ni
-la suma de demandas multi-room.
+En el backend completo se inyecta el motor real. BD3 mantiene sus fixtures
+controlables únicamente en tests y prueba el contrato opcional sin puerto en
+una prueba unitaria separada, sin cargar el contexto completo.
 
 ## Validación
 
@@ -80,3 +73,10 @@ Las tablas de contrato de BD3 usadas por esta suite viven en un schema aleatorio
 exclusivo del test. No sustituyen las tablas productivas ni equivalen a ejecutar
 el servicio de booking BD3. La integración real se valida separadamente contra
 una copia que conserva sus fuentes y migraciones de `origin/main`.
+
+`InventoryBookingIntegrationTests` completa la validación con el servicio de
+booking BD3 real y todo el changelog productivo, en un schema exclusivo de la
+suite. Verifica consumo de una unidad, cancelación del padre, demanda solapada,
+noches adyacentes, rollback tras fallo de ocupante, OOO/OOS y dos bookings reales
+por la última unidad. Comprueba en PostgreSQL que el segundo espera el lock hasta
+el commit exterior del primero y luego se rechaza sin escrituras parciales.
