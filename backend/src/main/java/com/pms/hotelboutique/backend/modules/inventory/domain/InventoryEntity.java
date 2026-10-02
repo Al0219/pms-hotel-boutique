@@ -28,4 +28,6 @@ public abstract class InventoryEntity {
     public UUID getId() { return id; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
+
+    protected void touch(Instant now) { updatedAt = Objects.requireNonNull(now, "now"); }
 }

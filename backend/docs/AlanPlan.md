@@ -239,15 +239,18 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
 
 ### BD2-006B — Properties: altas, consultas y edición descriptiva
 
-- **Estado:** PENDIENTE — contrato operativo por confirmar.
+- **Estado:** EN_QA — Properties validado; CI global pendiente de fixtures BD3.
 - **Owner:** BD2.
 - **Dependencias:** BD2-006A; autorización C2 y AuditService existentes.
-- **DoR:** confirmar `15_BD2_PROPERTIES_CRUD_CONTRACT_PROPOSAL.md`, especialmente
-  rutas/permisos y alcance sin baja/reactivación ni cambios de timezone/moneda.
-- **Alcance propuesto:** servicios/DTO/REST/OpenAPI, guard Staff por método,
+- **DoR:** contrato `15_BD2_PROPERTIES_CRUD_CONTRACT_PROPOSAL.md` aprobado;
+  rutas/permisos confirmados, sin baja/reactivación ni cambios de timezone/moneda.
+- **Alcance:** servicios/DTO/REST/OpenAPI, guard Staff por método,
   repositorios scoped, auditoría transaccional y extensión de Postman.
-- **Aceptación/DoD:** definidos en la propuesta; pruebas PostgreSQL/HTTP real,
+- **Aceptación/DoD:** definidos en el contrato aprobado; pruebas PostgreSQL/HTTP real,
   verify completo, diff revisado, commit/push y handoff.
+- **Evidencia:** QA enfocada BUILD SUCCESS (13 tests); Postman 14 requests/20
+  assertions PASS. Verify completo final: 190 tests, 0 failures, 8 errors BD3,
+  0 skipped; las pruebas Properties pasan. El workflow permanece íntegro.
 
 ## Entorno de validación
 
