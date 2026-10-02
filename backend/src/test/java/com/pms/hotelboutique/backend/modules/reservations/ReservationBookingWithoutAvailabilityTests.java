@@ -15,9 +15,14 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Locks the documented fail-open behavior: without an ATS engine wired
- * (production until BD2 Fase 2+), the booking proceeds. No stub is imported
- * here on purpose, so this context proves the port is truly optional.
+ * Proves the booking flows against the real ATS engine (BD2 Fase 3+): one
+ * physical room yields ATS 1 and the precheck passes. No stub is imported
+ * here on purpose, so this context exercises the production wiring.
+ *
+ * <p>History: this suite once locked a fail-open behavior when no ATS engine
+ * was wired. Since BD2 now provides its engine, booking with zero physical
+ * rooms is correctly rejected; the fail-open path only applies when no
+ * {@code AvailabilityPort} bean exists at all.</p>
  */
 @SpringBootTest
 @Transactional
@@ -32,10 +37,12 @@ class ReservationBookingWithoutAvailabilityTests {
     JdbcTemplate jdbc;
 
     @Test
-    void booksWithoutAvailabilityPort() {
+    void booksAgainstRealAvailabilityEngine() {
         UUID roomType = UUID.randomUUID();
         jdbc.update("INSERT INTO room_types(id,property_id,code,name) VALUES (?,?,'KING','King')",
                 roomType, SEED_PROPERTY);
+        jdbc.update("INSERT INTO rooms(id,property_id,room_type_id,code) VALUES (?,?,?,'101')",
+                UUID.randomUUID(), SEED_PROPERTY, roomType);
 
         BookingView booking = this.booking.createBooking(new CreateBookingCommand(SEED_PROPERTY,
                 new CreateBookingCommand.BookerBooking(null, new CreateGuestProfileCommand(
