@@ -1,6 +1,6 @@
 # BD2-007 — Propuesta de administración de RoomTypes
 
-**Estado:** PROPUESTA; rutas y mapeo operativo de permisos pendientes de aprobación.
+**Estado:** APROBADO para implementación por la instrucción del usuario de terminar los CRUD BD2.
 **Rama/base:** `feature/bd2-room-types-crud`, `origin/main` `c2699ff`.
 **Owner:** BD2. Reviewer de seguridad/scope: BD1.
 
@@ -123,9 +123,8 @@ No modificar el servicio ni fixtures de BD3.
 - Colección Postman, guía, tracking AlanPlan/AlanHandoff, revisión de diff y
   commit/push por entrega. QA documental no equivale a validar una API existente.
 
-## Siguiente decisión
+## Continuación autorizada
 
-Aprobar o ajustar las cuatro rutas, el mapeo de permisos y el alcance C/R/U
-descriptivo. Después implementar BD2-007B en esta misma rama. Rooms y RatePlans
-serán incrementos separados con sus contratos; no se espera a booking BD3 para
-preparar estos catálogos.
+El usuario autorizó implementar estas cuatro rutas, permisos C2 existentes y
+alcance C/R/U descriptivo. Rooms y RatePlans se entregan por separado con sus
+contratos. La baja sigue pendiente de política de dominio; no se inventa DELETE.

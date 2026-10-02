@@ -269,7 +269,7 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
 
 ### BD2-007B — RoomTypes: altas, consultas y edición descriptiva
 
-- **Estado:** PENDIENTE — contrato operativo por confirmar.
+- **Estado:** EN_QA — C/R/U RoomTypes validado; CI global pendiente de fixtures BD3.
 - **Owner:** BD2; reviewer BD1 para permisos/scope.
 - **Dependencias/DoR:** BD2-007A completada y contrato operativo aprobado;
   esquema/fundación BD2-002, C2 y auditoría existentes. No depende de que BD3
@@ -278,6 +278,34 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
   bloqueo de fila, auditoría transaccional y colección Postman.
 - **Aceptación/DoD:** definidos en el contrato propuesto 16; PostgreSQL/HTTP,
   verify completo con errores ajenos visibles, diff revisado, commit/push/handoff.
+
+- **Evidencia BD2-007B:** verify enfocado BUILD SUCCESS, 9 tests (API, rollback y HTTP real). Verify completo: 198 tests, 0 failures, 8 errors BD3, 0 skipped; ejecutado antes de añadir la prueba HTTP final. Newman RoomTypes: 8 solicitudes/11 assertions PASS en la validación final de catálogos.
+
+### BD2-008 — Rooms C/R/U
+
+- **Estado:** EN_QA. Owner BD2; rama dependiente `feature/bd2-rooms-crud`.
+- **DoR:** RoomTypes `1c0ed07`, esquema Room, C2 y auditoría existentes;
+  continuación de CRUD autorizada por el usuario. Contrato 17 publicado.
+- **Alcance:** alta física, consultas y edición exclusiva de código; no baja,
+  reclasificación ni cambios BD3. Aceptación/DoD según contrato 17.
+- **QA enfocada:** BUILD SUCCESS, 15 tests (9 Rooms y 6 de regresión RoomTypes).
+  Incluye capacidad +1, locks reales, scope, validación, auditoría, rollback y HTTP.
+- **Verify completo:** BUILD FAILURE, 208 tests, 0 failures, 8 errors solo BD3, 0 skipped.
+
+### BD2-009 — RatePlans C/R/U
+
+- **Estado:** EN_QA. Owner BD2; `feature/bd2-rate-plans-crud`.
+- **DoR:** Rooms `4cea3db`, esquema/MonetaryAmount/C2/AuditService existentes;
+  continuación CRUD autorizada. Contrato 18 publicado antes de crear API.
+- **Alcance:** catálogo de tarifas y precios exactos; sin inventario, baja ni
+  reescritura de reservas/folios. Aceptación/DoD: contrato 18.
+- **QA enfocada:** BUILD SUCCESS, 21 tests; 9 RatePlans y 12 regresiones Rooms/RoomTypes.
+- **Verify completo final:** BUILD FAILURE, 217 tests, 0 failures, 8 errors solo BD3, 0 skipped.
+  Las 40 pruebas de los cuatro catálogos BD2 pasan. Sin exclusiones ni cambios BD3.
+- **Newman:** los cuatro catálogos suman 40 solicitudes/58 assertions PASS.
+  SQL confirmó unicidad, audit real/no-op y precio exacto; ATS de tarifas permanece 1.
+- **Pendiente de cierre global:** fixtures/admisión BD3 e integración PR; políticas
+  de baja/retención/reclasificación aún no definidas, fuera del C/R/U entregado.
 
 ## Entorno de validación
 

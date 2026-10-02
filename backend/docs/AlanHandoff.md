@@ -1,5 +1,72 @@
 # AlanHandoff — Seguimiento Backend
 
+## BD2-009 — RatePlans y cierre C/R/U de catálogos BD2
+
+- **Rama/base:** `feature/bd2-rate-plans-crud`, Rooms `4cea3db` ya publicado.
+- **Estado:** EN_QA. Implementación C/R/U terminada y validada; CI global pendiente BD3.
+- **Entregado:** contrato 18, API/DTO/OpenAPI, dinero exacto BIGINT/ISO, permisos
+  y scope C2 vigentes antes de SQL, locks/no-op y auditoría transaccional.
+  RatePlan no agrega inventario ni modifica precios históricos de reservas.
+- **QA enfocada:** BUILD SUCCESS, 21 tests; 9 RatePlans y 12 regresiones Rooms/RoomTypes.
+- **Verify final:** `./mvnw -B verify`, Java 21/PostgreSQL 17: BUILD FAILURE,
+  217 tests, 0 failures, 8 errors solo BD3, 0 skipped. Las 40 pruebas de los
+  cuatro catálogos BD2 pasan, incluidas las 27 nuevas de estos tres incrementos.
+- **Postman real:** Properties 14 requests/20 assertions, RoomTypes 8/11,
+  Rooms 8/11, RatePlans 10/16: total 40 requests/58 assertions PASS.
+  SQL: una fila por catálogo pese a 409, dos eventos (alta/edición) por entidad,
+  actor Staff real y precio final 9999 unidades menores GTQ. ATS de tarifas=1
+  antes/después. Swagger real publica precio string y RatePlanView.
+- **Limpieza:** runtime QA retirado y credenciales/environments/reportes privados
+  eliminados fuera del repositorio. Solo fuentes, tests, contratos y guía en Git.
+- **Publicación autorizada:** commit/push de esta entrega. PRs por dependencia:
+  RoomTypes `feature/bd2-room-types-crud` → main;
+  Rooms `feature/bd2-rooms-crud` → RoomTypes;
+  RatePlans `feature/bd2-rate-plans-crud` → Rooms.
+  Integrar primero RoomTypes, luego Rooms y finalmente RatePlans; ajustar las bases al incorporar cada entrega.
+- **Pendientes reales:** definir política de baja/retención/reclasificación para
+  completar D; no hay DELETE ni status nuevo. BD3 debe conectar admisión según
+  contrato 13 para garantizar sobreventa cero en escrituras de booking.
+- **Errores BD3, sin modificar sus archivos:**
+  ReservationBookingServiceIntegrationTests: 7 errores de contexto porque
+  ControllableAvailabilityConfiguration y AvailabilityService ofrecen dos
+  AvailabilityPort; propuesta BD3: dar prioridad al stub únicamente en su fixture.
+  ReservationBookingWithoutAvailabilityTests: el contexto completo ahora carga
+  ATS real y rechaza el tipo sin Rooms; propuesta BD3: probar ausencia de puerto
+  en contexto mínimo que realmente no cargue el motor/API de inventario.
+  Siguen presentes también en la rama remota BD3 revisada, sin incorporarla.
+- **Retomar:** cuando BD3 corrija sus fixtures/conecte admisión, actualizar
+  referencias y validar integración en copia aislada antes de cerrar CI/PR.
+  No hubo merge/rebase sobre nuestras ramas, cambios main ni modificaciones BD3.
+
+## BD2-008 — Rooms
+
+- **Rama/base:** `feature/bd2-rooms-crud`, RoomTypes `1c0ed07` ya publicado.
+- **Estado:** EN_QA. Contrato 17 publicado antes de crear las APIs.
+- **Dependencias:** C2/AuditService y schema existentes. No requiere cambios BD3.
+- **Entregado:** alta física, consultas scoped y PATCH de código, permisos C2,
+  bloqueo de RoomType compatible con admisión, row lock de edición y audit.
+- **QA enfocada:** BUILD SUCCESS, 15 tests; 9 Rooms y 6 regresiones RoomTypes.
+  Capacidad +1, no-op, tipos cruzados, 409, lock NOWAIT, rollback y HTTP real.
+- **Postman final:** colección Rooms ejecutada: 8 solicitudes/11 assertions PASS.
+- **Verify completo:** BUILD FAILURE, 208 tests, 0 failures, 8 errors solo BD3, 0 skipped.
+- **Publicación:** commit/push autorizado. Siguiente entrega RatePlans; sin DELETE/reclasificación.
+
+## BD2-007B — RoomTypes: implementación
+
+- **Rama:** `feature/bd2-room-types-crud`. Contrato 16 autorizado por el usuario.
+- **Estado:** EN_QA; C/R/U validado. Scope C2 antes de SQL, permisos vigentes,
+  bloqueo de fila, auditoría transaccional y OpenAPI tipado; sin DELETE/status.
+- **QA:** verify enfocado BUILD SUCCESS, 9 tests sin fallos/errores/omitidas.
+  Incluye PostgreSQL, rollback real de auditoría, referencias, ATS sin Rooms,
+  HTTP entre transacciones, JWT Guest/revocación y permisos negativos.
+- **Verify completo:** 198 tests, 0 failures, 8 errors BD3, 0 skipped; ejecutado
+  antes de añadir la prueba HTTP final. Sin cambios BD3 ni exclusiones de tests.
+- **Postman final:** colección RoomTypes ejecutada: 8 solicitudes/11 assertions PASS.
+- **Publicación:** commit/push autorizado. Main incorporó solo la propuesta
+  documental en PR #68 (`302080b`); no trae correcciones de fixtures BD3.
+- **Siguiente paso:** Rooms y RatePlans en ramas dependientes separadas.
+  Baja/retención sigue pendiente de política; no se inventan borrados.
+
 ## BD2-007A — Preparación de RoomTypes
 
 - **Rama/base:** `feature/bd2-room-types-crud`, `origin/main` `c2699ff`.

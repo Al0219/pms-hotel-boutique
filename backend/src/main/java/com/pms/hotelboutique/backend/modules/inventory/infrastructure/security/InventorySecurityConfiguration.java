@@ -22,7 +22,10 @@ public class InventorySecurityConfiguration {
             StaffAuthService sessions) throws Exception {
         return http
                 .securityMatcher("/api/v1/properties", "/api/v1/properties/*",
-                        "/api/v1/properties/*/availability")
+                        "/api/v1/properties/*/availability", "/api/v1/properties/*/room-types",
+                        "/api/v1/properties/*/room-types/*", "/api/v1/properties/*/rooms",
+                        "/api/v1/properties/*/rooms/*", "/api/v1/properties/*/rate-plans",
+                        "/api/v1/properties/*/rate-plans/*")
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(errors -> errors

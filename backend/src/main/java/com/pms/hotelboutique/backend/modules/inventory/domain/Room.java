@@ -29,4 +29,12 @@ public class Room extends InventoryEntity {
     public UUID getPropertyId() { return propertyId; }
     public UUID getRoomTypeId() { return roomTypeId; }
     public String getCode() { return code; }
+
+    public boolean rename(String code, Instant now) {
+        String next = InventoryValues.text(code, "code", 64);
+        if (this.code.equals(next)) { return false; }
+        this.code = next;
+        touch(now);
+        return true;
+    }
 }

@@ -1,0 +1,280 @@
+{
+  "info": {
+    "name": "PMS BD2 — Rooms",
+    "description": "Contrato 17. Solo base QA: crea y conserva una unidad física, sin DELETE. Requiere Staff COMMERCIAL_MANAGE y propertyId autorizado. Configurar propertyId y roomTypeId autorizados. Credenciales en environment privado.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:18080"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{staffAccessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "01 — Login Staff",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/staff-auth/sessions",
+        "auth": {
+          "type": "noauth"
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"username\":\"{{staffUsername}}\",\"password\":\"{{staffPassword}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "if (pm.response.code === 201) pm.environment.set('staffAccessToken', pm.response.json().accessToken);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Crear Room",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "if (pm.response.code === 201) { const r=pm.response.json(); pm.environment.set('roomId',r.id); pm.environment.set('roomCode',r.code); }",
+              "pm.test('UTC', () => pm.expect(pm.response.json().createdAt).to.match(/Z$/));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rooms",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"roomTypeId\":\"{{roomTypeId}}\",\"code\":\"PM-{{$guid}}\"}"
+        },
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "POST"
+      }
+    },
+    {
+      "name": "Listar Rooms",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Tipo presente', () => pm.expect(pm.response.json().map(r=>r.id)).to.include(pm.environment.get('roomId')));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rooms",
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "GET"
+      }
+    },
+    {
+      "name": "Leer Room",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rooms/{{roomId}}",
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "GET"
+      }
+    },
+    {
+      "name": "Editar Room",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.environment.set('roomUpdatedAt',pm.response.json().updatedAt);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rooms/{{roomId}}",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"code\":\"{{roomCode}}-EDIT\"}"
+        },
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "PATCH"
+      }
+    },
+    {
+      "name": "Repetir PATCH",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('No-op conserva timestamp', () => pm.expect(pm.response.json().updatedAt).to.eql(pm.environment.get('roomUpdatedAt')));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rooms/{{roomId}}",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"code\":\"{{roomCode}}-EDIT\"}"
+        },
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "PATCH"
+      }
+    },
+    {
+      "name": "Campo inmutable",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rooms/{{roomId}}",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"propertyId\":\"{{propertyId}}\"}"
+        },
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "PATCH"
+      }
+    },
+    {
+      "name": "Codigo duplicado",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 409', () => pm.response.to.have.status(409));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rooms",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"roomTypeId\":\"{{roomTypeId}}\",\"code\":\"{{roomCode}}-EDIT\"}"
+        },
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "POST"
+      }
+    }
+  ]
+}
