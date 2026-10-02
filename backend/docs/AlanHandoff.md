@@ -1,5 +1,21 @@
 # AlanHandoff — Seguimiento Backend
 
+## BD2-006A — Propuesta de administración de propiedades
+
+- **Rama/base:** `feature/bd2-properties-crud`, `origin/main` `9552325`.
+  Fase 5 integrada por PR #65; su conexión productiva BD3 continúa pendiente.
+- **Estado:** preparación de propuesta COMPLETADA; implementación BD2-006B PENDIENTE.
+- **Entregado:** `15_BD2_PROPERTIES_CRUD_CONTRACT_PROPOSAL.md`; primera entrega
+  C/R/U de Properties y secuencia RoomTypes/Rooms/RatePlans/bajas, con ownership BD2.
+- **Decisiones pendientes:** rutas/permisos operativos, alta limitada al
+  SUPER_ADMIN de su organización y edición solo de nombre/código. Baja y
+  reactivación necesitan definición de acceso a properties inactivas bajo C2.
+- **Revisión:** coherencia con C2, modelo/schema existentes y reglas de dominio;
+  distinguir propuesta de contrato confirmado. Diff/whitespace revisados.
+  Solo documentación; no se declara una nueva ejecución Maven ni una API creada.
+- **Siguiente paso:** confirmar propuesta, implementar BD2-006B y validar
+  PostgreSQL/HTTP/OpenAPI/Postman antes de su commit/push. No modificar fixtures BD3.
+
 ## BD2-005 — Admisión e integración (Fase 5)
 
 - **Rama:** `feature/bd2-inventory-admission`, desde Fase 4 publicada en `0dbaa74`.
