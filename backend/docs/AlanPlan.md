@@ -368,9 +368,30 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
 - **DoD:** pruebas, diff/check y evidencia en AlanHandoff.
 - **Evidencia local:** regresión original con 3 fallos de 5; corrección con
   verify completo BUILD SUCCESS, 259 tests, 0 failures/errors/skipped.
-- **Límite:** BD2-FP-001 completo continúa PENDIENTE hasta confirmar SH-D01 y
-  persistencia. Se solicitó una decisión concreta para base local de idempotencia;
-  no se implementa la propuesta por ausencia de respuesta.
+- **Límite histórico:** SH-D01 estaba pendiente en esta entrega; el usuario
+  aprobó después la base local. Implementación en BD2-FP-001.
+
+### BD2-FP-001 — Fase 1: idempotencia transaccional local
+
+- **Estado:** EN_QA — aceptación y verify local PASS; revisión pendiente.
+  Owner José / BD2; reviewers BD1 (base compartida) y BD3 (test de upgrade).
+- **Rama:** `feature/bd2-financial-foundation`; incremento sobre `be09de4`.
+- **DoR:** FP-000 integrada; SH-D01 local aprobado explícitamente por el usuario.
+  Reutilizar Reservations/Folio, C2, AuditService y PostgreSQL. No nace módulo.
+- **Alcance:** recibo persistente append-only; clave 8–128 caracteres; identidad
+  Staff/property/operación/clave; payload canonicalizado sin secretos; dedupe,
+  conflicto, efecto/recibo/audit atómicos y bloqueos entre transacciones/JVMs.
+- **Aceptación:** reintentos y concurrencia no duplican efecto; autorización
+  vigente antes de recuperar resultado; aislamiento por actor/property/operación;
+  payload/version/política distinta generan conflicto; rollback no deja recibo;
+  upgrade/idempotencia/append-only PostgreSQL y verify sin exclusiones.
+- **Archivos:** LocalOperationService/Request/Receipt y repositorio JDBC,
+  nuevo changeset en 004ServiceReservations, contrato 21 y pruebas.
+- **DoD/evidencia:** Java 21/PostgreSQL 17, `./mvnw -B verify` BUILD SUCCESS;
+  281 tests, 0 failures/errors/skipped, incluidos 22 tests nuevos.
+  Upgrade/reaplicación y diff revisados; detalles en AlanHandoff.
+- **Límites:** sin caducidad automática, HTTP, proveedor ni nuevos permisos.
+  Pagos externos y APIs financieras mantienen sus decisiones pendientes.
 
 ### Próximas entregas financieras y lifecycle
 
@@ -381,7 +402,7 @@ contrato aplicable aprobado y dependencias COMPLETADAS; no implementar desde moc
 
 | ID / módulo | Estado | Dependencias y decisión que falta |
 | --- | --- | --- |
-| BD2-FP-001 / 1 base transaccional | PENDIENTE | FP-000; SH-D01/persistencia, SH-D03 si nace módulo |
+| BD2-FP-001 / 1 base transaccional | EN_QA | SH-D01 local aprobado; verify PASS, revisión pendiente; no requiere SH-D03 |
 | BD2-FP-002 / 2A lectura folio | PENDIENTE | FP-000; FP-D02 (propuesta en documento 20) |
 | BD2-FP-003 / 2B escritura folio | PENDIENTE | FP-001; FP-D04/contrato de escritura |
 | BD2-FP-004 / 3 pagos/garantía | PENDIENTE | FP-001/003; FP-D01/03 y SPI BD1 |

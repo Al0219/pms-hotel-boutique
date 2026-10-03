@@ -1,0 +1,50 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-reservations-006
+      author: jose-bd2
+      changes:
+        - createTable:
+            tableName: local_operation_receipts
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: property_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_local_operation_property, references: properties(id) } }
+              - column: { name: staff_user_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_local_operation_actor, references: staff_users(id) } }
+              - column: { name: operation_name, type: varchar(64), constraints: { nullable: false } }
+              - column: { name: request_key, type: varchar(128), constraints: { nullable: false } }
+              - column: { name: payload_version, type: integer, constraints: { nullable: false } }
+              - column: { name: request_hash, type: varchar(64), constraints: { nullable: false } }
+              - column: { name: required_permission, type: varchar(96), constraints: { nullable: false, foreignKeyName: fk_local_operation_permission, references: permission_catalog(code) } }
+              - column: { name: result_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: completed_at, type: timestamptz, constraints: { nullable: false } }
+        - addUniqueConstraint:
+            tableName: local_operation_receipts
+            columnNames: staff_user_id, property_id, operation_name, request_key
+            constraintName: uq_local_operation_identity
+        - sql:
+            dbms: postgresql
+            sql: |
+              ALTER TABLE local_operation_receipts
+                ADD CONSTRAINT ck_local_operation_key CHECK (char_length(request_key) BETWEEN 8 AND 128 AND btrim(request_key) <> '' AND request_key !~ '[[:cntrl:]]'),
+                ADD CONSTRAINT ck_local_operation_version CHECK (payload_version > 0),
+                ADD CONSTRAINT ck_local_operation_hash CHECK (request_hash ~ '^[0-9a-f]{64}$'),
+                ADD CONSTRAINT ck_local_operation_name CHECK (operation_name ~ '^[A-Z][A-Z0-9_]{1,63}$'),
+                ADD CONSTRAINT ck_local_operation_permission CHECK (required_permission IN ('FOLIO_PAYMENT_OPERATE','PAYMENT_REFUND_VOID','RESERVATION_MANAGE'));
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              CREATE FUNCTION bd2_reject_local_operation_mutation() RETURNS trigger AS $$
+              BEGIN
+                RAISE EXCEPTION 'local_operation_receipts is append-only (tried %)', TG_OP;
+              END; $$ LANGUAGE plpgsql;
+        - sql:
+            dbms: postgresql
+            sql: CREATE TRIGGER trg_local_operation_receipts_append_only BEFORE UPDATE OR DELETE ON local_operation_receipts FOR EACH ROW EXECUTE FUNCTION bd2_reject_local_operation_mutation();
+      rollback:
+        - sql:
+            dbms: postgresql
+            sql: DROP TRIGGER trg_local_operation_receipts_append_only ON local_operation_receipts;
+        - dropTable: { tableName: local_operation_receipts }
+        - sql:
+            dbms: postgresql
+            sql: DROP FUNCTION bd2_reject_local_operation_mutation();
