@@ -1,0 +1,73 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  background-color: var(--pms-color-neutral-50, #f8f8f6);
+  border: 1px dashed var(--pms-color-neutral-300, #d7d6ce);
+  border-radius: var(--radius-md, 8px);
+  text-align: center;
+  gap: 1.25rem;
+}
+
+.iconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background-color: var(--pms-color-neutral-100, #f1f0ec);
+  color: var(--pms-color-neutral-500, #737871);
+}
+
+.icon {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.textGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  max-width: 440px;
+}
+
+.title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--pms-color-neutral-800, #31352f);
+  margin: 0;
+}
+
+.description {
+  font-size: 0.875rem;
+  color: var(--pms-color-neutral-600, #61665f);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  background-color: var(--pms-color-brand-primary, #32473c);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.actionButton:hover {
+  background-color: var(--pms-color-brand-secondary, #435e50);
+}
+
+.actionButton:focus-visible {
+  outline: 2px solid var(--pms-color-brand-accent, #c9933f);
+  outline-offset: 2px;
+}

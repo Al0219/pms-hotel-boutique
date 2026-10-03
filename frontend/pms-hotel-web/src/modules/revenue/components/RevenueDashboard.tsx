@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { fetchRevenueKpis } from '../service/revenue-kpi.service';
-import { RevenueKpi } from '../model/revenue-kpi';
+import React, { useState } from 'react';
+import { useRevenueKpis } from '../hooks/use-revenue-kpis';
 import { KpiCards } from './KpiCards';
 import { KpiCharts } from './KpiCharts';
 
@@ -11,42 +10,15 @@ interface RevenueDashboardProps {
 }
 
 export function RevenueDashboard({ propertyId }: RevenueDashboardProps) {
-  const [data, setData] = useState<RevenueKpi | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
   // Default dates for the demo (in a real app, these would be controlled by a date picker)
   const [startDate] = useState("2023-10-01");
   const [endDate] = useState("2023-10-07");
 
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadData() {
-      try {
-        setLoading(true);
-        setError(null);
-        const result = await fetchRevenueKpis({ propertyId, startDate, endDate });
-        if (isMounted) {
-          setData(result);
-        }
-      } catch (err: any) {
-        if (isMounted) {
-          setError(err.message || 'Failed to load revenue data');
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [propertyId, startDate, endDate]);
+  const { kpis: data, isLoading: loading, error } = useRevenueKpis({
+    propertyId,
+    startDate,
+    endDate,
+  });
 
   if (loading) {
     return (

@@ -1,54 +1,75 @@
+import { httpRequest } from "@/lib/http";
+
+import type {
+  SellLimitListQueryDto,
+  SellLimitListResponseDto,
+  UpdateSellLimitRequestDto,
+  SellLimitDto,
+} from "../dtos/sell-limit.dto";
+import type { SellLimit, UpdateSellLimitParams } from "../model/sell-limit";
 import {
-  SellLimit,
-  UpdateSellLimitParams,
-} from "../model/sell-limit";
-import {
-  toDomainSellLimitList,
   toDomainSellLimit,
   toDtoUpdateSellLimit,
 } from "../mappers/sell-limit.mapper";
-import {
-  SellLimitListResponseDto,
-  SellLimitDto,
-} from "../dtos/sell-limit.dto";
+
+export async function fetchSellLimitsDto(
+  query: SellLimitListQueryDto,
+  signal?: AbortSignal
+): Promise<SellLimitListResponseDto> {
+  const params = new URLSearchParams();
+  params.set("property_id", query.property_id);
+  if (query.start_date) params.set("start_date", query.start_date);
+  if (query.end_date) params.set("end_date", query.end_date);
+  if (query.room_type_id) params.set("room_type_id", query.room_type_id);
+
+  const queryString = params.toString();
+  const path = queryString
+    ? `/api/v1/private/inventory/sell-limits?${queryString}`
+    : "/api/v1/private/inventory/sell-limits";
+
+  return httpRequest<SellLimitListResponseDto>({
+    path,
+    method: "GET",
+    signal,
+  });
+}
+
+export async function updateSellLimitDto(
+  payload: UpdateSellLimitRequestDto,
+  signal?: AbortSignal
+): Promise<SellLimitDto> {
+  return httpRequest<SellLimitDto>({
+    path: "/api/v1/private/inventory/sell-limits",
+    method: "POST",
+    json: payload,
+    signal,
+  });
+}
 
 export async function fetchSellLimits(
   propertyId: string,
   startDate?: string,
   endDate?: string,
   roomTypeId?: string,
+  signal?: AbortSignal
 ): Promise<SellLimit[]> {
-  const params = new URLSearchParams();
-  params.set("property_id", propertyId);
-  if (startDate) params.set("start_date", startDate);
-  if (endDate) params.set("end_date", endDate);
-  if (roomTypeId) params.set("room_type_id", roomTypeId);
-
-  const res = await fetch(`/api/v1/private/inventory/sell-limits?${params.toString()}`);
-  if (!res.ok) {
-    throw new Error(`Error al consultar límites de venta: ${res.statusText}`);
-  }
-
-  const data: SellLimitListResponseDto = await res.json();
-  return toDomainSellLimitList(data);
+  const response = await fetchSellLimitsDto(
+    {
+      property_id: propertyId,
+      start_date: startDate,
+      end_date: endDate,
+      room_type_id: roomTypeId,
+    },
+    signal
+  );
+  return response.items.map(toDomainSellLimit);
 }
 
 export async function updateSellLimit(
   params: UpdateSellLimitParams,
+  signal?: AbortSignal
 ): Promise<SellLimit> {
-  const payload = toDtoUpdateSellLimit(params);
-  const res = await fetch(`/api/v1/private/inventory/sell-limits`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    throw new Error(`Error al actualizar límite de venta/overbooking: ${res.statusText}`);
-  }
-
-  const data: SellLimitDto = await res.json();
-  return toDomainSellLimit(data);
+  const dto = toDtoUpdateSellLimit(params);
+  const result = await updateSellLimitDto(dto, signal);
+  return toDomainSellLimit(result);
 }

@@ -1,19 +1,22 @@
-import { RevenueKpiFilters, RevenueKpi } from '../model/revenue-kpi';
-import { RevenueKpiResponseDto } from '../dtos/revenue-kpi.dto';
-import { mapRevenueKpiResponseToDomain } from '../mappers/revenue-kpi.mapper';
+import { httpRequest } from "@/lib/http";
 
-export async function fetchRevenueKpis(filters: RevenueKpiFilters): Promise<RevenueKpi> {
+import type {
+  RevenueKpiRequestDto,
+  RevenueKpiResponseDto,
+} from "../dtos/revenue-kpi.dto";
+
+export async function fetchRevenueKpisDto(
+  filters: RevenueKpiRequestDto,
+  signal?: AbortSignal
+): Promise<RevenueKpiResponseDto> {
   const params = new URLSearchParams();
-  params.append('propertyId', filters.propertyId);
-  params.append('startDate', filters.startDate);
-  params.append('endDate', filters.endDate);
+  params.set("property_id", filters.property_id);
+  params.set("start_date", filters.start_date);
+  params.set("end_date", filters.end_date);
 
-  const response = await fetch(`/api/v1/private/revenue/kpis?${params.toString()}`);
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch revenue KPIs');
-  }
-
-  const dto: RevenueKpiResponseDto = await response.json();
-  return mapRevenueKpiResponseToDomain(dto);
+  return httpRequest<RevenueKpiResponseDto>({
+    path: `/api/v1/private/revenue/kpis?${params.toString()}`,
+    method: "GET",
+    signal,
+  });
 }

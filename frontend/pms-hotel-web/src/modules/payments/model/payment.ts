@@ -79,9 +79,11 @@ export interface PaymentGuaranteeResult {
 }
 
 export interface PaymentListFilters {
+  propertyId?: string;
   folioId?: string;
   reservationId?: string;
   status?: PaymentStatus;
+  paymentMethod?: PaymentMethod;
   fromDate?: string;
   toDate?: string;
 }

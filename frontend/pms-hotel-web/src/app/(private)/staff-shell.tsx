@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { StaffLogout, useStaffSession } from "@/modules/auth";
 import { PropertySwitcher } from "@/modules/properties";
+import { NotificationBell } from "@/components/NotificationBell";
 import styles from "./private-layout.module.css";
 
 const nav = [
@@ -50,7 +51,10 @@ export function StaffShell({ children }: { children: React.ReactNode }) {
       <header className={styles.header} aria-label="Private shell header">
         <div><strong>{session.userName}</strong><p>{session.roleName} · {mockSession ? "Sesión de demostración" : "Sesión Staff"}</p></div>
         {supportsScope ? <PropertySwitcher /> : <p className={styles.propertyContext}>{propertyId ? "Contexto propio del módulo: " + propertyId : "Este módulo conserva su contexto de propiedad."}</p>}
-        <StaffLogout />
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <NotificationBell />
+          <StaffLogout />
+        </div>
       </header>
       <main className={styles.main}>{children}</main>
     </div>

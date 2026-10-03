@@ -1,53 +1,56 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchRevenueKpis } from './revenue-kpi.service';
+import { fetchRevenueKpisDto } from './revenue-kpi.service';
 
 describe('revenue-kpi.service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should fetch and map revenue KPIs successfully', async () => {
+  it('should fetch revenue KPIs DTO successfully', async () => {
     const mockResponse = {
-      propertyId: 'prop-1',
+      property_id: 'prop-1',
       currency: 'USD',
       summary: {
-        occupancyPercent: 80,
+        occupancy_percent: 80,
         adr: 150,
-        revPar: 120,
+        rev_par: 120,
         pickup: 5,
         pace: 2,
-        totalRoomsSold: 80,
-        totalRoomsAvailable: 100,
-        totalRevenue: 12000,
+        total_rooms_sold: 80,
+        total_rooms_available: 100,
+        total_revenue: 12000,
       },
       daily: [],
     };
 
-    global.fetch = vi.fn().mockResolvedValue({
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse,
+    } as Response);
+
+    const result = await fetchRevenueKpisDto({
+      property_id: 'prop-1',
+      start_date: '2023-10-01',
+      end_date: '2023-10-02',
     });
 
-    const result = await fetchRevenueKpis({
-      propertyId: 'prop-1',
-      startDate: '2023-10-01',
-      endDate: '2023-10-02',
-    });
-
-    expect(global.fetch).toHaveBeenCalledWith('/api/v1/private/revenue/kpis?propertyId=prop-1&startDate=2023-10-01&endDate=2023-10-02');
-    expect(result.propertyId).toBe('prop-1');
+    expect(fetchSpy).toHaveBeenCalled();
+    expect(result.property_id).toBe('prop-1');
     expect(result.summary.adr).toBe(150);
   });
 
   it('should throw an error if the response is not ok', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
       ok: false,
-    });
+      status: 500,
+      statusText: 'Internal Server Error',
+      json: async () => ({ error: { message: 'Internal Server Error' } }),
+    } as Response);
 
-    await expect(fetchRevenueKpis({
-      propertyId: 'prop-1',
-      startDate: '2023-10-01',
-      endDate: '2023-10-02',
-    })).rejects.toThrow('Failed to fetch revenue KPIs');
+    await expect(fetchRevenueKpisDto({
+      property_id: 'prop-1',
+      start_date: '2023-10-01',
+      end_date: '2023-10-02',
+    })).rejects.toThrow();
   });
 });

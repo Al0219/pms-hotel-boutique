@@ -47,11 +47,20 @@ export {
 } from "./mappers/folio.mapper";
 
 export {
+  useFolio,
+  type UseFolioResult,
+} from "./hooks/use-folio";
+
+export {
   createChargeRoutingRuleDto,
   fetchFolioByIdDto,
   splitFolioChargeDto,
   transferFolioChargeDto,
 } from "./service/folio.service";
+
+export {
+  FoliosPage,
+} from "./components/folios-page";
 
 export {
   FolioDetailCard,
