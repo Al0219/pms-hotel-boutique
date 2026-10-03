@@ -14,3 +14,6 @@ databaseChangeLog:
   - include:
       file: 005-audit-trail.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 006-local-operation-receipts.yaml
+      relativeToChangelogFile: true

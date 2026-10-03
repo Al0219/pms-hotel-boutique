@@ -41,6 +41,44 @@ dependencias; un perfil parcial incluye solo su módulo y sus dependencias.
 
 ## Tareas
 
+### BE-HANDOFF-001 — Traspaso de pendientes BD2 a BD1/BD3
+
+- **Estado:** COMPLETADA — preparación del traspaso documental y revisión local PASS.
+  Autor José / BD2; receptores Alan / BD1 y Juan / BD3; revisión local Codex.
+- **Rama/base:** chore/backend-demo, sobre f5fc545.
+- **DoR:** usuario confirma cambio de foco a Frontend y solicita publicar todo
+  lo pendiente y una lista clara para los responsables restantes de Backend.
+- **Alcance/archivos:** documento 23, actualización de ownership/decisión global
+  y AlanPlan/AlanHandoff. Conservar historia, distinguir publicación de integración.
+- **Aceptación:** entregas existentes identificadas, ramas/commits y estado remoto
+  verificados; pendientes completos, límites y reparto detallado marcado propuesto.
+- **DoD:** enlaces/localización, revisión documental, diff --check, commit/push;
+  sin cambios Java, SQL, API, frontend, infraestructura o funcionalidades.
+- **Evidencia:** cinco documentos, siete enlaces locales válidos y 12 tareas
+  cubiertas; estados/ramas/commits verificados tras fetch. Diff --check PASS.
+  La integración y los acuerdos de los receptores permanecen pendientes.
+
+### BE-DEMO-001 — Presentación Backend con un comando
+
+- **Estado:** EN_QA — aceptación/DoD local PASS; revisión BD1 y CI de PR pendientes.
+  Owner José / BD2; reviewer Alan / BD1 (runtime compartido).
+- **Rama/base:** chore/backend-demo, sobre e5421f9 de BD2 financial foundation.
+- **DoR:** usuario solicita Docker Compose y cuenta de muestra sin configuración
+  manual; BE-001/002/003 y catálogos BD2 integrados. No requiere nuevos contratos.
+- **Alcance/archivos:** compose.demo.yaml reutiliza servicios existentes, base/volumen
+  propios, puerto localhost y bootstrap Staff existente; colección Postman única,
+  guía de presentación, README y seguimiento. Credenciales públicas solo de muestra.
+- **Aceptación:** un comando arranca PostgreSQL/backend saludables; login demo,
+  catálogos y ATS reales mediante colección sin environment/copiar IDs/tokens;
+  reinicio conserva datos y no duplica Staff; base habitual no se toca.
+- **DoD:** validar Compose, arranque/reinicio/health/Swagger y colección completa;
+  verify Java 21/PostgreSQL 17, diff revisado, evidencia y commit/push.
+- **Evidencia:** arranque y reinicio saludables; un Staff demo y propiedad previa
+  preservados. Newman dos ejecuciones de 53 requests/81 assertions sin fallos.
+  Verify BUILD SUCCESS, 281 tests, 0 failures/errors/skipped. Diff --check PASS.
+- **Límites:** contiene todos los módulos Backend de esa versión. No añade REST
+  de reservas/folios, frontend, Google externo ni funcionalidades financieras.
+
 ### BE-001 — Foundation y control Backend
 
 - **Estado:** COMPLETADA
@@ -368,20 +406,45 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
 - **DoD:** pruebas, diff/check y evidencia en AlanHandoff.
 - **Evidencia local:** regresión original con 3 fallos de 5; corrección con
   verify completo BUILD SUCCESS, 259 tests, 0 failures/errors/skipped.
-- **Límite:** BD2-FP-001 completo continúa PENDIENTE hasta confirmar SH-D01 y
-  persistencia. Se solicitó una decisión concreta para base local de idempotencia;
-  no se implementa la propuesta por ausencia de respuesta.
+- **Límite histórico:** SH-D01 estaba pendiente en esta entrega; el usuario
+  aprobó después la base local. Implementación en BD2-FP-001.
+
+### BD2-FP-001 — Fase 1: idempotencia transaccional local
+
+- **Estado:** EN_QA — aceptación y verify local PASS; revisión pendiente.
+  Owner José / BD2; reviewers BD1 (base compartida) y BD3 (test de upgrade).
+- **Rama:** `feature/bd2-financial-foundation`; incremento sobre `be09de4`.
+- **DoR:** FP-000 integrada; SH-D01 local aprobado explícitamente por el usuario.
+  Reutilizar Reservations/Folio, C2, AuditService y PostgreSQL. No nace módulo.
+- **Alcance:** recibo persistente append-only; clave 8–128 caracteres; identidad
+  Staff/property/operación/clave; payload canonicalizado sin secretos; dedupe,
+  conflicto, efecto/recibo/audit atómicos y bloqueos entre transacciones/JVMs.
+- **Aceptación:** reintentos y concurrencia no duplican efecto; autorización
+  vigente antes de recuperar resultado; aislamiento por actor/property/operación;
+  payload/version/política distinta generan conflicto; rollback no deja recibo;
+  upgrade/idempotencia/append-only PostgreSQL y verify sin exclusiones.
+- **Archivos:** LocalOperationService/Request/Receipt y repositorio JDBC,
+  nuevo changeset en 004ServiceReservations, contrato 21 y pruebas.
+- **DoD/evidencia:** Java 21/PostgreSQL 17, `./mvnw -B verify` BUILD SUCCESS;
+  281 tests, 0 failures/errors/skipped, incluidos 22 tests nuevos.
+  Upgrade/reaplicación y diff revisados; detalles en AlanHandoff.
+- **Límites:** sin caducidad automática, HTTP, proveedor ni nuevos permisos.
+  Pagos externos y APIs financieras mantienen sus decisiones pendientes.
 
 ### Próximas entregas financieras y lifecycle
 
-Owner José / BD2; reviewers del dominio afectado según contrato. Fuente de
+Desde el traspaso de 2026-10-03, Alan / BD1 y Juan / BD3 asumen conjuntamente
+estas entregas pendientes; José pasa al Frontend. El reparto específico de cada
+tarea queda por acordar entre ellos: propuesta y contexto en documento 23.
+La autoría de entregas anteriores se conserva; EN_QA no significa integrada.
+Reviewers del dominio afectado según contrato. Fuente de
 aceptación, archivos previstos y dependencias por tarea:
 `19_BD2_FINANCE_LIFECYCLE_PHASE0.md`, sección Entregas. DoR siempre exige el
 contrato aplicable aprobado y dependencias COMPLETADAS; no implementar desde mocks.
 
 | ID / módulo | Estado | Dependencias y decisión que falta |
 | --- | --- | --- |
-| BD2-FP-001 / 1 base transaccional | PENDIENTE | FP-000; SH-D01/persistencia, SH-D03 si nace módulo |
+| BD2-FP-001 / 1 base transaccional | EN_QA | SH-D01 local aprobado; verify PASS, revisión pendiente; no requiere SH-D03 |
 | BD2-FP-002 / 2A lectura folio | PENDIENTE | FP-000; FP-D02 (propuesta en documento 20) |
 | BD2-FP-003 / 2B escritura folio | PENDIENTE | FP-001; FP-D04/contrato de escritura |
 | BD2-FP-004 / 3 pagos/garantía | PENDIENTE | FP-001/003; FP-D01/03 y SPI BD1 |

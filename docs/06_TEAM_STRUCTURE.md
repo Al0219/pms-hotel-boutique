@@ -197,7 +197,17 @@ Cambio significativo:
 
 # Backend
 
-## Reparto vigente — 2026-10-02
+## Reparto vigente — 2026-10-03
+
+El usuario confirma que José deja la implementación Backend y pasa al Frontend.
+Alan / BD1 y Juan / BD3 continúan el Backend, incluidos los pendientes de BD2.
+El reparto específico de esos pendientes debe acordarse entre ambos; documento
+`backend/docs/23_BD2_BACKEND_HANDOVER.md` contiene propuesta, entregas y límites.
+No se reasignan automáticamente módulos Frontend ni se aprueban contratos nuevos.
+Los owners de entregas anteriores se conservan como autoría histórica.
+Decisión registrada en DEC-B-010; seguimiento en AlanPlan/AlanHandoff.
+
+## Reparto anterior — 2026-10-02
 
 Autorizado por el usuario tras el cierre de inventario BD2 (PR #72 integrado).
 

@@ -102,7 +102,10 @@ acordar persistencia de entrega y recuperación antes de afirmar atomicidad.
 
 ## Registro de decisiones pendientes
 
-Todas las entradas siguientes están PENDIENTES; el plan aprobado no fija sus valores.
+La tabla conserva las decisiones de fase 0. SH-D01 tiene aprobación posterior
+para base local en [contrato 21](21_BD2_LOCAL_IDEMPOTENCY_CONTRACT.md), sin
+proveedores; sus efectos externos siguen pendientes. Las demás decisiones
+continúan PENDIENTES salvo aprobación registrada específica.
 
 | ID | Decisión / quién confirma | Bloquea |
 | --- | --- | --- |
@@ -117,7 +120,7 @@ Todas las entradas siguientes están PENDIENTES; el plan aprobado no fija sus va
 | LC-D03 | Waitlist: prioridad, expiración, notificación, consentimiento y precio al convertir; producto + BD2/BD3 | Waitlist/conversión |
 | LC-D04 | Move: mismo tipo/cambio de tipo, tarifa, aceptación destino y estado HK; producto + BD2/BD3 | Room move completo |
 | LC-D05 | Extensión: precio adicional, garantía, noches con Room asignada y fallos externos; producto + BD2/BD3 | Extensión completa |
-| SH-D01 | Idempotencia compartida: namespace, payload canónico, retención, recuperación; BD1/BD2 | Fase 1 de escrituras financieras |
+| SH-D01 | Base local aprobada por el usuario: namespace, payload y persistencia; documento 21. Recuperación externa pendiente BD1/BD2 | Fase 1 local habilitada; pagos externos requieren otro acuerdo |
 | SH-D02 | Locks comunes y orden entre room type, stay, Room y folio; BD2/BD3 | Operaciones concurrentes entre módulos |
 | SH-D03 | Ubicación de nuevo módulo/esquema de pagos y SPI; BD1/BD2 | Nuevo módulo/cambio estructural (Change Control) |
 
@@ -130,7 +133,8 @@ ninguna ruta propuesta se implementa antes de aprobar su contrato.
 ## Entregas, dependencias y aceptación
 
 Estos IDs organizan trabajo Backend; no son tareas Web/Android del XLSX.
-Todos son PENDIENTES hasta cumplir el DoR específico; fase 0 puede completarse
+Los estados vigentes están en AlanPlan; cada entrega exige su DoR específico.
+FP-001 local ya tiene SH-D01 aprobado en documento 21. Fase 0 puede completarse
 con decisiones registradas, sin declarar listos los módulos bloqueados por ellas.
 
 | Tarea / módulo | Dependencias y DoR | Aceptación principal / archivos previstos |
@@ -157,6 +161,6 @@ Estados COMPLETADA requieren evidencia; no se sustituyen por mocks o tests omiti
 ## Siguiente entrega
 
 Revisar el [contrato propuesto](20_BD2_FINANCE_LIFECYCLE_CONTRACT_PROPOSAL.md).
-Se recomienda acordar primero SH-D01 para la fase 1 y FP-D02 para lectura de folio.
+SH-D01 local quedó aprobado en documento 21; FP-D02 debe acordarse para lectura de folio.
 Las decisiones de proveedor/políticas restantes se resuelven antes de su módulo;
 no es necesario bloquear todo el programa mientras se define una de ellas.

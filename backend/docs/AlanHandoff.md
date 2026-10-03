@@ -1,5 +1,99 @@
 # AlanHandoff — Seguimiento Backend
 
+## BE-HANDOFF-001 — Traspaso BD2: entrega (2026-10-03)
+
+- **Estado:** COMPLETADA — preparación documental, aceptación/DoD y revisión local
+  Codex PASS; rama chore/backend-demo, sobre f5fc545. No cierra tareas de negocio.
+- **Autoridad:** usuario deja implementación Backend y se enfoca en Frontend;
+  BD1/BD3 continúan el Backend. Solicita commit/push y lista de entregas/pendientes.
+- **Entregado:** documento 23 con inventario, ramas verificadas, tareas y límites;
+  ownership global y tracking actualizados sin alterar la autoría histórica.
+- **Inspección:** los cuatro worktrees BD2 están limpios y sus entregas publicadas.
+  En main solo hay una copia no versionada de Backend-Demo: hash idéntico al JSON
+  ya publicado en f5fc545; no requiere otro commit ni se borra la copia del usuario.
+- **Validación:** origin/main 54f7dbd; fase 0 a2241d6 y scope be09de4 integrados;
+  idempotencia e5421f9 y demo f5fc545 publicados, no integrados.
+  Cinco documentos revisados, siete enlaces locales válidos y 12 tareas cubiertas.
+  Diff --check PASS. Solo Markdown: no se repite Maven; evidencia anterior de
+  verify 281 tests y Postman 53/81 se conserva como histórica, no nueva ejecución.
+- **Publicación:** commit/push solicitado explícitamente por el usuario, en
+  chore/backend-demo; sin commits a main ni merge/rebase. Revisión/CI de las
+  entregas de código sigue pendiente. No se duplican commits ya publicados.
+- **Pendiente receptores:** integrar financial-foundation antes de demo/handoff,
+  acordar reparto detallado y contratos, y continuar implementación Backend.
+  José cambia su foco a Frontend; propuestas de reparto no son aprobación implícita.
+
+## BE-DEMO-001 — Presentación simplificada: entrega (2026-10-02)
+
+- **Estado:** EN_QA — aceptación/DoD local PASS; revisión BD1/CI de PR pendientes.
+  Rama chore/backend-demo, base e5421f9;
+  checkout principal main intacto. Trabajo financiero siguiente permanece pendiente.
+- **Autoridad:** usuario solicita un Compose con todo el backend y usuario de prueba
+  listo, evitando pasos manuales. Se reutilizan runtime y bootstrap BD1.
+- **Entrega:** compose.demo.yaml independiente con volumen de demostración y puerto
+  loopback, una colección Postman con variables locales y datos creados por API;
+  instrucciones breves y tracking. Sin nuevas rutas, migraciones ni cambios Java.
+- **QA runtime:** build/arranque con un comando PASS; PostgreSQL/backend healthy,
+  health UP, Swagger/OpenAPI reales. Bootstrap por servicio BD1, sin bypass de auth.
+  Restart/recreate del backend conserva propiedad previa y exactamente un Staff
+  demo; Liquibase reaplica cero cambios de los 18 existentes.
+- **QA Postman:** colección sin environment externo, 53 requests/81 assertions,
+  0 failures; repetición tras restart: 53/81 PASS. IDs/tokens se propagan solos.
+  Tipo sin Room ATS=0; con una Room ATS=1; RatePlan conserva ATS. Negativos y
+  logout/revocación correctos. No hay SQL manual para crear fixtures comerciales.
+- **QA completa:** `./mvnw -B verify` en copia temporal Linux, Java 21/PostgreSQL 17,
+  BUILD SUCCESS: 281 tests, 0 failures/errors/skipped. Base de tests separada de demo.
+  Sin omitir pruebas, cambiar workflow, Java, migraciones o dependencias.
+- **Revisión:** ocho archivos de Compose/colección/docs/tracking; diff --check PASS.
+  Config resuelta contiene solo backend/postgres y volumen demo; no modifica el
+  Compose habitual ni su base. Reportes/logs y helpers privados fuera del repo.
+- **Integración:** origin/main actualizado a 3ff0061; desde 131448e solo cambiaron
+  archivos de despliegue Web, no backend/compose.yaml/workflow Backend.
+  Rama dependiente de financial-foundation e5421f9 para incluir la última base
+  local BD2. PR de demo contra esa rama; si ya se integra, revisar contra main.
+- **Publicación:** commit/push por entrega conforme a autorización vigente.
+  Reviewer BD1 para runtime compartido; no se afirma aprobación remota localmente.
+  Se deja demo encendida en localhost:18080; se retira solo el proyecto de QA.
+  Tareas nuevas de Folio/Payments/lifecycle permanecen pendientes como solicitó el usuario.
+
+## BD2-FP-001 — Idempotencia local: entrega (2026-10-02)
+
+- **Estado:** EN_QA — aceptación/verify local PASS; revisión BD1/BD3 pendiente.
+  Rama feature/bd2-financial-foundation, sobre be09de4; worktree aislado.
+- **Autoridad:** usuario aprueba explícitamente la propuesta SH-D01 local.
+  Contrato implementable y límites registrados en documento 21 antes de código.
+- **Entrega:** callback local autorizado con actor/scope BD1, fingerprint
+  canonicalizado/versionado, recibo append-only y lock transaccional PostgreSQL.
+  No crea módulo, API, permiso o flujo de pago; no llama proveedores.
+- **Integración necesaria:** ReservationsSchemaUpgradeTests fijaba 17 cambios y
+  tres triggers. Nuestra migración rompe ese supuesto: ahora compara con el master
+  instalado, incluyendo identidades/checksums y triggers, sin debilitar upgrade,
+  reaplicación, tablas o seed. No se corrige Night Audit ni otro trabajo BD3.
+- **QA final:** `./mvnw -B verify` completo, Java 21/PostgreSQL 17: BUILD SUCCESS,
+  281 tests, 0 failures, 0 errors, 0 skipped; 22 nuevos (5 unitarios y 17 de
+  integración). Sin exclusiones ni cambios de workflow/configuración.
+  Conexiones independientes verifican espera hasta commit, conflicto concurrente
+  y recuperación tras rollback. Fallo de audit durante commit revierte movimiento,
+  recibo y evento. Revocación, scope y permisos se recalculan también al reintentar.
+  Guardas rechazan read-only/aislamiento incompatible; constraints/append-only
+  se prueban en PostgreSQL, no solo mediante mocks.
+- **Migración:** master crece a 18 changesets; se agrega 004-reservations-006.
+  Upgrade desde baseline de seis, identidades/checksums del master vigente,
+  reaplicación, tablas/triggers y seed preservados; no se alteran changesets previos.
+- **Integración actual:** origin/main 131448e ya contiene be09de4 (PR #77).
+  `git diff HEAD origin/main -- backend .github/workflows/backend-ci.yml` vacío
+  antes del nuevo commit; cambios restantes de main son solo despliegue Web.
+  El backend/workflow que se verificó coincide con la base de integración actual,
+  sin merge/rebase ni modificaciones en el checkout principal main.
+- **Revisión local:** 15 archivos previstos; cambios limitados a puerto/repo,
+  nueva migración, tests y cinco documentos. Sin artefactos temporales ni secretos.
+  git diff --check PASS. Revisión de PR y checks GitHub pendientes de publicación.
+- **Entrega/siguiente paso:** commit/push por incremento autorizado; PR hacia main
+  con BD1 para base compartida y BD3 para adaptación del test de upgrade.
+  Acordar FP-D02 antes de implementar lectura HTTP de folio.
+- **Límites posteriores:** contrato HTTP/lectura, escrituras financieras y
+  recovery de efectos externos mantienen sus aprobaciones pendientes.
+
 ## BD2-FP-001A — Inicio de base financiera (2026-10-02)
 
 - **Rama/base:** `feature/bd2-financial-foundation`, origin/main `5419606`.
@@ -24,15 +118,15 @@
   API, dependencia, configuración local o credenciales nuevas. Main intacto.
 - **Entrega:** commit/push por incremento autorizado previamente por el usuario;
   rama `feature/bd2-financial-foundation`, revisión propuesta BD1 antes de merge.
-- **Decisión pendiente:** SH-D01: clave/payload/alcance/retención y persistencia
+- **Decisión pendiente en esa entrega:** SH-D01: clave/payload/alcance/retención y persistencia
   local de idempotencia. Consulta explícita al usuario; no inferir aprobación.
 - **Propuesta consultada:** base local en el módulo existente; clave opaca de
   8–128 caracteres; unicidad por Staff/property/operación/clave; payload validado
   y canonicalizado sin secretos; mismo payload recupera resultado y distinto
   genera conflicto; registro y efecto en una transacción; sin caducidad
-  automática ni llamadas a proveedores. Sigue pendiente de respuesta.
-- **Siguiente paso:** revisión BD1 del incremento scoped; confirmar/registrar
-  SH-D01 y su persistencia antes de implementar la base idempotente.
+  automática ni llamadas a proveedores. El usuario la aprobó posteriormente;
+  contrato y nueva entrega registrados arriba en BD2-FP-001.
+- **Siguiente paso vigente:** revisión del incremento de idempotencia local.
 
 ## BD2-FP-000 — Fase 0 financiera y lifecycle (2026-10-02)
 
