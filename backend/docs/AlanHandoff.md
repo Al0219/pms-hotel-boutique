@@ -1,5 +1,38 @@
 # AlanHandoff — Seguimiento Backend
 
+## BE-DEMO-001 — Presentación simplificada: entrega (2026-10-02)
+
+- **Estado:** EN_QA — aceptación/DoD local PASS; revisión BD1/CI de PR pendientes.
+  Rama chore/backend-demo, base e5421f9;
+  checkout principal main intacto. Trabajo financiero siguiente permanece pendiente.
+- **Autoridad:** usuario solicita un Compose con todo el backend y usuario de prueba
+  listo, evitando pasos manuales. Se reutilizan runtime y bootstrap BD1.
+- **Entrega:** compose.demo.yaml independiente con volumen de demostración y puerto
+  loopback, una colección Postman con variables locales y datos creados por API;
+  instrucciones breves y tracking. Sin nuevas rutas, migraciones ni cambios Java.
+- **QA runtime:** build/arranque con un comando PASS; PostgreSQL/backend healthy,
+  health UP, Swagger/OpenAPI reales. Bootstrap por servicio BD1, sin bypass de auth.
+  Restart/recreate del backend conserva propiedad previa y exactamente un Staff
+  demo; Liquibase reaplica cero cambios de los 18 existentes.
+- **QA Postman:** colección sin environment externo, 53 requests/81 assertions,
+  0 failures; repetición tras restart: 53/81 PASS. IDs/tokens se propagan solos.
+  Tipo sin Room ATS=0; con una Room ATS=1; RatePlan conserva ATS. Negativos y
+  logout/revocación correctos. No hay SQL manual para crear fixtures comerciales.
+- **QA completa:** `./mvnw -B verify` en copia temporal Linux, Java 21/PostgreSQL 17,
+  BUILD SUCCESS: 281 tests, 0 failures/errors/skipped. Base de tests separada de demo.
+  Sin omitir pruebas, cambiar workflow, Java, migraciones o dependencias.
+- **Revisión:** ocho archivos de Compose/colección/docs/tracking; diff --check PASS.
+  Config resuelta contiene solo backend/postgres y volumen demo; no modifica el
+  Compose habitual ni su base. Reportes/logs y helpers privados fuera del repo.
+- **Integración:** origin/main actualizado a 3ff0061; desde 131448e solo cambiaron
+  archivos de despliegue Web, no backend/compose.yaml/workflow Backend.
+  Rama dependiente de financial-foundation e5421f9 para incluir la última base
+  local BD2. PR de demo contra esa rama; si ya se integra, revisar contra main.
+- **Publicación:** commit/push por entrega conforme a autorización vigente.
+  Reviewer BD1 para runtime compartido; no se afirma aprobación remota localmente.
+  Se deja demo encendida en localhost:18080; se retira solo el proyecto de QA.
+  Tareas nuevas de Folio/Payments/lifecycle permanecen pendientes como solicitó el usuario.
+
 ## BD2-FP-001 — Idempotencia local: entrega (2026-10-02)
 
 - **Estado:** EN_QA — aceptación/verify local PASS; revisión BD1/BD3 pendiente.

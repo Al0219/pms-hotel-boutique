@@ -173,6 +173,24 @@ Registrar ID, fecha, status, contexto, problema, decisión, alternativas, consec
 
 ## Backend — Foundation aprobada
 
+### DEC-B-009 — Compose de presentación Backend aislado
+
+**Fecha:** 2026-10-02. **Status:** APPROVED por petición explícita del usuario.
+**Owner:** José / BD2. **Reviewer:** Alan / BD1 (runtime compartido).
+
+**Problema:** presentar la API exigía overrides, variables y cinco colecciones.
+**Decisión:** compose.demo.yaml reutiliza backend/PostgreSQL existentes con
+proyecto/volumen propios, puerto backend limitado a loopback y bootstrap Staff
+existente. Usuario/contraseña son valores públicos sintéticos solo de muestra;
+no credenciales reales. Una colección Postman propaga tokens/IDs sin environment.
+**Alternativas:** mantener configuración manual dificulta la revisión; modificar
+la pila habitual mezclaría credenciales/datos de demo con el desarrollo normal.
+**Consecuencias:** excepción explícita de presentación local a DEC-B-003/004,
+sin cambiar la pila habitual, APIs, permisos, módulos ni secretos de despliegue.
+Google/Resend no se configuran. La demo no se usa en nube; backend/BFF de la
+pila habitual conserva su perímetro. Booking e idempotencia interna se muestran
+con tests reales, sin inventar endpoints. Tracking BE-DEMO-001; PR requiere revisión BD1.
+
 ### DEC-B-008 — Reparto de la siguiente etapa Backend
 
 **Fecha:** 2026-10-02

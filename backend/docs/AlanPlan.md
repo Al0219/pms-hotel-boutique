@@ -41,6 +41,27 @@ dependencias; un perfil parcial incluye solo su módulo y sus dependencias.
 
 ## Tareas
 
+### BE-DEMO-001 — Presentación Backend con un comando
+
+- **Estado:** EN_QA — aceptación/DoD local PASS; revisión BD1 y CI de PR pendientes.
+  Owner José / BD2; reviewer Alan / BD1 (runtime compartido).
+- **Rama/base:** chore/backend-demo, sobre e5421f9 de BD2 financial foundation.
+- **DoR:** usuario solicita Docker Compose y cuenta de muestra sin configuración
+  manual; BE-001/002/003 y catálogos BD2 integrados. No requiere nuevos contratos.
+- **Alcance/archivos:** compose.demo.yaml reutiliza servicios existentes, base/volumen
+  propios, puerto localhost y bootstrap Staff existente; colección Postman única,
+  guía de presentación, README y seguimiento. Credenciales públicas solo de muestra.
+- **Aceptación:** un comando arranca PostgreSQL/backend saludables; login demo,
+  catálogos y ATS reales mediante colección sin environment/copiar IDs/tokens;
+  reinicio conserva datos y no duplica Staff; base habitual no se toca.
+- **DoD:** validar Compose, arranque/reinicio/health/Swagger y colección completa;
+  verify Java 21/PostgreSQL 17, diff revisado, evidencia y commit/push.
+- **Evidencia:** arranque y reinicio saludables; un Staff demo y propiedad previa
+  preservados. Newman dos ejecuciones de 53 requests/81 assertions sin fallos.
+  Verify BUILD SUCCESS, 281 tests, 0 failures/errors/skipped. Diff --check PASS.
+- **Límites:** contiene todos los módulos Backend de esa versión. No añade REST
+  de reservas/folios, frontend, Google externo ni funcionalidades financieras.
+
 ### BE-001 — Foundation y control Backend
 
 - **Estado:** COMPLETADA
