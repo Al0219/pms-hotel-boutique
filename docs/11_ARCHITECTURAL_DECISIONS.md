@@ -173,6 +173,24 @@ Registrar ID, fecha, status, contexto, problema, decisión, alternativas, consec
 
 ## Backend — Foundation aprobada
 
+### DEC-B-010 — Traspaso de implementación Backend BD2
+
+**Fecha:** 2026-10-03. **Status:** APPROVED por decisión explícita del usuario.
+**Responsables receptores:** Alan / BD1 y Juan / BD3.
+
+**Contexto/problema:** tras la primera revisión, falta completar Frontend y Backend.
+El usuario decide concentrar a José en Frontend y continuar Backend con Alan/Juan.
+**Decisión:** ambos asumen conjuntamente los pendientes de BD2, conservando su
+código, pruebas, contratos, autoría y estados reales de publicación/integración.
+El reparto detallado del documento 23 es PROPOSED hasta acuerdo entre ellos.
+**Alternativas:** mantener a José en ambos frentes conserva la carga que el
+usuario decidió redistribuir; rehacer servicios existentes perdería lo entregado.
+**Consecuencias:** supersede el ownership de trabajos pendientes en DEC-B-008;
+no borra la decisión previa ni modifica reglas, módulos, APIs, DoR/DoD o permisos.
+José continúa Frontend; alcance puntual se organiza con las fuentes de esa área.
+Entrega documental BE-HANDOFF-001; revisiones de código/CI aún pendientes no se
+declaran completadas por este traspaso. Receptores revisan ramas y acuerdan tareas.
+
 ### DEC-B-009 — Compose de presentación Backend aislado
 
 **Fecha:** 2026-10-02. **Status:** APPROVED por petición explícita del usuario.

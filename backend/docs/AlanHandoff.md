@@ -1,5 +1,28 @@
 # AlanHandoff — Seguimiento Backend
 
+## BE-HANDOFF-001 — Traspaso BD2: entrega (2026-10-03)
+
+- **Estado:** COMPLETADA — preparación documental, aceptación/DoD y revisión local
+  Codex PASS; rama chore/backend-demo, sobre f5fc545. No cierra tareas de negocio.
+- **Autoridad:** usuario deja implementación Backend y se enfoca en Frontend;
+  BD1/BD3 continúan el Backend. Solicita commit/push y lista de entregas/pendientes.
+- **Entregado:** documento 23 con inventario, ramas verificadas, tareas y límites;
+  ownership global y tracking actualizados sin alterar la autoría histórica.
+- **Inspección:** los cuatro worktrees BD2 están limpios y sus entregas publicadas.
+  En main solo hay una copia no versionada de Backend-Demo: hash idéntico al JSON
+  ya publicado en f5fc545; no requiere otro commit ni se borra la copia del usuario.
+- **Validación:** origin/main 54f7dbd; fase 0 a2241d6 y scope be09de4 integrados;
+  idempotencia e5421f9 y demo f5fc545 publicados, no integrados.
+  Cinco documentos revisados, siete enlaces locales válidos y 12 tareas cubiertas.
+  Diff --check PASS. Solo Markdown: no se repite Maven; evidencia anterior de
+  verify 281 tests y Postman 53/81 se conserva como histórica, no nueva ejecución.
+- **Publicación:** commit/push solicitado explícitamente por el usuario, en
+  chore/backend-demo; sin commits a main ni merge/rebase. Revisión/CI de las
+  entregas de código sigue pendiente. No se duplican commits ya publicados.
+- **Pendiente receptores:** integrar financial-foundation antes de demo/handoff,
+  acordar reparto detallado y contratos, y continuar implementación Backend.
+  José cambia su foco a Frontend; propuestas de reparto no son aprobación implícita.
+
 ## BE-DEMO-001 — Presentación simplificada: entrega (2026-10-02)
 
 - **Estado:** EN_QA — aceptación/DoD local PASS; revisión BD1/CI de PR pendientes.

@@ -41,6 +41,23 @@ dependencias; un perfil parcial incluye solo su módulo y sus dependencias.
 
 ## Tareas
 
+### BE-HANDOFF-001 — Traspaso de pendientes BD2 a BD1/BD3
+
+- **Estado:** COMPLETADA — preparación del traspaso documental y revisión local PASS.
+  Autor José / BD2; receptores Alan / BD1 y Juan / BD3; revisión local Codex.
+- **Rama/base:** chore/backend-demo, sobre f5fc545.
+- **DoR:** usuario confirma cambio de foco a Frontend y solicita publicar todo
+  lo pendiente y una lista clara para los responsables restantes de Backend.
+- **Alcance/archivos:** documento 23, actualización de ownership/decisión global
+  y AlanPlan/AlanHandoff. Conservar historia, distinguir publicación de integración.
+- **Aceptación:** entregas existentes identificadas, ramas/commits y estado remoto
+  verificados; pendientes completos, límites y reparto detallado marcado propuesto.
+- **DoD:** enlaces/localización, revisión documental, diff --check, commit/push;
+  sin cambios Java, SQL, API, frontend, infraestructura o funcionalidades.
+- **Evidencia:** cinco documentos, siete enlaces locales válidos y 12 tareas
+  cubiertas; estados/ramas/commits verificados tras fetch. Diff --check PASS.
+  La integración y los acuerdos de los receptores permanecen pendientes.
+
 ### BE-DEMO-001 — Presentación Backend con un comando
 
 - **Estado:** EN_QA — aceptación/DoD local PASS; revisión BD1 y CI de PR pendientes.
@@ -416,7 +433,11 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
 
 ### Próximas entregas financieras y lifecycle
 
-Owner José / BD2; reviewers del dominio afectado según contrato. Fuente de
+Desde el traspaso de 2026-10-03, Alan / BD1 y Juan / BD3 asumen conjuntamente
+estas entregas pendientes; José pasa al Frontend. El reparto específico de cada
+tarea queda por acordar entre ellos: propuesta y contexto en documento 23.
+La autoría de entregas anteriores se conserva; EN_QA no significa integrada.
+Reviewers del dominio afectado según contrato. Fuente de
 aceptación, archivos previstos y dependencias por tarea:
 `19_BD2_FINANCE_LIFECYCLE_PHASE0.md`, sección Entregas. DoR siempre exige el
 contrato aplicable aprobado y dependencias COMPLETADAS; no implementar desde mocks.
