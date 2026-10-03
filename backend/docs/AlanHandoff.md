@@ -1,5 +1,39 @@
 # AlanHandoff — Seguimiento Backend
 
+## BD2-FP-001A — Inicio de base financiera (2026-10-02)
+
+- **Rama/base:** `feature/bd2-financial-foundation`, origin/main `5419606`.
+  Worktree aislado; main principal intacto.
+- **Estado:** EN_QA — aceptación y verify local PASS; revisión BD1 pendiente.
+  Prerrequisito de scope, no cierre de Fase 1.
+- **Autoridad:** usuario solicita empezar Fase 1; C2 obliga a restringir SQL
+  antes de leer. El nuevo ownership asigna folios a BD2, sin duplicar servicios.
+- **Archivos previstos:** FolioRepository, getFolio en ReservationQueryServiceImpl,
+  pruebas FolioScopeIntegrationTests y seguimiento. Sin endpoints nuevos.
+- **Regresión original:** cinco pruebas PostgreSQL, tres fallos demostrados:
+  carga de folio ajeno, carga antes de rechazar scope ausente y error diferente
+  para folio ajeno/inexistente. Sin errores ni pruebas omitidas.
+- **Corrección:** findByIdAndPropertyIdIn en repositorio; getFolio valida scope
+  antes de query y devuelve folio no encontrado para ID ajeno/inexistente.
+  No se cambian consultas de reservas ni interfaces públicas existentes.
+- **Validación final:** `./mvnw -B verify` completo, Java 21/PostgreSQL 17,
+  BUILD SUCCESS: 259 tests, 0 failures, 0 errors, 0 skipped. Las cinco pruebas
+  nuevas pasan; compilación, migraciones y suites existentes preservadas.
+  Sin exclusiones, cambios al workflow ni cambios a módulos BD1/operaciones.
+- **Revisión local:** diff limitado a cinco archivos previstos; sin esquema,
+  API, dependencia, configuración local o credenciales nuevas. Main intacto.
+- **Entrega:** commit/push por incremento autorizado previamente por el usuario;
+  rama `feature/bd2-financial-foundation`, revisión propuesta BD1 antes de merge.
+- **Decisión pendiente:** SH-D01: clave/payload/alcance/retención y persistencia
+  local de idempotencia. Consulta explícita al usuario; no inferir aprobación.
+- **Propuesta consultada:** base local en el módulo existente; clave opaca de
+  8–128 caracteres; unicidad por Staff/property/operación/clave; payload validado
+  y canonicalizado sin secretos; mismo payload recupera resultado y distinto
+  genera conflicto; registro y efecto en una transacción; sin caducidad
+  automática ni llamadas a proveedores. Sigue pendiente de respuesta.
+- **Siguiente paso:** revisión BD1 del incremento scoped; confirmar/registrar
+  SH-D01 y su persistencia antes de implementar la base idempotente.
+
 ## BD2-FP-000 — Fase 0 financiera y lifecycle (2026-10-02)
 
 - **Rama/base:** `feature/bd2-finance-lifecycle-contracts`, origin/main `9eb2380`.
