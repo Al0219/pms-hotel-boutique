@@ -1,8 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "cd frontend/pms-hotel-web && npm run build",
-  "outputDirectory": "frontend/pms-hotel-web/.next",
   "headers": [
     {
       "source": "/(.*)",
