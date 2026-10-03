@@ -351,6 +351,27 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
 - **Siguiente paso:** revisar SH-D01 (idempotencia, fase 1) y FP-D02 (lectura folio).
   Proveedor, políticas y contratos de otras interfaces siguen pendientes.
 
+### BD2-FP-001A — Preparación Fase 1: detalle de folio scoped
+
+- **Estado:** EN_QA — aceptación y verify local PASS; revisión BD1 pendiente.
+- **Owner:** José / BD2; revisión de scope compartido: BD1.
+- **Rama/base:** `feature/bd2-financial-foundation`, origin/main `5419606`.
+- **Dependencias/DoR:** FP-000 COMPLETADA, C2 APPROVED, folio y repositorios
+  existentes. Usuario autoriza retomar BD2 e iniciar Fase 1. Este prerrequisito
+  aplica la regla C2 vigente; no necesita decidir proveedor ni idempotencia.
+- **Alcance:** detalle de folio con IDs autorizados en SQL; validar scope antes
+  de query, no cargar datos de otra property ni revelar existencia por errores.
+  No cambia consultas de reservas, escrituras, APIs ni políticas financieras.
+- **Aceptación:** lectura autorizada PROPERTY/ALL_PROPERTIES; folio ajeno no se
+  materializa en JPA; scope ausente rechazado antes de carga; mismo resultado
+  para folio inexistente y fuera de scope; regresión PostgreSQL y verify completo.
+- **DoD:** pruebas, diff/check y evidencia en AlanHandoff.
+- **Evidencia local:** regresión original con 3 fallos de 5; corrección con
+  verify completo BUILD SUCCESS, 259 tests, 0 failures/errors/skipped.
+- **Límite:** BD2-FP-001 completo continúa PENDIENTE hasta confirmar SH-D01 y
+  persistencia. Se solicitó una decisión concreta para base local de idempotencia;
+  no se implementa la propuesta por ausencia de respuesta.
+
 ### Próximas entregas financieras y lifecycle
 
 Owner José / BD2; reviewers del dominio afectado según contrato. Fuente de
