@@ -4,13 +4,13 @@
 **Fecha/base:** 2026-10-04, main `9003567` (PR #73).
 **Rama:** `feature/bd1-api-access-contracts`. **Owner:** Alan / BD1.
 **Reviewers previstos:** José / BD2, Juan / BD3 y consumidores afectados.
-No se han solicitado revisiones externas. AD-01 y AD-02 cuentan con aprobación
+No se han solicitado revisiones externas. AD-01, AD-02 y AD-03 cuentan con aprobación
 del usuario; las demás decisiones y contratos HTTP requieren revisión propia.
 
-**Revisión vigente:** BE-014A-FIN-01 en `feature/bd1-api-access-contract-approval`
-desde `main` `d258d60`; AD-02 fue aprobada por el usuario el 2026-10-04.
-AD-01 también está aprobada. AD-03 a AD-06 siguen abiertas; el documento
-completo conserva estado PROPOSED para esas decisiones y contratos HTTP.
+**Revisión vigente:** BE-014A-OPS-01 en `feature/bd1-reception-service-access-ad03`
+desde `main` `ccf72a2`; AD-03 fue aprobada por el usuario el 2026-10-04.
+AD-01 y AD-02 también están aprobadas. AD-04 a AD-06 siguen abiertas; el
+documento completo conserva estado PROPOSED para esas decisiones y contratos HTTP.
 
 ## Autoridad y alcance
 
@@ -66,7 +66,8 @@ servicios, flujos GERENCIA/SUPER_ADMIN y casos denegados. Verify final 270 tests
 PASS (45 comerciales), Java 21/PostgreSQL 17 y wrapper Maven 3.9.16. El usuario
 confirmó su QA manual y cerró BE-014B-COM-01; revisión BD3 queda para integración.
 En ese incremento solo AD-01 quedó aprobada; AD-02 se aprobó después en
-BE-014A-FIN-01. AD-03 a AD-06 y los contratos HTTP permanecen pendientes.
+BE-014A-FIN-01. AD-03 se aprobó después en BE-014A-OPS-01; AD-04 a AD-06 y los
+contratos HTTP permanecen pendientes.
 Esta aprobación no transforma el documento completo en CONFIRMED.
 
 ### Incremento BE-014B-COM-02 integrado
@@ -188,15 +189,15 @@ no se añade implícitamente como permiso de lectura por su nombre de rol.
 | Maintenance: open/start/resolve/cancel/reopen/assign/linkOutage/get/list | OPERATIONS_MANAGE | OT/Room/OOO y asignaciones autorizadas, misma property; resolver OT no implica sellable |
 | Outage: register/release/getScoped/list | OPERATIONS_MANAGE | OOO/OOS con actor/motivo/período e historial; coordinar inventario/locks BD2 para no romper admisión |
 | Discrepancy: report/investigate/reconcile/cancel/get/list | OPERATIONS_MANAGE | Room/discrepancy scoped; reason/actor; no modificar reservas/folio fuera del pipeline |
-| ServiceRequest: open/start/complete/cancel/reopen/assign/get/list | OPERATIONS_MANAGE | Servicio/conserjería/valet scoped; Stay/Room/GuestProfile relacionados validados; acceso RECEPCION pendiente AD-03 |
-| Mensajería: get/list/conversation y trabajo interno | Pendiente AD-03/04 | conversation por GuestProfile no autoriza consultar todas las propiedades; diferenciar tarea interna y respuesta externa |
+| ServiceRequest: open/start/complete/cancel/reopen/assign/get/list | OPERATIONS_MANAGE; AD-03 aprueba SERVICE_REQUEST_INTAKE solo para open/get/list de Recepción, pendiente de migración | Servicio/conserjería/valet scoped; Stay/Room/GuestProfile relacionados validados; transiciones/assign permanecen en Operaciones |
+| Mensajería: get/list/conversation y trabajo interno | Pendiente AD-04 | conversation por GuestProfile no autoriza consultar todas las propiedades; diferenciar tarea interna y respuesta externa |
 | Mensajería: logInbound | Interno validado o Guest autorizado, pendiente AD-04 | No endpoint anónimo para suministrar guestProfileId/propertyId; autenticar adapter o titularidad Guest |
 | Mensajería: sendOutbound | Pendiente AD-04 | Regla global solo Recepción responde externamente; no mapear OPERATIONS_MANAGE a envío externo |
 | NightAudit: openDay/closeDay/currentDay/listDays/listRuns | NIGHT_AUDIT_RUN | PROPERTY para ejecución; contrato BD3 con blockers/business date; consultas administrativas AUDIT_READ requieren endpoint separado aprobado |
 
-La matriz no concede OPERATIONS_MANAGE a RECEPCION. Si Recepción debe crear/leer
-solicitudes o tareas, definir permiso/capacidad limitada, sin concederle mantenimiento
-o cierre de business date por conveniencia de UI. OPERACIONES no responde al huésped
+La matriz no concede OPERATIONS_MANAGE a RECEPCION. AD-03 aprueba una capacidad
+limitada para abrir/leer solicitudes sin concederle mantenimiento ni cierre de
+business date por conveniencia de UI. OPERACIONES no responde al huésped
 externamente aunque pueda actualizar una tarea interna para Recepción.
 
 ### Commercial — coordinación BD3
@@ -252,7 +253,7 @@ aceptar esos identificadores como facultad suministrada por el cliente.
 | --- | --- | --- |
 | AD-01 — APPROVED por usuario 2026-10-04 | Reutilizar COMMERCIAL_MANAGE para B2B/grupos/blocks/promos/rewards; no crear B2B_MANAGE | Quitar SUPER_ADMIN provisional tras aprobación y pruebas; BD3 + BD1/producto |
 | AD-02 — APPROVED por usuario 2026-10-04 | FOLIO_PAYMENT_OPERATE para lecturas/ordinarias; también PAYMENT_REFUND_VOID para compensar PAYMENT; AUDITOR sin lectura financiera implícita | Revisión de integración del owner financiero y Web pendiente; coordinar FP-D02/04 y distinguir compensación de devolución externa |
-| AD-03 | Definir facultad limitada de RECEPCION sobre ServiceRequests/conserjería/valet y consultas operativas | C2 hoy no le da OPERATIONS_MANAGE; permiso nuevo o contrato de capacidad específica requiere aprobación BD3/producto |
+| AD-03 — APPROVED por usuario 2026-10-04 | Nuevo SERVICE_REQUEST_INTAKE para abrir y consultar ServiceRequests de cualquier categoría dentro de PROPERTY; trabajo/transiciones siguen con OPERATIONS_MANAGE | Revisión BD3/Web y migración RBAC pendientes antes de uso |
 | AD-04 | Resolver cómo representar Recepción en mensajería y facultad GERENCIA/SUPER_ADMIN | Regla solo Recepción externa frente a C1 SUPER_ADMIN todas las funciones: contradicción real para este flujo; detener su implementación hasta decisión registrada |
 | AD-05 | Delimitar lectura/modificación del master GuestProfile compartido | BD3 + BD1/producto; membership de property no concede modificar todo el CRM |
 | AD-06 | Acceso invoices y futuro AUDITOR financiero si se requiere | BD2 + BD1/producto, FP-D06; no inventar permiso fiscal ni retención |
@@ -288,7 +289,49 @@ el rol AUDITOR por analogía con AUDIT_READ.
 2026-10-04. La revisión del owner financiero y de Web sigue pendiente antes de
 integrar la implementación de BE-014B-FIN o publicar FP-D02.
 
-Estas decisiones pueden aprobarse por dominio. AD-03 a AD-06 no bloquean por sí
+### Decisión focalizada AD-03 — recepción de solicitudes
+
+**Decisión aprobada, todavía no implementada:** añadir `SERVICE_REQUEST_INTAKE` al catálogo
+C2 para Recepción. Autoriza abrir y consultar ServiceRequests de una PROPERTY
+autorizada en las categorías existentes `CONCIERGE`, `VALET`, `HOUSEKEEPING`,
+`MAINTENANCE` y `OTHER`. Recepción puede registrar una solicitud para que la
+atienda Operaciones, pero no cambia su estado ni la asigna. Consultar una
+solicitud no autoriza consultar las entidades relacionadas por separado.
+
+| Acción ServiceRequest | SUPER_ADMIN | GERENCIA | RECEPCION | OPERACIONES | AUDITOR |
+| --- | --- | --- | --- | --- | --- |
+| openRequest, get, listByScope | OPERATIONS_MANAGE o nuevo SERVICE_REQUEST_INTAKE | OPERATIONS_MANAGE | Nuevo SERVICE_REQUEST_INTAKE | OPERATIONS_MANAGE | Sin acceso |
+| startProgress, complete, cancel, reopen, assign | OPERATIONS_MANAGE | OPERATIONS_MANAGE | Sin acceso | OPERATIONS_MANAGE | Sin acceso |
+
+`SUPER_ADMIN` debe recibir el nuevo código para conservar la regla C2 de todo el
+catálogo, aunque su acceso a este servicio ya se satisface con
+`OPERATIONS_MANAGE`. `GERENCIA` y `OPERACIONES` no necesitan asignación adicional.
+Guest no recibe el permiso; una creación de solicitud Guest futura exige su
+propio contrato de titularidad. Las lecturas de housekeeping, mantenimiento,
+OOO/OOS y night audit como recursos distintos siguen bajo sus permisos vigentes.
+Mensajería, incluida la respuesta externa, queda exclusivamente en AD-04.
+
+La futura implementación debe tomar actor Staff de sesión activa, comprobar
+permiso y PROPERTY antes de SQL, buscar detalle y transiciones por ID y property,
+y validar que Reservation, Stay, Room y GuestProfile vinculados pertenezcan al
+contexto permitido. El `reportedBy`/`actorId` del método interno no es una
+facultad enviada por el cliente. Una respuesta HTTP necesitará DTO de mínima
+exposición para subject/detail y enlaces; estos métodos internos no aprueban
+rutas ni contrato BFF. Cambios de permiso/membership requieren la revocación
+acordada en BE-006B/C.
+
+Se descarta conceder `OPERATIONS_MANAGE` a Recepción: habilitaría mantenimiento,
+housekeeping, OOO/OOS y transiciones de tareas. Se descarta reutilizar
+`RESERVATION_MANAGE`: una solicitud puede no estar ligada a una reserva y el
+permiso de reservas no expresa facultad operativa. La nueva capacidad precisa
+catálogo/migración, asignación de roles y pruebas C2 tras aprobación explícita.
+
+**Aprobación registrada:** el usuario confirmó el permiso nuevo, las dos filas
+de acciones y la consulta de las cinco categorías por Recepción el 2026-10-04.
+Revisiones BD3 y Web, migración y pruebas siguen pendientes antes de integrar
+implementación o publicar rutas.
+
+Estas decisiones pueden aprobarse por dominio. AD-04 a AD-06 no bloquean por sí
 solas la corrección scoped de lectura de reservas o el contrato comercial AD-01;
 solo se inicia código de la entrega cuyo DoR esté satisfecho. AD-04 sí bloquea
 la autorización del envío externo afectado; no se resuelve por una suposición local.

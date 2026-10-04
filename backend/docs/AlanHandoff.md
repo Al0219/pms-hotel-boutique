@@ -1,5 +1,25 @@
 # AlanHandoff — Seguimiento Backend
 
+## BE-014A-OPS-01 — Propuesta de acceso Recepción AD-03 (2026-10-04)
+
+- **Estado:** COMPLETADA. AD-03 y QA documental aprobadas por el usuario;
+  commit/push autorizados en esta rama. BD3/Web revisan integración después.
+- **Rama/base:** `feature/bd1-reception-service-access-ad03` desde `main`
+  actualizado `ccf72a2` (PR #98); árbol limpio al iniciar.
+- **DoR/evidencia:** C2 da OPERATIONS_MANAGE solo a SUPER_ADMIN/GERENCIA/
+  OPERACIONES. ServiceRequestService tiene open/get/list y transiciones/assign;
+  get y transiciones cargan por ID, list recibe scope explícito pero sin validar
+  sesión. El modelo incluye CONCIERGE, VALET, HOUSEKEEPING, MAINTENANCE y OTHER.
+- **Alcance:** proponer acceso limitado de Recepción a ServiceRequests en doc 21;
+  AD-04 mensajería externa no se modifica. Sin código/SQL/API en esta fase.
+- **QA local:** catálogo/roles C2, servicio, repositorio y categorías contrastados;
+  nueve enlaces Markdown válidos y `git diff --check` PASS. Maven no aplica.
+- **QA manual:** el usuario aprobó las dos filas y las cinco categorías el
+  2026-10-04.
+- **Siguiente paso:** publicar la rama; revisar integración con BD3/Web e
+  implementar catálogo/guards en otra rama desde `main` actualizado. AD-04
+  mensajería externa sigue pendiente.
+
 ## BE-014A-FIN-01 — Revisión de acceso financiero AD-02 (2026-10-04)
 
 - **Estado:** COMPLETADA. El usuario aprobó AD-02 y la QA documental; commit y

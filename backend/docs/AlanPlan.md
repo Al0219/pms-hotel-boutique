@@ -557,17 +557,17 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 
 ### BE-014 — Protección transversal de APIs y permisos
 
-- **Estado:** BE-014A EN_QA — AD-01 y AD-02 aprobadas; AD-03 a AD-06 y
+- **Estado:** BE-014A EN_QA — AD-01, AD-02 y AD-03 aprobadas; AD-04 a AD-06 y
   contratos HTTP pendientes. BE-014B EN_PROGRESO — COM-01/02 completados;
   otros dominios pendientes. Prioridad inicial.
 - **Entrega:** `21_BD1_API_ACCESS_CONTRACT_PROPOSAL.md` PROPOSED: catálogo SQL C2,
   matrices de acceso, brechas de scope/actor/filtros, decisiones AD-01 a AD-06 y
   acceptance por dominio. Nueve enlaces y referencias/guards contrastados;
   diff --check PASS. Sin Java/SQL ni nueva ejecución Maven.
-- **Decisión inmediata:** AD-01 y AD-02 aprobadas por el usuario para Commercial
-  y la matriz financiera, respectivamente. Revisar integración con owners antes
-  de BE-014B. AD-03 a AD-06 siguen abiertas; AD-04 bloquea envío externo por
-  contradicción Reception/SUPER_ADMIN.
+- **Decisión inmediata:** AD-01, AD-02 y AD-03 aprobadas por el usuario para
+  Commercial, finanzas y ServiceRequests, respectivamente. Revisar integración
+  con owners antes de BE-014B. AD-04 a AD-06 siguen abiertas; AD-04 bloquea
+  envío externo por contradicción Reception/SUPER_ADMIN.
 - **Rama:** `feature/bd1-api-access-contracts`, creada desde main `9003567` antes
   de editar esta entrega; conserva cambios documentales previos.
 - **Inicio autorizado:** 2026-10-04; inventario de interfaces, SQL C2 y cadenas
@@ -620,6 +620,29 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 - **QA manual:** aprobación explícita del usuario de las cinco filas AD-02;
   cierre, commit y push autorizados. BE-014A global sigue EN_QA para AD-03 a
   AD-06 y contratos HTTP pendientes.
+
+#### BE-014A-OPS-01 — Facultad limitada de Recepción AD-03
+
+- **Estado:** COMPLETADA (2026-10-04). El usuario aprobó AD-03 y la QA
+  documental; revisión de integración BD3/Web pendiente antes de implementación.
+- **Rama/base:** `feature/bd1-reception-service-access-ad03` desde `main`
+  actualizado `ccf72a2` (PR #98 integra AD-02).
+- **DoR:** C2 y catálogo SQL confirmados; propuesta BE-014A/documento 21;
+  ServiceRequestService/Repository y regla global de mensajería inspeccionados.
+  AD-04 de respuesta externa permanece independiente y pendiente.
+- **Alcance/archivos:** precisar en documento 21 una capacidad de Recepción
+  para abrir y consultar ServiceRequests por PROPERTY sin concederle
+  OPERATIONS_MANAGE ni modificar mensajería. Seguimiento AlanPlan/Handoff.
+  Sin SQL, Java, rutas HTTP, rol o permiso nuevo efectivo hasta Change Control.
+- **Aceptación/DoD:** justificar alternativa, matriz de roles/acciones y límites
+  de scope/actor/relaciones; separar transiciones de Operaciones y envío externo;
+  revisar enlaces/diff y entregar QA documental antes de cerrar, commit y push.
+- **Evidencia local:** catálogo/roles C2, cinco categorías y métodos
+  ServiceRequest inspeccionados; nueve enlaces válidos y `git diff --check` PASS.
+  Maven no aplica a la propuesta documental; no hay permiso efectivo ni HTTP.
+- **QA manual:** el usuario aprobó explícitamente el permiso nuevo, las dos
+  filas de acciones y la consulta de las cinco categorías. Commit/push
+  autorizados; la migración RBAC y guards se harán en otro incremento.
 
 #### BE-014B-COM-01 — Reutilización del permiso comercial
 
