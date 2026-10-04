@@ -1,5 +1,15 @@
 # AlanHandoff — Seguimiento Backend
 
+## BD3-AUDIT-FIX-01 — Cierre técnico local
+
+- **Estado:** EN_QA — aceptación automatizada y verify PASS; falta QA manual del owner para completar.
+- **Rama/base:** `feature/bd3-audit-fixes`, base `335e5cf`; commits locales: `fix(bd3): persist blocked night audit attempts` y `fix(bd3): enforce SQL property scope for reservation details`.
+- **Entrega:** Night Audit registra el run `BLOCKED` y su audit event con commit independiente pese al rollback de cierre. Reservation se busca vía `findByIdInScope` y las estancias añaden el conjunto de `propertyId` autorizadas al SQL.
+- **Pruebas:** NightAudit 4/4 y ReservationQuery 3/3 PASS; verify completo `docker compose -p pms-bd3-audit3 -f backend/compose.bd2-test.yaml run --rm verify ./mvnw -B --no-transfer-progress verify` — BUILD SUCCESS, 331 tests, 0 failures/errors/skipped, Java 21/PostgreSQL 17, JAR generado. `git diff --check` PASS.
+- **Push:** autorizado únicamente a `origin/feature/bd3-foundation`; pendiente de ejecutar tras actualizar la referencia remota y confirmar fast-forward.
+- **Limitaciones:** no se modificaron rutas/contratos, BD1/BD2 ni reglas de producto. Los hallazgos excluidos y dependencias permanecen en AlanPlan.
+- **Siguiente paso:** publicar los dos commits a la rama autorizada y pedir confirmación de QA manual al owner.
+
 ## BD3-AUDIT-FIX-01 — Actualización fase 1 (Night Audit)
 
 - **Estado:** fase 1 implementada y prueba focalizada PASS; tarea global EN_PROGRESO.

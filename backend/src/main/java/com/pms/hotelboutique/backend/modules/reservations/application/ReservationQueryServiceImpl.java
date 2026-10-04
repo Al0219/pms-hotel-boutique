@@ -47,7 +47,7 @@ public class ReservationQueryServiceImpl implements ReservationQueryService {
     @Override
     public List<ReservationStayView> listStays(AuthorizedPropertyScope scope, UUID reservationId) {
         Reservation reservation = scopedReservation(scope, reservationId);
-        return stays.findByReservation_Id(reservation.getId()).stream()
+        return stays.findByReservation_IdAndPropertyIdIn(reservation.getId(), authorizedIds(scope)).stream()
                 .map(this::stayView).toList();
     }
 
@@ -71,12 +71,9 @@ public class ReservationQueryServiceImpl implements ReservationQueryService {
         if (reservationId == null) {
             throw new ReservationQueryException("reservation id is required");
         }
-        Reservation reservation = reservations.findById(reservationId)
+        authorizedIds(scope);
+        return reservations.findByIdInScope(scope, reservationId)
                 .orElseThrow(() -> new ReservationQueryException("reservation not found"));
-        if (!authorizedIds(scope).contains(reservation.getPropertyId())) {
-            throw new ReservationQueryException("not authorized for this property");
-        }
-        return reservation;
     }
 
     private ReservationStayView stayView(ReservationStay stay) {

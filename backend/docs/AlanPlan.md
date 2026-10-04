@@ -470,17 +470,17 @@ contrato aplicable aprobado y dependencias COMPLETADAS; no implementar desde moc
 
 #### BD3-AUDIT-FIX-01 — Durabilidad de Night Audit y consultas con property scope
 
-- **Estado:** EN_PROGRESO — alcance BD3 verificado; API/decisiones cross-owner excluidas.
+- **Estado:** EN_QA — implementación BD3 y verify automatizado PASS; QA manual del owner pendiente.
 - **Owner:** Juan / BD3; revisión local Codex.
 - **Base/rama:** base local `feature/bd3-ar-receivables`; rama de tarea `feature/bd3-audit-fixes`.
 - **DoR:** los servicios y contratos internos existen; la auditoría identificó que la excepción revierte BLOCKED/audit y que reservation detail consulta por ID antes del scope. Sin cambios de API, permisos o migración.
 - **Alcance:** separar el registro durable de intento bloqueado y su auditoría del rollback de cierre; probar persistencia después de completar la transacción; filtrar Reservation y ReservationStay por properties autorizadas en SQL.
 - **Archivos previstos:** servicios/repositorios/tests de Operations y Reservations, además de este seguimiento.
 - **Aceptación:** BLOCKED y su evento de auditoría permanecen consultables tras finalizar la transacción fallida; los detalles/listados de estancias solo devuelven filas de properties autorizadas.
-- **Progreso:** fase 1 implementada; `NightAuditServiceIntegrationTests` PASS en PostgreSQL 17 (4 tests, 0 failures/errors). Falta verify completo y fase 2.
+- **Progreso:** fase 1 y fase 2 implementadas. Night Audit 4/4 y ReservationQuery 3/3 PASS; `./mvnw -B verify` PASS con Java 21/PostgreSQL 17 (331 tests, 0 failures/errors/skipped), JAR y `git diff --check` PASS.
 - **DoD:** pruebas relevantes y `./mvnw -B verify` en Java 21/PostgreSQL 17; revisión de diff y `git diff --check`. Estado final EN_QA hasta QA manual del owner.
 - **Fuera de alcance/bloqueado:** publicar APIs (contratos/seguridad BD1), admisión de OOO (protocolo BD2), conserjería/valet y ATS de room blocks (reglas producto), transporte externo (BD1), posting de Night Audit/promotions/rewards (BD2), permisos HTTP comerciales (BD1), compras y AR con reglas/decisiones pendientes.
-- **Siguiente paso:** terminar y verificar la fase de Night Audit; luego corregir y verificar el scope SQL.
+- **Siguiente paso:** QA manual del owner; tras confirmación, marcar COMPLETADA. Los hallazgos fuera del alcance BD3 quedan con las dependencias registradas arriba.
 
 ### Juan / BD3 — F14.2 Cuentas por cobrar y Direct Bill
 
