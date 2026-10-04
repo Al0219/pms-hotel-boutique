@@ -1,4 +1,5 @@
 import { accountHandlers } from "./account-handlers";
+import { reservationLinkHandlers } from './reservation-link-handlers';
 import { http, HttpResponse } from "msw";
 import { private07Handlers } from "./private-07";
 import { private09Handlers } from "./private-09";
@@ -1463,6 +1464,7 @@ function handleGetRevenueKpis({ request }: { request: Request }) {
 import { guestAccessHandlers } from "./guest-access-handlers";
 
 export const handlers = [
+  ...reservationLinkHandlers,
   ...guestAccessHandlers,
   ...accountHandlers,
   ...private07Handlers,
@@ -1517,4 +1519,3 @@ export const handlers = [
   http.get("/api/v1/private/revenue/kpis", handleGetRevenueKpis),
   http.get("http://pms.test/api/v1/private/revenue/kpis", handleGetRevenueKpis),
 ];
-

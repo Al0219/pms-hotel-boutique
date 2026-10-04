@@ -6,3 +6,8 @@ export function checkoutReturn(value?: string): string | undefined {
     return url.origin === 'https://pms.invalid' && url.pathname === '/reserva/checkout' && !url.hash ? `${url.pathname}${url.search}` : undefined;
   } catch { return undefined; }
 }
+
+export function guestAccessReturn(value?: string): string | undefined {
+  if (value === '/mis-reservas') return value;
+  return checkoutReturn(value);
+}

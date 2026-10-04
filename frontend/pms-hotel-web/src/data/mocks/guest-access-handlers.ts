@@ -1,6 +1,6 @@
 import { delay, http, HttpResponse } from "msw";
 import type { GuestAccountDTO } from "@/modules/auth/dtos/guest-account.dto";
-import { initializeAccountFixture } from "./account-fixtures";
+import { initializeAccountFixture, peekAccountFixture } from "./account-fixtures";
 
 /** Frontend-only fixtures for IMP-WEB-0202. No authentication or Backend API contract. */
 export const guestAccessHandlers = [
@@ -19,8 +19,8 @@ export const guestAccessHandlers = [
     }
     if (email.toLowerCase() === "offline@example.com") return HttpResponse.error();
     const scenarios: Record<string, string> = { "empty@example.com": "guest-demo-empty", "data-error@example.com": "guest-demo-data-error", "data-offline@example.com": "guest-demo-data-offline", "save-error@example.com": "guest-demo-save-error" };
-    const accountId = scenarios[email.toLowerCase()] ?? "guest-demo-01";
-    initializeAccountFixture(accountId, email);
+    const accountId = input.method === 'GOOGLE' ? 'guest-demo-google' : scenarios[email.toLowerCase()] ?? "guest-demo-01";
+    if (peekAccountFixture(accountId)?.accessEmail !== email) initializeAccountFixture(accountId, email);
     const account: GuestAccountDTO = {
       account_id: accountId,
       email,

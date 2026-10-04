@@ -4,6 +4,7 @@ import type { GuestInvoiceDTO } from "@/modules/account/dtos/invoice.dto";
 import type { GuestProfileDTO } from "@/modules/profile/dtos/profile.dto";
 import type { RewardsProgramDTO } from "@/modules/rewards/dtos/rewards.dto";
 import type { PromotionDTO } from "@/modules/promotions/dtos/promotions.dto";
+import { resetReservationLinkFixtures } from './reservation-link-fixtures';
 
 export interface AccountFixture {
   accountId: string;
@@ -15,10 +16,10 @@ export interface AccountFixture {
   invoices: GuestInvoiceDTO[];
 }
 const accounts = new Map<string, AccountFixture>();
-export const demoAccountIds = ["guest-demo-01", "guest-demo-empty", "guest-demo-data-error", "guest-demo-data-offline", "guest-demo-save-error"];
+export const demoAccountIds = ["guest-demo-01", "guest-demo-google", "guest-demo-empty", "guest-demo-data-error", "guest-demo-data-offline", "guest-demo-save-error"];
 
 export function initializeAccountFixture(accountId: string, email: string): AccountFixture {
-  const empty = accountId === "guest-demo-empty";
+  const empty = accountId === "guest-demo-empty" || accountId === 'guest-demo-google';
   const profileId = `profile-${accountId}`;
   const profile: GuestProfileDTO = { profile_id: profileId, first_name: "Alan", last_name: "Palacios", email, phone: "+502 5555 5555", country: "Guatemala", preferred_language: "Español",
     preferences: { bed_type: "King", room_vibe: "tranquila", floor_preference: "Piso alto · evitar zonas ruidosas", privacy_level: "SOLO CUENTA", revocable_consent: true } };
@@ -62,7 +63,8 @@ export function getAccountFixture(id: string | null) {
   if (!id || !demoAccountIds.includes(id)) return undefined;
   return accounts.get(id) ?? initializeAccountFixture(id, "demo@example.com");
 }
-export function resetAccountFixtures() { accounts.clear(); }
+export function peekAccountFixture(id: string) { return accounts.get(id); }
+export function resetAccountFixtures() { accounts.clear(); resetReservationLinkFixtures(); }
 
 /** Summary derives from the same records as the detail screens. No reward/price engine. */
 export function summarizeAccount(data: AccountFixture): AccountSummaryDTO {

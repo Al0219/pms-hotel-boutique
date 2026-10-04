@@ -6,12 +6,13 @@ import { getPublicEnvironment } from "@/lib/env";
 import { HttpNetworkError } from "@/lib/http/errors";
 import { useGuestSession } from "./guest-session-provider";
 import styles from "./guest-access-page.module.css";
-import { checkoutReturn } from '../model/checkout-return';
+import { guestAccessReturn } from '../model/checkout-return';
 
 type AccessStep = "options" | "email" | "google";
 
 export function GuestAccessPage({ returnTo }: { returnTo?: string } = {}) {
-  const checkoutHref = checkoutReturn(returnTo);
+  const checkoutHref = guestAccessReturn(returnTo);
+  const reservationsAccess = checkoutHref === '/mis-reservas';
   const [step, setStep] = useState<AccessStep>("options");
   const [email, setEmail] = useState("");
   const [showHelp, setShowHelp] = useState(false);
@@ -22,6 +23,8 @@ export function GuestAccessPage({ returnTo }: { returnTo?: string } = {}) {
     setShowHelp(false);
     setStep(next);
   }
+
+  if (reservationsAccess && !getPublicEnvironment().useMockApi) return <section className={styles.page}><div className={styles.content}><h1>Mis reservas</h1><p>Esta entrega permite probar el acceso y la vinculación en modo demostración. La conexión real está pendiente.</p><Link className={styles.secondary} href="/habitaciones">Reservar como invitado</Link></div></section>;
 
   if (account) {
     return <section className={styles.page} aria-labelledby="access-success-title">
@@ -34,7 +37,8 @@ export function GuestAccessPage({ returnTo }: { returnTo?: string } = {}) {
           <p>Método de acceso <strong>{account.externalIdentities.some(identity => identity.provider === "GOOGLE") ? "Google" : "Correo electrónico"}</strong></p>
         </div>
         <Link className={styles.primary} href="/cuenta">Ir a mi cuenta</Link>
-        <Link className={styles.secondary} href={checkoutHref ?? '/'}>{checkoutHref ? 'Continuar mi reserva' : 'Continuar reservando'}</Link>
+        <Link className={styles.secondary} href={checkoutHref ?? '/'}>{reservationsAccess ? 'Ir a Mis reservas' : checkoutHref ? 'Continuar mi reserva' : 'Continuar reservando'}</Link>
+        {reservationsAccess && !account.externalIdentities.some(identity => identity.provider === 'GOOGLE') && <p>Para vincular una reserva en esta demostración, cierra esta sesión y continúa con Google.</p>}
         <button className={styles.secondary} type="button" onClick={signOut}>Cerrar sesión</button>
       </div>
     </section>;
@@ -46,17 +50,18 @@ export function GuestAccessPage({ returnTo }: { returnTo?: string } = {}) {
 
   return <section className={styles.page} aria-labelledby="access-title" aria-busy={isPending}>
     {step === "options"
-      ? <Link className={styles.back} href={checkoutHref ?? '/'}>{checkoutHref ? '← Volver a los datos de mi reserva' : '← Volver al inicio'}</Link>
+      ? <Link className={styles.back} href={reservationsAccess ? '/' : checkoutHref ?? '/'}>{reservationsAccess ? '← Volver al inicio' : checkoutHref ? '← Volver a los datos de mi reserva' : '← Volver al inicio'}</Link>
       : <button className={styles.back} disabled={isPending} onClick={() => changeStep("options")} type="button">← Volver a opciones</button>}
     <div className={styles.content}>
       <h1 id="access-title">{step === "email" ? "Accede con tu correo" : step === "google" ? "Continuar con Google" : "Accede a tu cuenta"}</h1>
       <p>Consulta tus reservas, beneficios y preferencias. También puedes reservar sin crear una cuenta.</p>
+      {reservationsAccess && <div className={styles.notice}><strong>¿Reservaste como invitado?</strong><p>Inicia sesión para vincular y consultar tu reserva. Utiliza la misma cuenta de Google cuyo correo ingresaste al reservar. Después verificaremos tu referencia con un código temporal.</p></div>}
       <p>{getPublicEnvironment().useMockApi ? "Acceso de demostración: no se envían correos ni se conecta con Google." : "Tu cuenta se vincula de forma segura mediante Google."}</p>
       {step === "options" ? <div className={styles.card}>
         <h2>Elige cómo continuar</h2>
         <button className={styles.google} onClick={() => changeStep("google")} type="button"><span aria-hidden="true">G</span>Continuar con Google</button>
-        <button className={styles.primary} onClick={() => changeStep("email")} type="button">Continuar con correo</button>
-        <Link className={styles.secondary} href={checkoutHref ?? '/'}>Continuar como invitado</Link>
+        {!reservationsAccess && <button className={styles.primary} onClick={() => changeStep("email")} type="button">Continuar con correo</button>}
+        <Link className={styles.secondary} href={reservationsAccess ? '/habitaciones' : checkoutHref ?? '/'}>{reservationsAccess ? 'Reservar como invitado' : 'Continuar como invitado'}</Link>
       </div> : step === "email" ? <form className={styles.card} onSubmit={event => {
         event.preventDefault();
         if (!email.trim()) return;
