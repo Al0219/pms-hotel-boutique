@@ -464,9 +464,9 @@ contrato aplicable aprobado y dependencias COMPLETADAS; no implementar desde moc
 
 ## Alan / BD1 — Plan de implementación integral
 
-**Actualización:** 2026-10-04. **Base inspeccionada:** main `9003567` (PR #73).
+**Actualización:** 2026-10-04. **Base inspeccionada:** main `ea50726` (PR #93).
 **Owner:** Alan / BD1. **Estado del programa:** EN_PROGRESO — AD-01 aprobado;
-BE-014B-COM-01 implementado/en QA; otros incrementos pendientes.
+BE-014B-COM-01/02 integrados en main; otros incrementos pendientes.
 El usuario solicita planificar sus once responsabilidades y usar AlanPlan/AlanHandoff
 para control. La planificación y el inicio de BE-014A están autorizados; no confirman por sí solos
 los contratos API, permisos nuevos, proveedores ni reglas pendientes.
@@ -480,8 +480,9 @@ Se conserva el seguimiento anterior BE-001 a BE-005 y BD2.
 - Reservations/Folio, Operations y Commercial tienen servicios y migraciones.
   La inspección de controllers encuentra HTTP de Auth e Inventory; no una API
   completa de reservas, operaciones, comercial o finanzas.
-- PromotionServiceImpl y RewardServiceImpl exigen SUPER_ADMIN provisionalmente.
-  No quitar estas restricciones hasta aprobar y probar su permiso sustituto.
+- Los seis servicios Commercial ya exigen COMMERCIAL_MANAGE y validan property
+  scope contra el snapshot Staff; los contratos HTTP y el actor de sesión siguen
+  pendientes.
 - GuestProfile y ReservationLinkService ya existen. Este último resuelve referencia
   y correo; ReservationLinkVerificationPort es una interfaz vacía. Falta contrato
   invocable, desafío OTP y asociación autorizada; no esperar la creación del módulo.
@@ -489,8 +490,8 @@ Se conserva el seguimiento anterior BE-001 a BE-005 y BD2.
   Google ni entrega de correo en vivo. Su disponibilidad externa queda SIN VERIFICAR.
 - C1/C2/C3 vigentes: Guest/Staff separados, un rol Staff fijo, permisos desde BD,
   scope explícito; MFA Staff excluido hasta modificar C1. Roles no personalizables.
-- Último verify documentado: 254 tests PASS en BD2-010, antes de la entrega
-  documental PR #73. No representa una ejecución nueva ni QA de este programa.
+- Último verify documentado: 300 tests PASS en BE-014B-COM-02 (Java 21,
+  PostgreSQL 17); el usuario confirmó su QA y PR #93 lo integró en main.
 
 ### Cobertura de los once requisitos del usuario
 
@@ -654,7 +655,8 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 
 ### BE-008 — AuditTrail común y consulta administrativa
 
-- **Estado:** BE-008A PENDIENTE; BE-008B PENDIENTE.
+- **Estado:** BE-008A COMPLETADA; C6-D01 a D06 aprobadas por el usuario.
+  BE-008B PENDIENTE por BE-014A, decisión de persistencia/módulo y contrato HTTP.
 - **Dependencias:** A inventaría AuditService/auth_audit_events; B requiere C6
   aprobado, BE-014A y decisiones de persistencia/módulo aprobadas.
 - **Entrega A / DoR B:** fijar taxonomía, actor, property u organización,
@@ -668,6 +670,28 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 - **Archivos previstos:** contrato C6, módulos/emisores existentes, módulo audit
   si aprobado, migrations 008, DTO/query/API y pruebas PostgreSQL/HTTP/upgrade.
 - **Reviewer:** BD2/BD3 por emisores y consumidores administrativos afectados.
+
+#### BE-008A — Propuesta de contrato C6
+
+- **Estado:** COMPLETADA (2026-10-04). Contrato conceptual C6-D01 a D06
+  aprobado por el usuario tras revisión; revisión de integración BD2/BD3 pendiente.
+- **Rama/base:** `feature/bd1-audit-contract-c6` desde `main` actualizado
+  `ea50726` (PR #93); COM-02 ya integrado.
+- **DoR:** BE-003/C2 disponible y AuditService, reservation_audit_events,
+  auth_audit_events y guest_auth_audit_events inventariados. BE-008B requiere
+  C6 aprobado; este incremento A prepara una propuesta para esa decisión.
+- **Alcance/archivos:** `docs/25_BD1_AUDIT_CONTRACT_C6_PROPOSAL.md`, AlanPlan y
+  AlanHandoff. Taxonomía y fuentes, actor/contexto, organización/property,
+  filtros/paginación, detalle seguro, retención y decisiones de persistencia.
+  Sin Java, SQL, endpoints ni permiso nuevo.
+- **Aceptación/DoD:** propuesta trazable a esquemas y emisores reales, matriz
+  de decisiones/reviewers y casos QA de alcance/append-only; revisión documental,
+  enlaces y diff --check PASS. El usuario revisa la propuesta antes del cierre,
+  commit y push; BE-008B queda pendiente de C6 aprobado.
+- **Evidencia:** inventario de tres tablas y sus emisores/ausencias verificado,
+  cuatro enlaces locales válidos y `git diff --check` PASS; aprobación explícita
+  del usuario. No se ejecuta Maven: solo cambia Markdown y no existe nueva
+  superficie HTTP/SQL que probar. Commit/push autorizados en esta rama.
 
 ### BE-006 — Staff, roles fijos, memberships y sesiones administrativas
 
@@ -904,12 +928,11 @@ evidencia HTTP/SQL/externa y límites; impedimentos/decisiones pendientes; sigui
 paso concreto. Mantener historial append-only y anteponer la actualización nueva.
 No llevar tareas Backend al XLSX. No actualizar memorias externas como parte del plan.
 
-**Próximo paso concreto:** publicar BE-014B-COM-01 en su rama y solicitar revisión
-BD3 al integrarlo; AD-01 ya aprobado e implementado. Coordinar los próximos guards de
-sesión/actor y consultas scoped antes de HTTP; AD-02 financiero con BD2.
-Preparar BE-008A/C6 y BE-006A/C4 para auditoría y administración. Mantener las
-implementaciones en PENDIENTE hasta completar sus acuerdos; no crear endpoints
-ni nuevos permisos desde este plan.
+**Próximo paso concreto:** publicar BE-008A/C6 en su rama. BE-008B permanece
+pendiente de BE-014A y de la arquitectura/API específica. Preparar BE-006A/C4
+para administración Staff. Coordinar guards de sesión/actor y AD-02 financiero
+con los owners antes de nuevas APIs; no crear endpoints ni permisos desde una
+propuesta no aprobada.
 
 ## Entorno de validación
 
