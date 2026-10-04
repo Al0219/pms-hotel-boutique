@@ -12,9 +12,8 @@ import java.util.UUID;
  * <p>Ledger is append-only ({@code EARN}/{@code REDEEM}/{@code EXPIRE}/
  * {@code REVERSE}); balance is derived, never stored. {@code EARN} posts
  * exactly once per {@code CHECKED_OUT} stay of a non-cancelled reservation;
- * {@code CANCELLED}/{@code NO_SHOW} stays never earn. Temporary
- * authorization: SUPER_ADMIN only
- * ({@code TODO(BD1): alta B2B_MANAGE}). No REST contract is implied.
+ * {@code CANCELLED}/{@code NO_SHOW} stays never earn. Authorization requires the effective {@code COMMERCIAL_MANAGE} permission
+ * and an explicit authorized property context. No REST contract is implied.
  * Redemption against folios belongs to a later phase.</p>
  */
 public interface RewardService {

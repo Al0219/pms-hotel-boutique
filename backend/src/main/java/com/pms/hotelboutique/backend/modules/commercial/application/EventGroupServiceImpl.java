@@ -38,7 +38,7 @@ public class EventGroupServiceImpl implements EventGroupService {
     @Override
     public EventGroupView create(StaffAuthorizationSnapshot authorization,
             @Valid CreateEventGroupCommand command, UUID actorId) {
-        requireSuperAdmin(authorization);
+        CommercialAuthorization.requireManage(authorization);
         requirePropertyMembership(authorization, command.propertyId());
         requireSamePropertyCompany(command.propertyId(), command.companyId());
         requireSamePropertyAgency(command.propertyId(), command.agencyId());
@@ -101,14 +101,14 @@ public class EventGroupServiceImpl implements EventGroupService {
     @Transactional(readOnly = true)
     public List<EventGroupView> list(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope) {
-        requireSuperAdmin(authorization);
+        CommercialAuthorization.requireManage(authorization);
         return groups.findAllInScope(authorizedScope(scope)).stream()
                 .map(EventGroupView::from).toList();
     }
 
     EventGroup scoped(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID groupId) {
-        requireSuperAdmin(authorization);
+        CommercialAuthorization.requireManage(authorization);
         if (groupId == null) {
             throw new CommercialException("group id is required");
         }
@@ -146,14 +146,6 @@ public class EventGroupServiceImpl implements EventGroupService {
                 : ReservationAuditEvent.ActorType.STAFF;
         audit.record(new AuditService.RecordAuditCommand(type, actorId, action, "EVENT_GROUP",
                 group.getId(), group.getPropertyId(), before, after, null, correlationId));
-    }
-
-    static void requireSuperAdmin(StaffAuthorizationSnapshot authorization) {
-        if (authorization == null || !"SUPER_ADMIN".equals(authorization.roleCode())) {
-            // TODO(BD1): migrate to a dedicated B2B_MANAGE permission once BD1
-            // owns permission_catalog + role_permissions for F12/F13.
-            throw new AccessDeniedException("F13 groups base requires SUPER_ADMIN");
-        }
     }
 
     private static void requirePropertyMembership(StaffAuthorizationSnapshot authorization,

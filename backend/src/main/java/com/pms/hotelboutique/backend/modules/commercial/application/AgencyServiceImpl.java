@@ -31,7 +31,7 @@ public class AgencyServiceImpl implements AgencyService {
     @Override
     public AgencyView create(StaffAuthorizationSnapshot authorization,
             @Valid CreateAgencyCommand command, UUID actorId) {
-        requireSuperAdmin(authorization);
+        CommercialAuthorization.requireManage(authorization);
         requirePropertyMembership(authorization, command.propertyId());
         Instant now = Instant.now();
         Agency agency;
@@ -97,14 +97,14 @@ public class AgencyServiceImpl implements AgencyService {
     @Transactional(readOnly = true)
     public List<AgencyView> list(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope) {
-        requireSuperAdmin(authorization);
+        CommercialAuthorization.requireManage(authorization);
         return agencies.findAllInScope(authorizedScope(scope)).stream()
                 .map(AgencyView::from).toList();
     }
 
     private Agency scoped(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID agencyId) {
-        requireSuperAdmin(authorization);
+        CommercialAuthorization.requireManage(authorization);
         if (agencyId == null) {
             throw new CommercialException("agency id is required");
         }
@@ -120,14 +120,6 @@ public class AgencyServiceImpl implements AgencyService {
                 : ReservationAuditEvent.ActorType.STAFF;
         audit.record(new AuditService.RecordAuditCommand(type, actorId, action, "AGENCY",
                 agency.getId(), agency.getPropertyId(), before, after, null, correlationId));
-    }
-
-    private static void requireSuperAdmin(StaffAuthorizationSnapshot authorization) {
-        if (authorization == null || !"SUPER_ADMIN".equals(authorization.roleCode())) {
-            // TODO(BD1): migrate to a dedicated B2B_MANAGE permission once BD1
-            // owns permission_catalog + role_permissions for F12.
-            throw new AccessDeniedException("F12 B2B base requires SUPER_ADMIN");
-        }
     }
 
     private static void requirePropertyMembership(StaffAuthorizationSnapshot authorization,

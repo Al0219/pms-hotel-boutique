@@ -14,8 +14,8 @@ import java.util.UUID;
  * <p>Catalog lifecycle plus deterministic stacking: winners ordered by
  * priority (higher first, code as tie-break); every loser is reported with
  * reason, priority and conflict. Applying benefits to a folio belongs to a
- * later phase. Temporary authorization: SUPER_ADMIN only
- * ({@code TODO(BD1): alta B2B_MANAGE}). No REST contract is implied.</p>
+ * later phase. Authorization requires the effective {@code COMMERCIAL_MANAGE} permission
+ * and an explicit authorized property context. No REST contract is implied.</p>
  */
 public interface PromotionService {
 

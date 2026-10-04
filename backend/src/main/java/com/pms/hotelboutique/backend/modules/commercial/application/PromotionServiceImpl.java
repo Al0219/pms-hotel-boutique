@@ -34,7 +34,7 @@ public class PromotionServiceImpl implements PromotionService {
     @Override
     public PromotionView create(StaffAuthorizationSnapshot authorization,
             @Valid CreatePromotionCommand command, UUID actorId) {
-        requireSuperAdmin(authorization);
+        CommercialAuthorization.requireManage(authorization);
         requirePropertyMembership(authorization, command.propertyId());
         if (command.validFrom() != null && command.validTo() != null
                 && command.validFrom().isAfter(command.validTo())) {
@@ -104,7 +104,7 @@ public class PromotionServiceImpl implements PromotionService {
     @Transactional(readOnly = true)
     public List<PromotionView> list(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope) {
-        requireSuperAdmin(authorization);
+        CommercialAuthorization.requireManage(authorization);
         return promotions.findAllInScope(authorizedScope(scope)).stream()
                 .map(PromotionView::from).toList();
     }
@@ -113,7 +113,7 @@ public class PromotionServiceImpl implements PromotionService {
     @Transactional(readOnly = true)
     public StackView resolveStack(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, LocalDate date, List<UUID> promotionIds) {
-        requireSuperAdmin(authorization);
+        CommercialAuthorization.requireManage(authorization);
         AuthorizedPropertyScope resolved = authorizedScope(scope);
         if (date == null) {
             throw new CommercialException("date is required");
@@ -165,7 +165,7 @@ public class PromotionServiceImpl implements PromotionService {
 
     private Promotion scoped(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID promotionId) {
-        requireSuperAdmin(authorization);
+        CommercialAuthorization.requireManage(authorization);
         if (promotionId == null) {
             throw new CommercialException("promotion id is required");
         }
@@ -181,14 +181,6 @@ public class PromotionServiceImpl implements PromotionService {
                 : ReservationAuditEvent.ActorType.STAFF;
         audit.record(new AuditService.RecordAuditCommand(type, actorId, action, "PROMOTION",
                 promotion.getId(), promotion.getPropertyId(), before, after, null, correlationId));
-    }
-
-    private static void requireSuperAdmin(StaffAuthorizationSnapshot authorization) {
-        if (authorization == null || !"SUPER_ADMIN".equals(authorization.roleCode())) {
-            // TODO(BD1): migrate to a dedicated B2B_MANAGE permission once BD1
-            // owns permission_catalog + role_permissions for commercial base.
-            throw new AccessDeniedException("F14 promotions base requires SUPER_ADMIN");
-        }
     }
 
     private static void requirePropertyMembership(StaffAuthorizationSnapshot authorization,

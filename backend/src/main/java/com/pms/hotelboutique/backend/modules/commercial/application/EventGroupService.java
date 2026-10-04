@@ -9,9 +9,9 @@ import java.util.UUID;
 /**
  * BD3 group/event operations (F13 base).
  *
- * <p>Temporary authorization: SUPER_ADMIN only until BD1 owns a dedicated
- * B2B permission ({@code TODO(BD1): alta B2B_MANAGE}). Lifecycle advances
- * exactly one step per call; no delete is offered. No REST contract is
+ * <p>Authorization requires the effective {@code COMMERCIAL_MANAGE} permission
+ * and an explicit authorized property context. Lifecycle advances exactly
+ * one step per call; no delete is offered. No REST contract is
  * implied. Cutoff auto-release and billing belong to later phases.</p>
  */
 public interface EventGroupService {

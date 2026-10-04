@@ -24,6 +24,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;import org.springframework.security.access.AccessDeniedException;
@@ -55,11 +57,15 @@ class PromotionRewardIntegrationTests {
     JdbcTemplate jdbc;
 
     private static StaffAuthorizationSnapshot superAdmin(UUID... properties) {
+        return commercialStaff("SUPER_ADMIN", properties);
+    }
+
+    private static StaffAuthorizationSnapshot commercialStaff(String role, UUID... properties) {
         var access = java.util.Arrays.stream(properties)
                 .map(id -> new StaffAuthorizationSnapshot.PropertyAccess(
                         id, id.toString(), "Hotel", "America/Guatemala", "GTQ"))
                 .toList();
-        return new StaffAuthorizationSnapshot(ORGANIZATION, "SUPER_ADMIN", Set.of(), access);
+        return new StaffAuthorizationSnapshot(ORGANIZATION, role, Set.of("COMMERCIAL_MANAGE"), access);
     }
 
     private static StaffAuthorizationSnapshot recepcion(UUID... properties) {
@@ -101,9 +107,10 @@ class PromotionRewardIntegrationTests {
                 null, SEED_PROPERTY, "Loyal", "Guest", null, null, null, null, null)).id();
     }
 
-    @Test
-    void runsPromotionLifecycle() {
-        var auth = superAdmin(SEED_PROPERTY);
+    @ParameterizedTest
+    @ValueSource(strings = {"SUPER_ADMIN", "GERENCIA"})
+    void runsPromotionLifecycle(String role) {
+        var auth = commercialStaff(role, SEED_PROPERTY);
         var created = promotions.create(auth, new CreatePromotionCommand(
                 SEED_PROPERTY, "PR-" + UUID.randomUUID(), "Early",
                 10, true, Promotion.BenefitType.AMOUNT_OFF, 5000, null, null), null);
@@ -160,9 +167,10 @@ class PromotionRewardIntegrationTests {
         assertTrue(stack.rejected().isEmpty());
     }
 
-    @Test
-    void earnsRedeemsExpiresAndReverses() {
-        var auth = superAdmin(SEED_PROPERTY);
+    @ParameterizedTest
+    @ValueSource(strings = {"SUPER_ADMIN", "GERENCIA"})
+    void earnsRedeemsExpiresAndReverses(String role) {
+        var auth = commercialStaff(role, SEED_PROPERTY);
         UUID profile = profileFixture();
         UUID stay = checkedOutStay();
 
@@ -238,9 +246,10 @@ class PromotionRewardIntegrationTests {
                 () -> jdbc.update("DELETE FROM reward_ledger WHERE id=?", earned.id()));
     }
 
-    @Test
-    void enforcesScopeAndSuperAdmin() {
-        var auth = superAdmin(SEED_PROPERTY);
+    @ParameterizedTest
+    @ValueSource(strings = {"SUPER_ADMIN", "GERENCIA"})
+    void enforcesScopeAndCommercialPermission(String role) {
+        var auth = commercialStaff(role, SEED_PROPERTY);
         var reception = recepcion(SEED_PROPERTY);
         assertThrows(AccessDeniedException.class, () -> promotions.list(
                 reception, scope(SEED_PROPERTY)));
@@ -256,7 +265,7 @@ class PromotionRewardIntegrationTests {
         jdbc.update("INSERT INTO properties(id,organization_id,name,code,timezone,currency,status,created_at,updated_at)"
                 + " VALUES (?,?,'Other',?,'America/Guatemala','GTQ','ACTIVE',now(),now())",
                 otherProperty, otherOrganization, otherProperty.toString());
-        assertTrue(promotions.list(superAdmin(otherProperty), scope(otherProperty)).isEmpty());
+        assertTrue(promotions.list(commercialStaff(role, otherProperty), scope(otherProperty)).isEmpty());
     }
 
     @Test

@@ -40,7 +40,7 @@ public class RewardServiceImpl implements RewardService {
     @Override
     public RewardCommands.RewardEntryView earn(StaffAuthorizationSnapshot authorization,
             @Valid RewardCommands.EarnRewardCommand command, UUID actorId) {
-        requireSuperAdmin(authorization);
+        CommercialAuthorization.requireManage(authorization);
         requirePropertyMembership(authorization, command.propertyId());
         requireProfile(command.guestProfileId());
         ReservationStay stay = stays.findById(command.stayId())
@@ -89,7 +89,7 @@ public class RewardServiceImpl implements RewardService {
     public RewardCommands.RewardEntryView reverse(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope,
             @Valid RewardCommands.ReverseRewardCommand command, UUID actorId) {
-        requireSuperAdmin(authorization);
+        CommercialAuthorization.requireManage(authorization);
         AuthorizedPropertyScope resolved = authorizedScope(scope);
         RewardLedgerEntry original = ledger.findById(command.originalEntryId())
                 .orElseThrow(() -> new CommercialException("original entry not found"));
@@ -114,7 +114,7 @@ public class RewardServiceImpl implements RewardService {
     @Transactional(readOnly = true)
     public long balanceOf(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID guestProfileId) {
-        requireSuperAdmin(authorization);
+        CommercialAuthorization.requireManage(authorization);
         AuthorizedPropertyScope resolved = authorizedScope(scope);
         requireProfile(guestProfileId);
         return ledger.balanceOf(guestProfileId, resolved.propertyIds());
@@ -124,7 +124,7 @@ public class RewardServiceImpl implements RewardService {
     @Transactional(readOnly = true)
     public List<RewardCommands.RewardEntryView> historyOf(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID guestProfileId) {
-        requireSuperAdmin(authorization);
+        CommercialAuthorization.requireManage(authorization);
         AuthorizedPropertyScope resolved = authorizedScope(scope);
         requireProfile(guestProfileId);
         return ledger.findByProfileInScope(guestProfileId, resolved.propertyIds()).stream()
@@ -134,7 +134,7 @@ public class RewardServiceImpl implements RewardService {
     private RewardCommands.RewardEntryView spend(StaffAuthorizationSnapshot authorization,
             RewardCommands.SpendRewardCommand command, RewardLedgerEntry.Kind kind,
             UUID actorId, String action) {
-        requireSuperAdmin(authorization);
+        CommercialAuthorization.requireManage(authorization);
         requirePropertyMembership(authorization, command.propertyId());
         requireProfile(command.guestProfileId());
         long balance = ledger.balanceOf(command.guestProfileId(),
@@ -179,14 +179,6 @@ public class RewardServiceImpl implements RewardService {
                 entry.getId(), entry.getPropertyId(), null,
                 "{\"kind\":\"" + entry.getKind() + "\",\"points\":" + entry.getPoints() + "}",
                 null, correlationId));
-    }
-
-    private static void requireSuperAdmin(StaffAuthorizationSnapshot authorization) {
-        if (authorization == null || !"SUPER_ADMIN".equals(authorization.roleCode())) {
-            // TODO(BD1): migrate to a dedicated B2B_MANAGE permission once BD1
-            // owns permission_catalog + role_permissions for commercial base.
-            throw new AccessDeniedException("F14 rewards base requires SUPER_ADMIN");
-        }
     }
 
     private static void requirePropertyMembership(StaffAuthorizationSnapshot authorization,

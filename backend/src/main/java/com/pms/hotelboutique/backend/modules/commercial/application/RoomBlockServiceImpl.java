@@ -54,7 +54,7 @@ public class RoomBlockServiceImpl implements RoomBlockService {
     @Override
     public RoomBlockView hold(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, @Valid CreateRoomBlockCommand command, UUID actorId) {
-        EventGroupServiceImpl.requireSuperAdmin(authorization);
+        CommercialAuthorization.requireManage(authorization);
         AuthorizedPropertyScope resolved = EventGroupServiceImpl.authorizedScope(scope);
         EventGroup group = groups.findByIdInScope(resolved, command.groupId())
                 .orElseThrow(() -> new CommercialException("group not found"));
@@ -115,7 +115,7 @@ public class RoomBlockServiceImpl implements RoomBlockService {
     @Transactional(readOnly = true)
     public List<RoomBlockView> listByGroup(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID groupId) {
-        EventGroupServiceImpl.requireSuperAdmin(authorization);
+        CommercialAuthorization.requireManage(authorization);
         AuthorizedPropertyScope resolved = EventGroupServiceImpl.authorizedScope(scope);
         if (groupId == null) {
             throw new CommercialException("group id is required");
@@ -159,7 +159,7 @@ public class RoomBlockServiceImpl implements RoomBlockService {
     @Override
     public void unlinkReservation(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID reservationId, UUID actorId) {
-        EventGroupServiceImpl.requireSuperAdmin(authorization);
+        CommercialAuthorization.requireManage(authorization);
         EventGroupServiceImpl.authorizedScope(scope);
         if (reservationId == null) {
             throw new CommercialException("reservation id is required");
@@ -177,7 +177,7 @@ public class RoomBlockServiceImpl implements RoomBlockService {
     @Override
     public FolioView openMasterFolio(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID groupId, String currency, UUID actorId) {
-        EventGroupServiceImpl.requireSuperAdmin(authorization);
+        CommercialAuthorization.requireManage(authorization);
         AuthorizedPropertyScope resolved = EventGroupServiceImpl.authorizedScope(scope);
         if (groupId == null) {
             throw new CommercialException("group id is required");
@@ -207,7 +207,7 @@ public class RoomBlockServiceImpl implements RoomBlockService {
 
     private RoomBlock scoped(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID blockId) {
-        EventGroupServiceImpl.requireSuperAdmin(authorization);
+        CommercialAuthorization.requireManage(authorization);
         if (blockId == null) {
             throw new CommercialException("block id is required");
         }
