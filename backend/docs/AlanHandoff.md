@@ -1,5 +1,33 @@
 # AlanHandoff — Seguimiento Backend
 
+## BE-014B-COM-02 — Confirmación manual y cierre (2026-10-04)
+
+- **Estado:** COMPLETADA. El usuario ejecutó los tests sin fallos y confirmó
+  cerrar esta tarea; commit/push autorizados en su rama.
+- **Rama/base:** `feature/bd1-commercial-scope`, creada desde `main` actualizado
+  `d08383e`. `../docs/entregables/` ya estaba
+  sin seguimiento y queda intacto.
+- **DoR/evidencia:** COM-01 cerrado y presente en main; C2 y regla global de
+  property scope exigen memberships, organización y SQL scoped. Inventario de los
+  seis servicios muestra comprobaciones locales de scope sin vincularlo al snapshot
+  y búsquedas por ID previas al filtro en Group, RoomBlock y Reward.
+- **Alcance:** validar scope contra snapshot, limitar escrituras a PROPERTY y
+  aplicar predicados SQL a vínculos Commercial con repositorios existentes/nuevos.
+  No cambia permisos, endpoints, finanzas ni operaciones.
+- **Entregado:** guard compartido vincula scope con organización y properties del
+  snapshot, exige MULTI_PROPERTY_READ y conjunto completo para ALL_PROPERTIES,
+  y PROPERTY para escrituras. Company/Agency de Group, Reservation de RoomBlock,
+  Stay de Earn y entrada original de Reverse se cargan con predicado SQL scoped.
+  Pickup limita reservas/stays a la propiedad del block. Sin rutas HTTP nuevas.
+- **Pruebas locales:** cuatro suites comerciales 48 PASS (13 + 13 + 12 + 10),
+  incluidos rechazos de scope fabricado y aserciones sobre repositorios SQL;
+  verify completo 300 PASS, cero failures/errors/skipped, BUILD SUCCESS y JAR.
+  Docker PostgreSQL 17, Java 21, wrapper Maven. `git diff --check` PASS.
+- **Guía:** `24_BD1_COMMERCIAL_SCOPE_MANUAL_QA.md`, con comandos y resultados
+  esperados para ejecución por el usuario.
+- **Siguiente paso:** commit/push de esta rama; revisión BD3 durante integración.
+  Abrir otra rama desde `main` actualizado para la siguiente tarea.
+
 ## BE-014B-COM-01 — Confirmación manual y cierre (2026-10-04)
 
 - **Estado:** COMPLETADA para el incremento comercial. El usuario ejecutó los

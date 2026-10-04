@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -49,6 +50,14 @@ class GroupServiceIntegrationTests {
 
     @Autowired
     ReservationStayService stays;
+
+    @Autowired
+    com.pms.hotelboutique.backend.modules.reservations.infrastructure.persistence.ReservationRepository
+            reservationRepository;
+
+    @Autowired
+    com.pms.hotelboutique.backend.modules.reservations.infrastructure.persistence.ReservationStayRepository
+            stayRepository;
 
     @Autowired
     com.pms.hotelboutique.backend.modules.commercial.infrastructure.persistence.EventGroupRepository
@@ -138,6 +147,10 @@ class GroupServiceIntegrationTests {
                 SEED_PROPERTY, null, "GTQ", "GROUP", null, null));
         var stay = stays.addStay(new CreateStayCommand(reservation.id(), roomType, null,
                 LocalDate.parse("2026-11-10"), LocalDate.parse("2026-11-12")));
+
+        var otherScope = scope(UUID.randomUUID());
+        assertTrue(reservationRepository.findByIdInScope(otherScope, reservation.id()).isEmpty());
+        assertTrue(stayRepository.findByIdInScope(otherScope, stay.id()).isEmpty());
 
         blocks.linkReservation(auth, scope(SEED_PROPERTY), reservation.id(), block.id(), null);
 

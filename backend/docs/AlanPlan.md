@@ -627,6 +627,31 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
   confirmación de cierre recibida. Este incremento no crea rutas HTTP: los seis
   servicios son internos y no hay contrato HTTP comercial aprobado.
 
+#### BE-014B-COM-02 — Property scope en servicios comerciales internos
+
+- **Estado:** COMPLETADA (2026-10-04). Implementación y pruebas locales PASS;
+  el usuario ejecutó los tests sin fallos y confirmó el cierre.
+- **Rama/base:** `feature/bd1-commercial-scope` desde `main` actualizado `d08383e`.
+- **Dependencias/DoR:** BE-014B-COM-01 cerrado; C2 y regla global de property scope
+  confirmados; seis servicios internos y repositorios scoped existentes. No requiere
+  nueva ruta HTTP ni decisión de permisos AD-02 a AD-06.
+- **Alcance/archivos:** validar que el scope recibido pertenece al snapshot Staff,
+  su organización, memberships y permiso MULTI_PROPERTY_READ; limitar mutaciones
+  a PROPERTY; llevar a predicados SQL la búsqueda de vínculos Company/Agency,
+  Reservation, Stay y Reward original en Commercial. Cambios en helper/servicios
+  Commercial, repositorios dependientes, tests y seguimiento.
+- **Aceptación/DoD:** rechazar scope fabricado/ajeno antes del lookup; recursos
+  vinculados ajenos son indistinguibles de inexistentes; listados multi-property
+  limitados a properties de la sesión; regresión Commercial y verify completo con
+  PostgreSQL/Java 21, diff --check. Entregar QA manual al usuario y esperar su
+  confirmación antes de COMPLETADA, commit y push.
+- **Evidencia:** 48 pruebas comerciales PASS (incluye aserciones SQL de scope),
+  verify completo 300 PASS, cero failures/errors/skipped, JAR y diff --check
+  PASS en PostgreSQL 17/Java 21. QA manual del usuario PASS según
+  `24_BD1_COMMERCIAL_SCOPE_MANUAL_QA.md`; commit/push autorizados en la rama.
+- **Límites:** contratos HTTP, actor derivado de sesión, finanzas/operaciones y
+  cambios de permisos fuera de este incremento; revisar con BD3 al integrar.
+
 ### BE-008 — AuditTrail común y consulta administrativa
 
 - **Estado:** BE-008A PENDIENTE; BE-008B PENDIENTE.

@@ -45,6 +45,10 @@ class PromotionRewardIntegrationTests {
     RewardService rewards;
 
     @Autowired
+    com.pms.hotelboutique.backend.modules.commercial.infrastructure.persistence.RewardLedgerRepository
+            rewardLedgerRepository;
+
+    @Autowired
     ReservationService reservations;
 
     @Autowired
@@ -176,6 +180,7 @@ class PromotionRewardIntegrationTests {
 
         var earned = rewards.earn(auth, new RewardCommands.EarnRewardCommand(
                 profile, SEED_PROPERTY, 100, stay, "stay completed"), null);
+        assertTrue(rewardLedgerRepository.findByIdInScope(scope(UUID.randomUUID()), earned.id()).isEmpty());
         assertEquals(100, earned.points());
         assertEquals(100, rewards.balanceOf(auth, scope(SEED_PROPERTY), profile));
 

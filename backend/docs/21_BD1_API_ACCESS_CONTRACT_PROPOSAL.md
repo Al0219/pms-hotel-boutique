@@ -63,6 +63,16 @@ Las otras decisiones, facultades financieras y contratos HTTP
 permanecen pendientes.
 Esta aprobación no transforma el documento completo en CONFIRMED.
 
+### Incremento BE-014B-COM-02 en curso
+
+En `feature/bd1-commercial-scope` se valida el scope Commercial contra el
+snapshot Staff antes de los queries: organización, properties autorizadas,
+`PROPERTY` único y `ALL_PROPERTIES` con `MULTI_PROPERTY_READ` y conjunto completo.
+Las mutaciones que reciben scope exigen `PROPERTY`. Los vínculos a Company,
+Agency, Reservation, Stay y Reward original se consultan con predicado SQL de
+property/organización. Sigue pendiente QA manual del usuario y revisión BD3.
+Este incremento no publica rutas HTTP ni resuelve actor Staff de sesión.
+
 ## Entradas y brechas observadas
 
 Rutas de archivos relativas a `src/main/java/com/pms/hotelboutique/backend/`.
