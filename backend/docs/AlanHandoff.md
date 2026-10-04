@@ -1,5 +1,29 @@
 # AlanHandoff — Seguimiento Backend
 
+## BE-014B-OPS-01 — Inicio RBAC e intake Staff (2026-10-04)
+
+- **Estado:** COMPLETADA. El usuario confirmó que todas las pruebas manuales
+  terminaron sin errores; commit y push autorizados.
+- **Rama/base:** `feature/bd1-service-request-intake` desde `main` actualizado
+  `71911e1` (PR #99 integra AD-03); árbol limpio al iniciar.
+- **DoR/evidencia:** AD-03 aprobada. C2 no contiene aún SERVICE_REQUEST_INTAKE;
+  ServiceRequestService BD3 no recibe principal ni hace guard, y sus mutaciones
+  por UUID permanecen internas. No hay controller de Operations. El modelo tiene
+  cinco categorías; list usa scope SQL, get/transition usan findById.
+- **Alcance:** nueva migración RBAC, entrada Staff protegida solo para
+  open/get/list por PROPERTY y pruebas. Métodos BD3 de transición/assign,
+  mensajería externa AD-04 y HTTP quedan pendientes de contratos/revisión.
+- **Implementado:** changeset 003-006 asigna SERVICE_REQUEST_INTAKE a RECEPCION
+  y SUPER_ADMIN; StaffServiceRequestService valida sesión/permiso/property,
+  deriva actor y valida vínculos scoped antes del servicio BD3. Detalle/lista
+  consultan SQL por property; no se expone HTTP.
+- **QA local:** 9 pruebas focalizadas PASS; verify completo 306 PASS, cero
+  failures/errors/skipped, JAR y BUILD SUCCESS en PostgreSQL 17/Java 21.
+  Guía `docs/28_BD1_SERVICE_REQUEST_INTAKE_QA.md`; QA manual del usuario PASS.
+- **Siguiente paso:** publicar esta rama y esperar su integración en `main`
+  antes de crear la rama siguiente. Integración BD3/Web, guard de transiciones
+  y contrato HTTP siguen pendientes.
+
 ## BE-014A-OPS-01 — Propuesta de acceso Recepción AD-03 (2026-10-04)
 
 - **Estado:** COMPLETADA. AD-03 y QA documental aprobadas por el usuario;

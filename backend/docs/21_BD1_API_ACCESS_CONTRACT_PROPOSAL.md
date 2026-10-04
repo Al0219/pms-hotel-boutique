@@ -189,7 +189,7 @@ no se añade implícitamente como permiso de lectura por su nombre de rol.
 | Maintenance: open/start/resolve/cancel/reopen/assign/linkOutage/get/list | OPERATIONS_MANAGE | OT/Room/OOO y asignaciones autorizadas, misma property; resolver OT no implica sellable |
 | Outage: register/release/getScoped/list | OPERATIONS_MANAGE | OOO/OOS con actor/motivo/período e historial; coordinar inventario/locks BD2 para no romper admisión |
 | Discrepancy: report/investigate/reconcile/cancel/get/list | OPERATIONS_MANAGE | Room/discrepancy scoped; reason/actor; no modificar reservas/folio fuera del pipeline |
-| ServiceRequest: open/start/complete/cancel/reopen/assign/get/list | OPERATIONS_MANAGE; AD-03 aprueba SERVICE_REQUEST_INTAKE solo para open/get/list de Recepción, pendiente de migración | Servicio/conserjería/valet scoped; Stay/Room/GuestProfile relacionados validados; transiciones/assign permanecen en Operaciones |
+| ServiceRequest: open/start/complete/cancel/reopen/assign/get/list | OPERATIONS_MANAGE; AD-03 aprueba SERVICE_REQUEST_INTAKE solo para open/get/list de Recepción, migración en BE-014B-OPS-01 | Servicio/conserjería/valet scoped; Stay/Room/GuestProfile relacionados validados; transiciones/assign permanecen en Operaciones |
 | Mensajería: get/list/conversation y trabajo interno | Pendiente AD-04 | conversation por GuestProfile no autoriza consultar todas las propiedades; diferenciar tarea interna y respuesta externa |
 | Mensajería: logInbound | Interno validado o Guest autorizado, pendiente AD-04 | No endpoint anónimo para suministrar guestProfileId/propertyId; autenticar adapter o titularidad Guest |
 | Mensajería: sendOutbound | Pendiente AD-04 | Regla global solo Recepción responde externamente; no mapear OPERATIONS_MANAGE a envío externo |
@@ -291,7 +291,7 @@ integrar la implementación de BE-014B-FIN o publicar FP-D02.
 
 ### Decisión focalizada AD-03 — recepción de solicitudes
 
-**Decisión aprobada, todavía no implementada:** añadir `SERVICE_REQUEST_INTAKE` al catálogo
+**Decisión aprobada; implementación parcial en BE-014B-OPS-01:** añadir `SERVICE_REQUEST_INTAKE` al catálogo
 C2 para Recepción. Autoriza abrir y consultar ServiceRequests de una PROPERTY
 autorizada en las categorías existentes `CONCIERGE`, `VALET`, `HOUSEKEEPING`,
 `MAINTENANCE` y `OTHER`. Recepción puede registrar una solicitud para que la
@@ -328,8 +328,10 @@ catálogo/migración, asignación de roles y pruebas C2 tras aprobación explíc
 
 **Aprobación registrada:** el usuario confirmó el permiso nuevo, las dos filas
 de acciones y la consulta de las cinco categorías por Recepción el 2026-10-04.
-Revisiones BD3 y Web, migración y pruebas siguen pendientes antes de integrar
-implementación o publicar rutas.
+La migración RBAC y una entrada Staff interna de open/get/list están en
+`feature/bd1-service-request-intake`, pendientes de QA manual e integración.
+El servicio BD3 de transiciones sigue interno y no se publica como API;
+revisiones BD3/Web y contrato HTTP permanecen pendientes.
 
 Estas decisiones pueden aprobarse por dominio. AD-04 a AD-06 no bloquean por sí
 solas la corrección scoped de lectura de reservas o el contrato comercial AD-01;

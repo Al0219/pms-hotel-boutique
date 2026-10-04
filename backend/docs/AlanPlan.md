@@ -558,8 +558,8 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 ### BE-014 — Protección transversal de APIs y permisos
 
 - **Estado:** BE-014A EN_QA — AD-01, AD-02 y AD-03 aprobadas; AD-04 a AD-06 y
-  contratos HTTP pendientes. BE-014B EN_PROGRESO — COM-01/02 completados;
-  otros dominios pendientes. Prioridad inicial.
+  contratos HTTP pendientes. BE-014B EN_PROGRESO — COM-01/02 completados,
+  OPS-01 completado; otros dominios pendientes. Prioridad inicial.
 - **Entrega:** `21_BD1_API_ACCESS_CONTRACT_PROPOSAL.md` PROPOSED: catálogo SQL C2,
   matrices de acceso, brechas de scope/actor/filtros, decisiones AD-01 a AD-06 y
   acceptance por dominio. Nueve enlaces y referencias/guards contrastados;
@@ -643,6 +643,33 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 - **QA manual:** el usuario aprobó explícitamente el permiso nuevo, las dos
   filas de acciones y la consulta de las cinco categorías. Commit/push
   autorizados; la migración RBAC y guards se harán en otro incremento.
+
+#### BE-014B-OPS-01 — RBAC y entrada Staff para solicitudes
+
+- **Estado:** COMPLETADA (2026-10-04). El usuario confirmó que todas las
+  pruebas manuales terminaron sin errores; commit y push autorizados.
+- **Rama/base:** `feature/bd1-service-request-intake` desde `main` actualizado
+  `71911e1` (PR #99 integra AD-03).
+- **DoR:** AD-03 aprobada, C2/Staff Auth/PropertyScopeResolver disponibles;
+  ServiceRequestService interno, repositorio y pruebas BD3 inventariados.
+  Revisión BD3/Web de integración pendiente; no existe contrato HTTP aprobado.
+- **Alcance/archivos:** changeset 003 nuevo para SERVICE_REQUEST_INTAKE de
+  RECEPCION/SUPER_ADMIN, entrada Staff interna de open/get/list con sesión,
+  permiso, PROPERTY y recursos relacionados scoped; pruebas PostgreSQL y
+  seguimiento. Mantener métodos BD3 existentes para transición/assign y sus
+  contratos; no abrir API HTTP ni mensajería AD-04.
+- **Aceptación/DoD:** Recepción y roles OPERATIONS_MANAGE pueden abrir/leer
+  solicitudes de su property; sin permiso/sesión/property se rechaza antes de
+  leer/escribir; actor viene de sesión; vínculos ajenos no se aceptan. Pruebas
+  positivas/negativas, migración/upgrade, verify completo y diff. Entregar QA
+  manual y esperar confirmación antes de commit/push.
+- **Límite:** el servicio BD3 de transiciones sigue interno y requiere guard
+  propio antes de cualquier exposición HTTP; este incremento solo protege el
+  puerto Staff de intake/lectura AD-03.
+- **Evidencia local:** 9 pruebas focalizadas y `verify` completo 306 PASS,
+  cero failures/errors/skipped, BUILD SUCCESS y JAR con PostgreSQL 17/Java 21.
+  Upgrade Liquibase incluido; QA manual del usuario PASS según
+  `docs/28_BD1_SERVICE_REQUEST_INTAKE_QA.md`.
 
 #### BE-014B-COM-01 — Reutilización del permiso comercial
 
