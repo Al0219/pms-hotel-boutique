@@ -1,5 +1,28 @@
 # AlanHandoff — Seguimiento Backend
 
+## BE-006B-SCHEMA-01 — Invariantes Staff C4 (2026-10-04)
+
+- **Estado:** COMPLETADA. El usuario confirmó QA manual sin errores y autorizó
+  el cierre, commit y push según el flujo acordado.
+- **Rama/base:** `feature/bd1-staff-admin-schema` desde `main` actualizado
+  `5ba93ae`. `../docs/entregables/` preexistente queda intacto.
+- **DoR/evidencia:** C4-D02/D06 aprobadas y BE-006A integrada. El changeset
+  003 ya impone membership única por Staff. Faltan unicidad case-insensitive de
+  workEmail, FK de property/organization y versión de concurrencia.
+- **Alcance:** migración aditiva, guía de preflight y pruebas PostgreSQL.
+  BE-006B CRUD/HTTP, BE-006C sesiones, auditoría C6 y BE-014A permanecen pendientes.
+- **Implementado:** changeset 003-005 con `version` Staff, índice único para
+  `lower(btrim(work_email))` y FK compuesta property/organization; `@Version`
+  en StaffUser. Fixtures de upgrade fijados a changesets históricos.
+- **Pruebas locales:** integración nueva 2 PASS; suite completa 302 PASS,
+  cero fallos/errores, BUILD SUCCESS; focalizadas de constraints y upgrade
+  histórico 8 PASS (incluye Staff preexistente con versión 0). Guía de preflight
+  y QA: `docs/27_BD1_STAFF_SCHEMA_MIGRATION_QA.md`.
+- **QA manual:** el usuario ejecutó las pruebas y reportó cero errores.
+- **Siguiente paso:** publicar esta rama; después iniciar la siguiente tarea
+  en otra rama desde `main` actualizado. Revisar datos reales con preflight
+  antes de aplicar la migración fuera del entorno aislado.
+
 ## BE-006A — Aprobación y cierre del contrato Staff C4 (2026-10-04)
 
 - **Estado:** COMPLETADA. El usuario aprobó C4-D01 a D07 tras recibir la guía

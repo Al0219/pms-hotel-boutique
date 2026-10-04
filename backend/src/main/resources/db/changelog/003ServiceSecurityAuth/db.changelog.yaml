@@ -11,3 +11,6 @@ databaseChangeLog:
   - include:
       file: 004-guest-auth-schema.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 005-staff-admin-invariants.yaml
+      relativeToChangelogFile: true

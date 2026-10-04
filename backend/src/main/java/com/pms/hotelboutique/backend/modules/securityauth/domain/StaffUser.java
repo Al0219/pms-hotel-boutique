@@ -6,6 +6,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -31,6 +32,9 @@ public class StaffUser {
     private Instant createdAt;
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+    @Version
+    @Column(nullable = false)
+    private long version;
 
     protected StaffUser() { }
 
@@ -51,5 +55,6 @@ public class StaffUser {
     public String getPasswordHash() { return passwordHash; }
     public String getRoleCode() { return roleCode; }
     public Status getStatus() { return status; }
+    public long getVersion() { return version; }
     public boolean isActive() { return status == Status.ACTIVE; }
 }
