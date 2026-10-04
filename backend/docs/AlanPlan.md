@@ -695,7 +695,9 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 
 ### BE-006 — Staff, roles fijos, memberships y sesiones administrativas
 
-- **Estado:** BE-006A PENDIENTE; BE-006B PENDIENTE; BE-006C PENDIENTE.
+- **Estado:** BE-006A COMPLETADA; C4-D01 a D07 aprobadas por el usuario.
+  BE-006B/C PENDIENTES de BE-014A, migración/auditoría, entrega de credenciales
+  y revisión de contratos HTTP/BFF con owners.
 - **Dependencias:** BE-002/003/005 completas; B requiere C4/BE-006A y BE-014A;
   definir en A auditoría con esquema vigente y contrato BE-008A. C depende de B.
 - **Entrega A / DoR B:** aprobar C4: altas/consultas/edición/activación/suspensión,
@@ -716,6 +718,29 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 - **Archivos previstos:** contrato C4, securityauth api/application/persistence,
   changesets nuevos 003 consecutivos, audit y tests; BFF/DTO/Mapper coordinados.
 - **Reviewer:** owner Web de Staff/seguridad y BD2/BD3 por efectos de acceso.
+
+#### BE-006A — Propuesta de contrato C4 para administración Staff
+
+- **Estado:** COMPLETADA (2026-10-04). C4-D01 a D07 aprobadas por el usuario;
+  revisión de integración Web/BD2/BD3 pendiente.
+- **Rama/base:** `feature/bd1-staff-admin-contract-c4` desde `main` actualizado
+  `fdc2ed3` (PR #95); C6 integrado por PR #94.
+- **DoR:** C1/C2 y BE-002/003/005 implementados, C6 aprobado para auditoría;
+  esquema Staff, repositorios, sesión y rutas BFF existentes inventariados.
+  BE-006B sigue bloqueado hasta aprobar C4, BE-014A por dominio y decisiones
+  de migración/auditoría/entrega de credenciales.
+- **Alcance/archivos:** propuesta `docs/26_BD1_STAFF_ADMIN_CONTRACT_C4_PROPOSAL.md`
+  y seguimiento AlanPlan/Handoff. Precisar CRUD Staff, roles fijos,
+  membership única, scope, protección de administradores, sesiones y auditoría.
+  Sin código, SQL, endpoints operativos, nuevos roles o permisos.
+- **Aceptación/DoD:** referencias de esquema y auth C1/C2/C6 comprobadas;
+  operaciones, restricciones, errores, concurrencia, BFF y decisiones abiertas
+  documentados. Revisar enlaces/diff y ofrecer QA manual al usuario; esperar
+  su revisión y aprobación antes de cerrar, commit y push.
+- **Evidencia:** seis enlaces locales válidos, esquema/RBAC/repositorios Staff y
+  BFF actual contrastados; `git diff --check` PASS y aprobación explícita del
+  usuario. Sin Java/SQL/HTTP nuevo, por lo que no aplica Maven a esta entrega
+  documental. Commit/push autorizados en la rama C4.
 
 ### BE-013 — OTP y vínculo de reservas históricas
 
