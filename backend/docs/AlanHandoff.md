@@ -1,5 +1,22 @@
 # AlanHandoff — Seguimiento Backend
 
+## BD3-AUDIT-FIX-01 — Actualización fase 1 (Night Audit)
+
+- **Estado:** fase 1 implementada y prueba focalizada PASS; tarea global EN_PROGRESO.
+- **Cambios:** `NightAuditBlockedRunRecorder` persiste `BLOCKED` y `NIGHT_AUDIT_BLOCKED` en `REQUIRES_NEW`; `closeDay` crea run durable solo cuando hay blockers conocidos, evitando rollback del intento registrado. El test deja el escenario comprometido y consulta desde transacciones posteriores al rechazo.
+- **Verificación:** `docker compose -p pms-bd3-audit2 -f backend/compose.bd2-test.yaml run --rm verify ./mvnw -B --no-transfer-progress -Dtest=NightAuditServiceIntegrationTests test` — BUILD SUCCESS, 4 tests, 0 failures/errors/skipped, PostgreSQL 17/JDK 21. `git diff --check` PASS.
+- **Siguiente paso:** commit de fase 1; completar consulta SQL scoped de Reservation/Stays, ejecutar su test y el verify completo antes de publicar.
+
+## BD3-AUDIT-FIX-01 — Durabilidad Night Audit y property scope
+
+- **Estado:** EN_PROGRESO; revisión de hallazgos de auditoría iniciada.
+- **Base/rama:** `335e5cf` (`feature/bd3-ar-receivables`); tarea `feature/bd3-audit-fixes`.
+- **DoR/alcance:** dos defectos BD3 reproducibles sin cambiar contratos: el flujo de cierre revierte BLOCKED y audit al lanzar excepción; Reservation/Stay detail debe aplicar scope autorizado antes/dentro de SQL. Se excluirán hallazgos dependientes de contratos, permisos, decisiones producto o ownership BD1/BD2.
+- **Plan:** fix de Night Audit con prueba que consulte tras finalizar su transacción; fix de Reservation/Stay scope con prueba de propiedades no autorizadas. Una fase/commit por defecto.
+- **Verificación:** pendiente.
+- **Publicación:** el usuario autorizó commits y pushes únicamente a `origin/feature/bd3-foundation`; no se empujará la rama de trabajo.
+- **Siguiente paso:** inspeccionar fixtures/transacciones/repositorios; implementar y validar cada fase por separado.
+
 ## F14.2 — Preparación de Cuentas por cobrar / Direct Bill
 
 - **Base:** `origin/main` `02bd91b`.

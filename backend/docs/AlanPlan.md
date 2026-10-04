@@ -466,6 +466,22 @@ contrato aplicable aprobado y dependencias COMPLETADAS; no implementar desde moc
 | BD2-LC-005 / 7B extensión | PENDIENTE | FP-001/003; LC-D05/SH-D02/cotización |
 | BD2-FP-LC-QA / 8 integración | PENDIENTE | Entregas incluidas y SPIs reales COMPLETADAS |
 
+### Juan / BD3 — Auditoría de brechas de entrega
+
+#### BD3-AUDIT-FIX-01 — Durabilidad de Night Audit y consultas con property scope
+
+- **Estado:** EN_PROGRESO — alcance BD3 verificado; API/decisiones cross-owner excluidas.
+- **Owner:** Juan / BD3; revisión local Codex.
+- **Base/rama:** base local `feature/bd3-ar-receivables`; rama de tarea `feature/bd3-audit-fixes`.
+- **DoR:** los servicios y contratos internos existen; la auditoría identificó que la excepción revierte BLOCKED/audit y que reservation detail consulta por ID antes del scope. Sin cambios de API, permisos o migración.
+- **Alcance:** separar el registro durable de intento bloqueado y su auditoría del rollback de cierre; probar persistencia después de completar la transacción; filtrar Reservation y ReservationStay por properties autorizadas en SQL.
+- **Archivos previstos:** servicios/repositorios/tests de Operations y Reservations, además de este seguimiento.
+- **Aceptación:** BLOCKED y su evento de auditoría permanecen consultables tras finalizar la transacción fallida; los detalles/listados de estancias solo devuelven filas de properties autorizadas.
+- **Progreso:** fase 1 implementada; `NightAuditServiceIntegrationTests` PASS en PostgreSQL 17 (4 tests, 0 failures/errors). Falta verify completo y fase 2.
+- **DoD:** pruebas relevantes y `./mvnw -B verify` en Java 21/PostgreSQL 17; revisión de diff y `git diff --check`. Estado final EN_QA hasta QA manual del owner.
+- **Fuera de alcance/bloqueado:** publicar APIs (contratos/seguridad BD1), admisión de OOO (protocolo BD2), conserjería/valet y ATS de room blocks (reglas producto), transporte externo (BD1), posting de Night Audit/promotions/rewards (BD2), permisos HTTP comerciales (BD1), compras y AR con reglas/decisiones pendientes.
+- **Siguiente paso:** terminar y verificar la fase de Night Audit; luego corregir y verificar el scope SQL.
+
 ### Juan / BD3 — F14.2 Cuentas por cobrar y Direct Bill
 
 - **Estado:** PENDIENTE — DoR incompleto; existe propuesta documental, no contrato aprobado.
