@@ -466,6 +466,15 @@ contrato aplicable aprobado y dependencias COMPLETADAS; no implementar desde moc
 | BD2-LC-005 / 7B extensión | PENDIENTE | FP-001/003; LC-D05/SH-D02/cotización |
 | BD2-FP-LC-QA / 8 integración | PENDIENTE | Entregas incluidas y SPIs reales COMPLETADAS |
 
+### Juan / BD3 — F14.2 Cuentas por cobrar y Direct Bill
+
+- **Estado:** PENDIENTE — DoR incompleto; existe propuesta documental, no contrato aprobado.
+- **Alcance:** acuerdo de crédito por Company/Property, asociación con folio COMPANY y saldos/aging sobre la fuente financiera acordada.
+- **Fuera de alcance:** segundo ledger de folios, pagos/invoices, endpoints no confirmados, postings de promociones/rewards y compras.
+- **Dependencias:** FP-D04 y escritura/SPIs de Folio de BD2; confirmar reglas de crédito/aprobación/aging, fuente del saldo y permiso/scope.
+- **Contrato:** `36_BD3_AR_DIRECT_BILL_CONTRACT_PROPOSAL.md`.
+- **Siguiente paso:** aprobar las decisiones abiertas del contrato; luego registrar archivos/acceptance y pasar a READY. No implementar postings mientras falte autorización de negocio o SPI financiero.
+
 ## Alan / BD1 — Plan de implementación integral
 
 **Actualización:** 2026-10-04. **Base inspeccionada:** main `ea50726` (PR #93).

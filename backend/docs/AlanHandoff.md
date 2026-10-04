@@ -1,5 +1,16 @@
 # AlanHandoff — Seguimiento Backend
 
+## F14.2 — Preparación de Cuentas por cobrar / Direct Bill
+
+- **Base:** `origin/main` `02bd91b`.
+- **Rama de trabajo:** `feature/bd3-ar-receivables`.
+- **Estado:** PENDIENTE — propuesta documental creada; implementación no iniciada.
+- **Ownership:** Juan / BD3 según `19_BD2_FINANCE_LIFECYCLE_PHASE0.md`.
+- **Inspección:** Company tiene scope por propiedad; `Folio.Type.COMPANY` existe, pero no hay vínculo Company–Folio ni modelo AR. FolioMovement ya es append-only y su escritura financiera corresponde a BD2.
+- **Bloqueos:** FP-D04 y BD2-FP-003 pendientes; reglas de crédito/aprobación, aging/fuente de saldo y decisión de permiso requieren confirmación.
+- **Verificación:** propuesta cotejada contra código y contratos; suite Backend intentada con Docker Compose, pero el daemon Docker no está disponible (`docker_engine` ausente). Sin cambios de código ni migraciones.
+- **Siguiente paso:** resolver las decisiones listadas en `36_BD3_AR_DIRECT_BILL_CONTRACT_PROPOSAL.md`; después completar DoR antes de implementar.
+
 ## BE-010B-ONBOOKS-01 — Actualización de seguimiento (2026-10-05)
 
 - **Cierre técnico:** BE-010B ya está técnicamente cerrada; se conserva el estado registrado en la entrada histórica.
