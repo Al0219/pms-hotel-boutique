@@ -1,5 +1,35 @@
 # AlanHandoff — Seguimiento Backend
 
+## BE-008A — Aprobación y cierre del contrato AuditTrail C6 (2026-10-04)
+
+- **Estado:** COMPLETADA. El usuario aprobó C6-D01 a D06 tras recibir la guía
+  de revisión manual. Revisión BD2/BD3 pendiente para integración; BE-008B
+  continúa PENDIENTE por BE-014A y arquitectura/API específica.
+- **Rama/base:** `feature/bd1-audit-contract-c6` desde `main` actualizado
+  `ea50726` (PR #93 que integra COM-02). Sin commit/push de esta tarea;
+  `../docs/entregables/` preexistente queda intacto.
+- **DoR/evidencia:** C2/AUDIT_READ aprobado. AuditService y tabla
+  reservation_audit_events ya ofrecen eventos append-only; Auth Staff usa
+  auth_audit_events separado sin property/organización ni trigger append-only.
+  Guest auth tiene una tabla separada. Consultas crudas actuales de AuditService
+  no reciben scope y no se exponen como API administrativa.
+- **Alcance/archivos:** propuesta C6 en documento 25, actualización de
+  AlanPlan/Handoff; inventario, taxonomía, scope, consulta/paginación, detalle
+  permitido, retención y decisiones/reviewers. No se cambió Java, SQL ni rutas.
+- **Hallazgo relevante:** Auth Staff intenta persistir eventos de fallo y luego
+  lanza StaffAuthenticationException bajo @Transactional; el rollback puede
+  eliminar el evento y la revocación intentada. C6-D06 exige prueba/corrección
+  en el incremento de implementación correspondiente; no se declara auditado
+  el fallo de login en esta entrega.
+- **Revisión local:** fuentes y roles C2 contrastados, cuatro enlaces Markdown
+  válidos, sin trailing whitespace, `git diff --check` PASS. No aplica Maven por
+  ser propuesta documental sin cambios Java/SQL/HTTP.
+- **QA manual:** usuario aprobó la propuesta C6-D01 a D06; guía entregada en
+  `25_BD1_AUDIT_CONTRACT_C6_PROPOSAL.md`. Commit/push autorizados en esta rama.
+  El contrato no prueba un AuditTrail HTTP operativo.
+- **Siguiente paso:** publicar rama; preparar BE-006A/C4 o cerrar dependencias
+  BE-008B en otra rama desde `main` actualizado.
+
 ## BE-014B-COM-02 — Confirmación manual y cierre (2026-10-04)
 
 - **Estado:** COMPLETADA. El usuario ejecutó los tests sin fallos y confirmó
