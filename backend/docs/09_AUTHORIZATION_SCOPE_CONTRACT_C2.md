@@ -30,13 +30,24 @@ BFF, JWT, refresh y separación Guest/Staff.
 | --- | --- |
 | `SUPER_ADMIN` | Todo el catálogo, en todas las propiedades activas autorizadas. |
 | `GERENCIA` | `MULTI_PROPERTY_READ`, `STAFF_MANAGE`, reservas, operaciones de folio/pago, devolución/anulación, operaciones, comercial, auditoría y night audit. Su conjunto sigue limitado a sus properties membership. |
-| `RECEPCION` | `RESERVATION_MANAGE`, `FOLIO_PAYMENT_OPERATE`. No devuelve ni anula pagos. |
+| `RECEPCION` | `RESERVATION_MANAGE`, `FOLIO_PAYMENT_OPERATE`, `SERVICE_REQUEST_INTAKE` (extensión AD-03). No devuelve ni anula pagos ni ejecuta transiciones operativas. |
 | `OPERACIONES` | `OPERATIONS_MANAGE`. |
 | `AUDITOR` | `AUDIT_READ`, solo lectura. |
 
 `GERENCIA` puede gestionar Staff dentro de su conjunto de propiedades y no
 puede crear ni asignar `SUPER_ADMIN`. El flujo administrativo y sus endpoints
 se definen en una tarea posterior; C2 no publica una API de provisionamiento.
+
+### Extensión AD-03 — solicitudes de Recepción
+
+Aprobada por el usuario el 2026-10-04. El changeset
+`003-staff-auth-006` agrega `SERVICE_REQUEST_INTAKE` para `RECEPCION` y
+`SUPER_ADMIN`; `GERENCIA` y `OPERACIONES` conservan `OPERATIONS_MANAGE` para
+el mismo puerto de intake/lectura. La entrada Staff interna permite abrir,
+consultar y listar ServiceRequests por PROPERTY autorizada; no concede
+start/complete/cancel/reopen/assign, mensajería externa ni lectura de otros
+recursos operativos. Esos métodos BD3 y el contrato HTTP requieren entregas
+separadas. El changeset está en BE-014B-OPS-01, pendiente de integración.
 
 ## Regla de scope que deben usar los módulos operativos
 
