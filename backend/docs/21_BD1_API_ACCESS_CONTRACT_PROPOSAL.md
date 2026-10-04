@@ -4,7 +4,13 @@
 **Fecha/base:** 2026-10-04, main `9003567` (PR #73).
 **Rama:** `feature/bd1-api-access-contracts`. **Owner:** Alan / BD1.
 **Reviewers previstos:** José / BD2, Juan / BD3 y consumidores afectados.
-No se han solicitado revisiones externas ni aprobado contratos mediante este documento.
+No se han solicitado revisiones externas. AD-01 y AD-02 cuentan con aprobación
+del usuario; las demás decisiones y contratos HTTP requieren revisión propia.
+
+**Revisión vigente:** BE-014A-FIN-01 en `feature/bd1-api-access-contract-approval`
+desde `main` `d258d60`; AD-02 fue aprobada por el usuario el 2026-10-04.
+AD-01 también está aprobada. AD-03 a AD-06 siguen abiertas; el documento
+completo conserva estado PROPOSED para esas decisiones y contratos HTTP.
 
 ## Autoridad y alcance
 
@@ -59,8 +65,8 @@ Implementado en `feature/bd1-commercial-permissions`: guard compartido en los se
 servicios, flujos GERENCIA/SUPER_ADMIN y casos denegados. Verify final 270 tests
 PASS (45 comerciales), Java 21/PostgreSQL 17 y wrapper Maven 3.9.16. El usuario
 confirmó su QA manual y cerró BE-014B-COM-01; revisión BD3 queda para integración.
-Las otras decisiones, facultades financieras y contratos HTTP
-permanecen pendientes.
+En ese incremento solo AD-01 quedó aprobada; AD-02 se aprobó después en
+BE-014A-FIN-01. AD-03 a AD-06 y los contratos HTTP permanecen pendientes.
 Esta aprobación no transforma el documento completo en CONFIRMED.
 
 ### Incremento BE-014B-COM-02 integrado
@@ -162,8 +168,8 @@ Recepción no evita PAYMENT_REFUND_VOID mediante un reverso contable.
 | Lista/detalle/movimientos/saldo de folios | FOLIO_PAYMENT_OPERATE | Primera lectura PROPERTY; coincide con propuesta FP-D02/doc 20; no permiso financiero implícito para AUDITOR |
 | openFolio/postCharge/postPayment | FOLIO_PAYMENT_OPERATE | Folio y vínculos scoped; PAYMENT actual es contabilidad, no capture del proveedor |
 | settle/reopen/close | FOLIO_PAYMENT_OPERATE | Política FP-D04 y concurrencia aprobadas antes de API; no inventar saldo de cierre |
-| postReversal de CHARGE/ADJUSTMENT | FOLIO_PAYMENT_OPERATE, pendiente AD-02 | Tipo original comprobado en servicio/SQL; motivo y compensación append-only, reverso único concurrente |
-| postReversal de PAYMENT | FOLIO_PAYMENT_OPERATE + PAYMENT_REFUND_VOID, pendiente AD-02 | No acredita refund externo; enlazar operación real según contrato BD2, sin simular devolución ni eludir permiso |
+| postReversal de CHARGE | FOLIO_PAYMENT_OPERATE, AD-02 aprobada | Tipo original comprobado en servicio/SQL; motivo y compensación append-only, reverso único concurrente. El servicio actual rechaza revertir ADJUSTMENT. |
+| postReversal de PAYMENT | FOLIO_PAYMENT_OPERATE + PAYMENT_REFUND_VOID, AD-02 aprobada | No acredita refund externo; enlazar operación real según contrato BD2, sin simular devolución ni eludir permiso |
 | Authorize/capture/garantía Staff (futuro) | FOLIO_PAYMENT_OPERATE | FP-D01/03 y SPI aprobados; idempotencia y referencias de proveedor; garantía pública tiene otro contexto |
 | Void/refund total/parcial (futuro) | FOLIO_PAYMENT_OPERATE + PAYMENT_REFUND_VOID | Importe/moneda/estado válidos según contrato, límite captured y dedupe; solo roles C2 con ambos permisos |
 | Split/routing/transfer (futuro) | FOLIO_PAYMENT_OPERATE | Todos los folios origen/destino autorizados en PROPERTY; FP-D05, moneda y compensaciones confirmadas |
@@ -245,11 +251,42 @@ aceptar esos identificadores como facultad suministrada por el cliente.
 | ID | Propuesta / decisión requerida | Efecto y reviewer |
 | --- | --- | --- |
 | AD-01 — APPROVED por usuario 2026-10-04 | Reutilizar COMMERCIAL_MANAGE para B2B/grupos/blocks/promos/rewards; no crear B2B_MANAGE | Quitar SUPER_ADMIN provisional tras aprobación y pruebas; BD3 + BD1/producto |
-| AD-02 | FOLIO_PAYMENT_OPERATE para lecturas/ordinarias; también PAYMENT_REFUND_VOID para compensar PAYMENT; AUDITOR sin lectura financiera implícita | BD2 + BD1/producto; coordinar FP-D02/04 y distinguir compensación de devolución externa |
+| AD-02 — APPROVED por usuario 2026-10-04 | FOLIO_PAYMENT_OPERATE para lecturas/ordinarias; también PAYMENT_REFUND_VOID para compensar PAYMENT; AUDITOR sin lectura financiera implícita | Revisión de integración del owner financiero y Web pendiente; coordinar FP-D02/04 y distinguir compensación de devolución externa |
 | AD-03 | Definir facultad limitada de RECEPCION sobre ServiceRequests/conserjería/valet y consultas operativas | C2 hoy no le da OPERATIONS_MANAGE; permiso nuevo o contrato de capacidad específica requiere aprobación BD3/producto |
 | AD-04 | Resolver cómo representar Recepción en mensajería y facultad GERENCIA/SUPER_ADMIN | Regla solo Recepción externa frente a C1 SUPER_ADMIN todas las funciones: contradicción real para este flujo; detener su implementación hasta decisión registrada |
 | AD-05 | Delimitar lectura/modificación del master GuestProfile compartido | BD3 + BD1/producto; membership de property no concede modificar todo el CRM |
 | AD-06 | Acceso invoices y futuro AUDITOR financiero si se requiere | BD2 + BD1/producto, FP-D06; no inventar permiso fiscal ni retención |
+
+### Decisión focalizada AD-02 — acceso a folios y reversos
+
+Evidencia de implementación: `FolioServiceImpl.postReversal` acepta como origen
+CHARGE o PAYMENT y rechaza ADJUSTMENT; el movimiento compensatorio es ADJUSTMENT.
+`postPayment` registra contabilidad, no una captura de proveedor. El puerto
+`LocalOperationServiceImpl` ya puede exigir un permiso existente y PROPERTY de
+una sesión Staff vigente, pero FolioService aún recibe UUID/actorId sin ese guard.
+La aprobación aquí fija la **matriz de autorización**, no publica ese método ni
+aprueba FP-D02/FP-D04, rutas HTTP, proveedor, refund o política de cierre.
+
+| Operación de negocio | Permisos Staff aprobados en AD-02 | Roles C2 que los reúnen |
+| --- | --- | --- |
+| Lectura de folio/saldo/movimientos y postings ordinarios CHARGE/PAYMENT | FOLIO_PAYMENT_OPERATE | SUPER_ADMIN, GERENCIA, RECEPCION |
+| Compensar un CHARGE contable | FOLIO_PAYMENT_OPERATE | SUPER_ADMIN, GERENCIA, RECEPCION |
+| Compensar un PAYMENT contable | FOLIO_PAYMENT_OPERATE + PAYMENT_REFUND_VOID | SUPER_ADMIN, GERENCIA |
+| Refund/void de proveedor futuro | FOLIO_PAYMENT_OPERATE + PAYMENT_REFUND_VOID; contrato financiero y adapter separados | SUPER_ADMIN, GERENCIA |
+| Lectura de folio por AUDITOR | Sin acceso implícito por AUDIT_READ | Ninguno hasta decisión expresa AD-06 |
+
+Cada fila requiere la organización y PROPERTY autorizada de la sesión Staff;
+ALL_PROPERTIES no forma parte de la primera lectura propuesta FP-D02. El guard
+de reverso debe cargar el folio y el movimiento original con predicados scoped,
+inspeccionar el tipo original y validar el permiso adicional **antes** de crear
+el movimiento compensatorio. `actorId` no procede del request. Una compensación
+de PAYMENT nunca se presenta como refund externo completado; la conciliación
+con proveedor requiere contrato propio. No se asigna permiso nuevo ni se amplía
+el rol AUDITOR por analogía con AUDIT_READ.
+
+**Aprobación registrada:** el usuario aprobó conjuntamente estas cinco filas el
+2026-10-04. La revisión del owner financiero y de Web sigue pendiente antes de
+integrar la implementación de BE-014B-FIN o publicar FP-D02.
 
 Estas decisiones pueden aprobarse por dominio. AD-03 a AD-06 no bloquean por sí
 solas la corrección scoped de lectura de reservas o el contrato comercial AD-01;

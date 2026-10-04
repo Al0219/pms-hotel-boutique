@@ -1,5 +1,26 @@
 # AlanHandoff — Seguimiento Backend
 
+## BE-014A-FIN-01 — Revisión de acceso financiero AD-02 (2026-10-04)
+
+- **Estado:** COMPLETADA. El usuario aprobó AD-02 y la QA documental; commit y
+  push autorizados en esta rama. Revisión de integración financiera/Web pendiente.
+- **Rama/base:** `feature/bd1-api-access-contract-approval` desde `main`
+  actualizado `d258d60` (PR #97); árbol limpio al iniciar.
+- **DoR/evidencia:** C2 contiene FOLIO_PAYMENT_OPERATE y PAYMENT_REFUND_VOID.
+  RECEPCION posee solo el primero; AUDITOR no posee ninguno. FolioServiceImpl
+  permite reverso de CHARGE/PAYMENT y rechaza ADJUSTMENT; PAYMENT es contable,
+  no acredita devolución del proveedor. LocalOperationServiceImpl valida permiso
+  y property desde la sesión Staff para operaciones locales futuras.
+- **Alcance:** precisar propuesta AD-02 y corregir matriz documental en doc 21;
+  BE-014A/FP-D02 siguen pendientes de aprobación aplicable. Sin código/SQL/HTTP.
+- **QA local:** catálogo C2/servicios/propuesta FP-D02 contrastados; nueve
+  enlaces Markdown válidos y `git diff --check` PASS. Maven no aplica a esta
+  entrega documental.
+- **QA manual:** el usuario aprobó las cinco filas de AD-02 el 2026-10-04.
+- **Siguiente paso:** publicar la rama; revisar con owner financiero y Web antes
+  de integrar implementación/API. AD-03 a AD-06 siguen abiertas y requieren
+  incrementos o decisiones propios en ramas nuevas desde `main` actualizado.
+
 ## BE-006B-SCHEMA-01 — Invariantes Staff C4 (2026-10-04)
 
 - **Estado:** COMPLETADA. El usuario confirmó QA manual sin errores y autorizó
