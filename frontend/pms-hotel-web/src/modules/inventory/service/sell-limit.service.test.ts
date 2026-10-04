@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fetchSellLimits, updateSellLimit } from "./sell-limit.service";
+import { fetchSellLimitsDto, updateSellLimitDto } from "./sell-limit.service";
 
 describe("sell-limit.service", () => {
   beforeEach(() => {
@@ -22,32 +22,36 @@ describe("sell-limit.service", () => {
     updated_at: "2026-09-01T12:00:00Z",
   };
 
-  it("fetches sell limits successfully", async () => {
+  it("fetches sell limits DTO successfully", async () => {
     const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValueOnce({
       ok: true,
       json: async () => ({ items: [mockDto], total_count: 1 }),
     } as Response);
 
-    const result = await fetchSellLimits("prop_boutique_01", "2026-10-01", "2026-10-07");
+    const result = await fetchSellLimitsDto({
+      property_id: "prop_boutique_01",
+      start_date: "2026-10-01",
+      end_date: "2026-10-07",
+    });
 
     expect(fetchSpy).toHaveBeenCalled();
-    expect(result).toHaveLength(1);
-    expect(result[0].limitId).toBe("lim_001");
-    expect(result[0].calculatedATS).toBe(7);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].limit_id).toBe("lim_001");
+    expect(result.items[0].calculated_ats).toBe(7);
   });
 
   it("throws error when fetchSellLimits fails", async () => {
     vi.spyOn(global, "fetch").mockResolvedValueOnce({
       ok: false,
+      status: 404,
       statusText: "Not Found",
+      json: async () => ({ error: { message: "Not Found" } }),
     } as Response);
 
-    await expect(fetchSellLimits("prop_boutique_01")).rejects.toThrow(
-      "Error al consultar límites de venta"
-    );
+    await expect(fetchSellLimitsDto({ property_id: "prop_boutique_01" })).rejects.toThrow();
   });
 
-  it("updates sell limit successfully", async () => {
+  it("updates sell limit DTO successfully", async () => {
     const updatedDto = { ...mockDto, overbooking_limit: 3, calculated_ats: 8 };
 
     const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValueOnce({
@@ -55,16 +59,16 @@ describe("sell-limit.service", () => {
       json: async () => updatedDto,
     } as Response);
 
-    const result = await updateSellLimit({
-      propertyId: "prop_boutique_01",
-      roomTypeId: "rt_deluxe_king",
+    const result = await updateSellLimitDto({
+      property_id: "prop_boutique_01",
+      room_type_id: "rt_deluxe_king",
       date: "2026-10-01",
-      overbookingLimit: 3,
-      sellLimit: null,
+      overbooking_limit: 3,
+      sell_limit: null,
     });
 
     expect(fetchSpy).toHaveBeenCalled();
-    expect(result.overbookingLimit).toBe(3);
-    expect(result.calculatedATS).toBe(8);
+    expect(result.overbooking_limit).toBe(3);
+    expect(result.calculated_ats).toBe(8);
   });
 });

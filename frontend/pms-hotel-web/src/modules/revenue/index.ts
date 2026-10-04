@@ -5,4 +5,6 @@
  */
 
 export * from './model/revenue-kpi';
+export { useRevenueKpis, type UseRevenueKpisResult } from './hooks/use-revenue-kpis';
 export { RevenueDashboard } from './components/RevenueDashboard';
+

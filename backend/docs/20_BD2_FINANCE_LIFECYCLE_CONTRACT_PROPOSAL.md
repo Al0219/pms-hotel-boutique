@@ -1,6 +1,7 @@
 # Propuesta BD2 — Folio/Payments y lifecycle de reservas
 
-**Estado:** PROPOSED; requiere revisión/aprobación por entrega antes de código.
+**Estado:** SH-D01 local APPROVED en documento 21; restantes propuestas requieren
+revisión/aprobación por entrega antes de código.
 **Fecha/base:** 2026-10-02, main `9eb2380`. **Owner:** José / BD2.
 **Reviewers propuestos:** BD1 (Auth/permisos/integraciones), BD3 (efectos de
 reservas/operación/comercial), WEB-4 (finanzas), WEB-3 (lifecycle), WEB-1
@@ -106,9 +107,15 @@ en la implementación. No generar Swagger de estas rutas mientras sigan propuest
 
 ## Propuesta SH-D01: idempotencia de escritura
 
+**Actualización:** el usuario aprobó la base local descrita en
+[contrato 21](21_BD2_LOCAL_IDEMPOTENCY_CONTRACT.md). La implementación local
+reutiliza Reservations/Folio, sin proveedor ni expiración automática. La parte
+de efectos externos/recovery descrita abajo continúa propuesta con BD1.
+
 La regla confirmada es misma clave + mismo payload -> resultado original;
-misma clave + payload distinto -> conflicto. La solución persistente siguiente
-requiere acuerdo BD1/BD2 antes de fase 1:
+misma clave + payload distinto -> conflicto. La propuesta original siguiente
+se conserva como contexto: documento 21 confirma la parte local; encabezados,
+códigos HTTP y efectos externos requieren su acuerdo antes de implementarlos:
 
 1. Exigir Idempotency-Key en las operaciones financieras/lifecycle que el contrato
    identifique como reintentables. Delimitar unicidad por contexto de actor,
@@ -126,8 +133,9 @@ requiere acuerdo BD1/BD2 antes de fase 1:
    la misma identidad estable en la deduplicación del proveedor cuando la soporte.
 
 Campos conceptuales: identidad de operación, alcance, clave/hash, versión,
-resultado/referencias y tiempos. Estados, nombre de tabla, límites de clave,
-caducidad y estrategia de recuperación aún no son contrato aprobado.
+resultado/referencias y tiempos. Documento 21 confirma tabla, límites de clave,
+recibo local y ausencia de caducidad automática. Los estados externos y su
+estrategia de recuperación siguen sin contrato aprobado.
 
 DB y proveedor no comparten una transacción. Propuesta: persistir intención,
 ejecutar llamada fuera de locks de inventario/folio, y confirmar resultado +

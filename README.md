@@ -31,6 +31,22 @@ Los valores predeterminados son solo para desarrollo local. Copiar
 contraseña local de PostgreSQL. Android se ejecuta fuera de Compose mediante
 Expo, porque requiere un emulador o dispositivo del host.
 
+## Presentación del Backend con Postman
+
+Desde la raíz, con Docker Desktop abierto:
+
+```powershell
+docker compose -f compose.demo.yaml up -d --build --wait --wait-timeout 300
+```
+
+Backend real y PostgreSQL con base independiente y usuario local `demo.profesor`,
+contraseña de muestra `DemoHotel2026!SoloLocal`. Swagger en
+http://127.0.0.1:18080/swagger-ui/index.html. Importar en Postman
+`backend/postman/Backend-Demo.postman_collection.json`, seleccionar **No environment**
+y ejecutar la colección en orden. No requiere configurar .env ni copiar tokens/IDs.
+No incluye Web/Android; valores públicos solo para presentación local.
+Pasos y límites: [guía de demostración](backend/docs/22_BACKEND_DEMO.md).
+
 ## Estado
 
 - Figma V3 finalizado.

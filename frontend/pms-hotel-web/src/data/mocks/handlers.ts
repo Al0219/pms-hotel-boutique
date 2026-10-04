@@ -3,14 +3,14 @@ import { http, HttpResponse } from "msw";
 import { private07Handlers } from "./private-07";
 import { private09Handlers } from "./private-09";
 
-import type { AvailabilityMatrixResponseDto } from "@/modules/availability/dtos/availability.dto";
+import type { AvailabilityMatrixResponseDto } from "@/modules/availability";
 import type {
   FolioDto,
   SplitChargeRequestDto,
   SplitChargeResultDto,
   TransferChargeRequestDto,
   TransferChargeResultDto,
-} from "@/modules/folio/dtos/folio.dto";
+} from "@/modules/folio";
 import type {
   AuthorizePaymentRequestDto,
   CapturePaymentRequestDto,
@@ -20,21 +20,19 @@ import type {
   PaymentListResponseDto,
   RefundPaymentRequestDto,
   VoidPaymentRequestDto,
-} from "@/modules/payments/dtos/payment.dto";
+} from "@/modules/payments";
 import type {
   RatePlanDto,
   RatePlanListResponseDto,
-} from "@/modules/rates/dtos/rate-plan.dto";
-import type {
   RateRestrictionDto,
   BatchUpdateRateRestrictionsPayloadDto,
   RateRestrictionBatchResultDto,
-} from "@/modules/rates/dtos/rate-restriction.dto";
+} from "@/modules/rates";
 import type {
   SellLimitDto,
   UpdateSellLimitRequestDto,
   SellLimitListResponseDto,
-} from "@/modules/inventory/dtos/sell-limit.dto";
+} from "@/modules/inventory";
 
 export const mockAvailabilitySuccessDto = {
   property_id: "prop_boutique_01",
@@ -246,6 +244,9 @@ function handleGetFolioById({ params }: { params: Record<string, string | readon
   if (folioId === "error_folio") {
     return HttpResponse.json({ error: "Folio Internal Error" }, { status: 500 });
   }
+  if (folioId === "fol_unauthorized") {
+    return HttpResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   if (folioId === "missing_folio") {
     return HttpResponse.json({ error: "Folio Not Found" }, { status: 404 });
   }
@@ -337,6 +338,28 @@ async function handleTransferChargeRequest({ params, request }: { params: Record
     reason: body.reason,
     transferred_at: new Date().toISOString(),
     updated_source_folio: updatedSourceFolio,
+  };
+
+  return HttpResponse.json(response);
+}
+
+async function handleCreateRoutingRule({ params, request }: { params: Record<string, string | readonly string[] | undefined>; request: Request }) {
+  const folioId = typeof params.id === "string" ? params.id : "fol_guest_101";
+  const body = (await request.json()) as any;
+
+  if (folioId === "error_folio") {
+    return HttpResponse.json({ error: "Failed to create rule" }, { status: 500 });
+  }
+
+  const response: any = {
+    rule_id: `rule_${Date.now()}`,
+    source_folio_id: folioId,
+    target_folio_id: body.target_folio_id,
+    category: body.category || body.charge_category || "ROOM",
+    charge_category: body.category || body.charge_category || "ROOM",
+    percentage: body.percentage || body.split_percentage || 100,
+    split_percentage: body.percentage || body.split_percentage || 100,
+    created_at: new Date().toISOString(),
   };
 
   return HttpResponse.json(response);
@@ -1377,58 +1400,58 @@ async function handleUpdateSellLimit({ request }: { request: Request }) {
 
 function handleGetRevenueKpis({ request }: { request: Request }) {
   const url = new URL(request.url);
-  const propertyId = url.searchParams.get("propertyId") || "prop_boutique_01";
-  const startDate = url.searchParams.get("startDate") || "2023-10-01";
+  const propertyId = url.searchParams.get("property_id") || url.searchParams.get("propertyId") || "prop_boutique_01";
+  const startDate = url.searchParams.get("start_date") || url.searchParams.get("startDate") || "2023-10-01";
   
   if (propertyId === "error_property") {
     return HttpResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 
   const mockResponse = {
-    propertyId: propertyId,
+    property_id: propertyId,
     currency: "USD",
     summary: {
-      occupancyPercent: 82.5,
+      occupancy_percent: 82.5,
       adr: 215.5,
-      revPar: 177.78,
+      rev_par: 177.78,
       pickup: 12,
       pace: 5.4,
-      totalRoomsSold: 240,
-      totalRoomsAvailable: 290,
-      totalRevenue: 51720,
+      total_rooms_sold: 240,
+      total_rooms_available: 290,
+      total_revenue: 51720,
     },
     daily: [
       {
         date: startDate,
-        occupancyPercent: 80,
+        occupancy_percent: 80,
         adr: 200,
-        revPar: 160,
+        rev_par: 160,
         pickup: 2,
         pace: 1.5,
-        roomsSold: 40,
-        roomsAvailable: 50,
+        rooms_sold: 40,
+        rooms_available: 50,
         revenue: 8000,
       },
       {
         date: "2023-10-02",
-        occupancyPercent: 85,
+        occupancy_percent: 85,
         adr: 220,
-        revPar: 187,
+        rev_par: 187,
         pickup: 5,
         pace: 2.1,
-        roomsSold: 42,
-        roomsAvailable: 50,
+        rooms_sold: 42,
+        rooms_available: 50,
         revenue: 9240,
       },
       {
         date: "2023-10-03",
-        occupancyPercent: 90,
+        occupancy_percent: 90,
         adr: 250,
-        revPar: 225,
+        rev_par: 225,
         pickup: 8,
         pace: 3.5,
-        roomsSold: 45,
-        roomsAvailable: 50,
+        rooms_sold: 45,
+        rooms_available: 50,
         revenue: 11250,
       },
     ],
@@ -1477,6 +1500,8 @@ export const handlers = [
   http.post("/api/v1/private/folios/:id/split-charge", handleSplitChargeRequest),
   http.post("http://pms.test/api/v1/private/folios/:id/transfer-charge", handleTransferChargeRequest),
   http.post("/api/v1/private/folios/:id/transfer-charge", handleTransferChargeRequest),
+  http.post("http://pms.test/api/v1/private/folios/:id/routing-rules", handleCreateRoutingRule),
+  http.post("/api/v1/private/folios/:id/routing-rules", handleCreateRoutingRule),
   http.get("http://pms.test/api/v1/private/payments", handleGetPayments),
   http.get("/api/v1/private/payments", handleGetPayments),
   http.get("http://pms.test/api/v1/private/payments/:id", handleGetPaymentById),

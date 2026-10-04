@@ -47,6 +47,11 @@ export {
 } from "./mappers/payment.mapper";
 
 export {
+  usePayments,
+  type UsePaymentsResult,
+} from "./hooks/use-payments";
+
+export {
   authorizePaymentDto,
   capturePaymentDto,
   createPaymentGuaranteeDto,
@@ -55,6 +60,10 @@ export {
   refundPaymentDto,
   voidPaymentDto,
 } from "./service/payment.service";
+
+export {
+  PaymentsPage,
+} from "./components/payments-page";
 
 export {
   PaymentListCard,

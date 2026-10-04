@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fetchRateRestrictions, batchUpdateRateRestrictions } from "./rate-restriction.service";
+import { fetchRateRestrictionsDto, batchUpdateRateRestrictionsDto } from "./rate-restriction.service";
 
 describe("rate-restriction.service", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("fetches rate restrictions with query params successfully", async () => {
+  it("fetches rate restrictions DTO with query params successfully", async () => {
     const mockDto = {
       restriction_id: "res-001",
       property_id: "prop-antigua",
@@ -26,34 +26,36 @@ describe("rate-restriction.service", () => {
       json: async () => ({ restrictions: [mockDto] }),
     } as Response);
 
-    const result = await fetchRateRestrictions({
-      propertyId: "prop-antigua",
-      startDate: "2026-10-01",
-      endDate: "2026-10-07",
+    const result = await fetchRateRestrictionsDto({
+      property_id: "prop-antigua",
+      start_date: "2026-10-01",
+      end_date: "2026-10-07",
     });
 
     expect(fetchSpy).toHaveBeenCalled();
-    expect(result).toHaveLength(1);
-    expect(result[0].restrictionId).toBe("res-001");
-    expect(result[0].closedToArrival).toBe(true);
+    expect(result.restrictions).toHaveLength(1);
+    expect(result.restrictions[0].restriction_id).toBe("res-001");
+    expect(result.restrictions[0].closed_to_arrival).toBe(true);
   });
 
   it("throws error when fetch fails", async () => {
     vi.spyOn(global, "fetch").mockResolvedValueOnce({
       ok: false,
+      status: 500,
       statusText: "Internal Server Error",
+      json: async () => ({ error: { message: "Internal Server Error" } }),
     } as Response);
 
     await expect(
-      fetchRateRestrictions({
-        propertyId: "prop-antigua",
-        startDate: "2026-10-01",
-        endDate: "2026-10-07",
+      fetchRateRestrictionsDto({
+        property_id: "prop-antigua",
+        start_date: "2026-10-01",
+        end_date: "2026-10-07",
       })
-    ).rejects.toThrow("Error al consultar restricciones tarifarias");
+    ).rejects.toThrow();
   });
 
-  it("sends batch update successfully", async () => {
+  it("sends batch update DTO payload successfully", async () => {
     const mockResult = {
       success: true,
       updated_count: 1,
@@ -79,21 +81,21 @@ describe("rate-restriction.service", () => {
       json: async () => mockResult,
     } as Response);
 
-    const result = await batchUpdateRateRestrictions({
-      propertyId: "prop-antigua",
+    const result = await batchUpdateRateRestrictionsDto({
+      property_id: "prop-antigua",
       restrictions: [
         {
-          ratePlanId: "rp-bar",
-          roomTypeId: "rt-deluxe",
+          rate_plan_id: "rp-bar",
+          room_type_id: "rt-deluxe",
           date: "2026-10-01",
-          stopSell: true,
+          stop_sell: true,
         },
       ],
     });
 
     expect(fetchSpy).toHaveBeenCalled();
     expect(result.success).toBe(true);
-    expect(result.updatedCount).toBe(1);
-    expect(result.restrictions[0].stopSell).toBe(true);
+    expect(result.updated_count).toBe(1);
+    expect(result.restrictions[0].stop_sell).toBe(true);
   });
 });

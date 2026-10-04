@@ -173,6 +173,42 @@ Registrar ID, fecha, status, contexto, problema, decisión, alternativas, consec
 
 ## Backend — Foundation aprobada
 
+### DEC-B-010 — Traspaso de implementación Backend BD2
+
+**Fecha:** 2026-10-03. **Status:** APPROVED por decisión explícita del usuario.
+**Responsables receptores:** Alan / BD1 y Juan / BD3.
+
+**Contexto/problema:** tras la primera revisión, falta completar Frontend y Backend.
+El usuario decide concentrar a José en Frontend y continuar Backend con Alan/Juan.
+**Decisión:** ambos asumen conjuntamente los pendientes de BD2, conservando su
+código, pruebas, contratos, autoría y estados reales de publicación/integración.
+El reparto detallado del documento 23 es PROPOSED hasta acuerdo entre ellos.
+**Alternativas:** mantener a José en ambos frentes conserva la carga que el
+usuario decidió redistribuir; rehacer servicios existentes perdería lo entregado.
+**Consecuencias:** supersede el ownership de trabajos pendientes en DEC-B-008;
+no borra la decisión previa ni modifica reglas, módulos, APIs, DoR/DoD o permisos.
+José continúa Frontend; alcance puntual se organiza con las fuentes de esa área.
+Entrega documental BE-HANDOFF-001; revisiones de código/CI aún pendientes no se
+declaran completadas por este traspaso. Receptores revisan ramas y acuerdan tareas.
+
+### DEC-B-009 — Compose de presentación Backend aislado
+
+**Fecha:** 2026-10-02. **Status:** APPROVED por petición explícita del usuario.
+**Owner:** José / BD2. **Reviewer:** Alan / BD1 (runtime compartido).
+
+**Problema:** presentar la API exigía overrides, variables y cinco colecciones.
+**Decisión:** compose.demo.yaml reutiliza backend/PostgreSQL existentes con
+proyecto/volumen propios, puerto backend limitado a loopback y bootstrap Staff
+existente. Usuario/contraseña son valores públicos sintéticos solo de muestra;
+no credenciales reales. Una colección Postman propaga tokens/IDs sin environment.
+**Alternativas:** mantener configuración manual dificulta la revisión; modificar
+la pila habitual mezclaría credenciales/datos de demo con el desarrollo normal.
+**Consecuencias:** excepción explícita de presentación local a DEC-B-003/004,
+sin cambiar la pila habitual, APIs, permisos, módulos ni secretos de despliegue.
+Google/Resend no se configuran. La demo no se usa en nube; backend/BFF de la
+pila habitual conserva su perímetro. Booking e idempotencia interna se muestran
+con tests reales, sin inventar endpoints. Tracking BE-DEMO-001; PR requiere revisión BD1.
+
 ### DEC-B-008 — Reparto de la siguiente etapa Backend
 
 **Fecha:** 2026-10-02

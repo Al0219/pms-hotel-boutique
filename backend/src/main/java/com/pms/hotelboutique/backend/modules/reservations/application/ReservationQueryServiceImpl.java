@@ -62,11 +62,8 @@ public class ReservationQueryServiceImpl implements ReservationQueryService {
         if (folioId == null) {
             throw new ReservationQueryException("folio id is required");
         }
-        Folio folio = folios.findById(folioId)
+        Folio folio = folios.findByIdAndPropertyIdIn(folioId, authorizedIds(scope))
                 .orElseThrow(() -> new ReservationQueryException("folio not found"));
-        if (!authorizedIds(scope).contains(folio.getPropertyId())) {
-            throw new ReservationQueryException("not authorized for this property");
-        }
         return FolioView.from(folio);
     }
 

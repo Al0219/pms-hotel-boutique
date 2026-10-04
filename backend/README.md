@@ -26,6 +26,19 @@ sobrescribirse en el archivo `.env` raíz basado en `.env.example`.
 Liquibase crea y modifica el esquema. No se crean tablas manualmente ni se usa
 `ddl-auto=update`.
 
+## Presentación con un comando
+
+Desde la raíz del monorepo:
+
+```powershell
+docker compose -f compose.demo.yaml up -d --build --wait --wait-timeout 300
+```
+
+Levanta todo el backend y PostgreSQL con base propia, puerto local 18080 y usuario
+de muestra creado automáticamente. Importar la colección única Backend-Demo,
+seleccionar No environment y ejecutarla. Ver [guía](docs/22_BACKEND_DEMO.md) para
+credenciales públicas de muestra, demostración de cada BD, tests y persistencia.
+
 ## Migraciones
 
 Las migraciones viven bajo `db/changelog/<nnn>Service<Modulo>/`. Cada módulo es

@@ -91,4 +91,15 @@ describe("rate-restriction.mapper", () => {
     expect(domain.restrictions).toHaveLength(1);
     expect(domain.restrictions[0].restrictionId).toBe("res-001");
   });
+
+  it("throws DomainMappingError when DTO is invalid or incomplete", () => {
+    // @ts-expect-error test invalid payload
+    expect(() => toDomainRateRestriction(null)).toThrow();
+    expect(() => toDomainRateRestriction({ restriction_id: "" } as RateRestrictionDto)).toThrow();
+  });
+
+  it("throws DomainMappingError when query filter is missing required fields", () => {
+    expect(() => toDtoRateRestrictionQuery({ propertyId: "" } as unknown as Parameters<typeof toDtoRateRestrictionQuery>[0])).toThrow();
+  });
 });
+

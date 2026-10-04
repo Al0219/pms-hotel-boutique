@@ -1,29 +1,35 @@
 export interface RevenueKpiDailyDto {
   date: string;
-  occupancyPercent: number;
+  occupancy_percent: number;
   adr: number;
-  revPar: number;
+  rev_par: number;
   pickup: number;
   pace: number;
-  roomsSold: number;
-  roomsAvailable: number;
+  rooms_sold: number;
+  rooms_available: number;
   revenue: number;
 }
 
 export interface RevenueKpiSummaryDto {
-  occupancyPercent: number;
+  occupancy_percent: number;
   adr: number;
-  revPar: number;
+  rev_par: number;
   pickup: number;
   pace: number;
-  totalRoomsSold: number;
-  totalRoomsAvailable: number;
-  totalRevenue: number;
+  total_rooms_sold: number;
+  total_rooms_available: number;
+  total_revenue: number;
 }
 
 export interface RevenueKpiResponseDto {
-  propertyId: string;
+  property_id: string;
   currency: string;
   summary: RevenueKpiSummaryDto;
   daily: RevenueKpiDailyDto[];
+}
+
+export interface RevenueKpiRequestDto {
+  property_id: string;
+  start_date: string;
+  end_date: string;
 }

@@ -47,3 +47,8 @@ export interface RateRestrictionBatchResultDto {
   restrictions: RateRestrictionDto[];
   error_message?: string;
 }
+
+export interface RateRestrictionListResponseDto {
+  restrictions: RateRestrictionDto[];
+}
+

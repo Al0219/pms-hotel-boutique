@@ -6,8 +6,12 @@
 export type {
   AvailabilityMatrixQueryDto,
   AvailabilityMatrixResponseDto,
+  AvailabilityResponseDto,
+  AvailabilitySearchQueryDto,
+  AvailableRoomTypeDto,
   DailyRoomTypeAvailabilityDto,
   PropertyDailySummaryDto,
+  RatePlanOptionDto,
   RoomTypeMatrixDto,
 } from "./dtos/availability.dto";
 
@@ -46,6 +50,10 @@ export {
 export {
   fetchAvailabilityMatrixDto,
 } from "./service/availability-matrix.service";
+
+export {
+  AvailabilityPage,
+} from "./components/availability-page";
 
 export {
   AvailabilityMatrixGrid,

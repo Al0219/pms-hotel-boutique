@@ -1,0 +1,72 @@
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  background-color: var(--color-system-error-soft, #f5e3e3);
+  border: 1px solid rgba(168, 84, 84, 0.25);
+  border-radius: var(--radius-md, 8px);
+  color: var(--color-system-error, #a85454);
+  text-align: center;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: var(--color-system-error, #a85454);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 480px;
+}
+
+.title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--pms-color-neutral-900, #1c201a);
+  margin: 0;
+}
+
+.message {
+  font-size: 0.875rem;
+  color: var(--pms-color-neutral-700, #4a4e49);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.code {
+  font-size: 0.75rem;
+  font-family: monospace;
+  color: var(--pms-color-neutral-500, #737871);
+  margin-top: 0.25rem;
+}
+
+.retryButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: var(--pms-color-brand-primary, #32473c);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.retryButton:hover {
+  background-color: var(--pms-color-brand-secondary, #435e50);
+}
+
+.retryButton:focus-visible {
+  outline: 2px solid var(--pms-color-brand-accent, #c9933f);
+  outline-offset: 2px;
+}

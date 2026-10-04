@@ -2,6 +2,7 @@ package com.pms.hotelboutique.backend.modules.reservations.infrastructure.persis
 
 import com.pms.hotelboutique.backend.modules.reservations.domain.Folio;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,4 +18,7 @@ public interface FolioRepository extends JpaRepository<Folio, UUID> {
      * SQL predicate (C2 rule). Never query globally and filter in memory.
      */
     List<Folio> findByPropertyIdIn(Set<UUID> propertyIds);
+
+    /** Detail reads must restrict properties in SQL, before loading a folio. */
+    Optional<Folio> findByIdAndPropertyIdIn(UUID folioId, Set<UUID> propertyIds);
 }
