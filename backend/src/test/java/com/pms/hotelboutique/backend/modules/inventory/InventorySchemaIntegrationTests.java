@@ -131,6 +131,15 @@ class InventorySchemaIntegrationTests {
                     assertTrue(result.next());
                     assertEquals(5, result.getInt(1));
                 }
+                var legacyStaff = UUID.randomUUID();
+                try (var insert = isolated.prepareStatement("INSERT INTO " + schema
+                        + ".staff_users(id,username,work_email,password_hash,role_code,status,created_at,updated_at) "
+                        + "VALUES (?,?,?,'test-only-unused-hash','GERENCIA','ACTIVE',now(),now())")) {
+                    insert.setObject(1, legacyStaff);
+                    insert.setString(2, legacyStaff.toString());
+                    insert.setString(3, legacyStaff + "@example.test");
+                    insert.executeUpdate();
+                }
                 migrate(schema, "classpath:db/changelog/db.changelog-master.yaml");
                 // An upgrade must match the fresh runtime schema, including newer modules.
                 try (var result = sql.executeQuery("SELECT count(*) FROM " + schema + ".databasechangelog")) {
@@ -152,6 +161,11 @@ class InventorySchemaIntegrationTests {
                     assertTrue(result.next());
                     assertEquals("HB-GT-001", result.getString(1));
                     assertFalse(result.next());
+                }
+                try (var result = sql.executeQuery("SELECT version FROM " + schema
+                        + ".staff_users WHERE id='" + legacyStaff + "'")) {
+                    assertTrue(result.next());
+                    assertEquals(0L, result.getLong(1));
                 }
             } finally {
                 sql.execute("DROP SCHEMA " + schema + " CASCADE");

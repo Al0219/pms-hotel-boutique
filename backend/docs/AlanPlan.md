@@ -742,6 +742,31 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
   usuario. Sin Java/SQL/HTTP nuevo, por lo que no aplica Maven a esta entrega
   documental. Commit/push autorizados en la rama C4.
 
+#### BE-006B-SCHEMA-01 — Invariantes de persistencia Staff C4
+
+- **Estado:** COMPLETADA (2026-10-04). QA manual sin errores confirmada por el
+  usuario; commit/push autorizados en esta rama.
+- **Rama/base:** `feature/bd1-staff-admin-schema` desde `main` actualizado `5ba93ae`.
+- **DoR:** C4-D02/D06 aprobadas; BE-006A integrada. La unicidad de una
+  membership por Staff ya existe en `003-one-role-per-staff.yaml`; no requiere
+  una segunda constraint. BE-014A y revisión HTTP/BFF siguen pendientes para
+  el CRUD BE-006B.
+- **Alcance/archivos:** nuevo changeset 003 y pruebas PostgreSQL para correo
+  Staff único normalizado, propiedad dentro de la organización de membership y
+  versión de concurrencia. Documentar consultas previas a migración sin
+  transformar datos históricos. Sin CRUD, endpoints, revocación ni Guest Auth.
+- **Aceptación/DoD:** migración falla si existen datos incompatibles, sin borrar
+  registros; inserciones cruzadas o correos con distinto case se rechazan;
+  Staff existente obtiene versión inicial 0. Ejecutar integración y `verify`,
+  `git diff --check`, entregar QA manual y esperar confirmación antes de cerrar.
+- **Evidencia local:** `verify` PostgreSQL 17/Java 21: 302 pruebas PASS, cero
+  fallos/errores y BUILD SUCCESS. Las 8 pruebas focalizadas de constraints y
+  upgrade histórico pasan tras comprobar la versión de un Staff preexistente.
+  Guía: `docs/27_BD1_STAFF_SCHEMA_MIGRATION_QA.md`.
+- **QA manual:** el usuario ejecutó las pruebas indicadas y confirmó que todas
+  terminaron sin errores. El CRUD HTTP BE-006B permanece pendiente de BE-014A
+  y revisión de los contratos con Web.
+
 ### BE-013 — OTP y vínculo de reservas históricas
 
 - **Estado:** BE-013A PENDIENTE; BE-013B PENDIENTE.

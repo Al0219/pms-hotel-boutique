@@ -1,0 +1,30 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-staff-auth-005
+      author: alan
+      changes:
+        - addColumn:
+            tableName: staff_users
+            columns:
+              - column:
+                  name: version
+                  type: bigint
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE staff_users ADD CONSTRAINT ck_staff_users_version CHECK (version >= 0)
+        - sql:
+            dbms: postgresql
+            sql: CREATE UNIQUE INDEX uq_staff_users_work_email_normalized ON staff_users (lower(btrim(work_email)))
+        - addUniqueConstraint:
+            tableName: properties
+            columnNames: id, organization_id
+            constraintName: uq_properties_id_organization
+        - addForeignKeyConstraint:
+            baseTableName: membership_properties
+            baseColumnNames: property_id, organization_id
+            constraintName: fk_membership_properties_property_organization
+            referencedTableName: properties
+            referencedColumnNames: id, organization_id
