@@ -1,8 +1,8 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   images: { unoptimized: true },
-  outputFileTracingRoot: undefined,
   typescript: {
     ignoreBuildErrors: true,
   },
