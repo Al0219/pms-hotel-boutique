@@ -557,16 +557,17 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 
 ### BE-014 — Protección transversal de APIs y permisos
 
-- **Estado:** BE-014A EN_QA — propuesta y revisión local PASS; aprobación
-  por dominio pendiente. BE-014B EN_PROGRESO — incremento COM-01 en QA;
+- **Estado:** BE-014A EN_QA — AD-01 y AD-02 aprobadas; AD-03 a AD-06 y
+  contratos HTTP pendientes. BE-014B EN_PROGRESO — COM-01/02 completados;
   otros dominios pendientes. Prioridad inicial.
 - **Entrega:** `21_BD1_API_ACCESS_CONTRACT_PROPOSAL.md` PROPOSED: catálogo SQL C2,
   matrices de acceso, brechas de scope/actor/filtros, decisiones AD-01 a AD-06 y
   acceptance por dominio. Nueve enlaces y referencias/guards contrastados;
   diff --check PASS. Sin Java/SQL ni nueva ejecución Maven.
-- **Decisión inmediata:** AD-01 propone COMMERCIAL_MANAGE para los seis servicios
-  comerciales; AD-02 concreta permisos financieros y AUDITOR. Revisar con owners
-  antes de BE-014B. AD-04 bloquea envío externo por contradicción Reception/SUPER_ADMIN.
+- **Decisión inmediata:** AD-01 y AD-02 aprobadas por el usuario para Commercial
+  y la matriz financiera, respectivamente. Revisar integración con owners antes
+  de BE-014B. AD-03 a AD-06 siguen abiertas; AD-04 bloquea envío externo por
+  contradicción Reception/SUPER_ADMIN.
 - **Rama:** `feature/bd1-api-access-contracts`, creada desde main `9003567` antes
   de editar esta entrega; conserva cambios documentales previos.
 - **Inicio autorizado:** 2026-10-04; inventario de interfaces, SQL C2 y cadenas
@@ -594,6 +595,31 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
   chains/guards/repos de cada dominio, tests HTTP/SQL, Liquibase RBAC solo si aprobado;
   consumidores BFF/DTO/Mapper afectados bajo coordinación de owner.
 - **Reviewers:** BD2/BD3 para su dominio; consumidores Web/Android si cambia API.
+
+#### BE-014A-FIN-01 — Confirmación de permisos financieros AD-02
+
+- **Estado:** COMPLETADA (2026-10-04). El usuario aprobó AD-02 y la QA
+  documental; revisión de integración del owner financiero y Web pendiente.
+- **Rama/base:** `feature/bd1-api-access-contract-approval` desde `main`
+  actualizado `d258d60` (PR #97 integra el esquema Staff).
+- **DoR:** C2 y catálogo SQL existentes; propuesta BE-014A/documento 21 y
+  FP-D02/documento 20 disponibles; FolioServiceImpl y LocalOperationServiceImpl
+  inspeccionados. Al iniciar este incremento, AD-01 comercial era la única
+  decisión de acceso ya aprobada.
+- **Alcance/archivos:** precisar AD-02 en `docs/21_BD1_API_ACCESS_CONTRACT_PROPOSAL.md`
+  y seguimiento. Corregir la fila de reversos al comportamiento real: el servicio
+  permite CHARGE/PAYMENT y rechaza ADJUSTMENT. Sin Java, SQL, rutas, permisos nuevos
+  ni aprobación de FP-D02/04 o del proveedor de pagos.
+- **Aceptación/DoD:** matriz de rol/operación/scope trazable al catálogo C2 y al
+  método actual; distinguir compensación contable de refund externo; decisión
+  explícita sobre AUDITOR. Revisar diff/enlaces, entregar QA documental y esperar
+  aprobación antes de cerrar, commit o push.
+- **Evidencia local:** catálogo C2, FolioServiceImpl, LocalOperationServiceImpl
+  y propuesta FP-D02 contrastados; nueve enlaces locales válidos y
+  `git diff --check` PASS. Maven no aplica: solo cambia documentación.
+- **QA manual:** aprobación explícita del usuario de las cinco filas AD-02;
+  cierre, commit y push autorizados. BE-014A global sigue EN_QA para AD-03 a
+  AD-06 y contratos HTTP pendientes.
 
 #### BE-014B-COM-01 — Reutilización del permiso comercial
 
