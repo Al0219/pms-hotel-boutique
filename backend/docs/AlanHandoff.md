@@ -1,5 +1,33 @@
 # AlanHandoff — Seguimiento Backend
 
+## BE-006A — Aprobación y cierre del contrato Staff C4 (2026-10-04)
+
+- **Estado:** COMPLETADA. El usuario aprobó C4-D01 a D07 tras recibir la guía
+  de revisión. BE-006B/C permanecen PENDIENTES de sus dependencias y del contrato
+  HTTP/BFF final; revisión Web/BD2/BD3 pendiente para integración.
+- **Rama/base:** `feature/bd1-staff-admin-contract-c4` creada desde `main`
+  actualizado `fdc2ed3` (PR #95); C6 integrado por PR #94.
+  `../docs/entregables/` preexistente queda intacto.
+- **DoR/evidencia:** C1/C2 y BE-002/003/005 disponibles; C6 aprobado. Schema
+  003 define StaffUser, roles, membership, sessions y refresh; BFF actual solo
+  ofrece sesión Staff. No existe CRUD administrativo Staff. El PK compuesto de
+  organization_memberships permite varias organizaciones para un usuario pese
+  al único rol/membership C2, y `role_code` vive en StaffUser y membership.
+- **Alcance/archivos:** contrato C4 propuesto en documento 26 y seguimiento;
+  operaciones, scope, protección de administradores, revocación/audit,
+  concurrencia y BFF. No modificar Java, SQL ni Web en esta tarea.
+- **Hallazgos:** membership PK permite varias organizaciones; StaffUser.roleCode
+  duplica el rol efectivo de membership; workEmail SQL es único con distinción de
+  mayúsculas; el BFF solo tiene sesión/refresh, no CRUD. C4 propone constraints,
+  sincronización y rutas candidatas, sin presentarlas como implementadas.
+- **QA local:** seis enlaces Markdown válidos, fuentes C1/C2/C6 y schema/Java
+  contrastados, `git diff --check` PASS. Maven no aplica: sin cambio de código.
+- **QA manual:** el usuario aprobó documento 26/C4-D01 a D07. No se afirma que
+  exista CRUD HTTP ni revocación administrativa funcional. Commit/push autorizados
+  en la rama C4; `../docs/entregables/` queda intacto.
+- **Siguiente paso:** publicar la rama; preparar BE-014A/contrato API y
+  migración/auditoría de BE-006B en otra rama desde `main` actualizado.
+
 ## BE-008A — Aprobación y cierre del contrato AuditTrail C6 (2026-10-04)
 
 - **Estado:** COMPLETADA. El usuario aprobó C6-D01 a D06 tras recibir la guía
