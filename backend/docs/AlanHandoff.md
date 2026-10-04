@@ -1,5 +1,196 @@
 # AlanHandoff — Seguimiento Backend
 
+## BE-014B-COM-01 — Confirmación manual y cierre (2026-10-04)
+
+- **Estado:** COMPLETADA para el incremento comercial. El usuario ejecutó los
+  comandos de `22_BD1_COMMERCIAL_MANUAL_QA.md` sin errores y confirmó cerrar
+  esta tarea. La suite local previa sigue en 270 tests PASS (45 comerciales),
+  Java 21/PostgreSQL 17, JAR y `git diff --check` PASS.
+- **Rama/base:** `feature/bd1-commercial-permissions` sobre `9003567`.
+  Commit y push autorizados por el usuario tras su QA; registrar hash y remoto
+  en la respuesta de publicación. `main` no se modifica.
+- **Alcance cerrado:** permiso C2 COMMERCIAL_MANAGE en los seis servicios
+  internos. No se publican rutas HTTP comerciales en este incremento; el
+  contrato HTTP, la sesión/actor en nuevos controllers y el scope SQL adicional
+  pertenecen a las entregas BE-014B posteriores.
+- **Siguiente paso:** commit/push de la rama; revisión BD3 durante integración.
+  Abrir otra rama al iniciar la siguiente tarea de implementación y repetir
+  entrega de pruebas manuales antes de su cierre/publicación.
+
+## BE-014B-COM-01 — QA manual solicitada (2026-10-04)
+
+- **Estado:** EN_QA. El usuario definió una regla permanente: presentar pruebas
+  manuales al finalizar cada tarea; esperar su resultado y confirmación antes
+  de COMPLETADA, commit y push. Esta entrega todavía no tiene confirmación manual.
+- **Rama/base:** `feature/bd1-commercial-permissions`, main `9003567`.
+  No se ha creado commit, hecho push ni cambiado main.
+- **Guía entregada:** `22_BD1_COMMERCIAL_MANUAL_QA.md`. Desde `backend/`, ejecutar
+  las cuatro suites comerciales en Compose con PostgreSQL 17 y wrapper Maven;
+  comprobar 45 tests PASS (13 + 13 + 12 + 7), cero failures/errors/skipped y
+  revisar `target/surefire-reports/`. El comando de limpieza está en la guía.
+- **Evidencia automática previa:** verify completo local 270 tests PASS, Java 21,
+  PostgreSQL 17 y wrapper Maven 3.9.16; `git diff --check` PASS. No sustituye
+  la ejecución/confirmación del usuario.
+- **Límite verificable:** estos servicios aún no tienen API HTTP Commercial;
+  la guía comprueba servicios internos con Spring/PostgreSQL, no login ni Postman.
+- **Siguiente paso:** recibir resultado del usuario; corregir fallos si aparecen.
+  Tras confirmación, actualizar AlanPlan/Handoff a COMPLETADA y hacer commit/push
+  en esta rama. La revisión BD3 corresponde al flujo de publicación posterior.
+
+## BE-014B-COM-01 — Implementación y QA local PASS (2026-10-04)
+
+- **Estado:** EN_QA — implementación y revisión local PASS. Revisión de owner BD3
+  y publicación pendientes; no se marca todo BE-014B como COMPLETADO.
+- **Rama/base:** `feature/bd1-commercial-permissions` creada antes del código;
+  main `9003567` conserva su commit. Sin commit/push/PR; planificación previa
+  local preservada y entregables externos al backend intactos.
+- **Decisión:** usuario aprobó explícitamente AD-01/COMMERCIAL_MANAGE.
+  AD-02 a AD-06 y contratos HTTP de los otros dominios no están aprobados aquí.
+- **Entregado:** CommercialAuthorization.requireManage comprueba permiso efectivo
+  y falla ante snapshot ausente o permissions nulo. Company/Agency/EventGroup/
+  RoomBlock/Promotion/Reward sustituyen todos sus requireSuperAdmin, incluyendo
+  llamadas delegadas de RoomBlock. Interfaces documentan el contrato interno C2.
+  SUPER_ADMIN también necesita el permiso en su snapshot; C2 ya lo asigna junto
+  a GERENCIA. No se crea B2B_MANAGE ni se modifica catálogo/migraciones/roles.
+- **Pruebas:** fixtures SUPER_ADMIN reflejan COMMERCIAL_MANAGE real; ciclos de
+  empresa/agencia/grupo/block/promo/rewards parametrizados para GERENCIA y
+  SUPER_ADMIN; aislamiento existente probado también como GERENCIA. Nueva suite
+  deniega lecturas/escrituras de los seis servicios antes de lookup para roles sin
+  permiso, snapshot null y permission set null; incluye rechazo de redeem.
+- **QA enfocada inicial:** wrapper Maven 3.9.16 en Java 21/PostgreSQL 17,
+  cuatro suites seleccionadas, 42 tests PASS. Se agregaron luego tres variantes
+  de aislamiento y una aserción de redeem; la suite completa final incluye todo.
+- **QA completa inicial:** compose original con Maven de imagen 3.9.11,
+  270 tests PASS. Como el wrapper fija 3.9.16, se revalida el DoD con éste.
+- **QA final obligatoria:** `./mvnw -B --no-transfer-progress verify`, wrapper
+  Maven 3.9.16, Temurin 21/PostgreSQL 17 desechable; BUILD SUCCESS, 270 tests,
+  0 failures, 0 errors, 0 skipped y JAR empaquetado. De éstos, 45 comerciales:
+  CommercialService 13, GroupService 13, PromotionReward 12, CommercialPermission 7.
+  Auth, Inventory, Reservations y otras regresiones incluidas sin exclusiones.
+- **Comando reproducible desde backend:** crear override Compose con
+  `services.verify.command: ["./mvnw", "-B", "--no-transfer-progress", "verify"]`;
+  ejecutar `docker compose -p pms-bd1-commercial-qa -f compose.bd2-test.yaml
+  -f /tmp/pms-bd1-wrapper-verify.yaml up --abort-on-container-exit
+  --exit-code-from verify`. Override y log `/tmp/pms-bd1-wrapper-verify.log`
+  son artefactos locales efímeros; no hay secretos de aplicación ni puertos host.
+- **Revisión:** cambio Java limitado a comprobación de permiso/comentarios;
+  scope, lifecycle, dinero y auditoría existentes conservados. Diff --check PASS;
+  sin cambios resources/pom/workflows. No prueba Google/Resend/providers en vivo.
+- **Límites:** APIs Commercial todavía no existen. Snapshot/scope/actor internos
+  mantienen sus firmas; antes de HTTP se requieren sesión activa, actor confiable
+  y hardening SQL de recursos relacionados descritos en documento 21.
+  Este incremento no declara completa la protección transversal ni acceso Guest.
+- **Siguiente paso:** revisión BD3 del incremento y publicación al autorizarse;
+  continuar hardening de acceso interno/SQL en rama nueva para la siguiente tarea.
+  Acordar AD-02 con BD2 sin asumir aprobación de políticas financieras.
+
+## BE-014B-COM-01 — Inicio del permiso comercial (2026-10-04)
+
+- **Estado:** EN_PROGRESO. AD-01 aprobado por el usuario; otras decisiones pendientes.
+- **Rama/base:** `feature/bd1-commercial-permissions` creada antes de editar;
+  base commit `9003567`, documentación previa conservada, sin commit/push/PR.
+- **DoR:** aprobación explícita COMMERCIAL_MANAGE, permiso C2 existente y
+  asignado a GERENCIA/SUPER_ADMIN. Sin nuevos roles/permisos/migraciones.
+- **Alcance/archivos:** guard compartido de permiso en seis servicios Commercial,
+  contratos internos actualizados y pruebas positivas/negativas de regresión.
+- **Límite:** este incremento no publica REST ni completa sesiones/actor/scope
+  de nuevas APIs. Los hardenings relacionados del documento 21 siguen pendientes.
+- **Validación prevista:** suites Commercial enfocadas, verify completo Java 21/
+  PostgreSQL 17 aislado en Docker, diff y handoff. Socket Docker requiere escalación.
+- **Siguiente paso:** cambiar guards y fixtures según catálogo real; ejecutar QA.
+
+## BE-014A — Propuesta preparada para revisión (2026-10-04)
+
+- **Estado:** EN_QA; revisión documental local PASS. Documento 21 PROPOSED;
+  no aprobado y BE-014B PENDIENTE. No se declara protección funcional implementada.
+- **Rama/base:** `feature/bd1-api-access-contracts`, main `9003567`; creada antes
+  de editar esta entrega. Sin commit/push/PR. Instrucción de rama nueva por tarea
+  registrada en AlanPlan; los cambios anteriores siguen preservados.
+- **Entregado:** documento 21: nueve permisos/roles contrastados con SQL C2,
+  superficies y brechas reales, matrices Reservations/Finanzas/Operations/
+  Commercial/Audit/Guest, contexto/scope/actor/transporte/errores, seis decisiones
+  y acceptance para cada incremento BE-014B. No inventa endpoints de dominios
+  que aún no tienen controllers ni confirma propuestas financieras de BD2.
+- **Hallazgos nuevos:** Staff/Guest filtros restringidos a prefijos Auth; Inventory
+  tiene chain dedicada. Seis servicios comerciales tienen guard SUPER_ADMIN,
+  incluido RoomBlock que delega en EventGroup. Queries de detalle Reservation/Folio
+  y enlaces/rewards requieren scope SQL antes de load. APIs externas siguen pendientes.
+- **Propuesta inmediata:** AD-01 reutiliza COMMERCIAL_MANAGE para empresas,
+  agencias, grupos/blocks/promociones/rewards; AD-02 reutiliza permisos financieros
+  C2, añade condición PAYMENT_REFUND_VOID para reverso PAYMENT y conserva AUDITOR
+  sin lectura financiera implícita. Son decisiones propuestas, no cambios al catálogo.
+- **Contradicción real AD-04:** regla global solo Recepción responde externamente
+  frente a C1 SUPER_ADMIN todas las funciones. No implementar autorización de ese
+  flujo hasta decisión registrada; otros dominios pueden avanzar con su propio DoR.
+- **Validación:** script documental PASS: 9 enlaces existentes, 10 referencias
+  explícitas de clases, 6 guards Commercial (incluye delegación RoomBlock), 9 códigos
+  del SQL y AD-01 a AD-06. git diff --check PASS. Inspección de interfaces/servicios,
+  chains y queries; sin Maven, sandbox externo o smoke funcional en esta entrega.
+- **Pendientes/reviewers:** aprobación AD-01 con BD3/BD1 y AD-02 con BD2/BD1;
+  AD-03/04 permisos y regla de mensajería, AD-05 master profile, AD-06 invoices.
+  Reviewers previstos, sin contactos externos ni revisión de owners ejecutada.
+- **Siguiente paso:** decidir AD-01 y preparar BE-014B Commercial en rama nueva,
+  con guards/actor/queries/pruebas según contrato aprobado. Nunca trasladar esta
+  propuesta a producción como si todos los contratos ya estuvieran CONFIRMED.
+
+## BE-014A — Inicio de matriz de acceso transversal (2026-10-04)
+
+- **Estado:** EN_PROGRESO — propuesta documental; BE-014B permanece PENDIENTE.
+- **Rama/base:** `feature/bd1-api-access-contracts`, creada desde main `9003567`
+  antes de modificar esta entrega. Sin commit/push/PR.
+- **Autorización:** usuario permite iniciar y exige una rama nueva por tarea.
+  Esta regla queda también en AlanPlan; no se trabaja directamente en main.
+- **DoR de preparación:** BE-002/003/005 completadas según registro; C1/C2/C3 y
+  documento 20 revisados; interfaces y SQL del catálogo real inventariados.
+  No hay contratos HTTP publicados para Operations/Commercial/Reservations;
+  la matriz no inventa sus rutas y registra revisión pendiente de BD2/BD3.
+- **Alcance:** proponer reutilización C2, matriz por operación y brechas de
+  autorización/scope/actor; criterios para futura implementación por dominio.
+- **Archivos:** nuevo contrato de acceso propuesto, AlanPlan y AlanHandoff.
+- **Cambios previos:** planificación local de la sesión anterior conservada;
+  entregables en raíz no se modifican. Java/SQL/permisos siguen sin cambios.
+- **Siguiente paso:** preparar documento 21 y revisar referencias/cobertura;
+  después obtener decisiones aplicables antes de código BE-014B.
+
+## BD1-PLAN-20261004 — Plan de las once responsabilidades de Alan
+
+- **Fecha/base:** 2026-10-04; checkout local main `9003567`, PR #73 integrado.
+- **Estado:** planificación documental preparada y revisada; todas las nuevas
+  implementaciones PENDIENTES. No aprueba contratos ni declara trabajo funcional completo.
+- **Solicitud:** organizar protección de APIs/permisos, integraciones/channels,
+  reportes/export/KPIs, Staff/memberships/sesiones, MFA/privacidad, AuditTrail,
+  OTP histórico, Google/Resend de presentación y adapters pagos/mensajería.
+- **Rama/commit/PR de esta entrega:** sin rama nueva, commit, push ni PR; cambios
+  documentales locales en los dos archivos solicitados. No se ha iniciado código.
+- **Cambios previos conservados:** AlanPlan tenía actualizaciones locales del
+  registro de módulos y tareas BE-006 a BE-013; se integran/amplían sin eliminar
+  su alcance. `docs/entregables/` en raíz estaba sin seguimiento y no se modifica.
+- **Entregado:** AlanPlan mapea 11 requisitos, orden de fases y coordinación,
+  contratos/decisiones pendientes, DoR/aceptación/archivos/reviewers por tarea y
+  DoD común. Conserva BE-001 a BE-005 y BD2; desglosa BE-006/007/008/010/011/012/013
+  y añade BE-014 acceso, BE-015 adapters, BE-016 presentación y BE-017 cierre.
+- **Base técnica comprobada:** controllers actuales Auth/Inventory; servicios y
+  esquema Reservations/Operations/Commercial existentes; Promotions/Rewards con
+  SUPER_ADMIN provisional. GuestProfile y ReservationLinkService ya existen;
+  ReservationLinkVerificationPort sigue vacío. Google/Resend tienen adapters,
+  pero no se validaron externamente en esta revisión.
+- **Contratos vigentes:** C1/C2/C3. Roles fijos consultables/asignables; CRUD de
+  roles personalizables exigiría modificar C2. MFA Staff requiere modificar C1
+  y aprobar C8. Documento financiero 20 permanece PROPOSED. C4-C9, matriz nueva
+  y SPIs/provider requieren revisión/aprobación; SH-D01 se coordina con BD2.
+- **Reviewers previstos:** BD2 por finanzas/inventario/dedupe/providers; BD3 por
+  reservas/operaciones/comercial/mensajería/OTP; consumidores y producto cuando
+  cambien contratos, fórmulas o política. No se han enviado mensajes externos.
+- **Validación de esta entrega:** lectura de docs/AGENTS/XLSX, contratos y código;
+  cobertura 1-11, IDs/dependencias/referencias, diff y git diff --check revisados.
+  Sin cambios Java/SQL/seguridad/configuración ni ejecución Maven: la evidencia
+  histórica de 254 tests PASS no valida las implementaciones pendientes.
+- **Pendientes:** acordar matriz de acceso, C4/C6 y SH-D01; proveedores/sandbox,
+  fórmulas C7, C8/C9 y entorno de presentación sin confirmación en este plan.
+- **Siguiente paso:** preparar BE-014A con owners BD2/BD3; después contratos
+  BE-008A/C6 y BE-006A/C4. BE-016A y los otros contratos independientes pueden
+  avanzar sin esperar finanzas. Marcar READY solo al completar DoR de cada incremento.
+
 ## BD2-FP-000 — Fase 0 financiera y lifecycle (2026-10-02)
 
 - **Rama/base:** `feature/bd2-finance-lifecycle-contracts`, origin/main `9eb2380`.

@@ -9,8 +9,8 @@ import java.util.UUID;
 /**
  * BD3 B2B agency operations (F12 base).
  *
- * <p>Temporary authorization: SUPER_ADMIN only until BD1 owns a dedicated
- * B2B permission ({@code TODO(BD1): alta B2B_MANAGE}). No delete is offered;
+ * <p>Authorization requires the effective {@code COMMERCIAL_MANAGE} permission
+ * and an explicit authorized property context. No delete is offered;
  * agencies are deactivated to preserve history. Commission model is a label
  * only; commission math belongs to a later phase and never reduces the
  * guest price.</p>

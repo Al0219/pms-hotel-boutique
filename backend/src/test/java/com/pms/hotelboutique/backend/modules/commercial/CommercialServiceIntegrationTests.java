@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -59,11 +61,15 @@ class CommercialServiceIntegrationTests {
     DataSource dataSource;
 
     private static StaffAuthorizationSnapshot superAdmin(UUID... properties) {
+        return commercialStaff("SUPER_ADMIN", properties);
+    }
+
+    private static StaffAuthorizationSnapshot commercialStaff(String role, UUID... properties) {
         var access = java.util.Arrays.stream(properties)
                 .map(id -> new StaffAuthorizationSnapshot.PropertyAccess(
                         id, id.toString(), "Hotel", "America/Guatemala", "GTQ"))
                 .toList();
-        return new StaffAuthorizationSnapshot(ORGANIZATION, "SUPER_ADMIN", Set.of(), access);
+        return new StaffAuthorizationSnapshot(ORGANIZATION, role, Set.of("COMMERCIAL_MANAGE"), access);
     }
 
     private static StaffAuthorizationSnapshot recepcion(UUID... properties) {
@@ -80,9 +86,10 @@ class CommercialServiceIntegrationTests {
                 AuthorizedPropertyScope.Type.PROPERTY, Set.of(properties));
     }
 
-    @Test
-    void createsListsUpdatesAndDeactivatesCompany() {
-        var auth = superAdmin(SEED_PROPERTY);
+    @ParameterizedTest
+    @ValueSource(strings = {"SUPER_ADMIN", "GERENCIA"})
+    void createsListsUpdatesAndDeactivatesCompany(String role) {
+        var auth = commercialStaff(role, SEED_PROPERTY);
         var created = companies.create(auth, new CreateCompanyCommand(
                 SEED_PROPERTY, "ACME-" + UUID.randomUUID(), "Acme Corp", "NIT-1",
                 "billing@acme.test", "+502 5555 0001"), null);
@@ -105,9 +112,10 @@ class CommercialServiceIntegrationTests {
         assertEquals(Company.Status.ACTIVE, reactivated.status());
     }
 
-    @Test
-    void createsAgencyWithCommissionLabelOnly() {
-        var auth = superAdmin(SEED_PROPERTY);
+    @ParameterizedTest
+    @ValueSource(strings = {"SUPER_ADMIN", "GERENCIA"})
+    void createsAgencyWithCommissionLabelOnly(String role) {
+        var auth = commercialStaff(role, SEED_PROPERTY);
         var created = agencies.create(auth, new CreateAgencyCommand(
                 SEED_PROPERTY, "OTA-" + UUID.randomUUID(), "Viajes Test",
                 Agency.CommissionModel.PERCENT, "ops@viajes.test", null), null);
@@ -120,8 +128,9 @@ class CommercialServiceIntegrationTests {
         assertEquals(Agency.CommissionModel.FIXED, updated.commissionModel());
     }
 
-    @Test
-    void isolatesByScopeAndRejectsNonSuperAdmin() {
+    @ParameterizedTest
+    @ValueSource(strings = {"SUPER_ADMIN", "GERENCIA"})
+    void isolatesByScopeAndRejectsStaffWithoutPermission(String role) {
         UUID otherProperty = UUID.randomUUID();
         UUID otherOrganization = UUID.randomUUID();
         jdbc.update("INSERT INTO organizations(id,name,code,status,created_at,updated_at)"
@@ -131,8 +140,8 @@ class CommercialServiceIntegrationTests {
                 + " VALUES (?,?,'Other',?,'America/Guatemala','GTQ','ACTIVE',now(),now())",
                 otherProperty, otherOrganization, otherProperty.toString());
 
-        var auth = superAdmin(SEED_PROPERTY, otherProperty);
-        var foreign = superAdmin(otherProperty);
+        var auth = commercialStaff(role, SEED_PROPERTY, otherProperty);
+        var foreign = commercialStaff(role, otherProperty);
         var reception = recepcion(SEED_PROPERTY);
 
         var company = companies.create(auth, new CreateCompanyCommand(

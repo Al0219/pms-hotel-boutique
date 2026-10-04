@@ -22,6 +22,8 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -56,11 +58,15 @@ class GroupServiceIntegrationTests {
     JdbcTemplate jdbc;
 
     private static StaffAuthorizationSnapshot superAdmin(UUID... properties) {
+        return commercialStaff("SUPER_ADMIN", properties);
+    }
+
+    private static StaffAuthorizationSnapshot commercialStaff(String role, UUID... properties) {
         var access = java.util.Arrays.stream(properties)
                 .map(id -> new StaffAuthorizationSnapshot.PropertyAccess(
                         id, id.toString(), "Hotel", "America/Guatemala", "GTQ"))
                 .toList();
-        return new StaffAuthorizationSnapshot(ORGANIZATION, "SUPER_ADMIN", Set.of(), access);
+        return new StaffAuthorizationSnapshot(ORGANIZATION, role, Set.of("COMMERCIAL_MANAGE"), access);
     }
 
     private static StaffAuthorizationSnapshot recepcion(UUID... properties) {
@@ -93,9 +99,10 @@ class GroupServiceIntegrationTests {
                 LocalDate.parse("2026-11-01")), null).id();
     }
 
-    @Test
-    void advancesLifecycleOneStepAtATime() {
-        var auth = superAdmin(SEED_PROPERTY);
+    @ParameterizedTest
+    @ValueSource(strings = {"SUPER_ADMIN", "GERENCIA"})
+    void advancesLifecycleOneStepAtATime(String role) {
+        var auth = commercialStaff(role, SEED_PROPERTY);
         var created = groups.create(auth, new CreateEventGroupCommand(
                 SEED_PROPERTY, "LC-" + UUID.randomUUID(), "Boda",
                 null, null, LocalDate.parse("2026-12-01"), LocalDate.parse("2026-12-03"), null),
@@ -114,9 +121,10 @@ class GroupServiceIntegrationTests {
                 () -> groups.advance(auth, scope(SEED_PROPERTY), created.id(), null));
     }
 
-    @Test
-    void holdsLinksAndCountsPickup() {
-        var auth = superAdmin(SEED_PROPERTY);
+    @ParameterizedTest
+    @ValueSource(strings = {"SUPER_ADMIN", "GERENCIA"})
+    void holdsLinksAndCountsPickup(String role) {
+        var auth = commercialStaff(role, SEED_PROPERTY);
         UUID groupId = groupFixture(auth);
         UUID roomType = roomTypeFixture();
 
@@ -182,8 +190,9 @@ class GroupServiceIntegrationTests {
                 auth, scope(SEED_PROPERTY), groupId, "GTQ", null));
     }
 
-    @Test
-    void rejectsCrossPropertyCompanyAndScopeLeaks() {
+    @ParameterizedTest
+    @ValueSource(strings = {"SUPER_ADMIN", "GERENCIA"})
+    void rejectsCrossPropertyCompanyAndScopeLeaks(String role) {
         UUID otherProperty = UUID.randomUUID();
         UUID otherOrganization = UUID.randomUUID();
         jdbc.update("INSERT INTO organizations(id,name,code,status,created_at,updated_at)"
@@ -197,7 +206,7 @@ class GroupServiceIntegrationTests {
                 + " VALUES (?,?,?,'Foreign','ACTIVE',now(),now())",
                 foreignCompany, otherProperty, "F-" + UUID.randomUUID());
 
-        var auth = superAdmin(SEED_PROPERTY, otherProperty);
+        var auth = commercialStaff(role, SEED_PROPERTY, otherProperty);
         assertThrows(CommercialException.class, () -> groups.create(auth,
                 new CreateEventGroupCommand(SEED_PROPERTY, "X-" + UUID.randomUUID(), "X",
                         foreignCompany, null, LocalDate.parse("2026-11-10"),
@@ -209,9 +218,9 @@ class GroupServiceIntegrationTests {
         assertThrows(AccessDeniedException.class, () -> blocks.openMasterFolio(
                 reception, scope(SEED_PROPERTY), UUID.randomUUID(), "GTQ", null));
 
-        UUID groupId = groupFixture(superAdmin(SEED_PROPERTY));
+        UUID groupId = groupFixture(commercialStaff(role, SEED_PROPERTY));
         assertThrows(CommercialException.class, () -> groups.get(
-                superAdmin(otherProperty), scope(otherProperty), groupId));
+                commercialStaff(role, otherProperty), scope(otherProperty), groupId));
     }
 
     @Test

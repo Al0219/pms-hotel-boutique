@@ -32,8 +32,13 @@ en `AlanHandoff.md`.
 | Prefijo | Módulo | Dueño | Estado |
 | --- | --- | --- | --- |
 | 001 | ServicePagos | Por asignar | Reservado |
-| 002 | ServiceManagement | BD1 (base) / BD2 (core) | `002-management-001` en BE-003; `002-management-002` en BD2-001 |
-| 003 | ServiceSecurityAuth | Alan / BD1 | `003-staff-auth-001` (BE-002) y `002`/`003` de RBAC (BE-003) |
+| 002 | ServiceManagement | BD1 (base) / BD2 (core) | Organization/Property, inventario, catálogo y disponibilidad implementados. |
+| 003 | ServiceSecurityAuth | Alan / BD1 | Auth Staff/Guest, RBAC y sesiones implementados. |
+| 004 | ServiceReservations | BD3 | GuestProfile, Reservations, Stays, Folio y AuditTrail de reservas implementados. |
+| 005 | ServiceOperations | BD3 | Housekeeping, mantenimiento, solicitudes y Night Audit implementados. |
+| 006 | ServiceCommercial | BD3 | B2B, grupos, promociones y rewards implementados. |
+| 007 | ServiceIntegrations | Alan | Reservado para BE-007; no hay changesets creados. |
+| 008 | ServiceAudit | Alan | Reservado para BE-008; no hay changesets creados. |
 
 Cada módulo agrega versiones internas consecutivas. Una migración aplicada no
 se renombra ni modifica. El changelog completo incluye módulos según sus
@@ -372,6 +377,430 @@ contrato aplicable aprobado y dependencias COMPLETADAS; no implementar desde moc
 | BD2-LC-004 / 7A room move | PENDIENTE | FP-001/003; LC-D04/SH-D02/HK |
 | BD2-LC-005 / 7B extensión | PENDIENTE | FP-001/003; LC-D05/SH-D02/cotización |
 | BD2-FP-LC-QA / 8 integración | PENDIENTE | Entregas incluidas y SPIs reales COMPLETADAS |
+
+## Alan / BD1 — Plan de implementación integral
+
+**Actualización:** 2026-10-04. **Base inspeccionada:** main `9003567` (PR #73).
+**Owner:** Alan / BD1. **Estado del programa:** EN_PROGRESO — AD-01 aprobado;
+BE-014B-COM-01 implementado/en QA; otros incrementos pendientes.
+El usuario solicita planificar sus once responsabilidades y usar AlanPlan/AlanHandoff
+para control. La planificación y el inicio de BE-014A están autorizados; no confirman por sí solos
+los contratos API, permisos nuevos, proveedores ni reglas pendientes.
+Se conserva el seguimiento anterior BE-001 a BE-005 y BD2.
+
+### Punto de partida verificado
+
+- BE-001 a BE-005 completadas según handoff: Foundation, Staff/Guest Auth, C2 y BFF.
+- Inventario/ATS/admisión y catálogos C/R/U integrados. Booking usa admisión
+  transaccional en el contexto completo; otros escritores deben coordinar sus locks.
+- Reservations/Folio, Operations y Commercial tienen servicios y migraciones.
+  La inspección de controllers encuentra HTTP de Auth e Inventory; no una API
+  completa de reservas, operaciones, comercial o finanzas.
+- PromotionServiceImpl y RewardServiceImpl exigen SUPER_ADMIN provisionalmente.
+  No quitar estas restricciones hasta aprobar y probar su permiso sustituto.
+- GuestProfile y ReservationLinkService ya existen. Este último resuelve referencia
+  y correo; ReservationLinkVerificationPort es una interfaz vacía. Falta contrato
+  invocable, desafío OTP y asociación autorizada; no esperar la creación del módulo.
+- GoogleOidcClientImpl y ResendEmailSender existen. Esta planificación no prueba
+  Google ni entrega de correo en vivo. Su disponibilidad externa queda SIN VERIFICAR.
+- C1/C2/C3 vigentes: Guest/Staff separados, un rol Staff fijo, permisos desde BD,
+  scope explícito; MFA Staff excluido hasta modificar C1. Roles no personalizables.
+- Último verify documentado: 254 tests PASS en BD2-010, antes de la entrega
+  documental PR #73. No representa una ejecución nueva ni QA de este programa.
+
+### Cobertura de los once requisitos del usuario
+
+| # | Responsabilidad | Tareas de entrega |
+| --- | --- | --- |
+| 1 | Protección APIs de reservas, operaciones, comercial y finanzas | BE-014A/B |
+| 2 | Permisos comerciales/financieros y sustitución de SUPER_ADMIN provisional | BE-014A/B con BD2/BD3 |
+| 3 | Centro de integraciones, channels, error queue, retries y recuperación | BE-007A/B, BE-009, BE-015A/B |
+| 4 | Reportes, exportaciones y revenue KPIs desde datos reales | BE-010A/B |
+| 5 | CRUD Staff, roles y memberships según contratos | BE-006A/B |
+| 6 | Revocación administrativa y por cambios sensibles | BE-006B/C |
+| 7 | MFA Staff, privacidad y consentimientos | BE-011A/B, BE-012A/B |
+| 8 | AuditTrail consultable, filtros, scope y paginación | BE-008A/B |
+| 9 | Vínculo OTP de reservas históricas | BE-013A/B |
+| 10 | Google y Resend en presentación | BE-016A/B |
+| 11 | Adapters de pagos y mensajería coordinados | BE-015A/B |
+
+Los sufijos A son contratos/preparación; B son implementación/validación y C,
+cuando existe, cierre específico. No se marca completada la tarea padre hasta
+cerrar todos sus incrementos incluidos. Cada incremento nace PENDIENTE y pasa
+READY solo al cumplir su DoR; una dependencia contractual exige A COMPLETADA,
+una dependencia funcional exige B/C COMPLETADA según la entrega.
+
+### Orden de entrega y dependencias
+
+| Fase | Entregas | Condición de entrada / salida |
+| --- | --- | --- |
+| 0 — acuerdos | BE-014A, BE-008A, BE-006A, BE-007A, BE-015A, BE-013A, BE-016A | Inventario real y revisores; salida: contratos aplicables aprobados, decisiones abiertas explícitas y entorno de presentación identificado |
+| 1 — acceso y administración | BE-014B por dominio, BE-008B, BE-006B/C | Acuerdos A; auditoría inicial reutiliza auth_audit_events/AuditService y se integra al contrato común sin duplicar historia |
+| 2 — Guest verificable | BE-013B, BE-016B | C3 + SPI/contrato OTP; Google/Resend configurados y evidencia de entrega real para cierre externo |
+| 3 — integraciones | BE-007B, BE-015B, BE-009 | Idempotencia compartida y adapters aprobados; cada proveedor se cierra con sandbox y consumidores reales |
+| 4 — analítica | BE-010A/B | Fórmulas/fuentes confirmadas; ingresos financieros reales disponibles para ADR/RevPAR y filtros por business date |
+| 5 — MFA y privacidad | BE-011A/B, BE-012A/B | Cambio de C1/C8 y C9 aprobados; contratos pueden prepararse desde fase 0 |
+| 6 — cierre | BE-017 | Entregas incluidas completas, integración BD2/BD3, aceptación y presentación verificadas |
+
+Este orden es de prioridad, no una dependencia artificial entre todas las fases.
+Contratos independientes y preparación de Google/Resend pueden avanzar sin esperar
+pagos; reportes independientes pueden entregarse cuando sus propias fuentes estén
+listas. No declarar KPIs completos si faltan ingresos, fórmulas o business date.
+Sin estimaciones de fechas hasta conocer contratos, disponibilidad BD2/BD3 y sandbox.
+
+### Reglas de coordinación y decisiones pendientes
+
+| Decisión | Autoridad / revisión | Qué debe quedar confirmado |
+| --- | --- | --- |
+| Acceso por operación | BD1 + BD2/BD3; consumidores Web/Android afectados | Matriz contexto/ruta/permiso/rol/scope/actor, acceso público y Guest, errores y BFF; reutilizar C2 antes de proponer permisos nuevos |
+| C4 administración | BD1 + producto | Campos, unicidad, alcance GERENCIA, protección administrativa, baja/retención y cambio de membership; roles fijos consultables/asignables |
+| Roles personalizables | Producto, Change Control C2 | Solo si se solicita/aprueba cambiar el catálogo fijo; no forma parte automática de BE-006 |
+| C5 integraciones | BD1 + BD2/BD3 | Categorías/proveedores, secret references, callbacks, retry/backoff, estados inciertos, recuperación e idempotencia |
+| C6 auditoría | BD1 + owners emisores | Taxonomía, eventos existentes, retención, detalle seguro, filtros/paginación y acceso org/property |
+| C7 analítica | Producto + BD1/BD2/BD3 | Fórmulas, numeradores/denominadores, descuentos/reembolsos, moneda, timezone, business date y fuentes SQL |
+| C8 MFA / cambio C1 | Producto + BD1 | Factor, usuarios obligados, enrolamiento, desafío, recuperación, revocación, límites y auditoría |
+| C9 privacidad | Producto + BD1/BD3 | Propósitos/canales, evidencia, titularidad GuestProfile, retenciones y DSR |
+| C3 extensión OTP | BD1 + BD3 + consumidor Guest | Firma del puerto, endpoints/DTO/BFF, vínculo persistente y carreras; mantener reglas OTP ya aprobadas |
+| SH-D01 de BD2 | BD1 + BD2 | Servicio/persistencia compartidos de dedupe, namespace, payload canónico, retención y recuperación; no dos motores incompatibles |
+| SPIs externos | BD1 + BD2 pagos / BD3 mensajería | Dueño del efecto, proveedor/sandbox, moneda/métodos, callback auténtico, delivery/status y recuperación |
+
+Alan coordina la protección y contratos compartidos. BD2/BD3 mantienen las reglas
+de negocio y aprueban cambios a sus servicios; Alan no crea un segundo booking,
+folio, night audit ni motor comercial. En cada PR queda claro quién incorpora
+controllers/BFF y quién asegura autorización en entradas internas. Una fachada
+segura no sustituye scope/permiso en el servicio y predicados SQL en repositorios.
+
+### BE-014 — Protección transversal de APIs y permisos
+
+- **Estado:** BE-014A EN_QA — propuesta y revisión local PASS; aprobación
+  por dominio pendiente. BE-014B EN_PROGRESO — incremento COM-01 en QA;
+  otros dominios pendientes. Prioridad inicial.
+- **Entrega:** `21_BD1_API_ACCESS_CONTRACT_PROPOSAL.md` PROPOSED: catálogo SQL C2,
+  matrices de acceso, brechas de scope/actor/filtros, decisiones AD-01 a AD-06 y
+  acceptance por dominio. Nueve enlaces y referencias/guards contrastados;
+  diff --check PASS. Sin Java/SQL ni nueva ejecución Maven.
+- **Decisión inmediata:** AD-01 propone COMMERCIAL_MANAGE para los seis servicios
+  comerciales; AD-02 concreta permisos financieros y AUDITOR. Revisar con owners
+  antes de BE-014B. AD-04 bloquea envío externo por contradicción Reception/SUPER_ADMIN.
+- **Rama:** `feature/bd1-api-access-contracts`, creada desde main `9003567` antes
+  de editar esta entrega; conserva cambios documentales previos.
+- **Inicio autorizado:** 2026-10-04; inventario de interfaces, SQL C2 y cadenas
+  revisado. Contratos HTTP operativos aún no disponibles: se documentan como
+  pendientes sin inventar rutas, y se prepara propuesta para revisión BD2/BD3.
+- **Dependencias:** BE-002/003/005; A requiere inventario BD2/BD3, B requiere A
+  COMPLETADA y contrato del endpoint disponible. Entrega B separada por dominio.
+- **DoR A:** identificar entradas HTTP y de servicio existentes/propuestas;
+  reunir C2, documento 20 y contratos de operaciones/comercial con sus owners.
+- **Entrega A:** matriz por operación de reservas/stays/folios/pagos/HK/OOO/OOS/
+  night audit/B2B/grupos/promos/rewards; contexto Staff/Guest/público, permiso,
+  PROPERTY/ALL_PROPERTIES, actor, pertenencia de recurso y errores. Confirmar
+  operaciones financieras que exigen devolución/anulación y acceso del AUDITOR.
+  No copiar permisos de mocks ni autorizar recursos por UUID o correo.
+- **DoR B:** matriz y nuevos permisos, si hacen falta, aprobados mediante Change
+  Control; servicio y rutas aplicables confirmados. B no inventa APIs ajenas.
+- **Entrega B:** guards de servicio, chains de seguridad y repositorios scoped;
+  actores desde sesión; reemplazar SUPER_ADMIN provisional solo donde el contrato
+  lo indique; BFF/OpenAPI coordinados. No query global + filtro posterior.
+- **Aceptación:** ausencia/token inválido/Guest cruzado/sesión revocada -> 401;
+  Staff sin permiso o property -> 403; recurso ajeno no revela datos ni existencia;
+  cada rol autorizado tiene casos positivos y negativos por operación. Cambio de
+  permiso/membership se aplica sin esperar exp JWT; acceso Guest prueba titularidad.
+- **Archivos previstos:** contrato de acceso nuevo en backend/docs; securityauth,
+  chains/guards/repos de cada dominio, tests HTTP/SQL, Liquibase RBAC solo si aprobado;
+  consumidores BFF/DTO/Mapper afectados bajo coordinación de owner.
+- **Reviewers:** BD2/BD3 para su dominio; consumidores Web/Android si cambia API.
+
+#### BE-014B-COM-01 — Reutilización del permiso comercial
+
+- **Estado:** COMPLETADA — implementación y revisión local PASS; el usuario
+  ejecutó las cuatro suites comerciales sin errores y confirmó el cierre.
+  Commit/push autorizados en `feature/bd1-commercial-permissions`; revisión BD3
+  corresponde a la integración posterior. 2026-10-04.
+- **Evidencia:** guard compartido COMMERCIAL_MANAGE en los seis servicios;
+  45 tests comerciales PASS en la versión final, flujos GERENCIA/SUPER_ADMIN
+  y denegaciones sin permiso. Verify completo con wrapper Maven 3.9.16, Java 21/
+  PostgreSQL 17: 270 tests, 0 failures/errors/skipped, BUILD SUCCESS y JAR.
+  git diff --check PASS; sin cambios SQL/permisos/roles/endpoints.
+  Detalle y comandos en AlanHandoff BE-014B-COM-01.
+- **Rama/base:** `feature/bd1-commercial-permissions`, nueva desde `9003567`
+  con documentación previa local conservada.
+- **DoR:** AD-01 aprobado explícitamente por el usuario: reutilizar
+  COMMERCIAL_MANAGE en empresas/agencias/grupos/blocks/promociones/rewards.
+  Catálogo y asignaciones C2 existentes; no exige migración de permisos.
+- **Alcance de este incremento:** sustituir guard provisional SUPER_ADMIN por
+  permiso efectivo, conservar contratos internos/scope/lifecycle/audit existentes,
+  actualizar documentación y probar flujos GERENCIA/SUPER_ADMIN y denegaciones.
+- **Límites:** AD-02 a AD-06 pendientes; no aprobar otras filas de documento 21.
+  No crear REST/BFF ni declarar terminada la protección transversal BE-014B.
+  Sesión/actor confiables y hardening de recursos relacionados se entregan en
+  incrementos posteriores coordinados con BD3 antes de exposición HTTP.
+- **Archivos:** seis implementaciones/interfaces Commercial, helper de permiso,
+  suites comerciales, documento 21 y seguimiento.
+- **Aceptación/DoD:** permiso obligatorio incluso para snapshot SUPER_ADMIN;
+  GERENCIA con permiso opera los seis servicios, roles sin permiso rechazados;
+  regresión de aislamiento/lifecycle, verify completo PostgreSQL/Java 21 y diff.
+  QA manual del usuario PASS conforme a `22_BD1_COMMERCIAL_MANUAL_QA.md`;
+  confirmación de cierre recibida. Este incremento no crea rutas HTTP: los seis
+  servicios son internos y no hay contrato HTTP comercial aprobado.
+
+### BE-008 — AuditTrail común y consulta administrativa
+
+- **Estado:** BE-008A PENDIENTE; BE-008B PENDIENTE.
+- **Dependencias:** A inventaría AuditService/auth_audit_events; B requiere C6
+  aprobado, BE-014A y decisiones de persistencia/módulo aprobadas.
+- **Entrega A / DoR B:** fijar taxonomía, actor, property u organización,
+  entity/action/reason/time/correlation, detalle permitido, retención y consulta;
+  acordar reutilización/proyección de eventos existentes sin duplicación.
+- **Entrega B:** contrato común append-only, emisores iniciales Auth Admin e
+  Integrations, query con AUDIT_READ y scope previo, filtros y paginación estable.
+- **Aceptación:** evento acompaña commit y rollback según semántica acordada;
+  no UPDATE/DELETE de historia; filtros/páginas sin fuga de properties y sin
+  secretos/PAN/CVV/PII innecesaria. Evento global nunca da acceso global implícito.
+- **Archivos previstos:** contrato C6, módulos/emisores existentes, módulo audit
+  si aprobado, migrations 008, DTO/query/API y pruebas PostgreSQL/HTTP/upgrade.
+- **Reviewer:** BD2/BD3 por emisores y consumidores administrativos afectados.
+
+### BE-006 — Staff, roles fijos, memberships y sesiones administrativas
+
+- **Estado:** BE-006A PENDIENTE; BE-006B PENDIENTE; BE-006C PENDIENTE.
+- **Dependencias:** BE-002/003/005 completas; B requiere C4/BE-006A y BE-014A;
+  definir en A auditoría con esquema vigente y contrato BE-008A. C depende de B.
+- **Entrega A / DoR B:** aprobar C4: altas/consultas/edición/activación/suspensión,
+  baja según retención, reset administrativo, roles fijos consultables/asignables,
+  membership única, propiedades autorizadas y endpoints BFF. Confirmar protección
+  de administradores, concurrencia y que GERENCIA no otorgue acceso fuera de su scope.
+- **Entrega B:** CRUD auditado Staff y membership; único rol C2; GERENCIA no crea
+  ni asigna SUPER_ADMIN. Cambio de contraseña/rol/estado/membership revoca todas
+  las sesiones y refresh tokens afectados en la transacción acordada.
+- **Entrega C:** listado scoped/paginado de sesiones, revocación administrativa
+  individual/masiva auditada y consulta de auth_audit_events; verificar carreras
+  refresh/revocación. Cambios a asignaciones de permisos, si aprobados, invalidan
+  acceso y revocan sesiones afectadas conforme al contrato.
+- **Aceptación:** duplicados rechazados sin alta parcial; sin escalamiento de rol
+  ni properties; JWT ya emitido y refresh dejan de funcionar tras cambio sensible;
+  logout Guest aislado; reset no filtra credenciales; rollback no deja usuario y
+  sesiones inconsistentes. No autorregistro ni recuperación autónoma Staff.
+- **Archivos previstos:** contrato C4, securityauth api/application/persistence,
+  changesets nuevos 003 consecutivos, audit y tests; BFF/DTO/Mapper coordinados.
+- **Reviewer:** owner Web de Staff/seguridad y BD2/BD3 por efectos de acceso.
+
+### BE-013 — OTP y vínculo de reservas históricas
+
+- **Estado:** BE-013A PENDIENTE; BE-013B PENDIENTE.
+- **Dependencias:** BE-004 completa; GuestProfile/ReservationLinkService existen.
+  B requiere A aprobada y contrato invocable del puerto con BD3; delivery externo
+  y aceptación de presentación se cierran con BE-016B.
+- **Entrega A / DoR B:** fijar firma/resultado mínimo de ReservationLinkVerificationPort,
+  lookup seguro, endpoints/BFF y relación GuestAccount-reserva; acordar unicidad,
+  asociación previa, concurrencia, rate limits y fallo de envío sin inventar reglas.
+- **Entrega B:** emitir OTP hasheado al correo de reserva, verificar referencia y
+  correo Google verificado; 10 minutos, 5 intentos, reenvío mínimo 60 segundos y
+  un solo uso según C3. Vincular solo tras desafío válido y sesión Guest vigente.
+- **Aceptación:** genéricas para inexistente/correo erróneo; expiración, bloqueo,
+  replay, dos verificaciones concurrentes y reenvío probados; sesión/cuenta distinta
+  no usa el desafío; ni OTP ni datos privados en logs; error Resend recuperable
+  conforme al contrato. Coincidencia de correo sola no vincula.
+- **Archivos previstos:** extensión C3, guestauth services/api/persistence, SPI y
+  adaptador Reservations con BD3, nuevos changesets, Resend y tests/BFF.
+- **Reviewer:** BD3 y consumidor Guest Web/Android aplicable.
+
+### BE-007 — Centro de integraciones, error queue e idempotencia
+
+- **Estado:** BE-007A PENDIENTE; BE-007B PENDIENTE.
+- **Dependencias:** A requiere BE-003 y acuerdo SH-D01/BE-015A con BD2;
+  B requiere C5/A, BE-014A, contrato audit BE-008A y persistencia confirmada.
+- **Entrega A / DoR B:** registro property/category/provider/capabilities/config,
+  secret references, health, contrato API/BFF y permisos; estados de queue,
+  reintentos/límites/backoff, concurrencia, recuperación tras caída y operación incierta.
+- **Entrega B:** configuración validada, health verificable, error queue con
+  historial append-only, retry manual/recuperación autorizados y auditados;
+  dedupe persistente compartido con BD2. No almacenar secretos en texto plano.
+- **Aceptación:** misma key/payload retorna resultado original; payload distinto
+  genera conflicto; retries simultáneos no duplican side effects; rollback,
+  caída tras envío/antes de confirmación y timeout quedan recuperables. Cuando
+  el proveedor no ofrece dedupe, acordar conciliación antes de prometer un solo efecto.
+- **Archivos previstos:** C5, integrations si módulo aprobado, 007 registry/queue/
+  idempotency, shared SPI acordado, API/DTO, PostgreSQL/HTTP/tests de fallos.
+- **Reviewer:** BD2 por dedupe/pagos y BD3 por mensajería/channels operativos.
+
+### BE-015 — Adapters externos de pagos y mensajería
+
+- **Estado:** BE-015A PENDIENTE; BE-015B PENDIENTE por proveedor.
+- **Dependencias:** A con BD2/BD3 y propuestas FP-D01/03/SH-D01;
+  B requiere A, BE-007B o base de dedupe equivalente compartida aprobada,
+  secretos/sandbox y flujos consumidores disponibles para integración final.
+- **Entrega A / DoR B:** contratos de provider y SPI: BD2 posee ledger/lifecycle/
+  folio; BD3 reglas y destinatarios de mensajería; BD1 transporte, secretos,
+  callbacks auténticos, retry y recuperación. Aprobar canales, mensajes,
+  consentimiento cuando aplique y propiedad del estado incierto.
+- **Entrega B:** adapters aprobados con timeouts/errores seguros, verificación
+  callback, dedupe y conciliación. Resend OTP no implica proveedor comercial
+  confirmado para toda la mensajería. Nunca recibir/persistir PAN/CVV en PMS.
+- **Aceptación:** authorize/capture/void/refund parciales según contrato BD2,
+  callbacks duplicados/desordenados y timeouts; sin segundo movimiento contable;
+  mensajería sin envío duplicado y estado de entrega según evidencia del proveedor.
+  Sandbox + consumidor real + cross-property antes de COMPLETADA por proveedor.
+- **Archivos previstos:** contrato SPI/provider, adapters integrations/guestauth
+  según responsabilidad, consumers BD2/BD3, callback/API, tests de contrato y sandbox.
+- **Reviewer:** BD2 pagos y BD3 mensajería; consumidores públicos afectados.
+
+### BE-009 — Channels reales
+
+- **Estado:** PENDIENTE; contrato y adapter se entregan por channel.
+- **Dependencias / DoR:** ATS/RatePlans existen; completar C5, provider/channel y
+  mappings aprobados; BE-007B/014A y contrato con booking/admisión BD2/BD3.
+- **Entrega:** sincronizar inventario/tarifas y recibir eventos autorizados;
+  health, errores/retry/recuperación en el centro; conciliar diferencias sin
+  duplicar reservas. Confirmar semántica de reservas nuevas/cambios/cancelación.
+- **Aceptación:** payload/callback auténtico, duplicados/desorden/timeout/reconexión,
+  mappings por property, tarifa exacta, ATS respetado y ausencia de sobreventa
+  para los escritores participantes; prueba sandbox de ida/vuelta con evidencia.
+- **Archivos previstos:** contrato channel/mapping, adapters, consumers booking/
+  inventory, queue/audit y pruebas. No diseñar reglas del channel desde fixtures.
+- **Reviewer:** BD2 inventario/finanzas y BD3 consumidor operativo/comercial.
+
+### BE-010 — Reportes, exportaciones y revenue KPIs
+
+- **Estado:** BE-010A PENDIENTE; BE-010B PENDIENTE por reporte/KPI.
+- **Dependencias:** A inventaría tablas y fórmulas con BD2/BD3; B requiere C7/A,
+  BE-014A y fuentes reales de cada indicador. Folio PAYMENT no prueba capture.
+- **Entrega A / DoR B:** definir occupancy/rooms sold/available, ADR/RevPAR/revenue,
+  pickup/pace, fechas/timezone/business date, cancelación/no-show/OOO, moneda,
+  snapshots históricos, filtros y permisos. Definir formato/límites/exportación.
+- **Entrega B:** consultas scoped y resultados verificables por property antes
+  de agregar ALL_PROPERTIES; exportar solo campos y properties autorizados;
+  no sumar monedas distintas ni promediar ratios sin fórmula aprobada.
+- **Aceptación:** dataset controlado persistido con resultado manual exacto,
+  noches/límites/DST, multi-room contado por stay, cancelaciones/reembolsos según C7,
+  denominador cero y monedas según contrato; filtros/paginación/exportación seguros
+  y sin fórmulas ejecutables en formatos de hoja de cálculo; presupuesto de consulta
+  y límites de export acordados/probados. Sin cifras derivadas de mocks Web.
+- **Archivos previstos:** C7, reporting solo si aprobado, SQL/query/DTO/API,
+  migrations/índices nuevos justificados, tests y consumidores de reportes.
+- **Reviewer:** BD2 finanzas/inventario, BD3 business date/comercial y owner Revenue.
+
+### BE-011 — MFA local Staff
+
+- **Estado:** BE-011A PENDIENTE; BE-011B PENDIENTE.
+- **Dependencias / DoR B:** cambio explícito aprobado de C1 + C8/A; BE-006C y
+  contrato audit/access disponibles. Guest conserva MFA delegado a Google.
+- **Entrega A:** decidir factor, obligatoriedad por rol, enrolamiento/confirmación,
+  desafío previo a sesión completa, recuperación, revocación, límites y secretos.
+- **Entrega B:** factor y recuperación acordados, protección de secretos,
+  auditoría segura y revocación al cambiar factor/recuperación según C8.
+- **Aceptación:** contraseña sola no concede sesión completa cuando MFA requerido;
+  replay/expiración/intentos/concurrencia y recuperación probados; no semillas,
+  códigos o recovery codes en logs/respuestas indebidas; no bypass vía refresh.
+- **Archivos previstos:** C1 superseded/extendido y C8, securityauth/BFF,
+  changesets y tests; dependencia criptográfica nueva solo si aprobada.
+- **Reviewer:** producto y owner Web seguridad.
+
+### BE-012 — Privacidad y consentimientos
+
+- **Estado:** BE-012A PENDIENTE; BE-012B PENDIENTE por consentimiento/DSR.
+- **Dependencias / DoR B:** GuestProfile existe; C9/A, BE-014A, auditoría y
+  fuentes/retención legales confirmadas. No inferir jurisdicción ni plazos.
+- **Entrega A:** propósitos/canales, source/version/evidence/time, identidad del
+  titular, representación Staff, exportación/anonimización y retención financiera.
+- **Entrega B:** historial versionado y revocable, exportación autorizada y
+  anonimización conforme al contrato; GuestAccount no sustituye GuestProfile.
+- **Aceptación:** revocar SMS no revoca Email; Guest solo accede a su vínculo
+  autorizado; Staff requiere permiso/scope; export no filtra terceros; anonimizar
+  no elimina historia financiera/audit retenida y reintento no duplica operación.
+- **Archivos previstos:** C9, servicio/módulo aprobado, persistence/profile/link,
+  migrations nuevas, audit/API/BFF y pruebas DSR/aislamiento.
+- **Reviewer:** producto/retención, BD3 GuestProfile y consumidores Guest.
+
+### BE-016 — Google y Resend en entorno de presentación
+
+- **Estado:** BE-016A PENDIENTE; BE-016B PENDIENTE; externo SIN VERIFICAR.
+- **Dependencias:** A puede iniciar desde ahora; B requiere acceso/configuración
+  del entorno, cuenta de prueba/remitente y BE-013B para OTP E2E completo.
+- **Entrega A:** checklist reproducible del host/HTTPS/callback Google, BFF y
+  cookies, secretos mediante entorno, remitente/dominio Resend y destinatario de
+  prueba autorizado. Registrar solo presencia/configuración pública, nunca valores secretos.
+- **Entrega B:** Google real login/session/refresh/logout; desafío OTP vía Resend
+  y recepción real en buzón, verificación/vínculo; errores de provider y correlación.
+- **Aceptación:** evidencia fechada de entorno/commit, Network browser solo BFF,
+  tokens fuera de JS, Guest/Staff aislados; recepción del correo comprobada.
+  Respuesta HTTP del proveedor no sustituye entrega externa. Sin acceso externo,
+  registrar impedimento/evidencia faltante y mantener validación pendiente.
+- **Archivos previstos:** guía de presentación/smoke y evidencia sanitizada;
+  cambios de configuración/código solo ante defecto concreto autorizado.
+- **Reviewer:** responsable despliegue y consumidor Guest; BD3 vínculo.
+
+### BE-017 — Cierre integrado BD1
+
+- **Estado:** PENDIENTE.
+- **Dependencias / DoR:** incrementos incluidos en los once puntos completos;
+  decisiones aplicables aprobadas, providers y consumidores reales disponibles.
+- **Entrega:** acceptance por requisito, suite PostgreSQL completa, HTTP/OpenAPI/
+  BFF, migraciones upgrade/instalación, replay/concurrencia/recuperación, seguridad
+  cross-property/Guest/Staff y smoke del entorno de presentación. Reviewers BD2/BD3.
+- **Aceptación:** ninguna responsabilidad cerrada solo por documentación, mocks,
+  tests omitidos o evidencia externa no ejecutada; limitaciones reales explícitas.
+  Handoff enlaza commit/PR, comandos/resultados y siguiente paso por requisito.
+- **Archivos previstos:** regresiones de integración y evidencia/handoff/plan;
+  no ampliar dominio para cerrar la tarea.
+
+### Persistencia y prefijos
+
+| Prefijo | Responsabilidad | Regla |
+| --- | --- | --- |
+| 003 | Security/Auth/Staff/MFA/OTP según diseño aprobado | Próximo changeset nuevo; no editar aplicados ni fijar numeración sin revisar rama vigente |
+| 007 | Integrations | Reservado; registry/queue/retry solo tras C5 y aprobación módulo |
+| 008 | Audit | Reservado; crear solo tras C6 y decisión de reutilización |
+| 009 o siguiente libre | Reporting/otros módulos nuevos | Reservar al confirmar arquitectura; no asignar dos módulos al mismo prefijo |
+| 001 | Payments | Reservado para owner Payments; uso y SPI requieren acuerdo BD1/BD2 |
+
+Folios existentes permanecen en 004 ServiceReservations. No mover migraciones por
+cambio de ownership. El changelog maestro incluye solo módulos implementados y
+respeta dependencias; perfiles parciales no alteran el contrato de integración.
+
+### Control operativo, DoR y DoD comunes
+
+Antes de cada incremento:
+
+1. Revisar estado local/base actual sin sobreescribir cambios previos. Por
+   instrucción explícita del usuario (2026-10-04), crear una rama nueva antes
+   de modificar archivos al iniciar cada tarea de implementación; nunca trabajar
+   directamente en main. Registrar rama y base en AlanHandoff.
+2. Confirmar contratos/DEC, dependencias COMPLETADAS, owner/reviewers, acceptance,
+   archivos previstos y configuración de prueba. Contrato pendiente = PENDIENTE,
+   no READY; registrar la decisión faltante.
+3. Marcar READY/EN_PROGRESO en este archivo y agregar entrada en AlanHandoff con
+   rama/base/alcance/siguiente paso. Actualizar ambos al cambiar de estado.
+4. Entregar contrato y código en incrementos revisables por dominio/proveedor.
+   No ampliar permisos/roles/scope por conveniencia de implementación.
+
+DoD de código: aceptación específica PASS, pruebas de dominio/SQL/HTTP/contrato
+según impacto, `./mvnw -B verify` Java 21/PostgreSQL 17 sin exclusiones, migraciones
+vacío/upgrade/idempotencia cuando existan, diff revisado y `git diff --check`;
+OpenAPI/BFF/DTO/Mapper y documentación coherentes, evidencia sanitizada, revisión
+de owners afectados. Providers requieren además sandbox; presentación requiere
+validación en vivo. Al terminar cada tarea, entregar al usuario pasos manuales
+con resultado esperado y límites de la superficie disponible. La tarea permanece
+EN_QA hasta que el usuario informe su resultado y confirme la implementación;
+solo entonces marcarla COMPLETADA y realizar commit/push. La publicación y el
+review de owners afectados continúan sujetos al workflow Git vigente. La
+autorización general para trabajar no sustituye esta confirmación por tarea.
+
+DoD de contrato: referencias/capacidades comprobadas, propuesta y aprobación
+separadas, campos/métodos/rutas/errores/permiso/scope/idempotencia/audit documentados,
+reviewers y decisiones registradas. Documento preparado no significa aprobado.
+
+Cada entrada de AlanHandoff registra: ID/incremento y estado; rama/base/commit/PR;
+contrato/decisión y reviewers; alcance entregado; comandos, entorno y resultados;
+evidencia HTTP/SQL/externa y límites; impedimentos/decisiones pendientes; siguiente
+paso concreto. Mantener historial append-only y anteponer la actualización nueva.
+No llevar tareas Backend al XLSX. No actualizar memorias externas como parte del plan.
+
+**Próximo paso concreto:** publicar BE-014B-COM-01 en su rama y solicitar revisión
+BD3 al integrarlo; AD-01 ya aprobado e implementado. Coordinar los próximos guards de
+sesión/actor y consultas scoped antes de HTTP; AD-02 financiero con BD2.
+Preparar BE-008A/C6 y BE-006A/C4 para auditoría y administración. Mantener las
+implementaciones en PENDIENTE hasta completar sus acuerdos; no crear endpoints
+ni nuevos permisos desde este plan.
 
 ## Entorno de validación
 

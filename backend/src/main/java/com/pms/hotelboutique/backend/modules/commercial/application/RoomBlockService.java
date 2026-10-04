@@ -15,9 +15,8 @@ import java.util.UUID;
  * <p>Blocks are commercial holds: they never consume ATS and never move
  * physical rooms. Pickup counts consuming stays ({@code RESERVED},
  * {@code IN_HOUSE}) of linked non-cancelled reservations and is always
- * derived. Master folios consolidate exactly one group. Temporary
- * authorization: SUPER_ADMIN only
- * ({@code TODO(BD1): alta B2B_MANAGE}). No REST contract is implied.</p>
+ * derived. Master folios consolidate exactly one group. Authorization requires the effective {@code COMMERCIAL_MANAGE} permission
+ * and an explicit authorized property context. No REST contract is implied.</p>
  */
 public interface RoomBlockService {
 
