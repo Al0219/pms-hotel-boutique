@@ -10,7 +10,6 @@ import jakarta.validation.Valid;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -32,7 +31,7 @@ public class CompanyServiceImpl implements CompanyService {
     public CompanyView create(StaffAuthorizationSnapshot authorization,
             @Valid CreateCompanyCommand command, UUID actorId) {
         CommercialAuthorization.requireManage(authorization);
-        requirePropertyMembership(authorization, command.propertyId());
+        CommercialAuthorization.requireProperty(authorization, command.propertyId());
         Instant now = Instant.now();
         Company company;
         try {
@@ -52,6 +51,7 @@ public class CompanyServiceImpl implements CompanyService {
     public CompanyView update(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID companyId,
             @Valid UpdateCompanyCommand command, UUID actorId) {
+        CommercialAuthorization.requirePropertyScope(authorization, scope);
         Company company = scoped(authorization, scope, companyId);
         String before = company.getName();
         try {
@@ -67,6 +67,7 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     public CompanyView activate(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID companyId, UUID actorId) {
+        CommercialAuthorization.requirePropertyScope(authorization, scope);
         Company company = scoped(authorization, scope, companyId);
         Company.Status before = company.getStatus();
         company.activate(Instant.now());
@@ -78,6 +79,7 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     public CompanyView deactivate(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID companyId, UUID actorId) {
+        CommercialAuthorization.requirePropertyScope(authorization, scope);
         Company company = scoped(authorization, scope, companyId);
         Company.Status before = company.getStatus();
         company.deactivate(Instant.now());
@@ -98,7 +100,7 @@ public class CompanyServiceImpl implements CompanyService {
     public List<CompanyView> list(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope) {
         CommercialAuthorization.requireManage(authorization);
-        return companies.findAllInScope(authorizedScope(scope)).stream()
+        return companies.findAllInScope(CommercialAuthorization.requireScope(authorization, scope)).stream()
                 .map(CompanyView::from).toList();
     }
 
@@ -108,7 +110,7 @@ public class CompanyServiceImpl implements CompanyService {
         if (companyId == null) {
             throw new CommercialException("company id is required");
         }
-        AuthorizedPropertyScope resolved = authorizedScope(scope);
+        AuthorizedPropertyScope resolved = CommercialAuthorization.requireScope(authorization, scope);
         return companies.findByIdInScope(resolved, companyId)
                 .orElseThrow(() -> new CommercialException("company not found"));
     }
@@ -120,25 +122,6 @@ public class CompanyServiceImpl implements CompanyService {
                 : ReservationAuditEvent.ActorType.STAFF;
         audit.record(new AuditService.RecordAuditCommand(type, actorId, action, "COMPANY",
                 company.getId(), company.getPropertyId(), before, after, null, correlationId));
-    }
-
-    private static void requirePropertyMembership(StaffAuthorizationSnapshot authorization,
-            UUID propertyId) {
-        if (propertyId == null) {
-            throw new CommercialException("property id is required");
-        }
-        boolean allowed = authorization.properties() != null && authorization.properties().stream()
-                .anyMatch(property -> property.propertyId().equals(propertyId));
-        if (!allowed) {
-            throw new AccessDeniedException("The active Staff session is not authorized for this property");
-        }
-    }
-
-    private static AuthorizedPropertyScope authorizedScope(AuthorizedPropertyScope scope) {
-        if (scope == null || scope.propertyIds() == null || scope.propertyIds().isEmpty()) {
-            throw new CommercialException("an explicit property scope is required");
-        }
-        return scope;
     }
 
     private static String blankToNull(String value) {

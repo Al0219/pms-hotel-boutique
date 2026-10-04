@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -35,7 +34,7 @@ public class PromotionServiceImpl implements PromotionService {
     public PromotionView create(StaffAuthorizationSnapshot authorization,
             @Valid CreatePromotionCommand command, UUID actorId) {
         CommercialAuthorization.requireManage(authorization);
-        requirePropertyMembership(authorization, command.propertyId());
+        CommercialAuthorization.requireProperty(authorization, command.propertyId());
         if (command.validFrom() != null && command.validTo() != null
                 && command.validFrom().isAfter(command.validTo())) {
             throw new CommercialException("validFrom must not be after validTo");
@@ -60,6 +59,7 @@ public class PromotionServiceImpl implements PromotionService {
     public PromotionView update(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID promotionId,
             @Valid UpdatePromotionCommand command, UUID actorId) {
+        CommercialAuthorization.requirePropertyScope(authorization, scope);
         Promotion promotion = scoped(authorization, scope, promotionId);
         String before = promotion.getName();
         try {
@@ -105,7 +105,7 @@ public class PromotionServiceImpl implements PromotionService {
     public List<PromotionView> list(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope) {
         CommercialAuthorization.requireManage(authorization);
-        return promotions.findAllInScope(authorizedScope(scope)).stream()
+        return promotions.findAllInScope(CommercialAuthorization.requireScope(authorization, scope)).stream()
                 .map(PromotionView::from).toList();
     }
 
@@ -114,7 +114,7 @@ public class PromotionServiceImpl implements PromotionService {
     public StackView resolveStack(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, LocalDate date, List<UUID> promotionIds) {
         CommercialAuthorization.requireManage(authorization);
-        AuthorizedPropertyScope resolved = authorizedScope(scope);
+        AuthorizedPropertyScope resolved = CommercialAuthorization.requireScope(authorization, scope);
         if (date == null) {
             throw new CommercialException("date is required");
         }
@@ -151,6 +151,7 @@ public class PromotionServiceImpl implements PromotionService {
     private PromotionView transition(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID promotionId, String action, UUID actorId,
             PromotionTransition transition) {
+        CommercialAuthorization.requirePropertyScope(authorization, scope);
         Promotion promotion = scoped(authorization, scope, promotionId);
         Promotion.Status before = promotion.getStatus();
         try {
@@ -169,7 +170,7 @@ public class PromotionServiceImpl implements PromotionService {
         if (promotionId == null) {
             throw new CommercialException("promotion id is required");
         }
-        AuthorizedPropertyScope resolved = authorizedScope(scope);
+        AuthorizedPropertyScope resolved = CommercialAuthorization.requireScope(authorization, scope);
         return promotions.findByIdInScope(resolved, promotionId)
                 .orElseThrow(() -> new CommercialException("promotion not found"));
     }
@@ -181,25 +182,6 @@ public class PromotionServiceImpl implements PromotionService {
                 : ReservationAuditEvent.ActorType.STAFF;
         audit.record(new AuditService.RecordAuditCommand(type, actorId, action, "PROMOTION",
                 promotion.getId(), promotion.getPropertyId(), before, after, null, correlationId));
-    }
-
-    private static void requirePropertyMembership(StaffAuthorizationSnapshot authorization,
-            UUID propertyId) {
-        if (propertyId == null) {
-            throw new CommercialException("property id is required");
-        }
-        boolean allowed = authorization.properties() != null && authorization.properties().stream()
-                .anyMatch(property -> property.propertyId().equals(propertyId));
-        if (!allowed) {
-            throw new AccessDeniedException("The active Staff session is not authorized for this property");
-        }
-    }
-
-    private static AuthorizedPropertyScope authorizedScope(AuthorizedPropertyScope scope) {
-        if (scope == null || scope.propertyIds() == null || scope.propertyIds().isEmpty()) {
-            throw new CommercialException("an explicit property scope is required");
-        }
-        return scope;
     }
 
     @FunctionalInterface

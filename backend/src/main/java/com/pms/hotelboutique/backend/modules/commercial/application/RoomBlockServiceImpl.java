@@ -20,7 +20,6 @@ import java.time.Instant;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -55,7 +54,7 @@ public class RoomBlockServiceImpl implements RoomBlockService {
     public RoomBlockView hold(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, @Valid CreateRoomBlockCommand command, UUID actorId) {
         CommercialAuthorization.requireManage(authorization);
-        AuthorizedPropertyScope resolved = EventGroupServiceImpl.authorizedScope(scope);
+        AuthorizedPropertyScope resolved = CommercialAuthorization.requirePropertyScope(authorization, scope);
         EventGroup group = groups.findByIdInScope(resolved, command.groupId())
                 .orElseThrow(() -> new CommercialException("group not found"));
         if (group.getStatus() == EventGroup.Status.CLOSED) {
@@ -84,6 +83,7 @@ public class RoomBlockServiceImpl implements RoomBlockService {
     @Override
     public RoomBlockView release(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID blockId, UUID actorId) {
+        CommercialAuthorization.requirePropertyScope(authorization, scope);
         RoomBlock block = scoped(authorization, scope, blockId);
         RoomBlock.Status before = block.getStatus();
         block.release(Instant.now());
@@ -95,6 +95,7 @@ public class RoomBlockServiceImpl implements RoomBlockService {
     @Override
     public RoomBlockView reactivate(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID blockId, UUID actorId) {
+        CommercialAuthorization.requirePropertyScope(authorization, scope);
         RoomBlock block = scoped(authorization, scope, blockId);
         RoomBlock.Status before = block.getStatus();
         block.reactivate(Instant.now());
@@ -116,7 +117,7 @@ public class RoomBlockServiceImpl implements RoomBlockService {
     public List<RoomBlockView> listByGroup(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID groupId) {
         CommercialAuthorization.requireManage(authorization);
-        AuthorizedPropertyScope resolved = EventGroupServiceImpl.authorizedScope(scope);
+        AuthorizedPropertyScope resolved = CommercialAuthorization.requireScope(authorization, scope);
         if (groupId == null) {
             throw new CommercialException("group id is required");
         }
@@ -129,6 +130,7 @@ public class RoomBlockServiceImpl implements RoomBlockService {
     @Override
     public void linkReservation(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID reservationId, UUID blockId, UUID actorId) {
+        CommercialAuthorization.requirePropertyScope(authorization, scope);
         RoomBlock block = scoped(authorization, scope, blockId);
         if (!block.acceptsLinks()) {
             throw new CommercialException("block is RELEASED and accepts no new links");
@@ -136,11 +138,11 @@ public class RoomBlockServiceImpl implements RoomBlockService {
         if (reservationId == null) {
             throw new CommercialException("reservation id is required");
         }
-        Reservation reservation = reservations.findById(reservationId)
+        AuthorizedPropertyScope blockScope = new AuthorizedPropertyScope(
+                authorization.organizationId(), AuthorizedPropertyScope.Type.PROPERTY,
+                java.util.Set.of(block.getPropertyId()));
+        Reservation reservation = reservations.findByIdInScope(blockScope, reservationId)
                 .orElseThrow(() -> new CommercialException("reservation not found"));
-        if (!reservation.getPropertyId().equals(block.getPropertyId())) {
-            throw new AccessDeniedException("reservation belongs to another property");
-        }
         if (reservation.getStatus() == Reservation.Status.CANCELLED) {
             throw new CommercialException("a CANCELLED reservation cannot join a block");
         }
@@ -160,15 +162,12 @@ public class RoomBlockServiceImpl implements RoomBlockService {
     public void unlinkReservation(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID reservationId, UUID actorId) {
         CommercialAuthorization.requireManage(authorization);
-        EventGroupServiceImpl.authorizedScope(scope);
+        AuthorizedPropertyScope resolved = CommercialAuthorization.requirePropertyScope(authorization, scope);
         if (reservationId == null) {
             throw new CommercialException("reservation id is required");
         }
-        Reservation reservation = reservations.findById(reservationId)
+        Reservation reservation = reservations.findByIdInScope(resolved, reservationId)
                 .orElseThrow(() -> new CommercialException("reservation not found"));
-        if (!scope.propertyIds().contains(reservation.getPropertyId())) {
-            throw new CommercialException("not authorized for this property");
-        }
         reservation.unlinkBlock();
         record(reservation.getPropertyId(), "RESERVATION_UNLINKED_FROM_BLOCK", "RESERVATION",
                 reservation.getId(), null, null, actorId, null);
@@ -178,7 +177,7 @@ public class RoomBlockServiceImpl implements RoomBlockService {
     public FolioView openMasterFolio(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID groupId, String currency, UUID actorId) {
         CommercialAuthorization.requireManage(authorization);
-        AuthorizedPropertyScope resolved = EventGroupServiceImpl.authorizedScope(scope);
+        AuthorizedPropertyScope resolved = CommercialAuthorization.requirePropertyScope(authorization, scope);
         if (groupId == null) {
             throw new CommercialException("group id is required");
         }
@@ -211,18 +210,20 @@ public class RoomBlockServiceImpl implements RoomBlockService {
         if (blockId == null) {
             throw new CommercialException("block id is required");
         }
-        AuthorizedPropertyScope resolved = EventGroupServiceImpl.authorizedScope(scope);
+        AuthorizedPropertyScope resolved = CommercialAuthorization.requireScope(authorization, scope);
         return blocks.findByIdInScope(resolved, blockId)
                 .orElseThrow(() -> new CommercialException("block not found"));
     }
 
     private int pickupOf(RoomBlock block) {
         int pickup = 0;
-        for (Reservation reservation : reservations.findByRoomBlockId(block.getId())) {
+        for (Reservation reservation : reservations.findByRoomBlockIdAndPropertyId(
+                block.getId(), block.getPropertyId())) {
             if (reservation.getStatus() == Reservation.Status.CANCELLED) {
                 continue;
             }
-            for (ReservationStay stay : stays.findByReservation_Id(reservation.getId())) {
+            for (ReservationStay stay : stays.findByReservation_IdAndPropertyId(
+                    reservation.getId(), block.getPropertyId())) {
                 if (CONSUMING.contains(stay.getStatus())) {
                     pickup++;
                 }

@@ -12,7 +12,6 @@ import jakarta.validation.Valid;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -39,9 +38,12 @@ public class EventGroupServiceImpl implements EventGroupService {
     public EventGroupView create(StaffAuthorizationSnapshot authorization,
             @Valid CreateEventGroupCommand command, UUID actorId) {
         CommercialAuthorization.requireManage(authorization);
-        requirePropertyMembership(authorization, command.propertyId());
-        requireSamePropertyCompany(command.propertyId(), command.companyId());
-        requireSamePropertyAgency(command.propertyId(), command.agencyId());
+        CommercialAuthorization.requireProperty(authorization, command.propertyId());
+        AuthorizedPropertyScope propertyScope = new AuthorizedPropertyScope(
+                authorization.organizationId(), AuthorizedPropertyScope.Type.PROPERTY,
+                java.util.Set.of(command.propertyId()));
+        requireSamePropertyCompany(propertyScope, command.companyId());
+        requireSamePropertyAgency(propertyScope, command.agencyId());
         Instant now = Instant.now();
         EventGroup group;
         try {
@@ -61,9 +63,13 @@ public class EventGroupServiceImpl implements EventGroupService {
     public EventGroupView update(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID groupId,
             @Valid UpdateEventGroupCommand command, UUID actorId) {
+        CommercialAuthorization.requirePropertyScope(authorization, scope);
         EventGroup group = scoped(authorization, scope, groupId);
-        requireSamePropertyCompany(group.getPropertyId(), command.companyId());
-        requireSamePropertyAgency(group.getPropertyId(), command.agencyId());
+        AuthorizedPropertyScope propertyScope = new AuthorizedPropertyScope(
+                authorization.organizationId(), AuthorizedPropertyScope.Type.PROPERTY,
+                java.util.Set.of(group.getPropertyId()));
+        requireSamePropertyCompany(propertyScope, command.companyId());
+        requireSamePropertyAgency(propertyScope, command.agencyId());
         String before = group.getName();
         try {
             group.updateDetails(command.name(), command.companyId(), command.agencyId(),
@@ -78,6 +84,7 @@ public class EventGroupServiceImpl implements EventGroupService {
     @Override
     public EventGroupView advance(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID groupId, UUID actorId) {
+        CommercialAuthorization.requirePropertyScope(authorization, scope);
         EventGroup group = scoped(authorization, scope, groupId);
         EventGroup.Status before = group.getStatus();
         try {
@@ -102,7 +109,7 @@ public class EventGroupServiceImpl implements EventGroupService {
     public List<EventGroupView> list(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope) {
         CommercialAuthorization.requireManage(authorization);
-        return groups.findAllInScope(authorizedScope(scope)).stream()
+        return groups.findAllInScope(CommercialAuthorization.requireScope(authorization, scope)).stream()
                 .map(EventGroupView::from).toList();
     }
 
@@ -112,31 +119,25 @@ public class EventGroupServiceImpl implements EventGroupService {
         if (groupId == null) {
             throw new CommercialException("group id is required");
         }
-        AuthorizedPropertyScope resolved = authorizedScope(scope);
+        AuthorizedPropertyScope resolved = CommercialAuthorization.requireScope(authorization, scope);
         return groups.findByIdInScope(resolved, groupId)
                 .orElseThrow(() -> new CommercialException("group not found"));
     }
 
-    private void requireSamePropertyCompany(UUID propertyId, UUID companyId) {
+    private void requireSamePropertyCompany(AuthorizedPropertyScope scope, UUID companyId) {
         if (companyId == null) {
             return;
         }
-        UUID owner = companies.findById(companyId)
-                .orElseThrow(() -> new CommercialException("company not found")).getPropertyId();
-        if (!propertyId.equals(owner)) {
-            throw new CommercialException("company belongs to another property");
-        }
+        companies.findByIdInScope(scope, companyId)
+                .orElseThrow(() -> new CommercialException("company not found"));
     }
 
-    private void requireSamePropertyAgency(UUID propertyId, UUID agencyId) {
+    private void requireSamePropertyAgency(AuthorizedPropertyScope scope, UUID agencyId) {
         if (agencyId == null) {
             return;
         }
-        UUID owner = agencies.findById(agencyId)
-                .orElseThrow(() -> new CommercialException("agency not found")).getPropertyId();
-        if (!propertyId.equals(owner)) {
-            throw new CommercialException("agency belongs to another property");
-        }
+        agencies.findByIdInScope(scope, agencyId)
+                .orElseThrow(() -> new CommercialException("agency not found"));
     }
 
     private void record(EventGroup group, String action, String before, String after,
@@ -148,22 +149,4 @@ public class EventGroupServiceImpl implements EventGroupService {
                 group.getId(), group.getPropertyId(), before, after, null, correlationId));
     }
 
-    private static void requirePropertyMembership(StaffAuthorizationSnapshot authorization,
-            UUID propertyId) {
-        if (propertyId == null) {
-            return;
-        }
-        boolean allowed = authorization.properties() != null && authorization.properties().stream()
-                .anyMatch(property -> property.propertyId().equals(propertyId));
-        if (!allowed) {
-            throw new AccessDeniedException("The active Staff session is not authorized for this property");
-        }
-    }
-
-    static AuthorizedPropertyScope authorizedScope(AuthorizedPropertyScope scope) {
-        if (scope == null || scope.propertyIds() == null || scope.propertyIds().isEmpty()) {
-            throw new CommercialException("an explicit property scope is required");
-        }
-        return scope;
-    }
 }

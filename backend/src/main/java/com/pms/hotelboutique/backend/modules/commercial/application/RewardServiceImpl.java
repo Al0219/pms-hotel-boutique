@@ -14,7 +14,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -41,18 +40,18 @@ public class RewardServiceImpl implements RewardService {
     public RewardCommands.RewardEntryView earn(StaffAuthorizationSnapshot authorization,
             @Valid RewardCommands.EarnRewardCommand command, UUID actorId) {
         CommercialAuthorization.requireManage(authorization);
-        requirePropertyMembership(authorization, command.propertyId());
+        CommercialAuthorization.requireProperty(authorization, command.propertyId());
         requireProfile(command.guestProfileId());
-        ReservationStay stay = stays.findById(command.stayId())
+        AuthorizedPropertyScope propertyScope = new AuthorizedPropertyScope(
+                authorization.organizationId(), AuthorizedPropertyScope.Type.PROPERTY,
+                java.util.Set.of(command.propertyId()));
+        ReservationStay stay = stays.findByIdInScope(propertyScope, command.stayId())
                 .orElseThrow(() -> new CommercialException("stay not found"));
         if (stay.getStatus() != ReservationStay.Status.CHECKED_OUT) {
             throw new CommercialException("EARN requires a CHECKED_OUT stay");
         }
         if (stay.getReservation().getStatus() == Reservation.Status.CANCELLED) {
             throw new CommercialException("cancelled reservations never earn");
-        }
-        if (!stay.getPropertyId().equals(command.propertyId())) {
-            throw new AccessDeniedException("stay belongs to another property");
         }
         if (!ledger.findByStayIdAndKind(stay.getId(), RewardLedgerEntry.Kind.EARN).isEmpty()) {
             throw new CommercialException("stay already earned");
@@ -90,14 +89,11 @@ public class RewardServiceImpl implements RewardService {
             AuthorizedPropertyScope scope,
             @Valid RewardCommands.ReverseRewardCommand command, UUID actorId) {
         CommercialAuthorization.requireManage(authorization);
-        AuthorizedPropertyScope resolved = authorizedScope(scope);
-        RewardLedgerEntry original = ledger.findById(command.originalEntryId())
+        AuthorizedPropertyScope resolved = CommercialAuthorization.requirePropertyScope(authorization, scope);
+        RewardLedgerEntry original = ledger.findByIdInScope(resolved, command.originalEntryId())
                 .orElseThrow(() -> new CommercialException("original entry not found"));
         if (!original.getGuestProfileId().equals(command.guestProfileId())) {
             throw new CommercialException("original entry belongs to another profile");
-        }
-        if (!resolved.propertyIds().contains(original.getPropertyId())) {
-            throw new CommercialException("not authorized for this property");
         }
         if (!ledger.findByReversesId(original.getId()).isEmpty()) {
             throw new CommercialException("entry was already reversed");
@@ -115,7 +111,7 @@ public class RewardServiceImpl implements RewardService {
     public long balanceOf(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID guestProfileId) {
         CommercialAuthorization.requireManage(authorization);
-        AuthorizedPropertyScope resolved = authorizedScope(scope);
+        AuthorizedPropertyScope resolved = CommercialAuthorization.requireScope(authorization, scope);
         requireProfile(guestProfileId);
         return ledger.balanceOf(guestProfileId, resolved.propertyIds());
     }
@@ -125,7 +121,7 @@ public class RewardServiceImpl implements RewardService {
     public List<RewardCommands.RewardEntryView> historyOf(StaffAuthorizationSnapshot authorization,
             AuthorizedPropertyScope scope, UUID guestProfileId) {
         CommercialAuthorization.requireManage(authorization);
-        AuthorizedPropertyScope resolved = authorizedScope(scope);
+        AuthorizedPropertyScope resolved = CommercialAuthorization.requireScope(authorization, scope);
         requireProfile(guestProfileId);
         return ledger.findByProfileInScope(guestProfileId, resolved.propertyIds()).stream()
                 .map(RewardCommands.RewardEntryView::from).toList();
@@ -135,7 +131,7 @@ public class RewardServiceImpl implements RewardService {
             RewardCommands.SpendRewardCommand command, RewardLedgerEntry.Kind kind,
             UUID actorId, String action) {
         CommercialAuthorization.requireManage(authorization);
-        requirePropertyMembership(authorization, command.propertyId());
+        CommercialAuthorization.requireProperty(authorization, command.propertyId());
         requireProfile(command.guestProfileId());
         long balance = ledger.balanceOf(command.guestProfileId(),
                 java.util.Set.of(command.propertyId()));
@@ -181,22 +177,4 @@ public class RewardServiceImpl implements RewardService {
                 null, correlationId));
     }
 
-    private static void requirePropertyMembership(StaffAuthorizationSnapshot authorization,
-            UUID propertyId) {
-        if (propertyId == null) {
-            throw new CommercialException("property id is required");
-        }
-        boolean allowed = authorization.properties() != null && authorization.properties().stream()
-                .anyMatch(property -> property.propertyId().equals(propertyId));
-        if (!allowed) {
-            throw new AccessDeniedException("The active Staff session is not authorized for this property");
-        }
-    }
-
-    private static AuthorizedPropertyScope authorizedScope(AuthorizedPropertyScope scope) {
-        if (scope == null || scope.propertyIds() == null || scope.propertyIds().isEmpty()) {
-            throw new CommercialException("an explicit property scope is required");
-        }
-        return scope;
-    }
 }

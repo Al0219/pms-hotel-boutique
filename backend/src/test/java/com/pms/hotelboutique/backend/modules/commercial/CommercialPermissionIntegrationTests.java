@@ -1,6 +1,7 @@
 package com.pms.hotelboutique.backend.modules.commercial;
 
 import com.pms.hotelboutique.backend.modules.commercial.application.AgencyService;
+import com.pms.hotelboutique.backend.modules.commercial.application.CommercialException;
 import com.pms.hotelboutique.backend.modules.commercial.application.CompanyService;
 import com.pms.hotelboutique.backend.modules.commercial.application.EventGroupService;
 import com.pms.hotelboutique.backend.modules.commercial.application.PromotionService;
@@ -22,6 +23,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 @SpringBootTest
 @Transactional
@@ -47,6 +49,66 @@ class CommercialPermissionIntegrationTests {
     @Test
     void rejectsMissingPermissionSet() {
         assertDenied(snapshot("GERENCIA", null));
+    }
+
+    @Test
+    void rejectsScopeOutsideSessionAndOrganizationAcrossAllSixServices() {
+        var authorization = snapshot("GERENCIA", Set.of("COMMERCIAL_MANAGE"));
+        var foreignProperty = new AuthorizedPropertyScope(ORGANIZATION,
+                AuthorizedPropertyScope.Type.PROPERTY, Set.of(UUID.randomUUID()));
+        var foreignOrganization = new AuthorizedPropertyScope(UUID.randomUUID(),
+                AuthorizedPropertyScope.Type.PROPERTY, Set.of(PROPERTY));
+        for (var scope : List.of(foreignProperty, foreignOrganization)) {
+            assertThrows(AccessDeniedException.class, () -> companies.list(authorization, scope));
+            assertThrows(AccessDeniedException.class, () -> agencies.list(authorization, scope));
+            assertThrows(AccessDeniedException.class, () -> groups.list(authorization, scope));
+            assertThrows(AccessDeniedException.class,
+                    () -> blocks.listByGroup(authorization, scope, UUID.randomUUID()));
+            assertThrows(AccessDeniedException.class, () -> promotions.list(authorization, scope));
+            assertThrows(AccessDeniedException.class,
+                    () -> rewards.balanceOf(authorization, scope, UUID.randomUUID()));
+        }
+    }
+
+    @Test
+    void requiresMultiPropertyPermissionAndExactSessionSet() {
+        UUID second = UUID.randomUUID();
+        var access = List.of(
+                new StaffAuthorizationSnapshot.PropertyAccess(PROPERTY, "P1", "Hotel", "America/Guatemala", "GTQ"),
+                new StaffAuthorizationSnapshot.PropertyAccess(second, "P2", "Hotel 2", "America/Guatemala", "GTQ"));
+        var withoutMulti = new StaffAuthorizationSnapshot(ORGANIZATION, "GERENCIA",
+                Set.of("COMMERCIAL_MANAGE"), access);
+        var withMulti = new StaffAuthorizationSnapshot(ORGANIZATION, "GERENCIA",
+                Set.of("COMMERCIAL_MANAGE", "MULTI_PROPERTY_READ"), access);
+        var all = new AuthorizedPropertyScope(ORGANIZATION,
+                AuthorizedPropertyScope.Type.ALL_PROPERTIES, Set.of(PROPERTY, second));
+        var partial = new AuthorizedPropertyScope(ORGANIZATION,
+                AuthorizedPropertyScope.Type.ALL_PROPERTIES, Set.of(PROPERTY));
+        var invalidSingle = new AuthorizedPropertyScope(ORGANIZATION,
+                AuthorizedPropertyScope.Type.PROPERTY, Set.of(PROPERTY, second));
+        assertThrows(AccessDeniedException.class, () -> companies.list(withoutMulti, all));
+        assertThrows(AccessDeniedException.class, () -> companies.list(withMulti, partial));
+        assertThrows(AccessDeniedException.class, () -> companies.list(withMulti, invalidSingle));
+        assertDoesNotThrow(() -> companies.list(withMulti, all));
+        assertThrows(AccessDeniedException.class,
+                () -> companies.activate(withMulti, all, UUID.randomUUID(), null));
+    }
+
+    @Test
+    void unauthorizedScopeIsRejectedBeforeResourceLookup() {
+        var authorization = snapshot("GERENCIA", Set.of("COMMERCIAL_MANAGE"));
+        var forged = new AuthorizedPropertyScope(ORGANIZATION,
+                AuthorizedPropertyScope.Type.PROPERTY, Set.of(UUID.randomUUID()));
+        UUID unknown = UUID.randomUUID();
+        assertThrows(AccessDeniedException.class, () -> companies.get(authorization, forged, unknown));
+        assertThrows(AccessDeniedException.class, () -> groups.get(authorization, forged, unknown));
+        assertThrows(AccessDeniedException.class, () -> blocks.get(authorization, forged, unknown));
+        assertThrows(AccessDeniedException.class,
+                () -> rewards.reverse(authorization, forged,
+                        new RewardCommands.ReverseRewardCommand(unknown, unknown, "test"), null));
+        assertThrows(CommercialException.class,
+                () -> companies.get(authorization, new AuthorizedPropertyScope(ORGANIZATION,
+                        AuthorizedPropertyScope.Type.PROPERTY, Set.of(PROPERTY)), unknown));
     }
 
     private void assertDenied(StaffAuthorizationSnapshot authorization) {
