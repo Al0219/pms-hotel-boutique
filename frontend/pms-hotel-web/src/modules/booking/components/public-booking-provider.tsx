@@ -25,6 +25,11 @@ export function usePublicBookingSession() {
   return context;
 }
 
+/** Read the display preference without exposing the cart to other modules. */
+export function usePublicDisplayCurrency() {
+  return usePublicBookingSession().currency;
+}
+
 export function usePublicRoomSelection(criteria: Partial<BookingSearchCriteria>, propertyId?: string) {
   const { cart, setCart } = usePublicBookingSession();
   const scope = propertyId && Object.keys(validateBookingSearchCriteria(criteria)).length === 0 ? `${propertyId}:${buildSearchQueryParams(criteria as BookingSearchCriteria)}` : '';
