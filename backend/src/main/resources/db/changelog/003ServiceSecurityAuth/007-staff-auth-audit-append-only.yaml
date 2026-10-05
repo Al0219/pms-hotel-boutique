@@ -1,0 +1,26 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-staff-auth-007
+      author: alan
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              CREATE FUNCTION bd1_reject_staff_auth_audit_mutation() RETURNS trigger AS $$
+              BEGIN
+                RAISE EXCEPTION 'auth_audit_events is append-only (tried %)', TG_OP;
+              END; $$ LANGUAGE plpgsql;
+        - sql:
+            dbms: postgresql
+            sql: |
+              CREATE TRIGGER trg_staff_auth_audit_append_only
+                BEFORE UPDATE OR DELETE ON auth_audit_events
+                FOR EACH ROW EXECUTE FUNCTION bd1_reject_staff_auth_audit_mutation();
+      rollback:
+        - sql:
+            dbms: postgresql
+            sql: DROP TRIGGER IF EXISTS trg_staff_auth_audit_append_only ON auth_audit_events;
+        - sql:
+            dbms: postgresql
+            sql: DROP FUNCTION IF EXISTS bd1_reject_staff_auth_audit_mutation();
