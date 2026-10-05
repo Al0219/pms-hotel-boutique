@@ -47,7 +47,7 @@ No agregar secretos ni tokens de sesión al frontend.
 
 ## Checkout público
 
-Inicio → catálogo → detalle → revisión → datos del huésped → destino de pago.
+Inicio → catálogo → detalle → selección → datos del huésped → revisión final → pago → confirmación.
 Usar `npm run dev -- --port 3000` y abrir `http://localhost:3000`.
 Seleccionar primero una habitación con fechas futuras. El borrador se conserva
 durante la navegación; recargar descarta carrito y datos personales. La vista
@@ -58,7 +58,11 @@ Detalles y validación en [Datos del huésped](docs/42_PUBLIC_BOOKING_GUEST_DATA
 referencia/código y listado/detalle únicamente de reservas vinculadas.
 Instrucciones y límites en [Reserva como invitado y Mis reservas](docs/43_PUBLIC_GUEST_RESERVATION_LINK.md).
 
-El Paso 3 incluye tarjeta de prueba aislada, garantía de una noche, revalidación
+El Paso 3 permite revisar estadía, contacto, solicitudes y desglose antes del pago.
+Los enlaces de edición conservan la búsqueda y los datos del borrador.
+Detalles en [Revisión final](docs/45_PUBLIC_BOOKING_FINAL_REVIEW.md).
+
+El Paso 4 incluye tarjeta de prueba aislada, garantía de una noche, revalidación
 y confirmación ficticia. Casos de aprobación/rechazo/error y límites en
 [Pago y garantía](docs/44_PUBLIC_BOOKING_PAYMENT_GUARANTEE.md).
 

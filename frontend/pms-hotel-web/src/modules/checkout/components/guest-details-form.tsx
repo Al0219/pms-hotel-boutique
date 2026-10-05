@@ -7,6 +7,7 @@ import { useGuestSession } from '@/modules/auth';
 import { publicGuestDataHref, type BookingSearchCriteria } from '@/modules/booking';
 import { Button } from '@/shared/components';
 import { callingCodes, countries, validateGuest, type GuestField } from '../domain/guest-details';
+import { publicCheckoutReviewHref } from '../domain/checkout-navigation';
 import { useCheckoutDraft } from './checkout-draft-provider';
 import { GuestProfilePrefill } from './guest-profile-prefill';
 import type { BookingReview } from './checkout-availability-gate';
@@ -36,7 +37,7 @@ export function GuestDetailsForm({ review, criteria }: { review: BookingReview; 
     // Presentation transition only: no account, reservation or payment mutation.
     timer.current = setTimeout(() => {
       approve(review.selectionKey);
-      startNavigation(() => router.push(publicGuestDataHref(criteria).replace('/checkout', '/checkout/pago')));
+      startNavigation(() => router.push(publicCheckoutReviewHref(criteria)));
       pending.current = false;
       setProcessing(false);
     }, 350);
@@ -63,7 +64,7 @@ export function GuestDetailsForm({ review, criteria }: { review: BookingReview; 
       </div>
       <div className={`${styles.field} ${styles.requests}`}><label htmlFor="guest-specialRequests">Solicitudes especiales</label><textarea {...fieldProps('specialRequests')} maxLength={300} rows={4} placeholder="Ej. Llegada tardía (después de las 20:00 h), preferencia de cama, piso alto, alergias o accesibilidad reducida." /><div className={styles.textareaFooter}><small id="guest-specialRequests-hint">Sujetas a disponibilidad del hotel.</small><small aria-label="Caracteres de solicitudes especiales">{guest.specialRequests.length}/300</small></div>{errorFor('specialRequests')}</div>
       <p className={styles.small}>* Campos obligatorios. Verificaremos el formato de tu información antes de continuar.</p>
-      <div className={styles.formFooter}><p>Puedes continuar como invitado.<br />Estos datos no crean una cuenta.</p><Button type="submit" className={styles.continue} isLoading={busy} loadingText="Procesando…" disabled={!review.ready}>Continuar a pago / garantía <span aria-hidden="true">→</span></Button></div>
+      <div className={styles.formFooter}><p>Puedes continuar como invitado.<br />Estos datos no crean una cuenta.</p><Button type="submit" className={styles.continue} isLoading={busy} loadingText="Procesando…" disabled={!review.ready}>Revisar mi reserva <span aria-hidden="true">→</span></Button></div>
       <p className={styles.privacy}>Tus datos se conservan solo durante esta navegación; no se envían al servidor en este paso.</p>
     </form>
   </section>;

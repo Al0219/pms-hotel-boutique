@@ -42,13 +42,14 @@ describe('Public booking selection review', () => {
     fireEvent.click(screen.getByRole('button', { name: /Continuar con mis datos/ }));
     expect(push).toHaveBeenLastCalledWith('/reserva/checkout?checkIn=2026-10-10&checkOut=2026-10-13&adults=2&children=0&roomsCount=1&promoCode=BOUTIQUE');
   });
-  it('queries the selected property, shows the three-step process and exact server estimate', async () => {
+  it('queries the selected property, shows the four-step process and exact server estimate', async () => {
     const properties: (string | null)[] = [];
     mockServer.use(http.get('*/api/v1/public/availability', ({ request }) => { properties.push(new URL(request.url).searchParams.get('property_id')); return HttpResponse.json({ ...publicCatalogueFixture, check_in_date: criteria.checkIn, check_out_date: criteria.checkOut }); }));
     mount(); const price = await screen.findByRole('complementary', { name: 'Resumen de precio' });
     expect(properties).toContain('prop_boutique_01');
     for (const amount of ['US$ 435.00', 'US$ 22.00', 'US$ 48.00', 'US$ 505.00']) expect(within(price).getByText(amount)).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Pasos de la reserva' }).querySelector('[aria-current="step"]')).toHaveTextContent('Revisa tu selección');
+    expect(within(screen.getByRole('navigation', { name: 'Pasos de la reserva' })).getAllByRole('listitem')).toHaveLength(4);
     expect(screen.getByText('La disponibilidad se verificará nuevamente antes de confirmar la reserva.')).toBeInTheDocument();
     expect(screen.getByRole('article', { name: 'Deluxe King' })).toHaveTextContent('3 noches');
   });

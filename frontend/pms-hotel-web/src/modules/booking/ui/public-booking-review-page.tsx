@@ -26,7 +26,7 @@ export function PublicBookingReviewPage({ initialCriteria: criteria }: { initial
   const nights = availability.data?.totalNights ?? 0;
   return <div className={styles.page}>
     <div className={styles.topBar}><Link href={publicResultsHref(criteria)}>← Volver a resultados</Link><PublicCurrencySelector id="review-display-currency" /></div>
-    <header className={styles.heading}><p className={styles.eyebrow}>TU PRÓXIMA ESTANCIA</p><h1>Revisa tu selección</h1><p>Paso 1 de 3 · Habitación seleccionada</p></header>
+    <header className={styles.heading}><p className={styles.eyebrow}>TU PRÓXIMA ESTANCIA</p><h1>Revisa tu selección</h1><p>Paso 1 de 4 · Habitación seleccionada</p></header>
     <BookingStepper step={1} />
     {!hydrated ? <LoadingState message="Preparando tu selección…" /> : !validCriteria ?
       <EmptyState title="Completa tu búsqueda" description="Necesitamos fechas y huéspedes válidos para revisar la selección." /> :
