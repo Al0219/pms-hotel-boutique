@@ -1,5 +1,32 @@
 # AlanHandoff — Seguimiento Backend
 
+## BE-016A-01 — Preflight Google/Resend de presentación (2026-10-04)
+
+- **Estado:** COMPLETADA; QA manual confirmada por el usuario. Commit y push
+  autorizados según el flujo acordado.
+- **Rama/base:** `feature/bd1-presentation-google-resend-preflight` desde
+  `main` actualizado `b60f465` (PR #103 integra OTP Backend); árbol limpio al
+  iniciar.
+- **DoR:** C3/BE-004 y BE-013B Backend integrados; adaptadores externos
+  existentes. BE-016A no requiere credenciales reales para preparar el entorno.
+- **Hallazgo:** el Compose habitual no pasaba
+  `PMS_RESERVATION_LINK_OTP_HMAC_KEY`; la emisión OTP exige al menos 32 bytes.
+- **Alcance:** passthrough de la clave OTP en Compose raíz y marcador vacío en
+  `.env.example`; guía de preflight y actualización factual C3. No se agregan
+  rutas HTTP, por lo que la colección Postman BD1 no cambia.
+- **QA local:** `docker compose -f ../compose.yaml config --quiet`, enlaces
+  locales, passthrough de clave, comando de longitud OTP con valores sintéticos
+  y `git diff --check` PASS. No ejecutar Google o Resend sin
+  entorno/credenciales de presentación; código/test de auth no cambia.
+- **QA manual:** primera ejecución del usuario desde `backend/` con
+  `-f compose.yaml` no encontró el archivo raíz; guía aclarada con los comandos
+  válidos desde raíz y desde `backend/`. Repetición con
+  `docker compose -f ../compose.yaml config --quiet` terminó sin errores.
+- **Límites:** host, cuenta Google y buzón autorizados aún no identificados;
+  login externo, cookies y recepción del correo siguen SIN VERIFICAR en BE-016B.
+- **Siguiente paso:** publicar la rama; después preparar BE-016B cuando se
+  identifiquen host, cuenta Google y buzón autorizados para evidencia real.
+
 ## BE-013B-BACKEND-01 — OTP histórico Backend (2026-10-04)
 
 - **Estado:** COMPLETADA; el usuario confirmó las pruebas manuales sin errores

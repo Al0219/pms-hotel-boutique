@@ -34,6 +34,7 @@ GOOGLE_REDIRECT_URI
 PMS_WEB_PUBLIC_URL
 RESEND_API_KEY
 RESEND_FROM_EMAIL
+PMS_RESERVATION_LINK_OTP_HMAC_KEY
 ```
 
 Desarrollo configura `GOOGLE_REDIRECT_URI` y `PMS_WEB_PUBLIC_URL` con el
@@ -68,14 +69,13 @@ hasheado enviado al correo de la reserva. El OTP dura 10 minutos, es de un solo
 uso, tiene 5 intentos y reenvío mínimo de 60 segundos. Las respuestas externas
 son genéricas y no revelan si existe la reserva ni su correo.
 
-La implementación del desafío requiere una consulta interna segura de
-`confirmationCode` y correo de contacto. Reservations y
-`ReservationLinkService.verifyLink` ya existen; `ReservationLinkVerificationPort`
-sigue vacío y su resultado actual no incluye property ni correo de entrega.
-`EmailSender`/Resend también existen, pero no hay desafío OTP ni asociación
-autorizada. La propuesta para completar el puerto, persistencia y BFF está en
-[BE-013A-01](30_BD1_HISTORICAL_RESERVATION_OTP_CONTRACT_PROPOSAL.md).
-Esta actualización registra el estado del código; no cambia la regla C3 aprobada.
+El Backend ya implementa el desafío, el vínculo autorizado y las rutas Guest
+BFF-only de [BE-013B](31_BD1_HISTORICAL_RESERVATION_OTP_BACKEND_QA.md).
+`ReservationLinkVerificationPort` usa el lookup interno seguro de Reservations;
+el BFF Web del flujo OTP y la entrega real por Resend siguen pendientes de
+integración/verificación. La clave HMAC de OTP debe configurarse en el entorno
+de ejecución; el [preflight BE-016A](32_BD1_PRESENTATION_GOOGLE_RESEND_PREFLIGHT.md)
+explica cómo comprobarlo sin revelar secretos.
 
 ## Endpoints Backend BFF-only
 
