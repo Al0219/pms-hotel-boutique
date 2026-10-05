@@ -68,10 +68,14 @@ hasheado enviado al correo de la reserva. El OTP dura 10 minutos, es de un solo
 uso, tiene 5 intentos y reenvío mínimo de 60 segundos. Las respuestas externas
 son genéricas y no revelan si existe la reserva ni su correo.
 
-La implementación del desafío requiere que el módulo Reservations publique una
-consulta autorizada de `confirmationCode` y correo de contacto. Ese módulo aún
-no existe en Backend; BE-004 define el puerto `ReservationLinkVerificationPort`
-y el adaptador Resend, pero no inventa tablas ni búsquedas de reservas.
+La implementación del desafío requiere una consulta interna segura de
+`confirmationCode` y correo de contacto. Reservations y
+`ReservationLinkService.verifyLink` ya existen; `ReservationLinkVerificationPort`
+sigue vacío y su resultado actual no incluye property ni correo de entrega.
+`EmailSender`/Resend también existen, pero no hay desafío OTP ni asociación
+autorizada. La propuesta para completar el puerto, persistencia y BFF está en
+[BE-013A-01](30_BD1_HISTORICAL_RESERVATION_OTP_CONTRACT_PROPOSAL.md).
+Esta actualización registra el estado del código; no cambia la regla C3 aprobada.
 
 ## Endpoints Backend BFF-only
 
