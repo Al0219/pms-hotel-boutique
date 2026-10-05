@@ -336,7 +336,8 @@ class StaffAuthAuditAttributionIntegrationTests {
                     .filter(row -> staff.equals(row.staffUserId())).toList();
             assertEquals(3, events.size());
             assertEquals(3, scalar(connection, "SELECT count(*) FROM auth_audit_events WHERE staff_user_id=? AND "
-                    + ATTR_NULL, staff));
+                    + "organization_id IS NULL AND property_id IS NULL AND scope_kind IS NULL AND correlation_id IS NULL "
+                    + "AND actor_context='STAFF' AND actor_id=staff_user_id", staff));
             assertEquals(java.util.Set.of("STAFF_LOGIN_SUCCEEDED", "STAFF_REFRESH_ROTATED", "STAFF_SESSION_REVOKED"),
                     events.stream().map(AuditRow::eventType).collect(java.util.stream.Collectors.toSet()));
             assertTrue(events.stream().allMatch(row -> principal.sessionId().equals(row.sessionId())));
