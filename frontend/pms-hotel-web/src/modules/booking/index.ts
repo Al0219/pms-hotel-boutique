@@ -17,6 +17,8 @@ export { publicResultsHref, publicSelectionHref, publicGuestDataHref } from './d
 export { PublicCurrencySelector } from './ui/public-currency-selector';
 export { usePublicDisplayCurrency } from './components/public-booking-provider';
 export { displayMoney } from './domain/display-currency';
+export { resolveSelection } from './domain/room-catalogue';
+export { selectionPriceSummary } from './domain/selection-price-summary';
 export type { PublicSearchFormProps } from './ui/public-search-form';
 
 export {

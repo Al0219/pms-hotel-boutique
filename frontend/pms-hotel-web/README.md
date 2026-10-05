@@ -51,12 +51,16 @@ Inicio → catálogo → detalle → revisión → datos del huésped → destin
 Usar `npm run dev -- --port 3000` y abrir `http://localhost:3000`.
 Seleccionar primero una habitación con fechas futuras. El borrador se conserva
 durante la navegación; recargar descarta carrito y datos personales. La vista
-de pago es un destino de revisión, todavía no cobra ni confirma reservas.
+de pago permite ahora una garantía y confirmación simuladas, sin cobros ni reservas reales.
 Detalles y validación en [Datos del huésped](docs/42_PUBLIC_BOOKING_GUEST_DATA.md).
 
 «Mis reservas» permite probar acceso Google simulado, vinculación mediante
 referencia/código y listado/detalle únicamente de reservas vinculadas.
 Instrucciones y límites en [Reserva como invitado y Mis reservas](docs/43_PUBLIC_GUEST_RESERVATION_LINK.md).
+
+El Paso 3 incluye tarjeta de prueba aislada, garantía de una noche, revalidación
+y confirmación ficticia. Casos de aprobación/rechazo/error y límites en
+[Pago y garantía](docs/44_PUBLIC_BOOKING_PAYMENT_GUARANTEE.md).
 
 ## Backlog y reglas
 

@@ -2,6 +2,8 @@
  * Public API for the payments module (WEB-4).
  * Export only intentionally public Domain Models, DTO types, mappers, service functions and components.
  */
+export { DemoCardGateway } from './components/demo-card-gateway';
+export type { DemoCardToken } from './model/demo-card';
 
 export type {
   AuthorizePaymentRequestDto,

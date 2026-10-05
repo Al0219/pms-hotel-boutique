@@ -1,25 +1,53 @@
 'use client';
 
 import Link from 'next/link';
-import { BookingStepper, PublicCurrencySelector, publicGuestDataHref, usePublicBookingReview, type BookingSearchCriteria } from '@/modules/booking';
-import { EmptyState } from '@/shared/components';
-import { validateGuest, internationalPhone, countries } from '../domain/guest-details';
+import { useState } from 'react';
+import { BookingStepper, PublicCurrencySelector, displayMoney, publicGuestDataHref, publicSelectionHref, usePublicBookingReview, usePublicDisplayCurrency, type BookingSearchCriteria } from '@/modules/booking';
+import { DemoCardGateway, type DemoCardToken } from '@/modules/payments';
+import { useGuestSession } from '@/modules/auth';
+import { getPublicEnvironment } from '@/lib/env';
+import { Button, EmptyState } from '@/shared/components';
+import { validateGuest, internationalPhone } from '../domain/guest-details';
+import { paymentEstimate } from '../domain/payment-estimate';
 import { useCheckoutDraft } from './checkout-draft-provider';
 import { CheckoutAvailabilityGate } from './checkout-availability-gate';
-import { ReservationSummary } from './reservation-summary';
-import styles from './public-guest-data-page.module.css';
+import { confirmationHref, useDemoCheckout } from '../hooks/use-demo-checkout';
+import styles from './public-payment-review-page.module.css';
 
-/** Handoff only. A payment-provider contract is required before collecting or charging. */
 export function PublicPaymentReviewPage({ initialCriteria: criteria }: { initialCriteria: Partial<BookingSearchCriteria> }) {
   const review = usePublicBookingReview(criteria);
-  const { guest, approvedSelection } = useCheckoutDraft(review.scope);
-  const valid = approvedSelection === review.selectionKey && !Object.keys(validateGuest(guest)).length;
+  const draft = useCheckoutDraft(review.scope);
+  const { account } = useGuestSession();
+  const currency = usePublicDisplayCurrency();
+  const holderName = `${draft.guest.firstName.trim()} ${draft.guest.lastName.trim()}`.trim();
+  const [selectedCard, setSelectedCard] = useState<{ scope: string; holderName: string; card: DemoCardToken | null } | null>(null);
+  const card = selectedCard?.scope === review.scope && selectedCard.holderName === holderName ? selectedCard.card : { token: 'demo_visa_approved', brand: 'Visa' as const, last4: '4242', holderName };
+  const checkout = useDemoCheckout(review, criteria, card);
+  const valid = draft.approvedSelection === review.selectionKey && !Object.keys(validateGuest(draft.guest)).length;
+  const nights = review.availability.data?.totalNights ?? 0;
+  const estimate = paymentEstimate(review.items, nights);
+  const roomCount = review.items.reduce((count, item) => count + item.quantity, 0);
+  const money = (minor: number) => displayMoney(minor / 100, estimate!.currency, currency);
+  const dates = (value: string) => new Intl.DateTimeFormat('es-GT', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${value}T00:00:00Z`));
   return <div className={styles.page}>
-    <div className={styles.topBar}><Link className={styles.back} href={publicGuestDataHref(criteria)}>← Volver a mis datos</Link><PublicCurrencySelector id="payment-display-currency" /></div>
-    <header><p className={styles.eyebrow}>TU RESERVA, PASO A PASO</p><h1>Pago y Confirmación</h1><p>Paso 3 de 3 · Revisa tus datos antes de la garantía</p></header><BookingStepper step={3} />
-    <CheckoutAvailabilityGate review={review}>{!valid ? <><EmptyState title="Completa tus datos antes de continuar" description="Necesitamos la información válida de la persona responsable para esta selección." /><Link className={styles.back} href={publicGuestDataHref(criteria)}>Completar mis datos →</Link></> :
-      <div className={styles.layout}><section className={styles.card} aria-labelledby="payment-contact-title"><h2 id="payment-contact-title">Datos del huésped</h2><dl className={styles.contactReview}><dt>Responsable</dt><dd>{guest.firstName.trim()} {guest.lastName.trim()}</dd><dt>Correo electrónico</dt><dd>{guest.email.trim()}</dd><dt>Teléfono</dt><dd>{internationalPhone(guest)}</dd><dt>País / región</dt><dd>{countries.find(country => country.code === guest.country)?.label}</dd>{guest.specialRequests.trim() && <><dt>Solicitudes especiales</dt><dd>{guest.specialRequests}</dd></>}</dl>
-        <Link className={styles.back} href={publicGuestDataHref(criteria)}>Editar mis datos</Link><div className={styles.paymentNotice}><strong>Pago y garantía: próxima entrega</strong><p>Conservamos tu selección y tus datos en esta sesión. Todavía no se creó una reserva ni se realizó un cobro. La confirmación requiere conectar la garantía y validar nuevamente la disponibilidad.</p></div>
-      </section><ReservationSummary review={review} criteria={criteria} /></div>}</CheckoutAvailabilityGate>
+    <div className={styles.topBar}><Link className={styles.back} href={publicGuestDataHref(criteria)}>← Volver a datos</Link><PublicCurrencySelector id="payment-display-currency" /></div>
+    <header><p className={styles.eyebrow}>{account ? 'CHECKOUT · PASO 3' : 'CHECKOUT COMO INVITADO · PASO 3'}</p><h1>Pago y garantía</h1><p>El inicio de sesión sigue siendo opcional. La garantía aplica a esta reserva de {roomCount} {roomCount === 1 ? 'habitación' : 'habitaciones'}.</p></header>
+    <BookingStepper step={3} finalLabel="Pago y garantía" />
+    <p className={styles.demo}>Modo demostración · Sin cobros, correos ni reservas reales. No ingreses datos de una tarjeta real.</p>
+    <CheckoutAvailabilityGate review={review}>{!valid ? <><EmptyState title="Completa tus datos antes de continuar" description="Necesitamos la información válida de la persona responsable para esta selección."/><Link className={styles.back} href={publicGuestDataHref(criteria)}>Completar mis datos →</Link></> : draft.confirmation ? <section className={styles.card}><h2>Ya completaste esta demostración</h2><p>La referencia es {draft.confirmation.reservationId}. Volver a esta pantalla no repite la garantía.</p><Link className={styles.back} href={confirmationHref(criteria)}>Ver confirmación →</Link></section> : <div className={styles.layout}>
+      <div className={styles.left}><section className={styles.card} aria-labelledby="guarantee-title"><h2 id="guarantee-title">Garantía de la reserva</h2><p className={styles.muted}>Modalidad seleccionada para este recorrido de validación</p>
+        {getPublicEnvironment().useMockApi ? <DemoCardGateway key={`${review.scope}:${holderName}`} holderName={holderName} card={card} disabled={checkout.isPending} onChange={value => { setSelectedCard({ scope: review.scope, holderName, card: value }); checkout.clearError(); }} /> : <p className={styles.demo}>La pasarela real todavía no está conectada. Esta pantalla permite confirmar únicamente en modo demostración.</p>}
+        <div className={styles.contact}><h3>Responsable de la reserva</h3><strong>{holderName}</strong><span>{draft.guest.email.trim()}</span><span>{internationalPhone(draft.guest)}</span>{draft.guest.specialRequests.trim() && <p>{draft.guest.specialRequests}</p>}<Link className={styles.back} href={publicGuestDataHref(criteria)}>Editar mis datos</Link></div>
+      </section><section className={styles.trust} aria-label="Información de seguridad"><div><span aria-hidden="true">◇</span><strong>PSP con tokenización</strong><small>Certificación PCI-DSS del proveedor real pendiente</small></div><div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><strong>Datos aislados</strong><small>Sin envío de número de tarjeta ni CVV al PMS</small></div></section>
+        <section className={styles.policy} aria-labelledby="payment-policy-title"><h3 id="payment-policy-title">Condiciones de cancelación</h3>{review.items.map(item => <p key={item.roomTypeId}><strong>{item.room?.name}</strong><br/>{item.rate?.cancellationPolicy}</p>)}<small>Se aplica la política de cada tarifa, en la hora local del hotel. Las condiciones mostradas son de demostración.</small></section>
+      </div><aside className={styles.summary} aria-labelledby="payment-summary-title"><h2 id="payment-summary-title">Resumen de la reserva</h2><ul className={styles.rooms}>{review.items.map(item => <li key={item.roomTypeId}><div><strong>{item.room?.name}{item.quantity > 1 ? ` × ${item.quantity}` : ''}</strong><span>{item.rate?.name}</span></div><b>{item.rate?.priceBreakdown ? displayMoney(item.rate.priceBreakdown.estimatedTotal * item.quantity, item.rate.currency, currency) : 'Por confirmar'}</b></li>)}</ul>
+        <p className={styles.stay}>{roomCount} {roomCount === 1 ? 'habitación' : 'habitaciones'} · {criteria.adults} {criteria.adults === 1 ? 'adulto' : 'adultos'}{criteria.children ? ` · ${criteria.children} niños` : ''}<br/>{dates(criteria.checkIn!)} → {dates(criteria.checkOut!)} · {nights} {nights === 1 ? 'noche' : 'noches'}</p>
+        {estimate ? <><dl className={styles.amounts}><div><dt>Total estimado</dt><dd>{money(estimate.totalMinor)}</dd></div><div className={styles.today}><dt>Garantía del recorrido <small>Una noche · Cobro hoy simulado</small></dt><dd>{money(estimate.guaranteeMinor)}</dd></div><div><dt>Restante en check-in</dt><dd>{money(estimate.remainingMinor)}</dd></div></dl><p className={styles.note}>Incluye los impuestos y cargos estimados. La garantía de una noche es una modalidad de ejemplo.</p>{currency !== estimate.currency && <p className={styles.note}>Conversión referencial. La garantía se simula en {estimate.currency}: {displayMoney(estimate.guaranteeMinor / 100, estimate.currency, 'USD')}.</p>}</> : <p className={styles.error}>La cotización está incompleta o mezcla monedas. No podemos confirmar la garantía.</p>}
+        <span className={styles.accountBadge}>✓ Cuenta no requerida</span>
+        {checkout.error && <p className={styles.error} role="alert">{checkout.error}</p>}
+        <Button className={styles.confirm} type="button" disabled={!estimate || !card || !valid || !getPublicEnvironment().useMockApi || checkout.phase === 'done'} isLoading={checkout.isPending} loadingText={checkout.phase === 'checking' ? 'Verificando disponibilidad…' : 'Procesando garantía de prueba…'} onClick={() => void checkout.submit()}>Garantizar y confirmar reserva</Button>
+        <p className={styles.note}>No se realizará ningún débito real. Confirmamos solo después de verificar la respuesta del simulador.</p><Link className={styles.back} href={publicSelectionHref(criteria)}>Revisar mi selección</Link>
+      </aside>
+    </div>}</CheckoutAvailabilityGate>
   </div>;
 }

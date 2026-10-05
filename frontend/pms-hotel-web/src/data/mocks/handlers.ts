@@ -1,5 +1,6 @@
 import { accountHandlers } from "./account-handlers";
 import { reservationLinkHandlers } from './reservation-link-handlers';
+import { publicCheckoutHandlers } from './public-checkout-handlers';
 import { http, HttpResponse } from "msw";
 import { private07Handlers } from "./private-07";
 import { private09Handlers } from "./private-09";
@@ -1464,6 +1465,7 @@ function handleGetRevenueKpis({ request }: { request: Request }) {
 import { guestAccessHandlers } from "./guest-access-handlers";
 
 export const handlers = [
+  ...publicCheckoutHandlers,
   ...reservationLinkHandlers,
   ...guestAccessHandlers,
   ...accountHandlers,
