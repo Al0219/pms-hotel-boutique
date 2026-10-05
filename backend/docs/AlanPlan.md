@@ -1051,12 +1051,16 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
   `b5d6630` (PR #106 integra C7).
 - **DoR:** C7-D01/D02/D06/D07/D08 aprobadas para primer reporte; C2 Staff,
   PropertyScopeResolver, tablas Rooms/OOO/Reservations/Stays y ATS SQL existen.
-  C7-D03 pendiente no bloquea On-books sin importes.
+  C7-D03 pendiente no bloquea On-books sin importes. Las revisiones BD2/BD3
+  de paridad y Web del BFF son seguimiento colaborativo, no dependencias para
+  cerrar este alcance Backend: la paridad se apoya en las consultas y pruebas
+  del Backend; la ruta BFF queda explícitamente fuera de esta entrega.
 - **Alcance/archivos:** consulta de inventario por property/stay date y
   `GET /api/v1/reports/on-books/daily`, autorización Staff `COMMERCIAL_MANAGE`
   y `MULTI_PROPERTY_READ` explícito para ALL_PROPERTIES, SQL scoped, DTO,
   `Cache-Control: private, no-store`, tests PostgreSQL/HTTP, contrato y
-  colección Postman. BFF Web sujeto a revisión del owner; no revenue, ADR,
+  colección Postman. El BFF Web pertenece a una integración Web posterior;
+  no revenue, ADR,
   RevPAR ni CSV en este incremento.
 - **Aceptación/DoD:** capacidad física−OOO única; OOS intacto; stays elegibles
   por noche y padre no cancelado; multi-room, cero denominador, property ajena,
@@ -1072,8 +1076,9 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
   Tras fallo CI por `too many clients already`, `verify` 331 PASS con
   PostgreSQL de 100 conexiones y pool Hikari de test limitado a 5. En PR #109,
   `verify-backend` y `verify-stack` SUCCESS con hotfix `d2c1a21`; PR #110 integra
-  el límite Hikari de CI. Quedan pendientes la revisión BD2/BD3 de paridad ATS/
-  ReservationStay y la revisión del BFF por el owner Web.
+  el límite Hikari de CI. La revisión de código confirma que ATS y On-books
+  comparten elegibilidad ReservationStay y OOO/OOS; las revisiones BD2/BD3 y Web
+  pueden aportar correcciones concretas, pero no bloquean el cierre Backend.
 
 ### BE-011 — MFA local Staff
 
@@ -1190,21 +1195,33 @@ Antes de cada incremento:
 4. Entregar contrato y código en incrementos revisables por dominio/proveedor.
    No ampliar permisos/roles/scope por conveniencia de implementación.
 
-DoD de código: aceptación específica PASS, pruebas de dominio/SQL/HTTP/contrato
-según impacto, `./mvnw -B verify` Java 21/PostgreSQL 17 sin exclusiones, migraciones
-vacío/upgrade/idempotencia cuando existan, diff revisado y `git diff --check`;
-OpenAPI/BFF/DTO/Mapper y documentación coherentes, evidencia sanitizada, revisión
-de owners afectados. Providers requieren además sandbox; presentación requiere
-validación en vivo. Al terminar cada tarea, entregar al usuario pasos manuales
-con resultado esperado y límites de la superficie disponible. La tarea permanece
-EN_QA hasta que el usuario informe su resultado y confirme la implementación;
-solo entonces marcarla COMPLETADA y realizar commit/push. La publicación y el
-review de owners afectados continúan sujetos al workflow Git vigente. La
-autorización general para trabajar no sustituye esta confirmación por tarea.
+DoD de código: aceptación específica PASS; pruebas automatizadas relevantes y
+suite/CI aplicable PASS; QA manual PASS del owner de la tarea; pruebas de
+dominio/SQL/HTTP/contrato según impacto; `./mvnw -B verify` Java 21/PostgreSQL 17
+sin exclusiones; migraciones vacío/upgrade/idempotencia cuando existan; diff
+revisado y `git diff --check`; OpenAPI/BFF/DTO/Mapper y documentación coherentes;
+evidencia sanitizada; seguridad, property scope e integración validados cuando
+correspondan. Providers requieren además sandbox; presentación requiere
+validación en vivo. Las revisiones de otros owners/reviewers no bloquean avance
+ni cierre con esta evidencia PASS. Son bloqueantes únicamente si el docente lo
+exige, branch protection/política de repositorio requiere aprobación, existe
+contradicción real entre fuentes de verdad, o falta una decisión de negocio
+necesaria que no esté registrada en una fuente de verdad aprobada. Codex no
+infiere ni inventa decisiones de producto. Registrar la revisión como seguimiento
+y escalar hallazgos concretos; no mantener tareas pendientes por silencio o
+revisión externa. La tarea de implementación permanece EN_QA hasta que el usuario
+ejecute el QA manual aplicable y confirme el resultado PASS; solo después puede
+marcarse COMPLETADA. Esa confirmación no requiere aprobación de otros
+owners/reviewers. Commit, push y merge requieren autorización explícita.
 
 DoD de contrato: referencias/capacidades comprobadas, propuesta y aprobación
 separadas, campos/métodos/rutas/errores/permiso/scope/idempotencia/audit documentados,
-reviewers y decisiones registradas. Documento preparado no significa aprobado.
+reviewers y decisiones registradas. La aprobación de otro owner solo es requisito
+si la exigen explícitamente el docente o la política del repositorio. Si hace
+falta una decisión de negocio necesaria que no esté registrada en una fuente de
+verdad aprobada, debe resolverse con la autoridad correspondiente antes de
+presentar el contrato como aprobado; no se sustituye esa decisión con una
+inferencia de Codex ni con el silencio de un reviewer.
 
 Cada entrada de AlanHandoff registra: ID/incremento y estado; rama/base/commit/PR;
 contrato/decisión y reviewers; alcance entregado; comandos, entorno y resultados;
@@ -1212,10 +1229,11 @@ evidencia HTTP/SQL/externa y límites; impedimentos/decisiones pendientes; sigui
 paso concreto. Mantener historial append-only y anteponer la actualización nueva.
 No llevar tareas Backend al XLSX. No actualizar memorias externas como parte del plan.
 
-**Próximo paso concreto:** completar la revisión BD2/BD3 de paridad ATS/
-ReservationStay para On-books diario y la revisión Web del BFF. Después, acordar
-y registrar la siguiente tarea Backend con su DoR completo. No hay otro
-incremento Backend READY registrado.
+**Próximo paso concreto:** acordar y registrar la siguiente tarea Backend con
+su DoR completo. Las revisiones BD2/BD3 de paridad ATS/ReservationStay y Web del
+BFF para On-books quedan como seguimiento no bloqueante del alcance Backend ya
+completado; convertir en bloqueo solo ante uno de los criterios excepcionales
+del DoD común. No hay otro incremento Backend READY registrado.
 
 ## Entorno de validación
 
