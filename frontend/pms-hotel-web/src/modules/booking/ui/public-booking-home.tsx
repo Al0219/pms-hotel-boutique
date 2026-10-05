@@ -1,26 +1,29 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Button, Modal } from '@/shared/components';
+import Link from 'next/link';
+import Image from 'next/image';
 import type { BookingSearchCriteria } from '../domain/booking-search-criteria';
 import { PublicSearchForm } from './public-search-form';
 import { FloatingBookingSearch } from './floating-booking-search';
+import { PublicCurrencySelector } from './public-currency-selector';
+import { usePublicBookingSession } from '../components/public-booking-provider';
+import { displayMoney } from '../domain/display-currency';
+import { publicRoomHref } from '../domain/public-room-navigation';
 import styles from './public-booking-home.module.css';
 
 // Editorial examples supplied in the approved design, not inventory or a rate quote.
 const featuredRooms = [
-  { name: 'Deluxe King', features: '2 huéspedes · King · 32 m²', price: 145 },
-  { name: 'Suite Terraza', features: '2 huéspedes · King · 48 m²', price: 210 },
-  { name: 'Doble Superior', features: '2 huéspedes · Dos camas · 28 m²', price: 125 },
+  { id: 'rt_deluxe_king', image: 'deluxe-king', name: 'Deluxe King', features: '2 huéspedes · King · 32 m²', price: 145 },
+  { id: 'rt_terrace_suite', image: 'terrace-suite', name: 'Suite Terraza', features: '2 huéspedes · King · 48 m²', price: 210 },
+  { id: 'rt_double_superior', image: 'double-superior', name: 'Doble Superior', features: '2 huéspedes · Dos camas · 28 m²', price: 125 },
 ];
 
 export function PublicBookingHome({ initialCriteria }: { initialCriteria: Partial<BookingSearchCriteria> }) {
-  const [selectedRoom, setSelectedRoom] = useState<(typeof featuredRooms)[number] | null>(null);
-  const previewTrigger = useRef<HTMLButtonElement | null>(null);
+  const { currency } = usePublicBookingSession();
   const searchRef = useRef<HTMLDivElement | null>(null);
   const [draftCriteria, setDraftCriteria] = useState<Partial<BookingSearchCriteria>>(initialCriteria);
   const [searchPending, setSearchPending] = useState(false);
-  const closePreview = () => { setSelectedRoom(null); previewTrigger.current?.focus(); };
   return <>
     <section className={styles.hero} aria-labelledby="booking-hero-title">
       <div className={styles.decoration} aria-hidden="true"><span /><span /><span /></div>
@@ -37,32 +40,24 @@ export function PublicBookingHome({ initialCriteria }: { initialCriteria: Partia
     <FloatingBookingSearch searchRef={searchRef} criteria={draftCriteria} pending={searchPending} />
     <section className={styles.featured} aria-labelledby="featured-title">
       <div className={styles.sectionHeading}><h2 id="featured-title">Habitaciones destacadas</h2>
-        <p>Opciones diseñadas para distintos tipos de estadía.</p></div>
+        <p>Opciones diseñadas para distintos tipos de estadía.</p><div className={styles.currencyControl}><PublicCurrencySelector id="home-display-currency" /></div></div>
       <div className={styles.roomGrid}>
-        {featuredRooms.map((room, index) => <article className={styles.roomCard} key={room.name} aria-label={room.name}>
-          <div className={`${styles.roomImage} ${styles[`roomImage${index}`] ?? ''}`} role="img" aria-label={`Imagen de referencia de ${room.name}`} />
+        {featuredRooms.map(room => <article className={styles.roomCard} key={room.name} aria-label={room.name}>
+          <div className={styles.roomImage}><Image src={`/images/rooms/demo/${room.image}.webp`} alt={`Imagen ilustrativa de ${room.name}`} fill sizes="(max-width: 760px) 100vw, 33vw" /></div>
           <div className={styles.roomContent}>
             <h3>{room.name}</h3><p className={styles.roomFeatures}>{room.features}</p>
             <p className={styles.roomAmenities}>Wi-Fi · Desayuno · A/C</p>
-            <div className={styles.roomBottom}><p className={styles.price}><strong>US$ {room.price}</strong><span> / noche</span></p>
-              <Button size="sm" onClick={event => { previewTrigger.current = event.currentTarget; setSelectedRoom(room); }}>Ver habitación</Button>
+            <div className={styles.roomBottom}><p className={styles.price}><strong>{displayMoney(room.price, 'USD', currency)}</strong><span> / noche</span></p>
+              <Link className={styles.roomLink} href={publicRoomHref(room.id, draftCriteria)}>Ver habitación</Link>
             </div>
           </div>
         </article>)}
       </div>
-      <p className={styles.referenceNote}>Habitaciones y precios de referencia. Consulta la disponibilidad y tarifa para tus fechas.</p>
+      <p className={styles.referenceNote}>Imágenes ilustrativas y precios de referencia. Consulta la disponibilidad y tarifa para tus fechas.</p>
       <section id="amenidades" className={styles.amenities} aria-labelledby="amenities-title">
         <h3 id="amenities-title">Comodidad en cada detalle</h3>
         <p>Wi-Fi <span aria-hidden="true">·</span> Desayuno <span aria-hidden="true">·</span> Aire acondicionado</p>
       </section>
     </section>
-    {selectedRoom && <div className={styles.modalLayer}><Modal title={selectedRoom.name} onClose={closePreview}
-      footer={<><Button variant="outline" onClick={closePreview}>Cerrar</Button><Button onClick={() => {
-        setSelectedRoom(null); document.getElementById('search-check-in')?.focus();
-        document.getElementById('buscar')?.scrollIntoView({ behavior: 'instant', block: 'center' });
-      }}>Consultar disponibilidad</Button></>}>
-      <p>{selectedRoom.features}</p><p>Wi-Fi · Desayuno · A/C</p><p><strong>US$ {selectedRoom.price} / noche</strong></p>
-      <p>Presentación de referencia. Consulta tus fechas para conocer las habitaciones disponibles, las tarifas y sus condiciones.</p>
-    </Modal></div>}
   </>;
 }

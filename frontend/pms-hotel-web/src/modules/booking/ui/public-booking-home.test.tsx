@@ -1,4 +1,6 @@
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render as rtlRender, screen, waitFor, within } from '@testing-library/react';
+import type { ReactElement } from 'react';
+import { PublicBookingProvider } from '../components/public-booking-provider';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PublicBookingHome } from './public-booking-home';
 import { PublicBookingShell } from './public-booking-shell';
@@ -12,6 +14,7 @@ const router = { push, replace };
 vi.mock('next/navigation', () => ({ useRouter: () => router }));
 vi.mock('@/modules/auth', () => ({ useGuestSession: () => ({ account: guestAccount }) }));
 const criteria = { checkIn: '2026-10-10', checkOut: '2026-10-15', adults: 2, children: 0, roomsCount: 1 };
+const render = (ui: ReactElement) => rtlRender(ui, { wrapper: PublicBookingProvider });
 beforeEach(() => { guestAccount = null; vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-04T12:00:00Z')); });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.clearAllMocks(); vi.unstubAllGlobals(); });
 
@@ -46,14 +49,19 @@ describe('Public 01 landing interactions', () => {
     await waitFor(() => expect(screen.getByRole('spinbutton', { name: /^Habitaciones/ })).toHaveFocus());
     expect(push).not.toHaveBeenCalled();
   });
-  it('opens the selected editorial preview and restores focus on Escape', () => {
+  it('links editorial rooms to their RoomType details with the active search', () => {
     render(<PublicBookingHome initialCriteria={criteria} />);
-    const preview = within(screen.getByRole('article', { name: 'Suite Terraza' })).getByRole('button', { name: 'Ver habitación' });
-    fireEvent.click(preview);
-    expect(screen.getByRole('dialog', { name: 'Suite Terraza' })).toHaveTextContent('Presentación de referencia');
-    fireEvent.keyDown(window, { key: 'Escape' });
+    const link = within(screen.getByRole('article', { name: 'Suite Terraza' })).getByRole('link', { name: 'Ver habitación' });
+    expect(link).toHaveAttribute('href', '/habitaciones/rt_terrace_suite?checkIn=2026-10-10&checkOut=2026-10-15&adults=2&children=0&roomsCount=1');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(preview).toHaveFocus();
+  });
+  it('converts editorial prices to GTQ while identifying the dated reference', () => {
+    render(<PublicBookingHome initialCriteria={criteria} />);
+    const room = screen.getByRole('article', { name: 'Deluxe King' });
+    expect(within(room).getByText('US$ 145.00')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Mostrar precios en'), { target: { value: 'GTQ' } });
+    expect(within(room).getByText('Q 1,108.00')).toBeInTheDocument();
+    expect(screen.getByText(/Referencia 2026-10-04/)).toBeInTheDocument();
   });
   it('uses existing Guest routes and closes the mobile menu with Escape', () => {
     render(<PublicBookingShell><p>Contenido público</p></PublicBookingShell>);

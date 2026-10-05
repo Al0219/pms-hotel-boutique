@@ -7,12 +7,14 @@ import { Button, EmptyState, ErrorState, LoadingState } from "@/shared/component
 import { getPublicEnvironment } from "@/lib/env";
 import { HttpNetworkError } from "@/lib/http";
 import { buildSearchQueryParams, isBookingCalendarDate, validateBookingSearchCriteria, type BookingSearchCriteria } from "../domain/booking-search-criteria";
-import { catalogueOptions, clearCatalogueFilters, resolveSelection, type CatalogueSort, type RoomSelection } from "../domain/room-catalogue";
+import { catalogueOptions, clearCatalogueFilters, resolveSelection, type CatalogueSort } from "../domain/room-catalogue";
 import { PublicSearchForm } from "./public-search-form";
 import { BookingIcon } from "./booking-icon";
 import { CatalogueFilterPanel } from "./catalogue-filters";
 import { CatalogueRoomCard } from "./catalogue-room-card";
-import { CatalogueDetailsDialog, CatalogueSelectionDrawer } from "./catalogue-dialogs";
+import { CatalogueSelectionDrawer } from "./catalogue-dialogs";
+import { usePublicBookingSession, usePublicRoomSelection } from "../components/public-booking-provider";
+import { PublicCurrencySelector } from "./public-currency-selector";
 import styles from "./public-availability-page.module.css";
 
 const subscribe = () => () => {};
@@ -33,7 +35,7 @@ function CatalogueSearch({ initialCriteria }: { initialCriteria: Partial<Booking
   const [filters, setFilters] = useState(clearCatalogueFilters);
   const [sort, setSort] = useState<CatalogueSort>('recommended');
   const [rates, setRates] = useState<Record<string, string>>({});
-  const [selection, setSelection] = useState<RoomSelection[]>([]);
+  const { currency } = usePublicBookingSession();
   const [dialog, setDialog] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
   const dialogTrigger = useRef<HTMLElement | null>(null);
@@ -44,18 +46,18 @@ function CatalogueSearch({ initialCriteria }: { initialCriteria: Partial<Booking
   const closeDialog = useCallback(() => setDialog(null), []);
   const search = valid ? { checkInDate: criteria.checkIn!, checkOutDate: criteria.checkOut!, adults: criteria.adults!, children: criteria.children!, roomsCount: criteria.roomsCount! } : undefined;
   const availability = usePublicAvailability(search);
+  const { selection, setSelection } = usePublicRoomSelection(criteria, availability.data?.propertyId);
   const rooms = availability.data?.roomTypes ?? [];
-  const options = catalogueOptions(rooms, rates, filters, sort);
+  const selectedRates = { ...Object.fromEntries(selection.map(item => [item.roomTypeId, item.ratePlanId])), ...rates };
+  const options = catalogueOptions(rooms, selectedRates, filters, sort);
   const ready = valid && availability.isSuccess && !availability.isFetching && availability.fetchStatus !== 'paused';
   const nights = isBookingCalendarDate(criteria.checkIn) && isBookingCalendarDate(criteria.checkOut) && criteria.checkOut > criteria.checkIn ?
     (Date.parse(`${criteria.checkOut}T00:00:00Z`) - Date.parse(`${criteria.checkIn}T00:00:00Z`)) / 86400000 : 0;
   const guests = `${Number.isSafeInteger(criteria.adults) ? criteria.adults : '—'} ${criteria.adults === 1 ? 'adulto' : 'adultos'}${criteria.children ? ` · ${criteria.children} ${criteria.children === 1 ? 'niño' : 'niños'}` : ''}`;
-  const details = dialog && dialog !== 'cart' ? rooms.find(room => room.roomTypeId === dialog) : undefined;
-  const detailRate = details?.ratePlans.find(rate => rate.ratePlanId === rates[details.roomTypeId]) ?? details?.ratePlans[0];
   const resetFilters = () => setFilters(clearCatalogueFilters());
 
   return <div className={styles.page}>
-    <div inert={dialog === 'cart' || Boolean(details && detailRate)}>
+    <div inert={dialog === 'cart'}>
       <nav className={styles.breadcrumb} aria-label="Navegación de reserva"><Link href="/">Inicio</Link><span> / Habitaciones</span></nav>
       <section className={styles.searchBar} aria-label="Tu búsqueda">
         <div><BookingIcon name="calendar" /><span><small>Check-in — Check-out</small><strong>{dateLabel(criteria.checkIn)} — {dateLabel(criteria.checkOut)}</strong></span></div>
@@ -63,6 +65,7 @@ function CatalogueSearch({ initialCriteria }: { initialCriteria: Partial<Booking
         <span className={styles.nights}>{nights} {nights === 1 ? 'noche' : 'noches'}</span>
         <Button variant="secondary" aria-expanded={editing} aria-controls="catalogue-search-editor" onClick={() => setEditing(value => !value)}>Modificar búsqueda</Button>
       </section>
+      <div className={styles.currencyBar}><PublicCurrencySelector /></div>
       <div id="catalogue-search-editor" hidden={!editing} className={styles.editor}>
         <PublicSearchForm key={JSON.stringify(criteria)} initialCriteria={criteria} onSearchSubmitted={value => {
           window.history.replaceState(null, '', `/habitaciones?${buildSearchQueryParams(value)}`);
@@ -89,13 +92,13 @@ function CatalogueSearch({ initialCriteria }: { initialCriteria: Partial<Booking
             availability.isError ? <ErrorState title={availability.error instanceof HttpNetworkError ? "No pudimos conectar" : "No pudimos consultar disponibilidad"} message="Vuelve a intentarlo. Conservamos tus criterios de búsqueda." onRetry={() => { void availability.refetch(); }} /> : ready &&
             (options.length === 0 ? <EmptyState title="Sin habitaciones disponibles" description="No encontramos habitaciones disponibles para las fechas o filtros seleccionados." actionLabel="Restablecer filtros" onAction={resetFilters} /> :
               <div className={styles.grid}>{options.map(({ room, rate }) => <CatalogueRoomCard key={room.roomTypeId} room={room} rate={rate} nights={nights}
-                selected={selection.some(item => item.roomTypeId === room.roomTypeId)} onDetails={() => openDialog(room.roomTypeId)}
+                selected={selection.some(item => item.roomTypeId === room.roomTypeId)} currency={currency}
+                detailsHref={`/habitaciones/${encodeURIComponent(room.roomTypeId)}?${buildSearchQueryParams(criteria as BookingSearchCriteria)}&ratePlanId=${encodeURIComponent(rate.ratePlanId)}`}
                 onRateChange={ratePlanId => { setRates(value => ({ ...value, [room.roomTypeId]: ratePlanId })); setSelection(value => value.map(item => item.roomTypeId === room.roomTypeId ? { ...item, ratePlanId } : item)); }}
                 onSelect={() => setSelection(value => value.some(item => item.roomTypeId === room.roomTypeId) ? value.filter(item => item.roomTypeId !== room.roomTypeId) : [...value, { roomTypeId: room.roomTypeId, ratePlanId: rate.ratePlanId, quantity: 1 }])} />)}</div>)}
         </section>
       </div>
     </div>
-    {details && detailRate && <CatalogueDetailsDialog room={details} rate={detailRate} onClose={closeDialog} returnFocusRef={dialogTrigger} />}
     {dialog === 'cart' && <CatalogueSelectionDrawer items={resolveSelection(selection, rooms)} nights={nights} available={ready}
       onClose={closeDialog} returnFocusRef={dialogTrigger} onRemove={id => setSelection(value => value.filter(item => item.roomTypeId !== id))}
       onQuantity={(id, quantity) => setSelection(value => value.map(item => item.roomTypeId === id ? { ...item, quantity } : item))} />}

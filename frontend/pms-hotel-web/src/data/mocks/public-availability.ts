@@ -27,9 +27,19 @@ export function buildPublicAvailabilityMock(query: URLSearchParams, fixture: Ava
     // This static fixture is not a real inventory or admission calculation.
     available_room_types: roomsCount > totalAts ? [] : fixture.available_room_types.map(room => ({
         ...room,
-        rate_plans: room.rate_plans.map(rate => ({
-          ...rate, total_amount: ((Math.round(Number(rate.base_nightly_rate) * 100) * nights) / 100).toFixed(2),
-        })),
+        rate_plans: room.rate_plans.map(rate => {
+          const roomMinor = Math.round(Number(rate.base_nightly_rate) * 100) * nights;
+          const original = rate.stay_price_breakdown;
+          // Scale the approved illustrative stay estimate; not production fees/taxes.
+          const serviceMinor = original ? Math.round(Number(original.service_charge) * 100 * nights / fixture.total_nights) : 0;
+          const taxMinor = original ? Math.round(Number(original.estimated_taxes) * 100 * nights / fixture.total_nights) : 0;
+          return { ...rate, total_amount: (roomMinor / 100).toFixed(2),
+            ...(original ? { stay_price_breakdown: {
+              service_charge: (serviceMinor / 100).toFixed(2), estimated_taxes: (taxMinor / 100).toFixed(2),
+              estimated_total: ((roomMinor + serviceMinor + taxMinor) / 100).toFixed(2),
+            } } : {}),
+          };
+        }),
       })),
   };
 }

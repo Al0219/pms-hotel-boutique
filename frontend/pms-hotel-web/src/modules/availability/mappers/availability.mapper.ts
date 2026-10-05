@@ -43,15 +43,46 @@ export function mapRatePlanDtoToDomain(dto: RatePlanOptionDto): RatePlanOption {
     throw new DomainMappingError("MISSING_CANCELLATION_POLICY");
   }
 
+  const baseNightlyRate = parseMoneyAmount(dto.base_nightly_rate, "base_nightly_rate");
+  const totalAmount = parseMoneyAmount(dto.total_amount, "total_amount");
+  let priceBreakdown: RatePlanOption["priceBreakdown"];
+  if (dto.stay_price_breakdown !== undefined) {
+    const breakdown = dto.stay_price_breakdown;
+    if (!breakdown || typeof breakdown !== "object") throw new DomainMappingError("INVALID_STAY_PRICE_BREAKDOWN");
+    const serviceCharge = parseMoneyAmount(breakdown.service_charge, "service_charge");
+    const estimatedTaxes = parseMoneyAmount(breakdown.estimated_taxes, "estimated_taxes");
+    const estimatedTotal = parseMoneyAmount(breakdown.estimated_total, "estimated_total");
+    const digits = new Intl.NumberFormat("es", { style: "currency", currency: dto.currency.trim() }).resolvedOptions().maximumFractionDigits ?? 2;
+    const minor = (amount: number) => Math.round(amount * 10 ** digits);
+    if (![totalAmount, serviceCharge, estimatedTaxes, estimatedTotal].every(amount => Number.isSafeInteger(minor(amount))) ||
+      minor(totalAmount) + minor(serviceCharge) + minor(estimatedTaxes) !== minor(estimatedTotal)) {
+      throw new DomainMappingError("INCONSISTENT_STAY_PRICE_BREAKDOWN");
+    }
+    priceBreakdown = { serviceCharge, estimatedTaxes, estimatedTotal };
+  }
+  let cancellationTerms: RatePlanOption["cancellationTerms"];
+  if (dto.cancellation_terms !== undefined) {
+    if (!Array.isArray(dto.cancellation_terms) || !dto.cancellation_terms.length) throw new DomainMappingError("INVALID_CANCELLATION_TERMS");
+    cancellationTerms = dto.cancellation_terms.map(term => {
+      if (!term || typeof term.window_label !== "string" || !term.window_label.trim() ||
+        !Number.isFinite(term.penalty_percent) || term.penalty_percent < 0 || term.penalty_percent > 100) {
+        throw new DomainMappingError("INVALID_CANCELLATION_TERM");
+      }
+      return { windowLabel: term.window_label.trim(), penaltyPercent: term.penalty_percent,
+        severity: term.penalty_percent === 0 ? "low" : term.penalty_percent === 100 ? "high" : "medium" };
+    });
+  }
   return {
     ratePlanId: dto.rate_plan_id.trim(),
     name: dto.rate_plan_name.trim(),
     description: dto.description ?? null,
-    baseNightlyRate: parseMoneyAmount(dto.base_nightly_rate, "base_nightly_rate"),
-    totalAmount: parseMoneyAmount(dto.total_amount, "total_amount"),
+    baseNightlyRate,
+    totalAmount,
     currency: dto.currency.trim().toUpperCase(),
     cancellationPolicy: dto.cancellation_policy.trim(),
     mealsIncluded: dto.meals_included ?? null,
+    ...(priceBreakdown ? { priceBreakdown } : {}),
+    ...(cancellationTerms ? { cancellationTerms } : {}),
   };
 }
 
@@ -84,7 +115,7 @@ export function mapRoomTypeDtoToDomain(dto: AvailableRoomTypeDto): AvailableRoom
   if (dto.category !== undefined && !["DELUXE", "SUITE", "SUPERIOR"].includes(dto.category)) {
     throw new DomainMappingError("INVALID_ROOM_CATEGORY");
   }
-  for (const value of [dto.bed_description, dto.badge]) {
+  for (const value of [dto.bed_description, dto.badge, dto.view_description]) {
     if (value !== undefined && (typeof value !== "string" || !value.trim())) {
       throw new DomainMappingError("INVALID_CATALOGUE_TEXT");
     }
@@ -110,6 +141,7 @@ export function mapRoomTypeDtoToDomain(dto: AvailableRoomTypeDto): AvailableRoom
     areaSquareMeters: dto.area_square_meters,
     amenities: dto.amenities?.map(value => value.trim()),
     badge: dto.badge?.trim(),
+    viewDescription: dto.view_description?.trim(),
   };
 }
 

@@ -6,6 +6,7 @@ import { delay, http, HttpResponse } from "msw";
 import { mockServer } from "@/data/mocks/server";
 import { publicCatalogueFixture } from "@/data/mocks/public-catalogue";
 import { PublicAvailabilityPage } from "./public-availability-page";
+import { PublicBookingProvider } from '../components/public-booking-provider';
 import type { BookingSearchCriteria } from "../domain/booking-search-criteria";
 
 const push = vi.fn();
@@ -20,7 +21,7 @@ beforeEach(() => {
 afterEach(() => { cleanup(); clients.splice(0).forEach(client => client.clear()); onlineManager.setOnline(true); vi.useRealTimers(); vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 function mount(initialCriteria: Partial<BookingSearchCriteria> = criteria) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } }); clients.push(client);
-  return render(<QueryClientProvider client={client}><PublicAvailabilityPage initialCriteria={initialCriteria} /></QueryClientProvider>);
+  return render(<QueryClientProvider client={client}><PublicAvailabilityPage initialCriteria={initialCriteria} /></QueryClientProvider>, { wrapper: PublicBookingProvider });
 }
 function editSearch() { fireEvent.click(screen.getByRole("button", { name: "Modificar búsqueda" })); }
 async function deluxe() { return screen.findByRole("article", { name: "Deluxe King" }); }
@@ -40,21 +41,15 @@ describe("Public availability catalogue", () => {
     expect(screen.getByLabelText(/código promocional/i)).toHaveValue("BOUTIQUE");
     expect(screen.getByText(/no incluyen descuentos/)).toBeInTheDocument();
   });
-  it("shows loading, ATS, server totals, amenities and policies in an accessible details modal", async () => {
+  it("shows loading, ATS, server totals, amenities and a detail link preserving the selected rate", async () => {
     mockServer.use(http.get("*/api/v1/public/availability", async () => { await delay(80); return HttpResponse.json(fixture); }));
     mount(); expect(screen.getByText("Buscando habitaciones…")).toBeInTheDocument();
     const card = await deluxe();
     expect(within(card).getByText("2 habitaciones disponibles para estas fechas")).toBeInTheDocument();
-    expect(within(card).getByText(/435,00/)).toHaveTextContent("3 noches");
-    expect(within(card).getByText("Wi-Fi")).toBeInTheDocument();
-    const trigger = within(card).getByRole("button", { name: "Ver detalles" }); trigger.focus(); fireEvent.click(trigger);
-    const dialog = screen.getByRole("dialog", { name: "Deluxe King" });
-    expect(within(dialog).getByText(/Cancelación gratuita hasta 48h/)).toBeInTheDocument();
-    expect(within(dialog).getByText(/Fotografías aún no disponibles/)).toBeInTheDocument();
-    expect(document.body.style.overflow).toBe("hidden");
-    fireEvent.keyDown(window, { key: "Escape" });
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument(); await waitFor(() => expect(trigger).toHaveFocus());
-    expect(document.body.style.overflow).toBe("");
+    expect(within(card).getByText(/435\.00/)).toHaveTextContent("3 noches");
+    expect(within(card).getByText("Wi-Fi de alta velocidad")).toBeInTheDocument();
+    expect(within(card).getByRole('link', { name: 'Ver detalles' })).toHaveAttribute('href', '/habitaciones/rt_deluxe_king?checkIn=2026-10-10&checkOut=2026-10-13&adults=2&children=0&roomsCount=1&ratePlanId=rp_flexible');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.queryByRole("navigation", { name: "Módulos Staff" })).not.toBeInTheDocument();
   });
   it("shows offline state and resumes the same criteria when connectivity returns", async () => {
@@ -118,11 +113,12 @@ describe("Public availability catalogue", () => {
     expect(within(card).getByRole("button", { name: "Seleccionada" })).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(screen.getByLabelText("Suite")); const drawer = cart();
     expect(within(drawer).getByText("Deluxe King")).toBeInTheDocument();
-    expect(within(drawer).getByText(/435,00/, { selector: 'strong' })).toBeInTheDocument();
+    expect(within(drawer).getByText(/435\.00/, { selector: 'strong' })).toBeInTheDocument();
     const increment = within(drawer).getByRole("button", { name: "Aumentar cantidad de Deluxe King" }); fireEvent.click(increment);
-    expect(increment).toBeDisabled(); expect(within(drawer).getByText(/870,00/, { selector: 'strong' })).toBeInTheDocument();
+    expect(increment).toBeDisabled(); expect(within(drawer).getByText(/870\.00/, { selector: 'strong' })).toBeInTheDocument();
     expect(within(drawer).getByRole("button", { name: "Continuar con el Checkout" })).toBeDisabled();
-    expect(within(drawer).getByText("Pendientes de confirmar")).toBeInTheDocument();
+    expect(within(drawer).getByText('US$ 96.00')).toBeInTheDocument();
+    expect(within(drawer).getByText('US$ 1,010.00')).toBeInTheDocument();
     fireEvent.click(within(drawer).getByRole("button", { name: "Quitar Deluxe King" }));
     expect(within(drawer).getByText(/Tu selección está vacía/)).toBeInTheDocument();
     fireEvent.click(within(drawer).getByRole("button", { name: "Seguir explorando" }));
@@ -132,7 +128,7 @@ describe("Public availability catalogue", () => {
     mount(); const card = await deluxe(); fireEvent.click(within(card).getByRole("button", { name: "Agregar al carrito" }));
     fireEvent.change(within(card).getByLabelText("Tarifa de Deluxe King"), { target: { value: "rp_non_refundable" } });
     const drawer = cart(); expect(within(drawer).getByText("Tarifa no reembolsable")).toBeInTheDocument();
-    expect(within(drawer).getByText(/390,00/, { selector: 'strong' })).toBeInTheDocument();
+    expect(within(drawer).getByText(/390\.00/, { selector: 'strong' })).toBeInTheDocument();
     expect(within(drawer).getByText(/1 habitaciones seleccionadas/)).toBeInTheDocument();
   });
   it("modifies a search in place, preserves quantity/promo in URL and discards old quotes", async () => {

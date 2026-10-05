@@ -29,6 +29,7 @@ describe("Availability Service", () => {
     expect(result.check_out_date).toBe("2026-10-15");
     expect(result.total_nights).toBe(5);
     expect(result.available_room_types[0].rate_plans[0].total_amount).toBe("725.00");
+    expect(result.available_room_types[0].rate_plans[0].stay_price_breakdown).toEqual({ service_charge: '36.67', estimated_taxes: '80.00', estimated_total: '841.67' });
   });
 
   it("returns empty demo inventory when the requested quantity exceeds ATS", async () => {

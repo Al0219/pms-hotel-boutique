@@ -51,6 +51,7 @@
 .footer :is(a, button):focus-visible { outline-color: #d9e2d4; }
 /* Leave the legal row reachable above the floating search at the end of the page. */
 .shell:has([data-floating-search]) .footer { padding-bottom: 140px; }
+.shell:has([data-public-room-cart]) .footer { padding-bottom: 110px; }
 .modalLayer { position: relative; z-index: 60; }
 @media (max-width: 1000px) { .footerColumns { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px; } .footerBottom { align-items: flex-start; flex-direction: column; gap: 12px; } }
 @media (max-width: 760px) {

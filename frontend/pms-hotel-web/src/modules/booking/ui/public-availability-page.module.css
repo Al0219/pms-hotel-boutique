@@ -11,6 +11,7 @@
 .searchBar > button { margin-left: auto; }
 .nights { color: #5a6b5d; font-size: 13px; white-space: nowrap; }
 .editor { margin-top: 16px; }
+.currencyBar { display: flex; justify-content: flex-end; margin-top: 16px; }
 .heading { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin: 44px 0 24px; }
 .heading h1 { font-size: clamp(30px, 3.5vw, 42px); font-weight: 500; line-height: 1.2; margin: 0 0 12px; }
 .heading p { color: #687169; font-size: 14px; margin: 0; }
@@ -55,6 +56,9 @@
 .price small { display: block; color: #6d766e; font-size: 11px; margin-top: 5px; }
 .cardActions { display: flex; gap: 8px; flex-wrap: wrap; }
 .cardActions button { flex: 1; font-size: 11px; padding: 10px 12px; white-space: nowrap; }
+.detailsLink { display: flex; flex: 1; align-items: center; justify-content: center; border-radius: 8px; background: #e1e7dd; color: #38473a; text-decoration: none; padding: 10px 12px; font-size: 11px; min-height: 42px; }
+.detailsLink:hover { background: #d4ddcf; }
+.detailsLink:focus-visible { outline: 2px solid #5a6b5d; outline-offset: 3px; }
 .modalLayer { position: relative; z-index: 60; }
 .modalLayer [role='dialog'] { max-height: calc(100dvh - 40px); overflow-y: auto; overscroll-behavior: contain; }
 .drawer [role='dialog'] { position: fixed; right: 0; top: 0; border-radius: 0; width: min(480px, 100%); max-width: 480px; height: 100dvh; max-height: 100dvh; padding: 32px 28px; animation: drawer-enter .3s ease both; }

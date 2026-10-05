@@ -1,8 +1,9 @@
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/shared/components";
 import type { AvailableRoomType, RatePlanOption } from "@/modules/availability";
-import { catalogueMoney } from "../domain/room-catalogue";
+import { displayMoney, type DisplayCurrency } from "../domain/display-currency";
 import { BookingIcon } from "./booking-icon";
 import styles from "./public-availability-page.module.css";
 
@@ -16,9 +17,10 @@ export function CatalogueRoomImage({ room }: { room: AvailableRoomType }) {
   </div>;
 }
 
-export function CatalogueRoomCard({ room, rate, nights, selected, onRateChange, onDetails, onSelect }: {
+export function CatalogueRoomCard({ room, rate, nights, selected, currency, detailsHref, onRateChange, onSelect }: {
   room: AvailableRoomType; rate: RatePlanOption; nights: number; selected: boolean;
-  onRateChange: (rateId: string) => void; onDetails: () => void; onSelect: () => void;
+  currency: DisplayCurrency; detailsHref: string;
+  onRateChange: (rateId: string) => void; onSelect: () => void;
 }) {
   return <article className={styles.card} aria-label={room.name}>
     <CatalogueRoomImage room={room} />
@@ -29,9 +31,9 @@ export function CatalogueRoomCard({ room, rate, nights, selected, onRateChange, 
       {room.ratePlans.length > 1 && <label className={styles.rateLabel}>Tarifa de {room.name}<select value={rate.ratePlanId} onChange={event => onRateChange(event.target.value)}>
         {room.ratePlans.map(value => <option key={value.ratePlanId} value={value.ratePlanId}>{value.name}</option>)}
       </select></label>}
-      <div className={styles.cardBottom}><p className={styles.price}><strong>{catalogueMoney(rate.baseNightlyRate, rate.currency)}</strong><span> / noche</span>
-        <small>Total: {catalogueMoney(rate.totalAmount, rate.currency)} por {nights} {nights === 1 ? 'noche' : 'noches'}</small></p>
-        <div className={styles.cardActions}><Button variant="secondary" onClick={onDetails}>Ver detalles</Button>
+      <div className={styles.cardBottom}><p className={styles.price}><strong>{displayMoney(rate.baseNightlyRate, rate.currency, currency)}</strong><span> / noche</span>
+        <small>Total de habitación: {displayMoney(rate.totalAmount, rate.currency, currency)} por {nights} {nights === 1 ? 'noche' : 'noches'}</small></p>
+        <div className={styles.cardActions}><Link className={styles.detailsLink} href={detailsHref}>Ver detalles</Link>
           <Button aria-pressed={selected} onClick={onSelect}>{selected ? <><BookingIcon name="check" />Seleccionada</> : <><BookingIcon name="cart" />Agregar al carrito</>}</Button></div>
       </div>
     </div>
