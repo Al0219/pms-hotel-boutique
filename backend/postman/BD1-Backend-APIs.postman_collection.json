@@ -1,0 +1,120 @@
+{
+  "info": {
+    "name": "PMS BD1 — Backend APIs",
+    "description": "Colección BD1 para probar las rutas Backend. Requiere un entorno de pruebas con Google Guest Auth, envío OTP y PMS_RESERVATION_LINK_OTP_HMAC_KEY configurados. No guardar ni exportar tokens Guest reales después de usarla.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{guestAccessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:18080",
+      "type": "string"
+    },
+    {
+      "key": "guestAccessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "confirmationCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "requestId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "otp",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Guest — vínculo de reserva histórica",
+      "description": "Ejecutar en orden con JWT Guest vigente. El OTP llega al correo de la reserva; la API no lo devuelve.",
+      "item": [
+        {
+          "name": "01 — Solicitar desafío OTP",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/guest-auth/reservation-links/challenges",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"confirmationCode\":\"{{confirmationCode}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 202', () => pm.response.to.have.status(202));",
+                  "if (pm.response.code === 202) { const body = pm.response.json(); pm.test('Request ID opaco', () => pm.expect(body.requestId).to.match(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/)); pm.collectionVariables.set('requestId', body.requestId); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 — Verificar OTP y vincular reserva",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/guest-auth/reservation-links/verify",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"requestId\":\"{{requestId}}\",\"otp\":\"{{otp}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', () => pm.response.to.have.status(204));",
+                  "if (pm.response.code === 204) pm.test('Sin cuerpo', () => pm.expect(pm.response.text()).to.be.empty);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -29,23 +29,23 @@ public class ReservationLinkService implements ReservationLinkVerificationPort {
     }
 
     public Optional<ReservationLink> verifyLink(String confirmationCode, String contactEmail) {
+        return findCandidate(confirmationCode, contactEmail)
+                .map(candidate -> new ReservationLink(candidate.reservationId(),
+                        candidate.bookingGuestProfileId()));
+    }
+
+    @Override
+    public Optional<LinkCandidate> findCandidate(String confirmationCode, String verifiedAccountEmail) {
         if (confirmationCode == null || confirmationCode.isBlank()
-                || contactEmail == null || contactEmail.isBlank()) {
+                || verifiedAccountEmail == null || verifiedAccountEmail.isBlank()) {
             return Optional.empty();
         }
-        Optional<Reservation> reservation =
-                reservations.findByConfirmationCode(confirmationCode.trim());
-        if (reservation.isEmpty()) {
-            return Optional.empty();
-        }
-        GuestProfile booker = reservation.get().getBookingGuest();
-        if (booker == null || booker.getEmail() == null) {
-            return Optional.empty();
-        }
-        if (booker.getEmail().trim().equalsIgnoreCase(contactEmail.trim())) {
-            return Optional.of(new ReservationLink(reservation.get().getId(), booker.getId()));
-        }
-        return Optional.empty();
+        return reservations.findLinkCandidate(confirmationCode.trim(), verifiedAccountEmail.trim())
+                .map(reservation -> {
+                    GuestProfile booker = reservation.getBookingGuest();
+                    return new LinkCandidate(reservation.getId(), reservation.getPropertyId(),
+                            booker.getId(), booker.getEmail().trim());
+                });
     }
 
     public record ReservationLink(UUID reservationId, UUID guestProfileId) {

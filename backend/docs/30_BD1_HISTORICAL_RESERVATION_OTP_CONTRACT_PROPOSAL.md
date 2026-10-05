@@ -134,6 +134,24 @@ PostgreSQL, OTP hash/no logs, prueba con `EmailSender` simulado, casos de
 enumeración/replay/revocación y contrato HTTP/OpenAPI/BFF. Google y Resend en
 vivo siguen siendo BE-016B; la prueba local de un fake no los verifica.
 
+## Implementación Backend BE-013B-BACKEND-01
+
+En `feature/bd1-historical-reservation-otp`, el Backend incorpora el puerto
+`findCandidate`, lookup SQL por código y correo de cuenta verificado, los dos
+endpoints Guest BFF-only acordados y un vínculo por reserva. El OTP generado
+es numérico de ocho dígitos, se verifica con HMAC-SHA256 y requiere
+`PMS_RESERVATION_LINK_OTP_HMAC_KEY` (secreto de al menos 32 bytes). El código en
+claro se entrega solo al `EmailSender` y no se persiste.
+
+La emisión persiste `PENDING_SEND` y responde `202` sin esperar al proveedor.
+Un ejecutor acotado marca `READY` solo después de que el proveedor acepta el
+envío; esa aceptación no prueba recepción en el buzón. Rechazo,
+fallo o timeout deja `UNKNOWN`, no verificable. No hay retry automático de un
+envío incierto. Un proceso caído antes del envío puede dejar `PENDING_SEND`;
+el usuario puede solicitar un código nuevo tras el cooldown, que expira el
+anterior. BE-016B debe comprobar Resend real, y Guest Web debe implementar el
+BFF consumidor. Las pruebas Backend sustituyen `EmailSender` por un fake.
+
 ## QA manual de esta entrega documental
 
 Desde `backend/`:
