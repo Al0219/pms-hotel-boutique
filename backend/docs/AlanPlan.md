@@ -761,9 +761,13 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 ### BE-008 — AuditTrail común y consulta administrativa
 
 - **Estado:** BE-008A COMPLETADA; C6-D01 a D06 aprobadas por el usuario.
-  BE-008B PENDIENTE por BE-014A, decisión de persistencia/módulo y contrato HTTP.
+  BE-008B-AUTH-01 COMPLETADA como fundamento de persistencia. El resto de BE-008B
+  permanece PENDIENTE: proyección/consulta administrativa, atribución de Auth y
+  contratos de exposición aún requieren sus incrementos específicos.
 - **Dependencias:** A inventaría AuditService/auth_audit_events; B requiere C6
-  aprobado, BE-014A y decisiones de persistencia/módulo aprobadas.
+  aprobado y contratos de acceso/persistencia del alcance que implemente.
+  BE-014A aplica a las nuevas entradas de lectura; AUTH-01 solo protege una
+  tabla existente conforme a C6 y no depende de AD-04 a AD-06 ni de HTTP/BFF.
 - **Entrega A / DoR B:** fijar taxonomía, actor, property u organización,
   entity/action/reason/time/correlation, detalle permitido, retención y consulta;
   acordar reutilización/proyección de eventos existentes sin duplicación.
@@ -797,6 +801,101 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
   cuatro enlaces locales válidos y `git diff --check` PASS; aprobación explícita
   del usuario. No se ejecuta Maven: solo cambia Markdown y no existe nueva
   superficie HTTP/SQL que probar. Commit/push autorizados en esta rama.
+
+#### BE-008B-AUTH-01 — Protección append-only de auditoría Staff
+
+- **Estado:** COMPLETADA (2026-10-05); implementación, validación local y QA
+  manual ejecutado y confirmado PASS por el usuario. Sin commit/push/merge.
+- **Rama/base:** `feature/bd1-staff-auth-audit-append-only`, desde `main`
+  `722ce96`; se conservan los cambios documentales del registro READY previo.
+- **Owner:** Alan / BD1. **Reviewers:** BD2/BD3 por consumidores de auditoría;
+  seguimiento colaborativo no bloqueante salvo excepciones del DoD común.
+- **Alcance exacto:** añadir protección PostgreSQL contra UPDATE y DELETE de
+  eventos existentes en `auth_audit_events`, equivalente a la que ya protege
+  `reservation_audit_events`. INSERT continúa permitido; una transacción que
+  revierte puede descartar sus inserciones no confirmadas. No cambiar el
+  comportamiento de login/refresh/logout ni sus códigos de evento.
+- **Límite del incremento:** no implementar proyección/search/get, atribución
+  actor/sujeto/organización, backfill, API, BFF, exportación, productores nuevos
+  ni política de purga. C6-D06 (persistencia de fallos y revocación rechazada)
+  queda para su incremento de Auth/BE-006C; esta protección no corrige el
+  rollback de `StaffAuthServiceImpl` ni acredita AuditTrail C6 completo.
+- **Dependencias y DoR PASS:** BE-001/002/003 y BE-008A COMPLETADAS; C6 aprobado;
+  tabla y emisores Staff existentes inspeccionados; ausencia de trigger Staff
+  confirmada en la base `722ce96`; patrón append-only disponible en 004. La búsqueda de
+  usos actuales localizó inserciones Staff, sin UPDATE/DELETE de esa tabla.
+  Java 21/PostgreSQL 17 y Compose QA/CI ya configurados. No requiere decisión
+  de negocio nueva, contrato HTTP, proveedor ni aprobación de reviewers.
+- **Decisiones aprobadas reutilizadas:** C6-D01 conserva la fuente original y
+  evita duplicar historia; C6-D04 prohíbe purga automática/hard delete en V1.
+  C6, sección «Detalle seguro, escritura y retención», exige probar protección
+  equivalente para `auth_audit_events`; sus casos de aceptación exigen rechazar
+  UPDATE/DELETE y preservar el rollback de mutaciones locales. Reglas de
+  persistencia y auditoría Backend refuerzan ese invariante.
+- **Persistencia/módulo:** SecurityAuth existente, prefijo 003; changeset
+  aditivo con función/trigger propios sobre `auth_audit_events`, incorporado
+  al changelog 003. Sin módulo 008 ni segunda tabla histórica; no editar
+  changesets aplicados ni eventos legados. Implementado en
+  `007-staff-auth-audit-append-only.yaml`, ID `003-staff-auth-007`, con función
+  `bd1_reject_staff_auth_audit_mutation` y trigger `trg_staff_auth_audit_append_only`.
+- **HTTP/permisos/scope:** no hay superficie HTTP nueva ni request/response,
+  errores públicos, OpenAPI o Postman nuevos. BE-014A identifica la lectura
+  AuditTrail separada con `AUDIT_READ` y scope previo, confirmados por C2/C6;
+  AUTH-01 no expone esa lectura ni amplía roles, permisos o memberships.
+  No atribuir organización/property a eventos heredados desde membership actual.
+- **Acceptance criteria:** (1) migración preserva byte a byte los campos de
+  eventos previos; (2) INSERT/lectura interna actual funcionan tras commit;
+  (3) UPDATE/DELETE directos, también masivos sobre filas existentes, fallan
+  sin alterar ninguna fila; (4) inserción seguida de rollback no deja evento
+  confirmado; (5) instalación vacía, upgrade desde el master previo y
+  reaplicación conservan datos/checksums previos y reproducen la protección;
+  (6) login, refresh válido y logout siguen funcionando y sus eventos
+  confirmados permanecen insertables; (7) las protecciones de reservas y
+  Guest ya existentes permanecen operativas.
+- **Pruebas previstas:** integración PostgreSQL mediante JDBC real, savepoints
+  o transacciones independientes para comprobar rechazos sin invalidar otras
+  aserciones; dataset de upgrade con eventos previos y comparación de campos.
+  Regresión de `ReservationsSchemaUpgradeTests` y de los flujos Staff actuales.
+  Fixtures aisladas/rollback, sin desactivar triggers ni debilitar invariantes.
+  Desde `backend/`, usar `compose.bd2-test.yaml` con un nombre de proyecto QA
+  aislado: tests focalizados `StaffAuthAuditAppendOnlyIntegrationTests` y
+  `ReservationsSchemaUpgradeTests`, después `mvn -B --no-transfer-progress verify`.
+  CI aplicable: `verify-backend` y `verify-stack` cuando se publique con autorización.
+- **Evidencia local ya validada:** 8 pruebas focalizadas PASS (7 nuevas + upgrade existente);
+  `mvn -B --no-transfer-progress verify` completo: 338 pruebas PASS, cero
+  failures/errors/skipped y BUILD SUCCESS en PostgreSQL 17/Java 21 mediante
+  `compose.bd2-test.yaml`, proyecto aislado `pms_bd1_authaudit`. Se comprobó el
+  bloque SQL de la guía: UPDATE/DELETE generan P0001, campos conservados,
+  INSERT/rollback devuelve contadores 1→0 y evento confirmado permanece en 1.
+  `git diff --check` PASS; changesets previos intactos y checksums del master
+  anterior preservados en upgrade/reaplicación. CI remoto no ejecutado: no se
+  publicó la rama. La comprobación local de la guía no sustituye QA del usuario.
+- **QA manual confirmado PASS (2026-10-05):** el usuario ejecutó el QA aplicable
+  y confirmó changeset `003-staff-auth-007` EXECUTED, trigger presente,
+  INSERT permitido, UPDATE/DELETE rechazados con P0001, conservación del
+  registro y rollback limpio según `docs/36_BD1_STAFF_AUTH_AUDIT_APPEND_ONLY_QA.md`.
+  Las 8 pruebas focalizadas y verify de 338 pruebas PASS corresponden a la
+  validación previa; no se ejecutan de nuevo por este cierre documental.
+- **DoD:** aceptación y pruebas relevantes PASS; suite completa sin exclusiones
+  y CI aplicable PASS; manifest/upgrade/reaplicación y `git diff --check` PASS;
+  guía QA con resultados esperados y evidencia sanitizada; plan/handoff y docs
+  del incremento coherentes. QA manual ejecutado y confirmado PASS por el
+  usuario; criterio de cierre cumplido y estado COMPLETADA. QA manual en BD
+  descartable: verificar evento existente, rechazos de UPDATE/DELETE,
+  conservación del registro e INSERT seguido de rollback. Commit/push/merge
+  requieren autorización explícita.
+- **Archivos del incremento:**
+  `src/main/resources/db/changelog/003ServiceSecurityAuth/007-staff-auth-audit-append-only.yaml`
+  y
+  `src/main/resources/db/changelog/003ServiceSecurityAuth/db.changelog.yaml`,
+  `src/test/java/com/pms/hotelboutique/backend/modules/securityauth/StaffAuthAuditAppendOnlyIntegrationTests.java`,
+  `src/test/resources/db/changelog/db.changelog-before-staff-auth-audit-append-only.yaml`, guía
+  `docs/36_BD1_STAFF_AUTH_AUDIT_APPEND_ONLY_QA.md`, AlanPlan y AlanHandoff.
+- **Fuentes:** `docs/25_BD1_AUDIT_CONTRACT_C6_PROPOSAL.md`,
+  `docs/21_BD1_API_ACCESS_CONTRACT_PROPOSAL.md` (fila AuditTrail/C2),
+  `docs/04_PERSISTENCE_RULES.md`, `docs/05_IDEMPOTENCY_AND_AUDIT.md`,
+  `docs/07_TESTING_STRATEGY.md`, esquema 003-001, trigger 004-005,
+  `AuthAuditEventRepository` y emisores `StaffAuthServiceImpl`/bootstrap.
 
 ### BE-006 — Staff, roles fijos, memberships y sesiones administrativas
 
@@ -1229,11 +1328,15 @@ evidencia HTTP/SQL/externa y límites; impedimentos/decisiones pendientes; sigui
 paso concreto. Mantener historial append-only y anteponer la actualización nueva.
 No llevar tareas Backend al XLSX. No actualizar memorias externas como parte del plan.
 
-**Próximo paso concreto:** acordar y registrar la siguiente tarea Backend con
-su DoR completo. Las revisiones BD2/BD3 de paridad ATS/ReservationStay y Web del
-BFF para On-books quedan como seguimiento no bloqueante del alcance Backend ya
-completado; convertir en bloqueo solo ante uno de los criterios excepcionales
-del DoD común. No hay otro incremento Backend READY registrado.
+**Próximo paso concreto:** acordar y registrar el siguiente incremento Backend
+con DoR completo, siguiendo la prioridad de la fase 1 (resto de BE-008B,
+BE-014B por dominio y BE-006B/C). Confirmar para el alcance elegido contratos
+aplicables de acceso/persistencia, dependencias, aceptación, archivos y pruebas
+antes de marcar READY. Actualmente no hay otro incremento Backend READY
+registrado; este cierre no inicia ni cambia el estado de otra tarea.
+Las revisiones BD2/BD3 y Web de On-books siguen siendo seguimiento colaborativo
+no bloqueante bajo las excepciones del DoD común. El cierre de AUTH-01 no
+cierra el resto de BE-008B ni autoriza publicación.
 
 ## Entorno de validación
 

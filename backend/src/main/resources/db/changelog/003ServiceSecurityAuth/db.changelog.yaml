@@ -17,3 +17,6 @@ databaseChangeLog:
   - include:
       file: 006-service-request-intake-permission.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 007-staff-auth-audit-append-only.yaml
+      relativeToChangelogFile: true

@@ -1,5 +1,83 @@
 # AlanHandoff — Seguimiento Backend
 
+## BE-008B-AUTH-01 — Cierre con QA manual PASS (2026-10-05)
+
+- **Estado:** COMPLETADA; QA manual ejecutado y confirmado PASS por el usuario.
+  Rama `feature/bd1-staff-auth-audit-append-only`, base `722ce96`;
+  sin commit/push/merge ni cambios de código o migraciones en este cierre.
+- **Evidencia manual:** changeset `003-staff-auth-007` EXECUTED, trigger presente,
+  INSERT permitido, UPDATE/DELETE rechazados con P0001, conservación del
+  registro y rollback limpio según `docs/36_BD1_STAFF_AUTH_AUDIT_APPEND_ONLY_QA.md`.
+- **Pruebas ya validadas:** focalizados 8 PASS y
+  `mvn -B --no-transfer-progress verify` 338 PASS, cero failures/errors/skipped,
+  en PostgreSQL 17/Java 21. No se repiten en este cierre documental;
+  `git diff --check` PASS. CI remoto no ejecutado: rama sin publicar.
+- **Límites/revisiones:** cierre exclusivo de AUTH-01; resto de BE-008B y
+  C6-D06 pendientes de sus incrementos. Revisiones BD2/BD3 colaborativas no
+  bloqueantes salvo las excepciones del DoD común. Historial previo intacto.
+- **Siguiente paso Backend:** acordar y registrar un incremento con DoR completo
+  según prioridad de fase 1 (resto de BE-008B, BE-014B por dominio y BE-006B/C),
+  confirmando contratos aplicables, dependencias, aceptación, archivos y pruebas.
+  No hay otro incremento Backend READY registrado; no se inicia otra tarea
+  ni se modifica su estado. Publicación sujeta a autorización explícita.
+
+## BE-008B-AUTH-01 — Entrega en QA (2026-10-05)
+
+- **Estado:** EN_QA; implementación y validación local PASS. QA manual del
+  usuario pendiente; no se marca COMPLETADA ni se hizo commit/push/merge.
+- **Rama/base:** `feature/bd1-staff-auth-audit-append-only`, desde `722ce96`;
+  registro documental previo preservado.
+- **Implementado:** changeset aditivo `003-staff-auth-007`, función y trigger
+  propios sobre `auth_audit_events`: UPDATE/DELETE generan P0001; INSERT,
+  rollback y registros existentes preservados. Sin cambios a emisores Staff,
+  HTTP/BFF, roles/permisos ni consultas administrativas; C6-D06 sigue pendiente.
+- **QA local:** 8 pruebas focalizadas PASS (7 nuevas y upgrade existente);
+  `mvn -B --no-transfer-progress verify`: 338 PASS, cero failures/errors/skipped,
+  BUILD SUCCESS con PostgreSQL 17/Java 21 en `compose.bd2-test.yaml`, proyecto
+  `pms_bd1_authaudit`. Instalación limpia, master anterior con eventos legados,
+  checksums/upgrade/reaplicación, mutaciones individuales/masivas, INSERT/rollback,
+  protección Reservations/Guest y login/refresh/logout reales comprobados.
+- **Guía:** `docs/36_BD1_STAFF_AUTH_AUDIT_APPEND_ONLY_QA.md`. Bloque SQL comprobado
+  localmente: dos errores P0001, detalle/fecha conservados, contadores 1→0 y
+  evento confirmado conservado. No sustituye QA manual del usuario.
+- **Revisión:** `git diff --check` PASS; no se editaron changesets aplicados.
+  CI remoto no ejecutado porque la rama no se publicó. Revisiones BD2/BD3
+  colaborativas, bajo las excepciones del DoD común.
+- **Siguiente paso:** el usuario ejecuta la guía y confirma QA manual; conservar
+  EN_QA hasta entonces. Resto de BE-008B fuera de esta entrega.
+
+## BE-008B-AUTH-01 — Inicio de implementación (2026-10-05)
+
+- **Estado:** EN_PROGRESO; código autorizado por el usuario, sin commit/push/merge.
+- **Rama/base:** `feature/bd1-staff-auth-audit-append-only`, desde `main`
+  `722ce96`; se conservan los cambios documentales previos de AlanPlan/Handoff.
+- **Alcance:** changeset 003 aditivo para impedir UPDATE/DELETE sobre auditoría
+  Staff; pruebas PostgreSQL de instalación, upgrade/reaplicación, conservación,
+  INSERT/rollback y regresión Staff. Sin HTTP/BFF ni cambios de Auth funcional.
+- **Siguiente paso:** ejecutar pruebas relevantes y verify; dejar EN_QA con
+  evidencia real y guía para QA manual del usuario.
+
+## BE-008B-AUTH-01 — DoR de protección append-only Staff (2026-10-05)
+
+- **Estado:** READY; planificación autorizada, sin implementación. Owner Alan / BD1;
+  reviewers BD2/BD3 colaborativos bajo las excepciones del DoD común.
+- **Base del registro:** `main` `722ce96`; árbol limpio al iniciar. Crear una
+  rama nueva al autorizarse la implementación; no se creó rama de código.
+- **DoR/evidencia:** BE-001/002/003 y BE-008A completas; C6-D01/D04 y su regla
+  append-only aplicables. Tabla/emisores Staff inspeccionados: INSERT existentes,
+  sin protección PostgreSQL contra UPDATE/DELETE. Patrón equivalente en 004;
+  QA/CI Java 21/PostgreSQL 17 configurados. Sin decisión de negocio faltante.
+- **Alcance:** changeset aditivo en SecurityAuth/003 para proteger
+  `auth_audit_events`, con INSERT/rollback y datos legados preservados. Pruebas
+  de persistencia, upgrade/reaplicación y regresión Staff; guía QA. Sin HTTP/BFF,
+  módulo 008, lectura administrativa ni corrección C6-D06 en este incremento.
+- **Validación del registro:** fuentes C6/BE-014A y esquema/emisores contrastados;
+  `git diff --check` PASS; historial previo verificado intacto. Las pruebas de
+  implementación aún no se ejecutaron.
+- **Siguiente paso:** implementar únicamente AUTH-01 tras autorización; mantener
+  EN_QA hasta QA manual ejecutado y confirmado PASS por el usuario. El resto de
+  BE-008B sigue pendiente de sus incrementos; sin commit/push en este registro.
+
 ## BE-010B-ONBOOKS-01 — Actualización de seguimiento (2026-10-05)
 
 - **Cierre técnico:** BE-010B ya está técnicamente cerrada; se conserva el estado registrado en la entrada histórica.
