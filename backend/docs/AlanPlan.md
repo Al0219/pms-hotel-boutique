@@ -763,9 +763,9 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 - **Estado:** BE-008A COMPLETADA; C6-D01 a D06 aprobadas por el usuario.
   BE-008B-AUTH-01 COMPLETADA como fundamento de persistencia.
   BE-008B-AUTH-02 COMPLETADA: persistencia para atribución futura, con sujeto
-  resuelto y QA manual del usuario confirmado PASS. El resto de BE-008B
-  permanece PENDIENTE: proyección/consulta administrativa, atribución de Auth y
-  contratos de exposición aún requieren sus incrementos específicos.
+  resuelto y QA manual PASS. BE-008B-AUTH-03 COMPLETADA: atribución en emisores
+  Staff seleccionados. Proyección/consulta administrativa y contratos de
+  exposición permanecen PENDIENTES de sus incrementos y DoR propios.
 - **Dependencias:** A inventaría AuditService/auth_audit_events; B requiere C6
   aprobado y contratos de acceso/persistencia del alcance que implemente.
   BE-014A aplica a las nuevas entradas de lectura; AUTH-01 solo protege una
@@ -1063,6 +1063,115 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
   ni C6-D06 en esa continuidad acotada. No se asigna ID nuevo, se inicia código
   ni se marca otro incremento READY. Consulta administrativa permanece pendiente
   de su DoR y contratos de acceso/exposición propios.
+
+
+#### BE-008B-AUTH-03 — Atribución segura en emisores de autenticación Staff
+
+- **Estado:** COMPLETADA (2026-10-05); implementación, validación local y
+  QA manual ejecutado y confirmado PASS por el usuario. Cierre documental
+  exclusivo de AUTH-03; no se inicia otro incremento.
+  Rama feature/bd1-staff-auth-audit-emitter-attribution, base 6f03373;
+  registros documentales previos conservados, sin commit/push/merge.
+- **Owner:** Alan / BD1. **Reviewers:** BD2/BD3 por emisores/consumidores;
+  colaboración conforme al DoD común.
+- **Dependencias/DoR:** BE-001/002/003, BE-008A y BE-008B-AUTH-01/02
+  COMPLETADAS; C6-D01/D02/D03 aprobadas; C6-D06 permanece fuera del alcance.
+  AUTH-02 provee columnas nullable
+  y trigger append-only. StaffPrincipal se revalida en
+  StaffJwtAuthenticationFilter; login valida credenciales y refresh valida
+  token-hash, sesión y usuario activos. Bootstrap asigna explícitamente la
+  membresía SUPER_ADMIN a la organización sembrada. C6 define Staff/System,
+  PROPERTY/ORGANIZATION y separación actor/sujeto. No falta decisión de negocio
+  para esta selección acotada. Correlation y property quedan opcionales y su
+  ausencia se representa como NULL; no se fabrica contexto.
+- **Alcance:** poblar metadatos solo para login correcto, refresh rotado válido,
+  logout autenticado y bootstrap de Staff. Usar columnas AUTH-02 sin DDL ni
+  backfill. Mantener staff_user_id como sujeto; actor se deriva de la prueba
+  de credencial/sesión y se escribe únicamente en actor_context/actor_id.
+  Sin API/BFF/consulta administrativa ni C6-D06.
+- **Mapa por emisor:**
+
+  | Evento | organizationId | propertyId / scopeKind | actorContext / actorId | correlationId / sujeto |
+  | --- | --- | --- | --- | --- |
+  | STAFF_LOGIN_SUCCEEDED | NULL: login no selecciona una organización autorizable en la acción auditada | NULL / NULL: no selecciona propiedad; no convertir propiedades de la sesión en una acción PROPERTY ni clasificar login de cualquier rol como evento ORGANIZATION | STAFF / StaffUser.id tomado del objeto cargado tras validar password y estado activo, nunca leído de staff_user_id como prueba de actor | NULL: no hay correlación de request disponible / staff_user_id permanece el Staff autenticado |
+  | STAFF_REFRESH_ROTATED | NULL: refresh no recibe ni selecciona organización | NULL / NULL: sesión no representa una propiedad concreta | STAFF / session.getStaffUser().getId() solo después de comprobar token encontrado, refresh activo, sesión activa y Staff activo | NULL: el request no propaga correlación / staff_user_id conserva al sujeto Staff |
+  | STAFF_SESSION_REVOKED con causa de logout | NULL: logout no contiene operación de organización | NULL / NULL: logout termina una sesión, no una acción de propiedad | STAFF / StaffPrincipal.staffUserId autenticado y revalidado por StaffJwtAuthenticationFilter y asociado a la sesión revocada | NULL: no existe correlación disponible / staff_user_id conserva al sujeto |
+  | STAFF_BOOTSTRAP_CREATED | UUID sembrado 4f63ec16-4b5c-4daf-a9ba-fc4251fb81d1, el mismo pasado explícitamente a ensureSuperAdminMembership | NULL / ORGANIZATION: bootstrap crea la membership SUPER_ADMIN de esa organización; sin propiedad asignada por el evento | SYSTEM / NULL: proceso bootstrap, no un actor Staff | NULL: proceso sin request / staff_user_id es el Staff creado |
+
+- **Fuera de alcance por evento:** STAFF_LOGIN_FAILED queda fuera por C6-D06:
+  intento fallido debe sobrevivir 401 fuera de la transacción que revierte, y
+  este incremento no corrige ese flujo ni atribuye por username.
+  STAFF_SESSION_REVOKED con causa refresh_rejected queda fuera por C6-D06 y por
+  rollback del rechazo; no atribuirlo mediante el sujeto/session_id ni cambiar
+  la semántica de refresh. Las demás causas/revocaciones administrativas no
+  tienen emisor actual. No emitir correlation, property ni organización para
+  flujos de sesión a partir de membership, token claims sin revalidar,
+  session_id o datos del body.
+- **Persistencia/API implementada:** fábricas staffAction/bootstrapCreated
+  en AuthAuditEvent; se actualizaron los productores y el constructor/factory
+  necesarios de AuthAuditEvent, StaffAuthServiceImpl y
+  StaffBootstrapConfiguration; conservar constructores/emisores de prueba
+  existentes. No modificar el esquema, el sujeto, session_id, códigos de evento,
+  límites de transacción, respuestas HTTP o permisos. Logout revalida
+  StaffPrincipal contra sesión/usuario activos antes de atribuir actor;
+  bootstrap usa saveAndFlush antes de la membership JDBC para que el Staff
+  insertado sea visible dentro de la misma transacción. Se mantiene el
+  constructor legacy para los flujos excluidos y consumidores existentes.
+- **Acceptance:** (1) login correcto guarda STAFF actor id del Staff cuya
+  contraseña se validó; staff_user_id sigue siendo sujeto y puede tener el
+  mismo UUID por ser login propio, con procedencias/campos distintos. (2) refresh
+  válido rota y registra STAFF del usuario de la sesión validada; evento de
+  rechazo no se amplía. (3) logout del principal activo atribuye STAFF solo
+  después de validar correspondencia sesión/usuario. (4) bootstrap registra
+  SYSTEM/null y ORGANIZATION con el UUID explícito, sin propiedad. (5) en estos
+  eventos correlation_id queda NULL; login/refresh/logout dejan organization,
+  property y scope NULL; no se derivan desde membership actual ni historia.
+  (6) conservar códigos/detalles/eventos sujetos originales y no introducir
+  INSERT duplicados; evento sigue en su transacción/flujo existente.
+- **Pruebas implementadas:** tests PostgreSQL de atribución por cada emisor incluido,
+  afirmando source de actor, sujeto y NULLs; flujo real login-refresh-logout;
+  bootstrap con organization seed, actor_context=SYSTEM y actor_id IS NULL;
+  ausencia de metadatos nuevos en login fallido/refresh rechazado sin intentar
+  corregir C6-D06. Probar identidad de filas/event count, checksums/upgrade,
+  append-only/rollback y regresión Staff. Focalizados y mvn -B
+  --no-transfer-progress verify en PostgreSQL 17/Java 21; guía QA manual.
+- **Archivos entregados:** StaffAuthServiceImpl.java,
+  StaffBootstrapConfiguration.java, AuthAuditEvent.java,
+  StaffAuthAuditEmitterIntegrationTests.java y actualización de la regresión
+  de sesiones en StaffAuthAuditAttributionIntegrationTests.java (ahora espera
+  actor STAFF y scope/correlation NULL). Guía
+  38_BD1_STAFF_AUTH_AUDIT_EMITTER_QA.md y AlanPlan/AlanHandoff. Sin changeset,
+  permisos ni rutas nuevos.
+- **Límites/cierre:** QA manual confirmado PASS por el usuario; criterio de
+  cierre cumplido. Se conservan 26 focalizados PASS y verify 355 PASS previos,
+  sin repetir pruebas por este cierre documental. CI remoto no ejecutado;
+  se evalúa al publicar con autorización. AUTH-03 no completa proyección/consulta
+  ni el resto de BE-008B.
+- **Evidencia local (2026-10-05):** 26 focalizados PASS (8 nuevos de emisores,
+  9 de persistencia AUTH-02, 7 append-only AUTH-01, 1 upgrade Reservations y
+  1 seguridad HTTP). Verify completo: 355 pruebas PASS, cero failures/errors/
+  skipped y BUILD SUCCESS en PostgreSQL 17.11/Java 21.0.9, proyecto aislado
+  pms_bd1_authemit mediante compose.bd2-test.yaml. La primera corrida detectó
+  visibilidad JPA/JDBC en bootstrap; saveAndFlush la corrigió sin cambiar
+  límites transaccionales y los focalizados completos se repitieron PASS.
+  Constructor legado, actor/sujeto independientes, exclusión de fallos/
+  rechazos, rollback de logout, historia, upgrade/checksums y append-only
+  comprobados. Comparación contra HEAD: migraciones/changelogs intactos.
+  Guía 38 comprobada con JAR real en 127.0.0.1:18083: login 201, refresh 200,
+  logout 204; cuatro eventos con expected=true, bootstrap_count=1;
+  UPDATE/DELETE P0001, all_fields_preserved=true, legacy_unattributed=true
+  y after_rollback=0. Git diff --check PASS. CI remoto no ejecutado porque
+  no se publicó la rama. La comprobación del agente no sustituye QA del usuario.
+- **QA manual confirmado PASS (2026-10-05):** el usuario confirma login 201,
+  refresh 200 y logout 204; bootstrap SYSTEM + ORGANIZATION correcto; eventos
+  de sesión con actorContext=STAFF y actorId=staff_user_id; todos los eventos
+  inspeccionados expected=t; bootstrap_count=1. UPDATE rechazado con P0001;
+  DELETE rechazado con P0001; all_fields_preserved=t. INSERT legacy permitido
+  sin atribución automática, legacy_unattributed=t; rollback limpio,
+  after_rollback=0, conforme a la guía 38. No se cambia código funcional ni
+  migraciones en este cierre.
+- **Siguiente:** esperar autorización para acordar otro incremento. No iniciar
+  ni marcar READY otra tarea; commit/push/merge siguen sin autorización.
 
 ### BE-006 — Staff, roles fijos, memberships y sesiones administrativas
 
@@ -1495,17 +1604,11 @@ evidencia HTTP/SQL/externa y límites; impedimentos/decisiones pendientes; sigui
 paso concreto. Mantener historial append-only y anteponer la actualización nueva.
 No llevar tareas Backend al XLSX. No actualizar memorias externas como parte del plan.
 
-**Próximo paso concreto:** preparar el alcance/DoR del siguiente incremento
-BE-008B para atribución de eventos Staff nuevos. AUTH-02 está COMPLETADA; su
-cierre solo habilita persistencia, no define el mapeo por emisor de organización,
-scope, actor confiable y correlación. Ese mapeo, aceptación, archivos y pruebas
-requieren registro antes de READY. No hay otro incremento Backend READY
-registrado; no se inicia ni cambia el estado de otra tarea. Consulta/API y
-C6-D06 mantienen sus dependencias específicas. Se conserva la prioridad de
-fase 1: resto de BE-008B, BE-014B por dominio y BE-006B/C.
-Las revisiones BD2/BD3 y Web de On-books siguen como seguimiento colaborativo
-según las excepciones del DoD común. El cierre exclusivo de AUTH-02 no completa
-BE-008B ni autoriza commit/push/merge.
+**Próximo paso concreto:** esperar autorización para acordar el siguiente
+incremento Backend. BE-008B-AUTH-03 COMPLETADA con QA manual PASS; no se inicia
+ni modifica el estado de otra tarea en este cierre. Proyección/consulta y
+C6-D06 mantienen su alcance y dependencias pendientes. Commit/push/merge
+requieren autorización explícita.
 
 ## Entorno de validación
 

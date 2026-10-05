@@ -6,6 +6,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.Objects;
 
 @Entity
 @Table(name = "auth_audit_events")
@@ -23,7 +24,7 @@ public class AuthAuditEvent {
     @Column(nullable = false)
     private String detail;
 
-    // Future attribution only: existing producers intentionally leave these fields null.
+    // Nullable attribution preserves legacy events and emitters without trusted context.
     @Column(name = "organization_id")
     private UUID organizationId;
     @Column(name = "property_id")
@@ -36,6 +37,23 @@ public class AuthAuditEvent {
     private UUID actorId;
     @Column(name = "correlation_id")
     private UUID correlationId;
+
+    public static AuthAuditEvent staffAction(String eventType, UUID subjectId, UUID sessionId,
+            String detail, Instant occurredAt, UUID authenticatedActorId) {
+        AuthAuditEvent event = new AuthAuditEvent(eventType, subjectId, sessionId, detail, occurredAt);
+        event.actorContext = "STAFF";
+        event.actorId = Objects.requireNonNull(authenticatedActorId, "authenticatedActorId");
+        return event;
+    }
+
+    public static AuthAuditEvent bootstrapCreated(UUID subjectId, UUID organizationId, Instant occurredAt) {
+        AuthAuditEvent event = new AuthAuditEvent("STAFF_BOOTSTRAP_CREATED", subjectId, null,
+                "deployment_secret", occurredAt);
+        event.organizationId = Objects.requireNonNull(organizationId, "organizationId");
+        event.scopeKind = "ORGANIZATION";
+        event.actorContext = "SYSTEM";
+        return event;
+    }
 
     protected AuthAuditEvent() { }
 
