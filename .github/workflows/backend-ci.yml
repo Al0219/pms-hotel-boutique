@@ -48,3 +48,5 @@ jobs:
           PMS_DATABASE_URL: jdbc:postgresql://localhost:5432/pms_hotel
           PMS_DATABASE_USERNAME: pms_app
           PMS_DATABASE_PASSWORD: ci-password
+          SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "2"
+          SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "0"
