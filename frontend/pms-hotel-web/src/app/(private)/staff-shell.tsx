@@ -12,7 +12,7 @@ const nav = [
   { href: "/reservas", label: "Reservas", roles: ["SUPER_ADMIN", "GERENCIA", "RECEPCION"] },
   { href: "/lista-espera", label: "Lista de espera", roles: ["SUPER_ADMIN", "GERENCIA", "RECEPCION"] },
   { href: "/calendario", label: "Calendario", roles: ["SUPER_ADMIN", "GERENCIA", "RECEPCION"] },
-  { href: "/habitaciones", label: "Habitaciones", roles: ["SUPER_ADMIN", "GERENCIA", "RECEPCION"] },
+  { href: "/staff/habitaciones", label: "Habitaciones", roles: ["SUPER_ADMIN", "GERENCIA", "RECEPCION"] },
   { href: "/housekeeping", label: "Housekeeping", roles: ["SUPER_ADMIN", "GERENCIA", "OPERACIONES"] },
   { href: "/mantenimiento", label: "Mantenimiento", roles: ["SUPER_ADMIN", "GERENCIA", "OPERACIONES"] },
   { href: "/conserjeria", label: "Conserjería", roles: ["SUPER_ADMIN", "GERENCIA", "OPERACIONES", "RECEPCION"] },

@@ -5,11 +5,19 @@
  */
 export { MyReservationsPage } from "./components/my-reservations-page";
 export { PublicSearchForm } from './ui/public-search-form';
+export { PublicBookingHome } from './ui/public-booking-home';
+export { PublicBookingShell } from './ui/public-booking-shell';
+export { PublicAvailabilityPage } from './ui/public-availability-page';
 export type { PublicSearchFormProps } from './ui/public-search-form';
 
 export {
   validateBookingSearchCriteria,
   buildSearchQueryParams,
+  getBookingCalendarDate,
+  isBookingCalendarDate,
+  nextBookingCalendarDate,
+  readBookingSearchCriteria,
+  readBookingPageCriteria,
 } from './domain/booking-search-criteria';
 export type {
   BookingSearchCriteria,

@@ -2,6 +2,7 @@ import { accountHandlers } from "./account-handlers";
 import { http, HttpResponse } from "msw";
 import { private07Handlers } from "./private-07";
 import { private09Handlers } from "./private-09";
+import { buildPublicAvailabilityMock } from "./public-availability";
 
 import type { AvailabilityMatrixResponseDto } from "@/modules/availability";
 import type {
@@ -195,11 +196,9 @@ function handleAvailabilityRequest({ request }: { request: Request }) {
     return HttpResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 
-  if (propertyId === "empty_property") {
-    return HttpResponse.json(mockAvailabilityEmptyDto);
-  }
-
-  return HttpResponse.json(mockAvailabilitySuccessDto);
+  const response = buildPublicAvailabilityMock(url.searchParams,
+    propertyId === "empty_property" ? mockAvailabilityEmptyDto : mockAvailabilitySuccessDto);
+  return response ? HttpResponse.json(response) : HttpResponse.json({ error: "Invalid search criteria" }, { status: 400 });
 }
 
 async function handlePaymentGuaranteeRequest({ request }: { request: Request }) {
@@ -1517,5 +1516,4 @@ export const handlers = [
   http.get("/api/v1/private/revenue/kpis", handleGetRevenueKpis),
   http.get("http://pms.test/api/v1/private/revenue/kpis", handleGetRevenueKpis),
 ];
-
 
