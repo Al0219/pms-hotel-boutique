@@ -1,5 +1,25 @@
 # AlanHandoff — Seguimiento Backend
 
+## BE-013A-01 — Contrato OTP de reservas históricas (2026-10-04)
+
+- **Estado:** COMPLETADA. El usuario aprobó L-01 a L-07 y la entrega
+  documental; commit y push autorizados.
+- **Rama/base:** `feature/bd1-historical-reservation-otp-contract` desde
+  `main` actualizado `eb088d7` (PR #101 integra FIN-01); árbol limpio al iniciar.
+- **DoR/evidencia:** C3 aprueba referencia + correo Google verificado + OTP de
+  10 minutos, cinco intentos, reenvío mínimo de 60 segundos y uso único.
+  ReservationLinkService resuelve código/correo; el puerto Guest está vacío;
+  GuestProfile tiene FK opcional a cuenta, sin vínculo por reserva.
+- **Alcance:** contrato propuesta para puerto, endpoints/BFF, desafío,
+  asociación específica de Reservation, concurrencia, idempotencia, privacidad
+  y recuperación de entrega. No implementación ni proveedor en vivo.
+- **QA local:** código/esquema/C3 y pruebas actuales de lookup contrastados;
+  enlaces locales y `git diff --check` PASS. No aplica Maven: solo Markdown.
+  QA documental y aprobación del usuario en
+  `docs/30_BD1_HISTORICAL_RESERVATION_OTP_CONTRACT_PROPOSAL.md`.
+- **Siguiente paso:** publicar la rama y esperar integración en `main`; después
+  revisar el puerto con BD3/Guest Web antes de BE-013B. Pruebas externas separadas.
+
 ## BE-014B-FIN-01 — Acceso Staff a folio AD-02 (2026-10-04)
 
 - **Estado:** COMPLETADA. El usuario confirmó que todas las pruebas manuales

@@ -870,7 +870,8 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 
 ### BE-013 — OTP y vínculo de reservas históricas
 
-- **Estado:** BE-013A PENDIENTE; BE-013B PENDIENTE.
+- **Estado:** BE-013A COMPLETADA; BE-013B PENDIENTE de revisión de
+  integración BD3/Guest Web y de la implementación del puerto invocable.
 - **Dependencias:** BE-004 completa; GuestProfile/ReservationLinkService existen.
   B requiere A aprobada y contrato invocable del puerto con BD3; delivery externo
   y aceptación de presentación se cierran con BE-016B.
@@ -887,6 +888,29 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 - **Archivos previstos:** extensión C3, guestauth services/api/persistence, SPI y
   adaptador Reservations con BD3, nuevos changesets, Resend y tests/BFF.
 - **Reviewer:** BD3 y consumidor Guest Web/Android aplicable.
+
+#### BE-013A-01 — Contrato del desafío y asociación histórica
+
+- **Estado:** COMPLETADA (2026-10-04). El usuario aprobó L-01 a L-07 y la
+  entrega documental; commit y push autorizados.
+- **Rama/base:** `feature/bd1-historical-reservation-otp-contract` desde
+  `main` actualizado `eb088d7` (PR #101 integra FIN-01).
+- **DoR:** BE-004/C3 aprobado; ReservationLinkService, GuestProfile,
+  GuestAccount/Guest Auth y EmailSender ya existen. El puerto
+  ReservationLinkVerificationPort está vacío; no hay OTP ni asociación.
+- **Alcance/archivos:** propuesta de firma/resultado mínimo del puerto,
+  autorización Guest y BFF, persistencia de desafío/vínculo, estados,
+  concurrencia, privacidad, límites y fallo de entrega en contrato nuevo;
+  corregir nota factual obsoleta de C3 y actualizar seguimiento. Sin Java,
+  SQL, endpoint ni envío externo en esta fase.
+- **Aceptación/DoD:** separar reglas C3 aprobadas de decisiones nuevas;
+  contrastar propuestas con esquema/código y reglas Guest/Reservations; revisar
+  enlaces/diff, entregar QA documental y esperar aprobación antes de cerrar,
+  commit o push.
+- **Evidencia local:** fuentes C3, Auth, Reservations, esquema y tests de lookup
+  contrastados; enlaces Markdown y `git diff --check` PASS. Sin Java/SQL/HTTP,
+  por lo que Maven no aplica a esta entrega documental. QA y decisiones aprobadas
+  en `docs/30_BD1_HISTORICAL_RESERVATION_OTP_CONTRACT_PROPOSAL.md`.
 
 ### BE-007 — Centro de integraciones, error queue e idempotencia
 
