@@ -559,7 +559,7 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 
 - **Estado:** BE-014A EN_QA — AD-01, AD-02 y AD-03 aprobadas; AD-04 a AD-06 y
   contratos HTTP pendientes. BE-014B EN_PROGRESO — COM-01/02 completados,
-  OPS-01 completado; otros dominios pendientes. Prioridad inicial.
+  OPS-01 y FIN-01 completados; otros dominios pendientes. Prioridad inicial.
 - **Entrega:** `21_BD1_API_ACCESS_CONTRACT_PROPOSAL.md` PROPOSED: catálogo SQL C2,
   matrices de acceso, brechas de scope/actor/filtros, decisiones AD-01 a AD-06 y
   acceptance por dominio. Nueve enlaces y referencias/guards contrastados;
@@ -670,6 +670,31 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
   cero failures/errors/skipped, BUILD SUCCESS y JAR con PostgreSQL 17/Java 21.
   Upgrade Liquibase incluido; QA manual del usuario PASS según
   `docs/28_BD1_SERVICE_REQUEST_INTAKE_QA.md`.
+
+#### BE-014B-FIN-01 — Acceso Staff interno a lectura y postings de folio
+
+- **Estado:** COMPLETADA (2026-10-04). El usuario confirmó que todas las
+  pruebas manuales terminaron bien; commit y push autorizados.
+- **Rama/base:** `feature/bd1-folio-staff-access-ad02` desde `main` actualizado
+  `cbb8a51` (PR #100 integra OPS-01).
+- **DoR:** AD-02 aprobada; C2, Staff Auth, PropertyScopeResolver, FolioService y
+  consultas/repo financieros existentes. FP-D02/04 y contratos HTTP siguen
+  propuestos, por lo que esta entrega no crea endpoints ni modifica lifecycle.
+- **Alcance/archivos:** entrada Staff interna para get/balance/movements,
+  postCharge/postPayment/postReversal; permiso FOLIO_PAYMENT_OPERATE, PROPERTY,
+  actor de sesión y permiso adicional PAYMENT_REFUND_VOID para reverso de PAYMENT.
+  Predicados scoped en folio/movimiento original, pruebas PostgreSQL, contrato
+  de alcance y seguimiento. El motor FolioService BD3 conserva su contrato.
+- **Aceptación/DoD:** sesión y permisos actuales; folio ajeno/no existente
+  indistinguibles, original ajeno/no existente indistinguibles; Recepción puede
+  compensar CHARGE pero no PAYMENT; Gerencia sí puede ambos; actor confiable;
+  regresión financiera y verify completo Java 21/PostgreSQL 17. Entregar QA
+  manual y esperar confirmación antes de completar, commit o push.
+- **Límites:** openFolio, settle/reopen/close, proveedor de pagos, HTTP y
+  paginación FP-D02 quedan para incrementos/contratos propios.
+- **Evidencia local:** 18 pruebas focalizadas y `verify` completo 310 PASS,
+  cero failures/errors/skipped, BUILD SUCCESS en PostgreSQL 17/Java 21.
+  QA manual del usuario PASS según `docs/29_BD1_FOLIO_STAFF_ACCESS_QA.md`.
 
 #### BE-014B-COM-01 — Reutilización del permiso comercial
 

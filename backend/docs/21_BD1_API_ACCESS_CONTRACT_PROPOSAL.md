@@ -338,6 +338,20 @@ solas la corrección scoped de lectura de reservas o el contrato comercial AD-01
 solo se inicia código de la entrega cuyo DoR esté satisfecho. AD-04 sí bloquea
 la autorización del envío externo afectado; no se resuelve por una suposición local.
 
+### Incremento BE-014B-FIN-01 — entrada Staff interna AD-02
+
+`StaffFolioService` aplica sesión Staff activa, permisos vigentes y PROPERTY
+autorizada antes de consultar un folio. Cubre get, balance, movimientos, CHARGE,
+PAYMENT y reversos del motor contable existente. El movimiento original del
+reverso se busca por `id`, `folioId` y `propertyId`; un PAYMENT exige además
+`PAYMENT_REFUND_VOID`. El actor de cada posting procede de la sesión Staff.
+CHARGE solo exige `FOLIO_PAYMENT_OPERATE`; AUDITOR permanece sin acceso.
+
+El puerto es interno y no habilita rutas HTTP. La apertura de folio, transiciones
+settle/reopen/close, paginación FP-D02, captura/refund de proveedor y contratos
+HTTP quedan pendientes. El `FolioService` original continúa como motor interno;
+sus métodos crudos no deben exponerse directamente a clientes Staff.
+
 ## Acceptance y siguiente implementación revisable
 
 Para BE-014A: catálogo/roles contrastados con SQL; servicios en las matrices
