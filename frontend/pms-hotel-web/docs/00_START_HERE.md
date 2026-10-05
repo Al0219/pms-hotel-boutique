@@ -1,22 +1,5 @@
-# 00 — Start Here
+# 00 — Start Here Web
 
-## Antes de cualquier tarea Web
+Para una tarea nueva, leer `../../../AGENTS.md` y `../AGENTS.md`; localizar solo su fila en `../../../docs/Backlog_Implementacion_PMS_V1.xlsx`. Comprobar autorización/READY, dependencias, owner/reviewer, Figma/fuente, DoR, aceptación y DoD. Leer el documento y contrato específicos del dominio; implementar solo esa tarea y ejecutar QA pertinente.
 
-1. leer AGENTS global;
-2. leer AGENTS Web;
-3. abrir `../../../docs/Backlog_Implementacion_PMS_V1.xlsx`;
-4. localizar la tarea exacta;
-5. verificar que está READY o autorizada explícitamente;
-6. verificar dependencias;
-7. identificar owner/reviewer;
-8. identificar Figma/fuente y ruta;
-9. leer docs específicos del dominio;
-10. verificar DoR;
-11. implementar solo esa tarea;
-12. ejecutar Acceptance Criteria + DoD;
-13. pasar a QA.
-
-## Sprint 0
-La fase de análisis de Sprint 0 ya fue cerrada. Las decisiones aprobadas están en `docs/11_ARCHITECTURAL_DECISIONS.md` global y en el backlog.
-
-No volver a rediseñar Sprint 0 salvo contradicción real o cambio aprobado.
+Para un cambio localizado o fallo CI, partir de código/tests afectados y usar el router de `../AGENTS.md` para abrir solo la documentación necesaria. Las decisiones aprobadas de Sprint 0 están en `../../../docs/11_ARCHITECTURAL_DECISIONS.md`; no rediseñarlas sin cambio aprobado.

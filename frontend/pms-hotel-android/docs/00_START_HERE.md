@@ -1,17 +1,5 @@
 # 00 — Start Here Android
 
-Antes de una tarea:
-1. leer globals;
-2. leer Android AGENTS;
-3. abrir `../../../docs/Backlog_Implementacion_PMS_V1.xlsx`;
-4. localizar `IMP-AND-*` autorizada;
-5. verificar dependencias/DoR;
-6. revisar Figma y contrato cross-app;
-7. implementar;
-8. tests;
-9. DoD;
-10. QA/reviewer.
+Para una tarea nueva, leer `../../../AGENTS.md` y `../AGENTS.md`; localizar solo su fila `IMP-AND-*` en `../../../docs/Backlog_Implementacion_PMS_V1.xlsx`. Verificar autorización/READY, dependencias, owner/reviewer, Figma/contrato aplicable, DoR, aceptación y DoD. Implementar solo esa tarea y ejecutar pruebas y QA pertinentes.
 
-`IMP-AND-0001` confirmó el stack oficial: React Native, Expo, TypeScript, Expo Router, TanStack Query, `fetch` nativo, Jest, React Native Testing Library y `StyleSheet` con design tokens. Consultar `../../../docs/11_ARCHITECTURAL_DECISIONS.md` antes de proponer una dependencia estructural.
-
-La siguiente tarea de infraestructura es `IMP-AND-0002` una vez que `IMP-AND-0001` figure como `COMPLETADA` en el backlog canónico.
+Para una corrección localizada, partir de código/tests afectados y usar el router de `../AGENTS.md` para abrir solo las fuentes necesarias. El stack aprobado está en `../../../docs/11_ARCHITECTURAL_DECISIONS.md`; consultarlo cuando se proponga una dependencia o cambio estructural.
