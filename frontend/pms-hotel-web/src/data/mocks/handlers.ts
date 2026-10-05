@@ -3,6 +3,7 @@ import { http, HttpResponse } from "msw";
 import { private07Handlers } from "./private-07";
 import { private09Handlers } from "./private-09";
 import { buildPublicAvailabilityMock } from "./public-availability";
+import { publicCatalogueFixture } from "./public-catalogue";
 
 import type { AvailabilityMatrixResponseDto } from "@/modules/availability";
 import type {
@@ -197,7 +198,7 @@ function handleAvailabilityRequest({ request }: { request: Request }) {
   }
 
   const response = buildPublicAvailabilityMock(url.searchParams,
-    propertyId === "empty_property" ? mockAvailabilityEmptyDto : mockAvailabilitySuccessDto);
+    propertyId === "empty_property" ? mockAvailabilityEmptyDto : publicCatalogueFixture);
   return response ? HttpResponse.json(response) : HttpResponse.json({ error: "Invalid search criteria" }, { status: 400 });
 }
 

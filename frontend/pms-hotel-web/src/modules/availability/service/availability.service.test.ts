@@ -28,7 +28,7 @@ describe("Availability Service", () => {
     expect(result.check_in_date).toBe("2026-10-10");
     expect(result.check_out_date).toBe("2026-10-15");
     expect(result.total_nights).toBe(5);
-    expect(result.available_room_types[0].rate_plans[0].total_amount).toBe("1250.00");
+    expect(result.available_room_types[0].rate_plans[0].total_amount).toBe("725.00");
   });
 
   it("returns empty demo inventory when the requested quantity exceeds ATS", async () => {
@@ -38,8 +38,8 @@ describe("Availability Service", () => {
 
   it("preserves different room type options for a group instead of requiring all rooms to have one type", async () => {
     const result = await fetchAvailabilityDto({ check_in_date: "2026-10-10", check_out_date: "2026-10-15", adults: 6, children: 0, rooms_count: 6 });
-    expect(result.available_room_types.map(room => room.available_rooms_count)).toEqual([5, 2]);
-    expect(result.available_room_types.map(room => room.room_type_id)).toEqual(["rt_deluxe_king", "rt_master_suite"]);
+    expect(result.available_room_types.map(room => room.available_rooms_count)).toEqual([2, 1, 2, 2]);
+    expect(result.available_room_types.map(room => room.room_type_id)).toEqual(["rt_deluxe_king", "rt_terrace_suite", "rt_double_superior", "rt_junior_suite"]);
   });
 
   it("rejects invalid dates in the demo endpoint", async () => {
@@ -59,7 +59,7 @@ describe("Availability Service", () => {
     expect(result.check_in_date).toBe("2026-10-01");
     expect(result.check_out_date).toBe("2026-10-04");
     expect(result.total_nights).toBe(3);
-    expect(result.available_room_types).toHaveLength(2);
+    expect(result.available_room_types).toHaveLength(4);
     expect(result.available_room_types[0].code).toBe("DLX-KNG");
   });
 

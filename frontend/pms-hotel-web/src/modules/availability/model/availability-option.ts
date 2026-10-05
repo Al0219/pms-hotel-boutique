@@ -35,6 +35,11 @@ export interface AvailableRoomType {
   availableRoomsCount: number; // ATS (Available to sell) para la estancia
   ratePlans: RatePlanOption[];
   images: string[];
+  category?: "DELUXE" | "SUITE" | "SUPERIOR";
+  bedDescription?: string;
+  areaSquareMeters?: number;
+  amenities?: string[];
+  badge?: string;
 }
 
 export interface AvailabilitySearchResult {
