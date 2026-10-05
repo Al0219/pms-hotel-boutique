@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "PMS BD1 — Backend APIs",
-    "description": "Colección BD1 para probar las rutas Backend. Requiere un entorno de pruebas con Google Guest Auth, envío OTP y PMS_RESERVATION_LINK_OTP_HMAC_KEY configurados. No guardar ni exportar tokens Guest reales después de usarla.",
+    "description": "Colección BD1 para probar rutas Backend Guest y Staff. El flujo OTP Guest requiere Google Guest Auth, envío OTP y PMS_RESERVATION_LINK_OTP_HMAC_KEY en el entorno. No guardar ni exportar tokens reales después de usarla.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -23,6 +23,26 @@
     {
       "key": "guestAccessToken",
       "value": "",
+      "type": "string"
+    },
+    {
+      "key": "staffAccessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "propertyId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "from",
+      "value": "2035-01-01",
+      "type": "string"
+    },
+    {
+      "key": "to",
+      "value": "2035-01-03",
       "type": "string"
     },
     {
@@ -113,6 +133,38 @@
               }
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "Staff — reportes On-books diario",
+      "description": "Usar JWT Staff vigente con COMMERCIAL_MANAGE. Para ALL_PROPERTIES también requiere MULTI_PROPERTY_READ. No guardar tokens reales al exportar.",
+      "item": [
+        {
+          "name": "GET On-books diario — property",
+          "request": {
+            "method": "GET",
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{staffAccessToken}}", "type": "string"}]},
+            "url": "{{baseUrl}}/api/v1/reports/on-books/daily?from={{from}}&to={{to}}&propertyId={{propertyId}}"
+          },
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+            "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+            "pm.test('No cache privado', () => { const cache = pm.response.headers.get('Cache-Control') || ''; pm.expect(cache).to.include('private'); pm.expect(cache).to.include('no-store'); });",
+            "if (pm.response.code === 200) { const body = pm.response.json(); pm.test('DTO On-books', () => { pm.expect(body.calculatedAt).to.be.a('string'); pm.expect(body.rows).to.be.an('array'); body.rows.forEach(row => { pm.expect(row.propertyId).to.eql(pm.collectionVariables.get('propertyId')); pm.expect(row).to.have.all.keys('propertyId','timezone','currency','stayDate','physicalRooms','outOfOrderRooms','availableRooms','onBooksRooms','onBooksPercent','unavailableReason'); }); }); }"
+          ]}}]
+        },
+        {
+          "name": "GET On-books diario — ALL_PROPERTIES",
+          "request": {
+            "method": "GET",
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{staffAccessToken}}", "type": "string"}]},
+            "url": "{{baseUrl}}/api/v1/reports/on-books/daily?from={{from}}&to={{to}}&scope=ALL_PROPERTIES"
+          },
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+            "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+            "pm.test('No cache privado', () => { const cache = pm.response.headers.get('Cache-Control') || ''; pm.expect(cache).to.include('private'); pm.expect(cache).to.include('no-store'); });",
+            "if (pm.response.code === 200) { const body = pm.response.json(); pm.test('Filas ordenadas', () => { const keys = body.rows.map(row => row.propertyId + '/' + row.stayDate); pm.expect(keys).to.eql([...keys].sort()); }); }"
+          ]}}]
         }
       ]
     }

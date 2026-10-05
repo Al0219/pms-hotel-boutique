@@ -1,5 +1,32 @@
 # AlanHandoff — Seguimiento Backend
 
+## BE-010B-ONBOOKS-01 — On-books diario Backend HTTP (2026-10-05)
+
+- **Estado:** COMPLETADA; QA manual confirmada por el usuario, commit/push autorizado por el flujo acordado.
+- **Rama/base:** `feature/bd1-daily-on-books-report` desde `main` actualizado
+  `b5d6630` (PR #106 integra C7); árbol limpio al iniciar.
+- **DoR:** C7 habilita On-books sin D03; Staff Auth/C2 y ATS SQL disponibles.
+  Contrato HTTP Backend aprobado por usuario; BFF Web pendiente de su owner.
+- **Plan/archivos:** consulta Inventory con SQL property-scoped, servicio Staff,
+  controlador `GET /api/v1/reports/on-books/daily`, respuesta y errores públicos,
+  pruebas PostgreSQL/HTTP, contrato doc34 y Postman BD1.
+- **Implementado:** `DailyOnBooksRepository` filtra org/IDs antes de agregados
+  por stay date; `DailyOnBooksService` valida sesión Staff/COMMERCIAL_MANAGE,
+  PROPERTY/ALL_PROPERTIES, 366 noches/50 000 filas y porcentaje sin dividir
+  por cero. HTTP exige filtros excluyentes, 400/401/403/200 y no-store;
+  Postman contiene los dos modos Staff. Sin BFF Web ni CSV.
+- **QA local:** 10 pruebas focalizadas PASS y `verify` completo 331 PASS,
+  cero failures/errors/skipped, BUILD SUCCESS en PostgreSQL 17/Java 21.
+  El PostgreSQL descartable de `compose.bd2-test.yaml` admite 200 conexiones
+  para los contextos Spring y pruebas concurrentes. Guía
+  `docs/35_BD1_DAILY_ON_BOOKS_QA.md`; Postman JSON y `git diff --check` PASS.
+- **QA manual:** 200 por property y ALL_PROPERTIES; 401 sin Staff; 403 sin
+  permiso, property ajena o falta de MULTI_PROPERTY_READ; 400 con scope doble
+  o ausente, fechas invertidas y 367 noches. 366 noches válido; no-store, DTO,
+  denominador cero y orden PASS, según confirmación del usuario.
+- **Siguiente paso:** commit/push de esta rama y revisión de integración.
+  BD2/BD3 revisan paridad ATS/ReservationStay; owner Web revisa BFF.
+
 ## BE-010A-01 — Propuesta de reporting C7 (2026-10-04)
 
 - **Estado:** COMPLETADA; el usuario revisó D01–D09 y aprobó iniciar On-books
