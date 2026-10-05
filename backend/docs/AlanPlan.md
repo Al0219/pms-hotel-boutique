@@ -996,7 +996,8 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 
 ### BE-010 — Reportes, exportaciones y revenue KPIs
 
-- **Estado:** BE-010A PENDIENTE; BE-010B PENDIENTE por reporte/KPI.
+- **Estado:** BE-010A COMPLETADA (C7 aprobada parcialmente para On-books diario);
+  BE-010B PENDIENTE por reporte/KPI.
 - **Dependencias:** A inventaría tablas y fórmulas con BD2/BD3; B requiere C7/A,
   BE-014A y fuentes reales de cada indicador. Folio PAYMENT no prueba capture.
 - **Entrega A / DoR B:** definir occupancy/rooms sold/available, ADR/RevPAR/revenue,
@@ -1013,6 +1014,29 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 - **Archivos previstos:** C7, reporting solo si aprobado, SQL/query/DTO/API,
   migrations/índices nuevos justificados, tests y consumidores de reportes.
 - **Reviewer:** BD2 finanzas/inventario, BD3 business date/comercial y owner Revenue.
+
+#### BE-010A-01 — Propuesta C7 de métricas y exportación
+
+- **Estado:** COMPLETADA (2026-10-04); el usuario revisó D01–D09, aprobó el
+  primer reporte On-books diario y confirmó límites/permiso/export. Commit y
+  push autorizados por el flujo de QA acordado. C7-D03 sigue pendiente.
+- **Rama/base:** `feature/bd1-reporting-contract-c7` desde `main` actualizado
+  `9ecd208` (PR #105 integra BE-016A y PR #104 Web público).
+- **DoR:** BE-003/C2 y fuentes Reservations, Inventory, Folio y Night Audit
+  presentes; BE-010A inventaría fórmulas y vacíos antes de implementar.
+- **Alcance/archivos:** `docs/33_BD1_REPORTING_CONTRACT_C7_PROPOSAL.md`,
+  AlanPlan/Handoff. Inventario de tablas reales, decisiones de granularidad,
+  denominador, ingresos, fechas, monedas, permisos y export; sin Java, SQL,
+  ruta HTTP, permiso nuevo o valor de KPI calculado.
+- **Aceptación/DoD:** cada fuente enlazada al código/migración; decisiones
+  D01–D09 explícitas, brechas financieras/históricas reconocidas y secuencia
+  por indicador; enlaces/diff revisados. Entregar QA manual y esperar aprobación
+  antes de cerrar, commit o push.
+- **Evidencia local:** nueve enlaces válidos, D01–D09 presentes y
+  `git diff --check` PASS. QA de decisiones del usuario registrada; no aplica
+  Maven: solo documentación.
+- **Dependencias posteriores:** BE-010B On-books requiere contrato HTTP/BFF y
+  revisión de acceso; revenue/ADR/RevPAR requieren D03, y pace requiere D05.
 
 ### BE-011 — MFA local Staff
 
