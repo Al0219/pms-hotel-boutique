@@ -1048,7 +1048,7 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 
 ### BE-016 — Google y Resend en entorno de presentación
 
-- **Estado:** BE-016A PENDIENTE; BE-016B PENDIENTE; externo SIN VERIFICAR.
+- **Estado:** BE-016A COMPLETADA; BE-016B PENDIENTE; externo SIN VERIFICAR.
 - **Dependencias:** A puede iniciar desde ahora; B requiere acceso/configuración
   del entorno, cuenta de prueba/remitente y BE-013B para OTP E2E completo.
 - **Entrega A:** checklist reproducible del host/HTTPS/callback Google, BFF y
@@ -1063,6 +1063,27 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 - **Archivos previstos:** guía de presentación/smoke y evidencia sanitizada;
   cambios de configuración/código solo ante defecto concreto autorizado.
 - **Reviewer:** responsable despliegue y consumidor Guest; BD3 vínculo.
+
+#### BE-016A-01 — Preflight reproducible de Google, Resend y OTP
+
+- **Estado:** COMPLETADA (2026-10-04); guía y corrección de Compose verificadas
+  manualmente por el usuario. Commit y push autorizados.
+- **Rama/base:** `feature/bd1-presentation-google-resend-preflight` desde `main`
+  actualizado `b60f465` (PR #103 integra BE-013B-BACKEND-01).
+- **DoR:** BE-004/C3, adaptadores Google/Resend y BE-013B Backend integrados;
+  no se requieren secretos ni acceso externo para preparar el preflight.
+- **Alcance/archivos:** guía `docs/32_BD1_PRESENTATION_GOOGLE_RESEND_PREFLIGHT.md`,
+  estado factual C3, Compose raíz y `.env.example` para pasar la clave HMAC OTP,
+  AlanPlan/Handoff. Sin nuevas rutas, cambios de auth o pruebas en vivo.
+- **Aceptación/DoD:** variables y callback exacto inventariados; comandos de
+  presencia que no imprimen valores; checklist de cookies/Network, login,
+  refresh, logout, recepción OTP y evidencia sanitizada; Compose validado,
+  enlaces y diff revisados. El usuario confirma QA manual antes de cierre.
+- **Evidencia:** Compose `config --quiet`, enlaces locales, passthrough OTP,
+  comando de longitud con valores sintéticos y `git diff --check` PASS.
+  El usuario ejecutó desde `backend/` `docker compose -f ../compose.yaml
+  config --quiet` sin errores. Google/Resend del entorno de presentación
+  permanecen SIN VERIFICAR hasta BE-016B.
 
 ### BE-017 — Cierre integrado BD1
 
