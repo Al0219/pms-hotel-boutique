@@ -11,6 +11,7 @@
 .stepper li { display: flex; gap: 12px; align-items: center; color: #727a74; border-bottom: 2px solid #e1e5df; padding-bottom: 16px; }
 .stepper li > span { display: grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0; border: 1px solid #dce1d9; border-radius: 50%; font-size: 12px; }
 .stepper strong { font-size: 12px; font-weight: 500; }
+.stepper li[aria-current="step"] strong { font-weight: 600; }
 .stepper li.activeStep { border-color: #5a6b5d; color: #465a49; }
 .activeStep > span { background: #5a6b5d; color: #fff; border-color: #5a6b5d !important; }
 .demo { font-size: 12px; padding: 12px 16px; background: #edf1e8; color: #4d5e49; border-radius: 9px; margin-bottom: 24px; }

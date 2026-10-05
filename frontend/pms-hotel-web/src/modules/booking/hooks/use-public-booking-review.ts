@@ -22,5 +22,7 @@ export function usePublicBookingReview(criteria: Partial<BookingSearchCriteria>)
   const items = resolveSelection(selection, availability.data?.roomTypes ?? []);
   const prices = selectionPriceSummary(items);
   const ready = validCriteria && availability.isSuccess && !availability.isFetching && availability.fetchStatus !== 'paused';
-  return { hydrated, validCriteria, availability, items, prices, ready, setSelection };
+  const scope = validCriteria && availability.data?.propertyId ? `${availability.data.propertyId}:${buildSearchQueryParams(criteria as BookingSearchCriteria)}` : '';
+  const selectionKey = JSON.stringify(items.map(item => [item.roomTypeId, item.ratePlanId, item.quantity]).sort());
+  return { hydrated, validCriteria, availability, items, prices, ready, setSelection, scope, selectionKey };
 }

@@ -45,6 +45,15 @@ NEXT_PUBLIC_API_BASE_URL=
 
 No agregar secretos ni tokens de sesión al frontend.
 
+## Checkout público
+
+Inicio → catálogo → detalle → revisión → datos del huésped → destino de pago.
+Usar `npm run dev -- --port 3000` y abrir `http://localhost:3000`.
+Seleccionar primero una habitación con fechas futuras. El borrador se conserva
+durante la navegación; recargar descarta carrito y datos personales. La vista
+de pago es un destino de revisión, todavía no cobra ni confirma reservas.
+Detalles y validación en [Datos del huésped](docs/42_PUBLIC_BOOKING_GUEST_DATA.md).
+
 ## Backlog y reglas
 
 El backlog canónico es `../../docs/Backlog_Implementacion_PMS_V1.xlsx`. Antes de una tarea, leer `AGENTS.md`, la fila del backlog y los documentos indicados.

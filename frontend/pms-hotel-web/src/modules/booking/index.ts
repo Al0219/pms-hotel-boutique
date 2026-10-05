@@ -13,7 +13,10 @@ export { PublicRoomDetailPage } from './ui/public-room-detail-page';
 export { PublicBookingReviewPage } from './ui/public-booking-review-page';
 export { BookingStepper } from './ui/booking-stepper';
 export { usePublicBookingReview } from './hooks/use-public-booking-review';
-export { publicResultsHref, publicSelectionHref } from './domain/public-room-navigation';
+export { publicResultsHref, publicSelectionHref, publicGuestDataHref } from './domain/public-room-navigation';
+export { PublicCurrencySelector } from './ui/public-currency-selector';
+export { usePublicDisplayCurrency } from './components/public-booking-provider';
+export { displayMoney } from './domain/display-currency';
 export type { PublicSearchFormProps } from './ui/public-search-form';
 
 export {

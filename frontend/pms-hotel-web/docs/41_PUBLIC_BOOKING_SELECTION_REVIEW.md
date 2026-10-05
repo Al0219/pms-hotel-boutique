@@ -1,5 +1,7 @@
 # Public 01 — Revisa tu selección
 
+Actualización: el formulario inicial descrito aquí se amplía en [Datos del huésped](42_PUBLIC_BOOKING_GUEST_DATA.md), con validación y persistencia en memoria entre pasos.
+
 ## Alcance autorizado
 
 José solicita el Paso 1 de 3: selección → revisión → datos del huésped, conservando crema/serif/oliva, búsqueda, moneda y habitación. Implementación frontend en `feature/web1-public-booking`; desarrollo y QA en puerto 3000.

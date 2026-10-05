@@ -6,10 +6,12 @@ import { getPublicEnvironment } from "@/lib/env";
 import { HttpNetworkError } from "@/lib/http/errors";
 import { useGuestSession } from "./guest-session-provider";
 import styles from "./guest-access-page.module.css";
+import { checkoutReturn } from '../model/checkout-return';
 
 type AccessStep = "options" | "email" | "google";
 
-export function GuestAccessPage() {
+export function GuestAccessPage({ returnTo }: { returnTo?: string } = {}) {
+  const checkoutHref = checkoutReturn(returnTo);
   const [step, setStep] = useState<AccessStep>("options");
   const [email, setEmail] = useState("");
   const [showHelp, setShowHelp] = useState(false);
@@ -32,7 +34,7 @@ export function GuestAccessPage() {
           <p>Método de acceso <strong>{account.externalIdentities.some(identity => identity.provider === "GOOGLE") ? "Google" : "Correo electrónico"}</strong></p>
         </div>
         <Link className={styles.primary} href="/cuenta">Ir a mi cuenta</Link>
-        <Link className={styles.secondary} href="/">Continuar reservando</Link>
+        <Link className={styles.secondary} href={checkoutHref ?? '/'}>{checkoutHref ? 'Continuar mi reserva' : 'Continuar reservando'}</Link>
         <button className={styles.secondary} type="button" onClick={signOut}>Cerrar sesión</button>
       </div>
     </section>;
@@ -44,7 +46,7 @@ export function GuestAccessPage() {
 
   return <section className={styles.page} aria-labelledby="access-title" aria-busy={isPending}>
     {step === "options"
-      ? <Link className={styles.back} href="/">← Volver al inicio</Link>
+      ? <Link className={styles.back} href={checkoutHref ?? '/'}>{checkoutHref ? '← Volver a los datos de mi reserva' : '← Volver al inicio'}</Link>
       : <button className={styles.back} disabled={isPending} onClick={() => changeStep("options")} type="button">← Volver a opciones</button>}
     <div className={styles.content}>
       <h1 id="access-title">{step === "email" ? "Accede con tu correo" : step === "google" ? "Continuar con Google" : "Accede a tu cuenta"}</h1>
@@ -54,7 +56,7 @@ export function GuestAccessPage() {
         <h2>Elige cómo continuar</h2>
         <button className={styles.google} onClick={() => changeStep("google")} type="button"><span aria-hidden="true">G</span>Continuar con Google</button>
         <button className={styles.primary} onClick={() => changeStep("email")} type="button">Continuar con correo</button>
-        <Link className={styles.secondary} href="/">Continuar como invitado</Link>
+        <Link className={styles.secondary} href={checkoutHref ?? '/'}>Continuar como invitado</Link>
       </div> : step === "email" ? <form className={styles.card} onSubmit={event => {
         event.preventDefault();
         if (!email.trim()) return;
