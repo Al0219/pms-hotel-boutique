@@ -17,13 +17,13 @@ function SessionObserver() {
   return <output aria-label="Guest session">{status}</output>;
 }
 
-function setup() {
+function setup(returnTo?: string) {
   vi.stubEnv("NEXT_PUBLIC_USE_MOCK_API", "true");
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   function Harness({ page }: { page: "access" | "account" | "profile" }) {
     return <QueryClientProvider client={client}><GuestSessionProvider>
       <SessionObserver />
-      {page === "access" ? <GuestAccessPage /> : <GuestAccountGate>{page === "account" ? <AccountDashboardPage /> : <p>Perfil del huésped</p>}</GuestAccountGate>}
+      {page === "access" ? <GuestAccessPage returnTo={returnTo} /> : <GuestAccountGate>{page === "account" ? <AccountDashboardPage /> : <p>Perfil del huésped</p>}</GuestAccountGate>}
     </GuestSessionProvider></QueryClientProvider>;
   }
   const view = render(<Harness page="access" />);
@@ -37,6 +37,15 @@ async function emailAccess(user: ReturnType<typeof userEvent.setup>, email = "de
 }
 
 describe("Guest access and shared session", () => {
+  it('explains guest bookings and returns Google demo access to linked reservations', async () => {
+    const { user } = setup('/mis-reservas');
+    expect(screen.getByText('¿Reservaste como invitado?')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Reservar como invitado' })).toHaveAttribute('href', '/habitaciones');
+    expect(screen.queryByRole('button', { name: 'Continuar con correo' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continuar con Google' }));
+    await user.click(screen.getByRole('button', { name: 'Continuar retorno al PMS' }));
+    expect(await screen.findByRole('link', { name: 'Ir a Mis reservas' })).toHaveAttribute('href', '/mis-reservas');
+  });
   it("signs in through Service/Mapper, retains the session across routes, and clears Guest data on sign-out", async () => {
     const { user, navigate, client } = setup();
     client.setQueryData(["staff", "demo"], { active: true });

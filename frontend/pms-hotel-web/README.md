@@ -54,6 +54,10 @@ durante la navegación; recargar descarta carrito y datos personales. La vista
 de pago es un destino de revisión, todavía no cobra ni confirma reservas.
 Detalles y validación en [Datos del huésped](docs/42_PUBLIC_BOOKING_GUEST_DATA.md).
 
+«Mis reservas» permite probar acceso Google simulado, vinculación mediante
+referencia/código y listado/detalle únicamente de reservas vinculadas.
+Instrucciones y límites en [Reserva como invitado y Mis reservas](docs/43_PUBLIC_GUEST_RESERVATION_LINK.md).
+
 ## Backlog y reglas
 
 El backlog canónico es `../../docs/Backlog_Implementacion_PMS_V1.xlsx`. Antes de una tarea, leer `AGENTS.md`, la fila del backlog y los documentos indicados.
