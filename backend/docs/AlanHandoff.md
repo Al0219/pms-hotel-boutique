@@ -1,5 +1,32 @@
 # AlanHandoff — Seguimiento Backend
 
+## BE-013B-BACKEND-01 — OTP histórico Backend (2026-10-04)
+
+- **Estado:** COMPLETADA; el usuario confirmó las pruebas manuales sin errores
+  y autorizó commit/push.
+- **Rama/base:** `feature/bd1-historical-reservation-otp` desde `main`
+  actualizado `1f6c30e` (PR #102); árbol limpio al iniciar.
+- **DoR:** C3 y L-01 a L-07 aprobados; puerto Reservations vacío, lookup
+  interno existente, EmailSender disponible; BD3 y Guest Web revisan integración.
+- **Alcance:** desafíos/vínculos en 004 (depende de Reservations), emisión/verificación Guest con límites y
+  auditoría segura, puerto BD3 y API BFF-only. Web BFF y Resend real fuera de
+  esta rama.
+- **Implementado:** lookup scoped por código/correo, OTP HMAC y desafío
+  ligado a cuenta/sesión, emisión asíncrona, límites, vínculo único por
+  Reservation, audit append-only y dos rutas Guest con anotaciones OpenAPI.
+- **QA local:** 13 pruebas focalizadas y verify completo 321 PASS, cero
+  failures/errors/skipped, BUILD SUCCESS con PostgreSQL 17/Java 21. Primera
+  corrida completa detectó fixtures persistentes en tests nuevos; corregidos
+  con limpieza y repetición sobre BD fresca PASS. Upgrade separado desde
+  changelog pre-OTP: changeset 004-007 aplicado, 10 pruebas OTP PASS. Guía
+  `docs/31_BD1_HISTORICAL_RESERVATION_OTP_BACKEND_QA.md`.
+- **Límites:** Guest Web BFF, revisión BD3 y Resend de presentación pendientes.
+- **Postman:** las dos rutas OTP están en
+  `postman/BD1-Backend-APIs.postman_collection.json`; la guía QA explica
+  variables, ejecución manual y dependencia del envío real.
+- **Siguiente paso:** publicar la rama y solicitar revisión de BD3/Guest Web
+  en PR; integrar BFF y verificar Resend en el entorno de presentación después.
+
 ## BE-013A-01 — Contrato OTP de reservas históricas (2026-10-04)
 
 - **Estado:** COMPLETADA. El usuario aprobó L-01 a L-07 y la entrega

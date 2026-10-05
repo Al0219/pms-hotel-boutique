@@ -14,6 +14,14 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
 
     Optional<Reservation> findByConfirmationCode(String confirmationCode);
 
+    @Query("""
+            select r from Reservation r join fetch r.bookingGuest bg
+            where r.confirmationCode = :code
+              and lower(trim(bg.email)) = lower(trim(:email))
+            """)
+    Optional<Reservation> findLinkCandidate(@Param("code") String code,
+            @Param("email") String verifiedAccountEmail);
+
     List<Reservation> findByGroupId(UUID groupId);
 
     List<Reservation> findByRoomBlockId(UUID roomBlockId);

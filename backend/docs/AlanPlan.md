@@ -15,6 +15,10 @@ PENDIENTE -> READY -> EN_PROGRESO -> EN_QA -> COMPLETADA
 Una tarea solo pasa a `COMPLETADA` con aceptación, DoD y revisión registrados
 en `AlanHandoff.md`.
 
+Desde BE-013B-BACKEND-01, cada ruta HTTP nueva de BD1 se agrega a
+`postman/BD1-Backend-APIs.postman_collection.json` con variables sin secretos y
+se documenta su ejecución manual en la guía QA de la tarea.
+
 ## Decisiones vigentes
 
 | Área | Decisión |
@@ -870,8 +874,8 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 
 ### BE-013 — OTP y vínculo de reservas históricas
 
-- **Estado:** BE-013A COMPLETADA; BE-013B PENDIENTE de revisión de
-  integración BD3/Guest Web y de la implementación del puerto invocable.
+- **Estado:** BE-013A COMPLETADA; BE-013B EN_PROGRESO en su incremento
+  Backend. Integración BD3/Guest Web y entrega externa siguen pendientes.
 - **Dependencias:** BE-004 completa; GuestProfile/ReservationLinkService existen.
   B requiere A aprobada y contrato invocable del puerto con BD3; delivery externo
   y aceptación de presentación se cierran con BE-016B.
@@ -911,6 +915,29 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
   contrastados; enlaces Markdown y `git diff --check` PASS. Sin Java/SQL/HTTP,
   por lo que Maven no aplica a esta entrega documental. QA y decisiones aprobadas
   en `docs/30_BD1_HISTORICAL_RESERVATION_OTP_CONTRACT_PROPOSAL.md`.
+
+#### BE-013B-BACKEND-01 — Emisión, verificación y vínculo OTP Backend
+
+- **Estado:** COMPLETADA (2026-10-04); el usuario confirmó las pruebas
+  manuales sin errores y autorizó el cierre con commit y push.
+- **Rama/base:** `feature/bd1-historical-reservation-otp` desde `main`
+  actualizado `1f6c30e` (PR #102 integra el contrato L-01 a L-07).
+- **DoR:** C3 y L-01 a L-07 aprobados; Guest Auth, Reservations,
+  EmailSender y PostgreSQL/Liquibase disponibles. Revisiones BD3/Guest Web
+  necesarias para integración, sin impedir preparar esta rama Backend.
+- **Alcance/archivos:** puerto invocable Reservations, changeset 004 nuevo de
+  desafíos/vínculos, servicio Guest y API BFF-only, audit seguro, pruebas
+  PostgreSQL/HTTP y seguimiento. Sin cambios Web ni entrega Resend en vivo.
+- **Aceptación/DoD:** sesión Guest vigente, lookup genérico, límites C3/L-05,
+  OTP protegido, un uso, reenvío/expiración/intentos, concurrencia y
+  asociación por reserva; fake EmailSender en pruebas, verify completo,
+  migración/upgrade y diff. QA manual antes de cerrar, commit o push.
+- **Evidencia local:** 13 pruebas focalizadas y verify completo 321 PASS,
+  cero failures/errors/skipped, BUILD SUCCESS en PostgreSQL 17/Java 21.
+  Migración fresca y upgrade desde changelog pre-OTP PASS; en la base de upgrade
+  el changeset 004-007 aplicó y 10 pruebas OTP pasaron. Guía
+  `docs/31_BD1_HISTORICAL_RESERVATION_OTP_BACKEND_QA.md`; ambas rutas se
+  guardaron en `postman/BD1-Backend-APIs.postman_collection.json`.
 
 ### BE-007 — Centro de integraciones, error queue e idempotencia
 

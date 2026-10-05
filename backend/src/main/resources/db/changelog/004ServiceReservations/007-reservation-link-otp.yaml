@@ -1,0 +1,63 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-reservations-007-reservation-link-otp
+      author: alan-bd1
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              CREATE TABLE reservation_link_challenges (
+                id uuid PRIMARY KEY,
+                guest_account_id uuid NOT NULL REFERENCES guest_accounts(id),
+                guest_session_id uuid NOT NULL REFERENCES guest_auth_sessions(id),
+                reservation_id uuid REFERENCES reservations(id),
+                property_id uuid REFERENCES properties(id),
+                booking_guest_profile_id uuid REFERENCES guest_profiles(id),
+                confirmation_fingerprint char(64) NOT NULL,
+                otp_hash char(64),
+                status varchar(20) NOT NULL CHECK (status IN
+                  ('INVALID','PENDING_SEND','READY','UNKNOWN','CONSUMED','EXPIRED','LOCKED')),
+                attempt_count integer NOT NULL DEFAULT 0 CHECK (attempt_count BETWEEN 0 AND 5),
+                issued_at timestamptz NOT NULL,
+                expires_at timestamptz NOT NULL,
+                last_sent_at timestamptz,
+                consumed_at timestamptz,
+                CHECK ((reservation_id IS NULL) = (property_id IS NULL)),
+                CHECK ((reservation_id IS NULL) = (booking_guest_profile_id IS NULL))
+              );
+              CREATE INDEX ix_link_challenge_account_time
+                ON reservation_link_challenges(guest_account_id, issued_at DESC);
+              CREATE INDEX ix_link_challenge_account_code_time
+                ON reservation_link_challenges(guest_account_id, confirmation_fingerprint, issued_at DESC);
+              CREATE UNIQUE INDEX uq_link_challenge_active
+                ON reservation_link_challenges(guest_account_id, reservation_id)
+                WHERE reservation_id IS NOT NULL AND status IN ('PENDING_SEND','READY');
+              CREATE TABLE guest_reservation_links (
+                reservation_id uuid PRIMARY KEY REFERENCES reservations(id),
+                guest_account_id uuid NOT NULL REFERENCES guest_accounts(id),
+                property_id uuid NOT NULL REFERENCES properties(id),
+                challenge_id uuid NOT NULL UNIQUE REFERENCES reservation_link_challenges(id),
+                linked_at timestamptz NOT NULL
+              );
+              CREATE INDEX ix_guest_reservation_links_account_property
+                ON guest_reservation_links(guest_account_id, property_id);
+              CREATE OR REPLACE FUNCTION bd1_reject_guest_link_mutation() RETURNS trigger AS $$
+              BEGIN
+                RAISE EXCEPTION 'guest_reservation_links is append-only (tried %)', TG_OP;
+              END; $$ LANGUAGE plpgsql;
+              CREATE TRIGGER trg_guest_reservation_links_append_only
+                BEFORE UPDATE OR DELETE ON guest_reservation_links
+                FOR EACH ROW EXECUTE FUNCTION bd1_reject_guest_link_mutation();
+              CREATE TRIGGER trg_guest_auth_audit_append_only
+                BEFORE UPDATE OR DELETE ON guest_auth_audit_events
+                FOR EACH ROW EXECUTE FUNCTION bd1_reject_guest_link_mutation();
+      rollback:
+        - sql:
+            dbms: postgresql
+            sql: |
+              DROP TRIGGER IF EXISTS trg_guest_auth_audit_append_only ON guest_auth_audit_events;
+              DROP TRIGGER IF EXISTS trg_guest_reservation_links_append_only ON guest_reservation_links;
+              DROP FUNCTION IF EXISTS bd1_reject_guest_link_mutation();
+              DROP TABLE IF EXISTS guest_reservation_links;
+              DROP TABLE IF EXISTS reservation_link_challenges;

@@ -17,3 +17,7 @@ databaseChangeLog:
   - include:
       file: 006-local-operation-receipts.yaml
       relativeToChangelogFile: true
+  # Guest link persistence references both Guest Auth and Reservations.
+  - include:
+      file: 007-reservation-link-otp.yaml
+      relativeToChangelogFile: true
