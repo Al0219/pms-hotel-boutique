@@ -46,6 +46,10 @@ describe("Availability Mapper", () => {
   };
 
   describe("mapRatePlanDtoToDomain", () => {
+    it("rejects missing policy and malformed currency without inventing a non-refundable policy", () => {
+      expect(() => mapRatePlanDtoToDomain({ ...validRatePlanDto, cancellation_policy: "" })).toThrow(DomainMappingError);
+      expect(() => mapRatePlanDtoToDomain({ ...validRatePlanDto, currency: "US" })).toThrow(DomainMappingError);
+    });
     it("maps a valid rate plan DTO to domain model with numeric amounts", () => {
       const result = mapRatePlanDtoToDomain(validRatePlanDto);
 
@@ -123,6 +127,16 @@ describe("Availability Mapper", () => {
   });
 
   describe("mapAvailabilityResponseToDomain", () => {
+    it.each([
+      { check_in_date: "2026-02-30" }, { check_out_date: "2026-09-30" }, { total_nights: 5 },
+    ])("rejects impossible or inconsistent stay metadata %o", patch => {
+      expect(() => mapAvailabilityResponseToDomain({ ...validResponseDto, ...patch })).toThrow(DomainMappingError);
+    });
+
+    it("rejects missing required lists instead of converting a malformed response to empty inventory", () => {
+      expect(() => mapAvailabilityResponseToDomain({ ...validResponseDto, available_room_types: null } as unknown as AvailabilityResponseDto)).toThrow(DomainMappingError);
+      expect(() => mapRoomTypeDtoToDomain({ ...validRoomTypeDto, rate_plans: null } as unknown as AvailableRoomTypeDto)).toThrow(DomainMappingError);
+    });
     it("maps complete availability response to domain result", () => {
       const result = mapAvailabilityResponseToDomain(validResponseDto);
 

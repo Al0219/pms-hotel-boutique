@@ -16,6 +16,7 @@ describe("PrivateLayout", () => {
     const nav = await screen.findByRole("navigation", { name: "Módulos Staff" });
     expect(within(nav).getByRole("link", { name: "Panel" })).toHaveAttribute("aria-current", "page");
     expect(within(nav).getByRole("link", { name: "Multi-property" })).toHaveAttribute("href", "/multi-property");
+    expect(within(nav).getByRole("link", { name: "Habitaciones" })).toHaveAttribute("href", "/staff/habitaciones");
     expect(within(nav).getByRole("link", { name: "Grupos / Eventos" })).toHaveAttribute("href", "/grupos");
     expect(within(nav).getByRole("link", { name: "Housekeeping" })).toBeInTheDocument();
     expect(screen.getAllByRole("main")).toHaveLength(1);

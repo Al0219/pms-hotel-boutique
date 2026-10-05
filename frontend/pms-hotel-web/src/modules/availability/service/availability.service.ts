@@ -25,6 +25,7 @@ export async function fetchAvailabilityDto(
   return httpRequest<AvailabilityResponseDto>({
     path,
     method: "GET",
+    withAuth: false,
     signal,
   });
 }

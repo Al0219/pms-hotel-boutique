@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useGuestSession } from "@/modules/auth";
 import Link from "next/link";
 import styles from "./my-reservations-page.module.css";
 
@@ -22,17 +24,21 @@ const UPCOMING_RESERVATIONS = [
 ];
 
 export function MyReservationsPage() {
+  const { account } = useGuestSession();
+  const router = useRouter();
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
+  useEffect(() => { if (!account) router.replace('/acceso'); }, [account, router]);
+  if (!account) return <p role="status">Redirigiendo al acceso…</p>;
 
   return (
-    <main className={styles.page}>
+    <div className={styles.page}>
       <header className={styles.header}>
         <Link className={styles.brand} href="/">
           Hotel Boutique
         </Link>
         <nav aria-label="Navegación principal">
           <Link href="/habitaciones">Habitaciones</Link>
-          <Link href="/amenidades">Amenidades</Link>
+          <Link href="/#amenidades">Amenidades</Link>
           <Link className={styles.activeNav} href="/mis-reservas">
             Mis reservas
           </Link>
@@ -92,6 +98,6 @@ export function MyReservationsPage() {
           </section>
         )}
       </div>
-    </main>
+    </div>
   );
 }

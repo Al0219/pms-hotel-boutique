@@ -36,6 +36,15 @@ si ambos resuelven `/`.
 Preferir:
 `(private)/dashboard/page.tsx` -> `/dashboard`
 
+## Habitaciones: decisión aprobada el 2026-10-04
+
+Por confirmación explícita de José:
+- `(public)/habitaciones/page.tsx` -> `/habitaciones`: búsqueda y resultados Guest.
+- `(private)/staff/habitaciones/page.tsx` -> `/staff/habitaciones`: tablero Staff.
+
+El menú Staff usa la segunda URL. La ruta pública no se redirige al tablero
+Staff ni exige su sesión. El tablero conserva su layout privado y reglas de acceso.
+
 ## Layouts
 
 ### Public
