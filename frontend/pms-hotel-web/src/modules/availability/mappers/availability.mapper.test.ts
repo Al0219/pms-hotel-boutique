@@ -103,6 +103,15 @@ describe("Availability Mapper", () => {
   });
 
   describe("mapRoomTypeDtoToDomain", () => {
+    it("maps explicit catalogue metadata without deriving it from the name", () => {
+      const result = mapRoomTypeDtoToDomain({ ...validRoomTypeDto, category: "DELUXE", bed_description: " King ", area_square_meters: 32, amenities: [" Wi-Fi "], badge: " Vista al jardín " });
+      expect(result).toMatchObject({ category: "DELUXE", bedDescription: "King", areaSquareMeters: 32, amenities: ["Wi-Fi"], badge: "Vista al jardín" });
+      expect(mapRoomTypeDtoToDomain(validRoomTypeDto).category).toBeUndefined();
+      expect(mapRoomTypeDtoToDomain(validRoomTypeDto).amenities).toBeUndefined();
+    });
+    it.each([{ category: "OTHER" }, { area_square_meters: 0 }, { bed_description: "" }, { amenities: [null] }, { amenities: "Wi-Fi" }])("rejects malformed optional metadata %o", patch => {
+      expect(() => mapRoomTypeDtoToDomain({ ...validRoomTypeDto, ...patch } as unknown as AvailableRoomTypeDto)).toThrow(DomainMappingError);
+    });
     it("maps a valid room type DTO to domain", () => {
       const result = mapRoomTypeDtoToDomain(validRoomTypeDto);
 

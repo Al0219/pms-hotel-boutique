@@ -81,6 +81,21 @@ export function mapRoomTypeDtoToDomain(dto: AvailableRoomTypeDto): AvailableRoom
   if (!Array.isArray(dto.rate_plans)) throw new DomainMappingError("MISSING_RATE_PLANS");
   const ratePlans = dto.rate_plans.map(mapRatePlanDtoToDomain);
 
+  if (dto.category !== undefined && !["DELUXE", "SUITE", "SUPERIOR"].includes(dto.category)) {
+    throw new DomainMappingError("INVALID_ROOM_CATEGORY");
+  }
+  for (const value of [dto.bed_description, dto.badge]) {
+    if (value !== undefined && (typeof value !== "string" || !value.trim())) {
+      throw new DomainMappingError("INVALID_CATALOGUE_TEXT");
+    }
+  }
+  if (dto.area_square_meters !== undefined && (!Number.isFinite(dto.area_square_meters) || dto.area_square_meters <= 0)) {
+    throw new DomainMappingError("INVALID_ROOM_AREA");
+  }
+  if (dto.amenities !== undefined && (!Array.isArray(dto.amenities) || dto.amenities.some(value => typeof value !== "string" || !value.trim()))) {
+    throw new DomainMappingError("INVALID_ROOM_AMENITIES");
+  }
+
   return {
     roomTypeId: dto.room_type_id.trim(),
     name: dto.name.trim(),
@@ -90,6 +105,11 @@ export function mapRoomTypeDtoToDomain(dto: AvailableRoomTypeDto): AvailableRoom
     availableRoomsCount,
     ratePlans,
     images: Array.isArray(dto.images) ? [...dto.images] : [],
+    category: dto.category,
+    bedDescription: dto.bed_description?.trim(),
+    areaSquareMeters: dto.area_square_meters,
+    amenities: dto.amenities?.map(value => value.trim()),
+    badge: dto.badge?.trim(),
   };
 }
 

@@ -33,6 +33,12 @@ export interface AvailableRoomTypeDto {
   available_rooms_count: number;
   rate_plans: RatePlanOptionDto[];
   images: string[];
+  /** Optional PROVISIONAL catalogue metadata; not a confirmed Backend contract. */
+  category?: "DELUXE" | "SUITE" | "SUPERIOR";
+  bed_description?: string;
+  area_square_meters?: number;
+  amenities?: string[];
+  badge?: string;
 }
 
 export interface AvailabilityResponseDto {

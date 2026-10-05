@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { getPublicEnvironment } from "@/lib/env";
 import { buildPublicAvailabilityMock } from "@/data/mocks/public-availability";
+import { publicCatalogueFixture } from "@/data/mocks/public-catalogue";
 
 import {
   mockAvailabilityEmptyDto,
-  mockAvailabilitySuccessDto,
 } from "@/data/mocks/handlers";
 
 export async function GET(request: Request) {
@@ -20,6 +20,6 @@ export async function GET(request: Request) {
   }
 
   const response = buildPublicAvailabilityMock(url.searchParams,
-    propertyId === "empty_property" ? mockAvailabilityEmptyDto : mockAvailabilitySuccessDto);
+    propertyId === "empty_property" ? mockAvailabilityEmptyDto : publicCatalogueFixture);
   return response ? NextResponse.json(response) : NextResponse.json({ error: "Invalid search criteria" }, { status: 400 });
 }
