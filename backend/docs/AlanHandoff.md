@@ -1,5 +1,33 @@
 # AlanHandoff — Seguimiento Backend
 
+## BE-010A-01 — Propuesta de reporting C7 (2026-10-04)
+
+- **Estado:** COMPLETADA; el usuario revisó D01–D09 y aprobó iniciar On-books
+  diario. Commit/push autorizados según flujo acordado.
+- **Rama/base:** `feature/bd1-reporting-contract-c7` desde `main` actualizado
+  `9ecd208`; PR #105 integra BE-016A y #104 Web público. Árbol limpio al iniciar.
+- **DoR:** C2/BE-003 y esquemas Reservations, Inventory, Folio, Night Audit
+  existentes; BE-010A puede inventariar datos y proponer fórmulas. BE-016B
+  sigue separado: `.env` local carece de Resend/remitente y clave OTP; valores
+  secretos no se imprimieron ni registraron.
+- **Hallazgo:** stays y ATS permiten on-books por noche actual; FolioMovement
+  no identifica ingreso habitación/servicio/impuesto ni business date; los
+  cambios históricos y la capacidad OOO liberada no dan pace/denominador
+  histórico reproducible. PAYMENT contable no equivale a capture de proveedor.
+- **Alcance:** contrato `docs/33_BD1_REPORTING_CONTRACT_C7_PROPOSAL.md` con
+  inventario, D01–D09, secuencia por KPI y QA. Sin API/SQL/Java ni nuevas rutas
+  para la colección Postman.
+- **QA local:** 9 enlaces locales, nueve decisiones D01–D09 y
+  `git diff --check` PASS. QA manual de decisiones recibida; Maven no aplica:
+  solo Markdown.
+- **Decisiones:** D01/D02/D07/D09 aprobadas; D04 condicionada a D03; D05
+  posterior; D06 parcialmente aprobada; D08 acceso inicial aprobado. CSV máximo
+  366 días/50 000 filas. Primer reporte por property/stay date: físico, OOO,
+  disponible, on-books y porcentaje; llegadas/salidas opcionales. No revenue.
+- **Siguiente paso:** publicar la rama; tras merge, iniciar BE-010B On-books en
+  rama nueva desde main actualizado y concretar contrato HTTP/BFF. D03 exige
+  owner/fuente BD2/BD3 antes de métricas financieras.
+
 ## BE-016A-01 — Preflight Google/Resend de presentación (2026-10-04)
 
 - **Estado:** COMPLETADA; QA manual confirmada por el usuario. Commit y push
