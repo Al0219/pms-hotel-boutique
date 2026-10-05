@@ -8,6 +8,8 @@ export { PublicSearchForm } from './ui/public-search-form';
 export { PublicBookingHome } from './ui/public-booking-home';
 export { PublicBookingShell } from './ui/public-booking-shell';
 export { PublicAvailabilityPage } from './ui/public-availability-page';
+export { PublicBookingProvider } from './components/public-booking-provider';
+export { PublicRoomDetailPage } from './ui/public-room-detail-page';
 export type { PublicSearchFormProps } from './ui/public-search-form';
 
 export {

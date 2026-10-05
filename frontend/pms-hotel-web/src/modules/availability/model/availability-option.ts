@@ -24,6 +24,8 @@ export interface RatePlanOption {
   currency: string;
   cancellationPolicy: string;
   mealsIncluded: string | null;
+  priceBreakdown?: { serviceCharge: number; estimatedTaxes: number; estimatedTotal: number };
+  cancellationTerms?: { windowLabel: string; penaltyPercent: number; severity: "low" | "medium" | "high" }[];
 }
 
 export interface AvailableRoomType {
@@ -40,6 +42,7 @@ export interface AvailableRoomType {
   areaSquareMeters?: number;
   amenities?: string[];
   badge?: string;
+  viewDescription?: string;
 }
 
 export interface AvailabilitySearchResult {

@@ -21,6 +21,25 @@ const rooms: AvailableRoomTypeDto[] = [
     ] },
 ];
 
+const imageNames = ['deluxe-king', 'terrace-suite', 'double-superior', 'junior-suite'];
+const flexibleTerms = [
+  { window_label: 'Hasta 72 h antes', penalty_percent: 0 },
+  { window_label: '48–72 h antes', penalty_percent: 50 },
+  { window_label: 'Menos de 48 h', penalty_percent: 100 },
+];
+
 export const publicCatalogueFixture: AvailabilityResponseDto = {
-  property_id: "prop_boutique_01", check_in_date: "2026-10-01", check_out_date: "2026-10-04", total_nights: 3, available_room_types: rooms,
+  property_id: "prop_boutique_01", check_in_date: "2026-10-01", check_out_date: "2026-10-04", total_nights: 3,
+  available_room_types: rooms.map((room, index) => ({
+    ...room, view_description: index === 1 ? 'Terraza privada' : 'Vista al jardín',
+    amenities: ['Wi-Fi de alta velocidad', 'Aire acondicionado', 'Smart TV', 'Caja de seguridad', 'Servicio de limpieza', ...(room.amenities?.filter(value => !['Wi-Fi', 'A/C'].includes(value)) ?? [])],
+    images: [1, 2, 3].map(n => `/images/rooms/demo/${imageNames[index]}${n === 1 ? '' : `-${n}`}.webp`),
+    rate_plans: room.rate_plans.map(rate => ({
+      ...rate,
+      // User-approved visual example for a three-night demo quote, not tax law.
+      stay_price_breakdown: { service_charge: '22.00', estimated_taxes: '48.00', estimated_total: (Number(rate.total_amount) + 70).toFixed(2) },
+      cancellation_policy: rate.rate_plan_id === 'rp_non_refundable' ? rate.cancellation_policy : 'Hasta 72 h antes: sin cargo. Entre 48 y 72 h: 50% del total. Menos de 48 h: total de la reserva.',
+      cancellation_terms: rate.rate_plan_id === 'rp_non_refundable' ? [{ window_label: 'En cualquier momento', penalty_percent: 100 }] : flexibleTerms,
+    })),
+  })),
 };

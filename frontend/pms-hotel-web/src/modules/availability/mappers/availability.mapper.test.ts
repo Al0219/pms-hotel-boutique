@@ -46,6 +46,22 @@ describe("Availability Mapper", () => {
   };
 
   describe("mapRatePlanDtoToDomain", () => {
+    it('validates an optional stay estimate and derives risk styling from explicit penalties', () => {
+      const result = mapRatePlanDtoToDomain({ ...validRatePlanDto, stay_price_breakdown: { service_charge: '22.00', estimated_taxes: '48.00', estimated_total: '520.00' },
+        cancellation_terms: [{ window_label: '72 h', penalty_percent: 0 }, { window_label: '48 h', penalty_percent: 50 }, { window_label: '24 h', penalty_percent: 100 }] });
+      expect(result.priceBreakdown).toEqual({ serviceCharge: 22, estimatedTaxes: 48, estimatedTotal: 520 });
+      expect(result.cancellationTerms?.map(term => term.severity)).toEqual(['low', 'medium', 'high']);
+      expect(mapRatePlanDtoToDomain(validRatePlanDto).priceBreakdown).toBeUndefined();
+    });
+    it.each([
+      { stay_price_breakdown: { service_charge: '22', estimated_taxes: '48', estimated_total: '999' } },
+      { stay_price_breakdown: { service_charge: '-22', estimated_taxes: '48', estimated_total: '476' } },
+      { cancellation_terms: [{ window_label: '72 h', penalty_percent: -1 }] },
+      { cancellation_terms: [{ window_label: '', penalty_percent: 50 }] },
+      { cancellation_terms: [] },
+    ])('rejects corrupt quote or policy metadata %o', patch => {
+      expect(() => mapRatePlanDtoToDomain({ ...validRatePlanDto, ...patch })).toThrow(DomainMappingError);
+    });
     it("rejects missing policy and malformed currency without inventing a non-refundable policy", () => {
       expect(() => mapRatePlanDtoToDomain({ ...validRatePlanDto, cancellation_policy: "" })).toThrow(DomainMappingError);
       expect(() => mapRatePlanDtoToDomain({ ...validRatePlanDto, currency: "US" })).toThrow(DomainMappingError);

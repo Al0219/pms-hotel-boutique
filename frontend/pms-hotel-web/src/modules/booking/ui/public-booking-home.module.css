@@ -14,7 +14,12 @@
 .roomGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin-top: 28px; }
 .roomCard { min-width: 0; background: var(--color-surface-card); border: 1px solid var(--color-border-default); border-radius: 12px; box-shadow: 0 3px 12px rgb(31 38 33 / 3%); overflow: hidden; transition: transform .3s ease, box-shadow .3s ease; }
 @media (hover: hover) { .roomCard:hover { transform: translateY(-4px); box-shadow: 0 14px 30px rgb(31 38 33 / 12%); } }
-.roomImage { height: 184px; background: var(--color-brand-soft); }
+.roomImage { height: 184px; background: var(--color-brand-soft); position: relative; }
+.roomImage img { object-fit: cover; }
+.currencyControl { margin-top: 20px; }
+.roomLink { background: #5a6b5d; color: white; padding: 11px 16px; border-radius: 7px; text-decoration: none; font-size: 12px; transition: opacity .2s; }
+.roomLink:hover { opacity: .9; }
+.roomLink:focus-visible { outline: 2px solid #5a6b5d; outline-offset: 4px; }
 .roomImage1 { background: #e8ece4; }
 .roomImage2 { background: #dbe3d7; }
 .roomContent { padding: 22px 20px; }
