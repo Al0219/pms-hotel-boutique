@@ -1,5 +1,27 @@
 # AlanHandoff — Seguimiento Backend
 
+## BE-014B-FIN-01 — Acceso Staff a folio AD-02 (2026-10-04)
+
+- **Estado:** COMPLETADA. El usuario confirmó que todas las pruebas manuales
+  terminaron bien; commit y push autorizados.
+- **Rama/base:** `feature/bd1-folio-staff-access-ad02` desde `main` actualizado
+  `cbb8a51` (PR #100 integra OPS-01); árbol limpio al iniciar.
+- **DoR:** AD-02 aprobada; C2, Staff Auth y resolver de PROPERTY existentes.
+  FolioService recibe UUID/actorId crudos; FP-D02/04 y HTTP siguen propuestos.
+- **Alcance:** puerto Staff interno para lectura y postings ordinarios/reversos,
+  con permiso financiero, scope SQL y permiso extra sobre PAYMENT. Conservar
+  contratos BD3 y dejar apertura/lifecycle/HTTP/proveedor fuera de esta entrega.
+- **Implementado:** StaffFolioService revalida sesión/permisos/PROPERTY; busca
+  folio y movimiento original por predicado de propiedad antes de delegar al
+  motor contable. Los postings llevan actor de sesión y PAYMENT reversal exige
+  PAYMENT_REFUND_VOID.
+- **QA local:** 18 pruebas focalizadas y verify completo 310 PASS, cero
+  failures/errors/skipped, BUILD SUCCESS con PostgreSQL 17/Java 21. Guía
+  `docs/29_BD1_FOLIO_STAFF_ACCESS_QA.md`; QA manual del usuario PASS.
+- **Siguiente paso:** publicar la rama y esperar su integración en `main`
+  antes de iniciar otra tarea en rama nueva. FP-D02/04, apertura, lifecycle y
+  API HTTP pendientes.
+
 ## BE-014B-OPS-01 — Inicio RBAC e intake Staff (2026-10-04)
 
 - **Estado:** COMPLETADA. El usuario confirmó que todas las pruebas manuales
