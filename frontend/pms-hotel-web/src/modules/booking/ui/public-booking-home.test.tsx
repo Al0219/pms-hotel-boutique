@@ -4,7 +4,6 @@ import { PublicBookingProvider } from '../components/public-booking-provider';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PublicBookingHome } from './public-booking-home';
 import { PublicBookingShell } from './public-booking-shell';
-import { MyReservationsPage } from '../components/my-reservations-page';
 import type { GuestAccount } from '@/modules/auth';
 
 const push = vi.fn();
@@ -68,7 +67,7 @@ describe('Public 01 landing interactions', () => {
     const navigation = screen.getByRole('navigation', { name: 'Navegación pública' });
     expect(within(navigation).getByRole('link', { name: 'Habitaciones' })).toHaveAttribute('href', '/habitaciones');
     expect(within(navigation).getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/acceso');
-    expect(within(navigation).getByRole('link', { name: 'Mis reservas' })).toHaveAttribute('href', '/acceso');
+    expect(within(navigation).getByRole('link', { name: 'Mis reservas' })).toHaveAttribute('href', '/acceso?returnTo=%2Fmis-reservas');
     const toggle = screen.getByRole('button', { name: /Menú/ });
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
@@ -84,18 +83,16 @@ describe('Public 01 landing interactions', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cerrar' }));
     expect(privacy).toHaveFocus();
   });
-  it('offers My reservations only to a Guest session and redirects direct anonymous access', () => {
-    const view = render(<MyReservationsPage />);
-    expect(replace).toHaveBeenCalledWith('/acceso');
-    expect(screen.queryByText('HB-2026-08421')).not.toBeInTheDocument();
+  it('keeps navigation public and directs signed-in Guests to their linked reservations', () => {
+    const view = render(<PublicBookingShell><p>Contenido público</p></PublicBookingShell>);
+    expect(screen.getByRole('link', { name: 'Mis reservas' })).toHaveAttribute('href', '/acceso?returnTo=%2Fmis-reservas');
     guestAccount = { id: 'guest-demo', email: 'demo@example.com', externalIdentities: [] };
-    view.rerender(<PublicBookingShell><MyReservationsPage /></PublicBookingShell>);
+    view.rerender(<PublicBookingShell><p>Contenido público</p></PublicBookingShell>);
     const navigation = screen.getByRole('navigation', { name: 'Navegación pública' });
     expect(within(navigation).getByRole('link', { name: 'Mis reservas' })).toHaveAttribute('href', '/mis-reservas');
-    expect(screen.getByText('HB-2026-08421')).toBeInTheDocument();
     guestAccount = null;
-    view.rerender(<PublicBookingShell><MyReservationsPage /></PublicBookingShell>);
-    expect(screen.queryByText('HB-2026-08421')).not.toBeInTheDocument();
+    view.rerender(<PublicBookingShell><p>Contenido público</p></PublicBookingShell>);
+    expect(screen.getByRole('link', { name: 'Mis reservas' })).toHaveAttribute('href', '/acceso?returnTo=%2Fmis-reservas');
   });
   it('clearly identifies fictional contacts and opens social and FAQ information', () => {
     render(<PublicBookingShell><p>Contenido público</p></PublicBookingShell>);

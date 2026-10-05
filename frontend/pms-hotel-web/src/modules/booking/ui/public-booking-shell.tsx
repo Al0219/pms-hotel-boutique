@@ -34,7 +34,7 @@ export function PublicBookingShell({ children }: { children: ReactNode }) {
             if (event.key === 'Escape') { setMenuOpen(false); menuTrigger.current?.focus(); }
           }}>
           <Link href="/habitaciones">Habitaciones</Link><Link href="/#amenidades">Amenidades</Link>
-          <Link href={account ? '/mis-reservas' : '/acceso'}>Mis reservas</Link>
+          <Link href={account ? '/mis-reservas' : '/acceso?returnTo=%2Fmis-reservas'}>Mis reservas</Link>
           <Link href={account ? '/cuenta' : '/acceso'}>{account ? 'Mi cuenta' : 'Iniciar sesión'}</Link>
         </nav>
       </div>
