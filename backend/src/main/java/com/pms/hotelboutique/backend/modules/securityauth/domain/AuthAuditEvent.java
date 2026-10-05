@@ -23,6 +23,20 @@ public class AuthAuditEvent {
     @Column(nullable = false)
     private String detail;
 
+    // Future attribution only: existing producers intentionally leave these fields null.
+    @Column(name = "organization_id")
+    private UUID organizationId;
+    @Column(name = "property_id")
+    private UUID propertyId;
+    @Column(name = "scope_kind", length = 16)
+    private String scopeKind;
+    @Column(name = "actor_context", length = 16)
+    private String actorContext;
+    @Column(name = "actor_id")
+    private UUID actorId;
+    @Column(name = "correlation_id")
+    private UUID correlationId;
+
     protected AuthAuditEvent() { }
 
     public AuthAuditEvent(String eventType, UUID staffUserId, UUID sessionId, String detail, Instant occurredAt) {
