@@ -1,0 +1,34 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-staff-auth-008
+      author: alan
+      changes:
+        - addColumn:
+            tableName: auth_audit_events
+            columns:
+              - column: { name: organization_id, type: uuid }
+              - column: { name: property_id, type: uuid }
+              - column: { name: scope_kind, type: varchar(16) }
+              - column: { name: actor_context, type: varchar(16) }
+              - column: { name: actor_id, type: uuid }
+              - column: { name: correlation_id, type: uuid }
+        - sql:
+            dbms: postgresql
+            sql: |
+              ALTER TABLE auth_audit_events
+                ADD CONSTRAINT ck_staff_auth_audit_scope_kind
+                  CHECK (scope_kind IS NULL OR scope_kind IN ('PROPERTY', 'ORGANIZATION')),
+                ADD CONSTRAINT ck_staff_auth_audit_actor_context
+                  CHECK (actor_context IS NULL OR actor_context IN ('STAFF', 'GUEST', 'SYSTEM', 'UNKNOWN')),
+                ADD CONSTRAINT ck_staff_auth_audit_scope
+                  CHECK (
+                    (scope_kind IS NULL AND organization_id IS NULL AND property_id IS NULL)
+                    OR COALESCE(scope_kind = 'PROPERTY' AND organization_id IS NOT NULL AND property_id IS NOT NULL, FALSE)
+                    OR COALESCE(scope_kind = 'ORGANIZATION' AND organization_id IS NOT NULL AND property_id IS NULL, FALSE)
+                  ),
+                ADD CONSTRAINT fk_staff_auth_audit_organization
+                  FOREIGN KEY (organization_id) REFERENCES organizations(id)
+                  MATCH SIMPLE ON UPDATE NO ACTION ON DELETE NO ACTION NOT DEFERRABLE,
+                ADD CONSTRAINT fk_staff_auth_audit_property_organization
+                  FOREIGN KEY (property_id, organization_id) REFERENCES properties(id, organization_id)
+                  MATCH SIMPLE ON UPDATE NO ACTION ON DELETE NO ACTION NOT DEFERRABLE;

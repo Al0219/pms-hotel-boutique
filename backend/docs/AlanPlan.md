@@ -761,7 +761,9 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 ### BE-008 — AuditTrail común y consulta administrativa
 
 - **Estado:** BE-008A COMPLETADA; C6-D01 a D06 aprobadas por el usuario.
-  BE-008B-AUTH-01 COMPLETADA como fundamento de persistencia. El resto de BE-008B
+  BE-008B-AUTH-01 COMPLETADA como fundamento de persistencia.
+  BE-008B-AUTH-02 COMPLETADA: persistencia para atribución futura, con sujeto
+  resuelto y QA manual del usuario confirmado PASS. El resto de BE-008B
   permanece PENDIENTE: proyección/consulta administrativa, atribución de Auth y
   contratos de exposición aún requieren sus incrementos específicos.
 - **Dependencias:** A inventaría AuditService/auth_audit_events; B requiere C6
@@ -896,6 +898,171 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
   `docs/04_PERSISTENCE_RULES.md`, `docs/05_IDEMPOTENCY_AND_AUDIT.md`,
   `docs/07_TESTING_STRATEGY.md`, esquema 003-001, trigger 004-005,
   `AuthAuditEventRepository` y emisores `StaffAuthServiceImpl`/bootstrap.
+
+#### BE-008B-AUTH-02 — Persistencia para atribución futura de auditoría Staff
+
+- **Estado:** COMPLETADA (2026-10-05); implementación, validación local y
+  QA manual ejecutado y confirmado PASS por el usuario. Cierre documental
+  exclusivo de AUTH-02, sin cambios funcionales ni commit/push/merge.
+- **Rama/base actuales:** `feature/bd1-staff-auth-audit-attribution`, HEAD
+  `8e7c6ce` (merge PR #115 de AUTH-01). Rama ya existente al iniciar esta
+  actualización; se conservan los cambios documentales previos de AUTH-02.
+  No se creó ni cambió rama en esta entrega.
+- **Owner:** Alan / BD1. **Reviewers:** BD2/BD3 por emisores/consumidores;
+  seguimiento colaborativo según DoD común, sin bloqueo pendiente.
+- **Dependencias y DoR PASS:** BE-001/002/003, BE-008A y AUTH-01 COMPLETADAS;
+  C6-D01/D02/D03 y decisión del usuario del 2026-10-05 aprobadas. Esquema,
+  entidad e INSERT actuales inspeccionados; scope y actor siguen C6, sujeto
+  resuelto abajo. Persistencia en módulo 003 existente, sin dependencia de
+  contrato HTTP/BE-014A para este alcance. Pruebas, aceptación y archivos
+  definidos; Java 21/PostgreSQL 17 configurados en `compose.bd2-test.yaml`.
+- **Alcance exacto:** agregar solo seis columnas a `auth_audit_events` mediante
+  changeset aditivo en SecurityAuth/003, preservando función/trigger de
+  `003-staff-auth-007`, datos y checksums. No crear subject_id/subject_type,
+  otra tabla histórica ni módulo 008. Sin backfill, población por emisores,
+  API/BFF, consulta/proyección administrativa ni corrección C6-D06.
+- **Decisión del sujeto aprobada por el usuario:** `staff_user_id` sigue siendo
+  el sujeto persistido y nunca representa al actor. En la futura proyección,
+  si no es NULL: `subjectType=STAFF_USER`, `subjectId=staff_user_id`; si es NULL:
+  ambos metadatos del sujeto son NULL. Esta regla queda documentada, no se
+  implementa la proyección en AUTH-02. No copiar staff_user_id a actor_id.
+
+  | Metadato C6 | Única columna nueva correspondiente | Tipo PostgreSQL | Nullability / default |
+  | --- | --- | --- | --- |
+  | organizationId | organization_id | UUID | nullable, sin DEFAULT |
+  | propertyId | property_id | UUID | nullable, sin DEFAULT |
+  | scopeKind | scope_kind | VARCHAR(16) | nullable, sin DEFAULT |
+  | actorContext | actor_context | VARCHAR(16) | nullable, sin DEFAULT |
+  | actorId | actor_id | UUID | nullable, sin DEFAULT |
+  | correlationId | correlation_id | UUID | nullable, sin DEFAULT |
+
+- **Constraints exactos previstos:**
+  1. CHECK de `scope_kind`: NULL o valor exacto PROPERTY/ORGANIZATION.
+     CHECK de `actor_context`: NULL o STAFF/GUEST/SYSTEM/UNKNOWN. Rechazar
+     vacíos, espacios, diferencias de mayúsculas y cualquier otro código;
+     no normalizar ni introducir defaults.
+  2. CHECK de coherencia de scope: permitir solo (a) scope_kind,
+     organization_id y property_id todos NULL; (b) PROPERTY con organization_id
+     y property_id no NULL; (c) ORGANIZATION con organization_id no NULL y
+     property_id NULL. Evaluar de forma booleana total (`IS NULL`/`IS NOT NULL`
+     y `COALESCE(..., FALSE)` donde proceda), evitando que SQL UNKNOWN acepte
+     combinaciones incompletas. Nullable permite ausencia de atribución;
+     no significa que una atribución parcial sea un scope válido.
+  3. FK nullable `organization_id -> organizations(id)` y FK compuesta
+     `(property_id, organization_id) -> properties(id, organization_id)`;
+     reutilizar la unicidad `uq_properties_id_organization` de 003-005.
+     FK con MATCH SIMPLE, ON UPDATE NO ACTION y ON DELETE NO ACTION, no
+     diferibles; la coherencia anterior evita saltar la FK compuesta para
+     PROPERTY. Ninguna cascada ni SET NULL que modifique historia.
+  4. Sin FK de actor_id: C6 contempla actores STAFF/GUEST/SYSTEM y la fuente
+     no autoriza un vínculo único a staff_users. Sin FK de correlation_id,
+     sin UNIQUE nuevo y sin NOT NULL nuevo. No imponer nuevas reglas de
+     obligatoriedad de actor_id por contexto ni relacionarlo con el sujeto.
+     El incremento no implementa atribución confiable por emisores.
+- **Compatibilidad legacy:** upgrade e INSERT actuales omiten las seis columnas
+  y estas quedan NULL. No escribir UNKNOWN físicamente sobre el legado ni
+  deducir actor, scope u organización desde staff_user_id, session_id o
+  memberships actuales. C6 mantiene UNKNOWN como clasificación futura del actor
+  desconocido en el sobre; su proyección está fuera de este incremento.
+  Conservar los seis campos originales: `id UUID NOT NULL`,
+  `event_type VARCHAR(64) NOT NULL`, `staff_user_id UUID NULL`,
+  `session_id UUID NULL`, `occurred_at TIMESTAMPTZ NOT NULL` y
+  `detail VARCHAR(160)` sin NOT NULL en el changeset original (JPA declara
+  nullable=false). No alterar sus definiciones ni el constructor legacy.
+  session_id permanece referencia interna sensible, sin nueva exposición.
+- **Persistencia implementada:** archivo aditivo
+  `src/main/resources/db/changelog/003ServiceSecurityAuth/008-staff-auth-audit-attribution.yaml`,
+  changeset `003-staff-auth-008`, incluido después de 007 en el changelog 003.
+  No editar 001 a 007 ni el trigger append-only; no DML sobre historia,
+  índices adicionales ni dependencias externas. Mapeo nullable compatible en
+  `AuthAuditEvent` sin modificar los emisores ni poblar nuevos metadatos.
+- **Acceptance/tests:** matriz cubierta por pruebas PostgreSQL reales y verify
+  local PASS; bootstrap se conserva por constructor/emisor intactos, sin
+  atribuir una ejecución de bootstrap independiente a esta entrega:
+  1. Instalación vacía: metadata PostgreSQL confirma exactamente las seis
+     columnas nuevas, tipos/longitudes, nullable y ausencia de defaults;
+     no existen columnas físicas subject_id/subject_type. CHECK/FK previstos
+     presentes y función/trigger append-only sin cambios.
+  2. Upgrade desde master anterior a AUTH-02 con eventos Staff variados
+     (staff_user_id/session_id presentes y NULL): comparar los seis campos
+     originales por ID, cantidad e identidad de filas; las seis columnas
+     nuevas quedan NULL. Todos los checksums previos permanecen iguales.
+     Reaplicar Liquibase no agrega filas, cambios ni segunda ejecución de 008.
+  3. INSERT JDBC que omita los seis campos nuevos y constructor JPA legacy:
+     ambos funcionan y dejan metadatos NULL. Probar sujeto presente y ausente;
+     actor_id sigue NULL en ambos, incluso con memberships actuales.
+  4. Fixtures JDBC con metadatos explícitos: aceptar PROPERTY de organización
+     correcta y ORGANIZATION con property NULL; aceptar actor_context NULL y
+     cada uno de STAFF/GUEST/SYSTEM/UNKNOWN. correlation_id UUID opcional.
+     Son fixtures de prueba; no cambiar emisores para generarlas.
+  5. Rechazar scope/actor_context inválidos (incluidos vacío y minúsculas),
+     organización inexistente, property inexistente o de otra organización,
+     PROPERTY sin organización/property, ORGANIZATION sin organización o con
+     property, y scope NULL con organización/property no NULL. CHECK genera
+     SQLSTATE 23514; referencias inválidas coherentes generan 23503.
+     Usar savepoints o transacciones separadas para aislar cada rechazo.
+  6. UPDATE/DELETE individuales y masivos sobre filas existentes, incluidos
+     metadatos nuevos: P0001 y filas intactas. INSERT con metadatos seguido
+     de rollback deja cero eventos; INSERT confirmado conserva valores.
+     Intentar borrar/cambiar la clave de organización/property referenciada
+     falla con 23503 sin borrar ni cambiar el evento.
+  7. Regresión HTTP/JPA de login, refresh válido, logout y bootstrap mantiene
+     contratos y códigos existentes; eventos confirmados insertables con las
+     seis columnas nuevas NULL. No acreditar persistencia de fallos/refresh
+     rechazado: C6-D06 queda fuera. Regresión de protecciones Guest/Reservations.
+- **Archivos/tests implementados:** changeset y changelog 003, `AuthAuditEvent`,
+  `StaffAuthAuditAttributionIntegrationTests`, fixture
+  `db.changelog-before-staff-auth-audit-attribution.yaml` de master
+  anterior a AUTH-02, guía `37_BD1_STAFF_AUTH_AUDIT_ATTRIBUTION_QA.md` y
+  AlanPlan/AlanHandoff. Ajuste mínimo del test upgrade AUTH-01: el master
+  vigente agrega 007 y 008 sobre su fixture anterior, no solo 007.
+  Desde backend, Compose aislado con
+  proyecto `pms_bd1_authattr`: focalizados
+  `StaffAuthAuditAttributionIntegrationTests,StaffAuthAuditAppendOnlyIntegrationTests,ReservationsSchemaUpgradeTests`,
+  después `mvn -B --no-transfer-progress verify` completo y `git diff --check`.
+  CI aplicable verify-backend/verify-stack al publicar con autorización.
+- **DoD/cierre:** aceptación y pruebas PostgreSQL/regresión locales PASS;
+  focalizados 17 PASS y verify completo 347 PASS ya validados, sin repetirlos
+  por este cierre. QA manual ejecutado y confirmado PASS por el usuario;
+  criterio de cierre cumplido. Guía y documentos coherentes; CI remoto no
+  ejecutado porque no se publicó la rama. Los 338 PASS de AUTH-01 no acreditan
+  AUTH-02; su evidencia propia se conserva abajo. Commit/push/merge siguen
+  requiriendo autorización explícita.
+- **Fuentes/decisión:** C6 (`25_BD1_AUDIT_CONTRACT_C6_PROPOSAL.md`), decisión
+  explícita del usuario del 2026-10-05 registrada arriba, reglas de persistencia
+  y testing, changelogs 002-001/003-001/005/007, entidad y emisores Staff actuales.
+- **Evidencia local (2026-10-05):** 17 pruebas focalizadas PASS (9 nuevas de
+  AUTH-02, 7 AUTH-01 y 1 upgrade Reservations); verify completo 347 pruebas
+  PASS, cero failures/errors/skipped y BUILD SUCCESS, proyecto aislado
+  `pms_bd1_authattr`, PostgreSQL 17.11/Java 21.0.9 mediante Compose. Instalación
+  vacía, upgrade/reaplicación, datos/checksums/trigger, constructor JPA legacy,
+  constraints y regresión de servicios Staff comprobados. Comparación contra
+  HEAD: changesets versionados anteriores y emisores Staff intactos.
+  Guía SQL comprobada en base QA: changeset EXECUTED; 6 nullable sin defaults;
+  0 columnas físicas de sujeto; metadata_null/subject_preserved=true; tres
+  rechazos 23514, uno 23503 y dos P0001; contadores rollback 1→0, legado 1.
+  `git diff --check` PASS. CI remoto no ejecutado: no se publicó la rama.
+  La comprobación local de la guía no sustituye QA manual del usuario.
+- **QA manual confirmado PASS por el usuario (2026-10-05):** changeset
+  `003-staff-auth-008` EXECUTED; seis columnas nuevas presentes, nullable y sin
+  defaults; constraints de scope y actor presentes; INSERT legacy permitido;
+  INSERT con atribución válida permitido; staff_user_id y actor_id separados.
+  scope_kind inválido rechazado con SQLSTATE 23514; actor_context inválido
+  rechazado con SQLSTATE 23514; UPDATE y DELETE rechazados con P0001;
+  registro preservado y rollback final limpio con count=0. Evidencia confirmada
+  por el usuario conforme a la guía 37; no se ejecutan pruebas de nuevo en
+  este cierre ni se cambia código/migraciones.
+- **Bloqueos de AUTH-02:** ninguno; el cierre no completa BE-008B, sus emisores,
+  consulta administrativa ni C6-D06. Otros incrementos conservan sus estados.
+- **Siguiente según fase 1 y continuidad C6:** preparar el siguiente incremento de BE-008B para atribuir
+  metadatos a eventos Staff nuevos, aprovechando la persistencia AUTH-02.
+  Antes de READY, definir y registrar el mapeo por emisor de organización,
+  PROPERTY/ORGANIZATION, actor confiable separado del sujeto y correlación,
+  más aceptación, archivos y pruebas. C6 fija el sobre pero no ese mapeo
+  operativo; no inferirlo del sujeto ni de memberships históricas. Sin backfill
+  ni C6-D06 en esa continuidad acotada. No se asigna ID nuevo, se inicia código
+  ni se marca otro incremento READY. Consulta administrativa permanece pendiente
+  de su DoR y contratos de acceso/exposición propios.
 
 ### BE-006 — Staff, roles fijos, memberships y sesiones administrativas
 
@@ -1328,15 +1495,17 @@ evidencia HTTP/SQL/externa y límites; impedimentos/decisiones pendientes; sigui
 paso concreto. Mantener historial append-only y anteponer la actualización nueva.
 No llevar tareas Backend al XLSX. No actualizar memorias externas como parte del plan.
 
-**Próximo paso concreto:** acordar y registrar el siguiente incremento Backend
-con DoR completo, siguiendo la prioridad de la fase 1 (resto de BE-008B,
-BE-014B por dominio y BE-006B/C). Confirmar para el alcance elegido contratos
-aplicables de acceso/persistencia, dependencias, aceptación, archivos y pruebas
-antes de marcar READY. Actualmente no hay otro incremento Backend READY
-registrado; este cierre no inicia ni cambia el estado de otra tarea.
-Las revisiones BD2/BD3 y Web de On-books siguen siendo seguimiento colaborativo
-no bloqueante bajo las excepciones del DoD común. El cierre de AUTH-01 no
-cierra el resto de BE-008B ni autoriza publicación.
+**Próximo paso concreto:** preparar el alcance/DoR del siguiente incremento
+BE-008B para atribución de eventos Staff nuevos. AUTH-02 está COMPLETADA; su
+cierre solo habilita persistencia, no define el mapeo por emisor de organización,
+scope, actor confiable y correlación. Ese mapeo, aceptación, archivos y pruebas
+requieren registro antes de READY. No hay otro incremento Backend READY
+registrado; no se inicia ni cambia el estado de otra tarea. Consulta/API y
+C6-D06 mantienen sus dependencias específicas. Se conserva la prioridad de
+fase 1: resto de BE-008B, BE-014B por dominio y BE-006B/C.
+Las revisiones BD2/BD3 y Web de On-books siguen como seguimiento colaborativo
+según las excepciones del DoD común. El cierre exclusivo de AUTH-02 no completa
+BE-008B ni autoriza commit/push/merge.
 
 ## Entorno de validación
 
