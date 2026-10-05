@@ -8,8 +8,8 @@ import { buildSearchQueryParams, validateBookingSearchCriteria, type BookingSear
 interface PublicBookingSession {
   currency: DisplayCurrency;
   setCurrency: Dispatch<SetStateAction<DisplayCurrency>>;
-  cart: { scope: string; items: RoomSelection[] };
-  setCart: Dispatch<SetStateAction<{ scope: string; items: RoomSelection[] }>>;
+  cart: { scope: string; propertyId?: string; items: RoomSelection[] };
+  setCart: Dispatch<SetStateAction<{ scope: string; propertyId?: string; items: RoomSelection[] }>>;
 }
 const Context = createContext<PublicBookingSession | null>(null);
 
@@ -31,7 +31,7 @@ export function usePublicRoomSelection(criteria: Partial<BookingSearchCriteria>,
   const selection = scope && scope === cart.scope ? cart.items : [];
   const setSelection = (update: SetStateAction<RoomSelection[]>) => {
     if (!scope) return;
-    setCart(previous => ({ scope, items: typeof update === 'function' ? update(previous.scope === scope ? previous.items : []) : update }));
+    setCart(previous => ({ scope, propertyId, items: typeof update === 'function' ? update(previous.scope === scope ? previous.items : []) : update }));
   };
   return { selection, setSelection };
 }

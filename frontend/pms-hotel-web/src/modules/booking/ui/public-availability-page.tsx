@@ -99,7 +99,7 @@ function CatalogueSearch({ initialCriteria }: { initialCriteria: Partial<Booking
         </section>
       </div>
     </div>
-    {dialog === 'cart' && <CatalogueSelectionDrawer items={resolveSelection(selection, rooms)} nights={nights} available={ready}
+    {dialog === 'cart' && <CatalogueSelectionDrawer items={resolveSelection(selection, rooms)} nights={nights} available={ready} criteria={criteria}
       onClose={closeDialog} returnFocusRef={dialogTrigger} onRemove={id => setSelection(value => value.filter(item => item.roomTypeId !== id))}
       onQuantity={(id, quantity) => setSelection(value => value.map(item => item.roomTypeId === id ? { ...item, quantity } : item))} />}
   </div>;

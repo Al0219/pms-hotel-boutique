@@ -13,7 +13,7 @@ const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 const criteria = { checkIn: '2026-10-10', checkOut: '2026-10-13', adults: 2, children: 0, roomsCount: 1 };
 const clients: QueryClient[] = [];
-beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-04T12:00:00Z')); vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://pms.test'); vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'true'); });
+beforeEach(() => { push.mockClear(); vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-04T12:00:00Z')); vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://pms.test'); vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'true'); });
 afterEach(() => { cleanup(); clients.splice(0).forEach(client => client.clear()); onlineManager.setOnline(true); vi.useRealTimers(); vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 function mount({ roomTypeId = 'rt_deluxe_king', initialCriteria = criteria, initialRatePlanId }: { roomTypeId?: string; initialCriteria?: Partial<BookingSearchCriteria>; initialRatePlanId?: string } = {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } }); clients.push(client);
@@ -54,7 +54,8 @@ describe('Public RoomType detail', () => {
     expect(screen.getByText('Q 3,858.89')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Seleccionar habitación' }));
     expect(screen.getByRole('status')).toHaveTextContent('Deluxe King agregada a tu selección.');
-    expect(screen.getByRole('button', { name: 'Seleccionada' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Revisar mi selección' })).toBeEnabled();
+    expect(push).toHaveBeenCalledWith('/reserva?checkIn=2026-10-10&checkOut=2026-10-13&adults=2&children=0&roomsCount=1');
     const cartTrigger = screen.getByRole('button', { name: 'Mi Selección (1)' }); cartTrigger.focus(); fireEvent.click(cartTrigger);
     const cart = screen.getByRole('dialog', { name: 'Mi selección' }); expect(cart).toHaveTextContent('Q 3,858.89');
     fireEvent.keyDown(window, { key: 'Escape' }); await waitFor(() => expect(cartTrigger).toHaveFocus());
