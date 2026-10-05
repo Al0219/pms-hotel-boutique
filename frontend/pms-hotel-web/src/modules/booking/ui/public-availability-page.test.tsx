@@ -15,6 +15,7 @@ const criteria = { checkIn: "2026-10-10", checkOut: "2026-10-13", adults: 2, chi
 const fixture = { ...publicCatalogueFixture, check_in_date: criteria.checkIn, check_out_date: criteria.checkOut };
 const clients: QueryClient[] = [];
 beforeEach(() => {
+  push.mockClear();
   vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date("2026-10-04T12:00:00Z"));
   vi.stubEnv("NEXT_PUBLIC_API_BASE_URL", "http://pms.test"); vi.stubEnv("NEXT_PUBLIC_USE_MOCK_API", "true");
 });
@@ -116,11 +117,12 @@ describe("Public availability catalogue", () => {
     expect(within(drawer).getByText(/435\.00/, { selector: 'strong' })).toBeInTheDocument();
     const increment = within(drawer).getByRole("button", { name: "Aumentar cantidad de Deluxe King" }); fireEvent.click(increment);
     expect(increment).toBeDisabled(); expect(within(drawer).getByText(/870\.00/, { selector: 'strong' })).toBeInTheDocument();
-    expect(within(drawer).getByRole("button", { name: "Continuar con el Checkout" })).toBeDisabled();
+    expect(within(drawer).getByRole("button", { name: "Continuar con el Checkout" })).toBeEnabled();
     expect(within(drawer).getByText('US$ 96.00')).toBeInTheDocument();
     expect(within(drawer).getByText('US$ 1,010.00')).toBeInTheDocument();
     fireEvent.click(within(drawer).getByRole("button", { name: "Quitar Deluxe King" }));
     expect(within(drawer).getByText(/Tu selección está vacía/)).toBeInTheDocument();
+    expect(within(drawer).getByRole('button', { name: 'Continuar con el Checkout' })).toBeDisabled();
     fireEvent.click(within(drawer).getByRole("button", { name: "Seguir explorando" }));
     expect(screen.getByRole("button", { name: /Mi Selección/ })).toHaveTextContent("(0)");
   });
@@ -130,6 +132,9 @@ describe("Public availability catalogue", () => {
     const drawer = cart(); expect(within(drawer).getByText("Tarifa no reembolsable")).toBeInTheDocument();
     expect(within(drawer).getByText(/390\.00/, { selector: 'strong' })).toBeInTheDocument();
     expect(within(drawer).getByText(/1 habitaciones seleccionadas/)).toBeInTheDocument();
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Continuar con el Checkout' }));
+    expect(push).toHaveBeenCalledWith('/reserva?checkIn=2026-10-10&checkOut=2026-10-13&adults=2&children=0&roomsCount=1');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
   it("modifies a search in place, preserves quantity/promo in URL and discards old quotes", async () => {
     const replace = vi.spyOn(window.history, "replaceState").mockImplementation(() => {});

@@ -1,8 +1,12 @@
 import { useLayoutEffect, type RefObject } from "react";
+import { useRouter } from 'next/navigation';
 import { Button, Modal } from "@/shared/components";
-import { selectionTotals, type resolveSelection } from "../domain/room-catalogue";
+import type { resolveSelection } from "../domain/room-catalogue";
+import { selectionPriceSummary } from '../domain/selection-price-summary';
 import { displayMoney } from "../domain/display-currency";
 import { usePublicBookingSession } from "../components/public-booking-provider";
+import { publicSelectionHref } from '../domain/public-room-navigation';
+import type { BookingSearchCriteria } from '../domain/booking-search-criteria';
 import styles from "./public-availability-page.module.css";
 
 function useCatalogueDialog(returnFocusRef: RefObject<HTMLElement | null>) {
@@ -19,19 +23,18 @@ function useCatalogueDialog(returnFocusRef: RefObject<HTMLElement | null>) {
   }, [returnFocusRef]);
 }
 
-export function CatalogueSelectionDrawer({ items, nights, available, onQuantity, onRemove, onClose, returnFocusRef }: {
+export function CatalogueSelectionDrawer({ items, nights, available, criteria, onQuantity, onRemove, onClose, returnFocusRef }: {
   items: ReturnType<typeof resolveSelection>; nights: number; available: boolean;
+  criteria: Partial<BookingSearchCriteria>;
   onQuantity: (id: string, quantity: number) => void; onRemove: (id: string) => void; onClose: () => void;
   returnFocusRef: RefObject<HTMLElement | null>;
 }) {
   useCatalogueDialog(returnFocusRef);
+  const router = useRouter();
   const { currency } = usePublicBookingSession();
-  const totals = selectionTotals(items);
-  const estimatedTotals = selectionTotals(items.map(item => item.rate ? { ...item, rate: { ...item.rate, totalAmount: item.rate.priceBreakdown?.estimatedTotal ?? item.rate.totalAmount } } : item));
-  const completeEstimate = items.length > 0 && items.every(item => item.valid && item.rate?.priceBreakdown);
-  const feeTotals = (field: 'serviceCharge' | 'estimatedTaxes') => selectionTotals(items.map(item => item.rate ? { ...item, rate: { ...item.rate, totalAmount: item.rate.priceBreakdown?.[field] ?? 0 } } : item));
+  const prices = selectionPriceSummary(items);
   return <div className={`${styles.modalLayer} ${styles.drawer}`}><Modal title="Mi selección" onClose={onClose}
-    footer={<><Button variant="secondary" onClick={onClose}>Seguir explorando</Button><Button disabled aria-describedby="checkout-note">Continuar con el Checkout</Button></>}>
+    footer={<><Button variant="secondary" onClick={onClose}>Seguir explorando</Button><Button disabled={!available || items.length === 0 || items.some(item => !item.valid)} aria-describedby="checkout-note" onClick={() => { onClose(); router.push(publicSelectionHref(criteria)); }}>Continuar con el Checkout</Button></>}>
     <button className={styles.closeDrawer} type="button" aria-label="Cerrar mi selección" onClick={onClose}>×</button>
     <p>{nights} {nights === 1 ? 'noche' : 'noches'} · {items.reduce((sum, item) => sum + item.quantity, 0)} habitaciones seleccionadas</p>
     {!available && <p role="alert">Debemos consultar nuevamente la disponibilidad antes de continuar.</p>}
@@ -45,13 +48,13 @@ export function CatalogueSelectionDrawer({ items, nights, available, onQuantity,
           <button type="button" className={styles.remove} onClick={() => onRemove(item.roomTypeId)}>Quitar {item.room?.name}</button></div>
       </li>)}</ul>}
     <div className={styles.totals}><h3>Resumen de la estancia</h3>
-      {totals.map(total => <p key={total.currency}><span>Habitaciones ({total.currency})</span><strong>{displayMoney(total.amount, total.currency, currency)}</strong></p>)}
-      {completeEstimate ? <>{feeTotals('serviceCharge').map(total => <p key={total.currency}><span>Cargo de servicio</span><span>{displayMoney(total.amount, total.currency, currency)}</span></p>)}
-        {feeTotals('estimatedTaxes').map(total => <p key={total.currency}><span>Impuestos estimados</span><span>{displayMoney(total.amount, total.currency, currency)}</span></p>)}
-        {estimatedTotals.map(total => <p key={total.currency}><span>Total estimado</span><strong>{displayMoney(total.amount, total.currency, currency)}</strong></p>)}</> :
+      {prices.rooms.map(total => <p key={total.currency}><span>Habitaciones ({total.currency})</span><strong>{displayMoney(total.amount, total.currency, currency)}</strong></p>)}
+      {prices.completeEstimate ? <>{prices.service.map(total => <p key={total.currency}><span>Cargo de servicio</span><span>{displayMoney(total.amount, total.currency, currency)}</span></p>)}
+        {prices.taxes.map(total => <p key={total.currency}><span>Impuestos estimados</span><span>{displayMoney(total.amount, total.currency, currency)}</span></p>)}
+        {prices.estimated.map(total => <p key={total.currency}><span>Total estimado</span><strong>{displayMoney(total.amount, total.currency, currency)}</strong></p>)}</> :
         <><p><span>Impuestos</span><span>Pendientes de confirmar</span></p><p><span>Total final</span><span>Pendiente de confirmar</span></p></>}
       {items.some(item => !item.valid) && <p>Los importes excluyen selecciones no disponibles.</p>}
     </div>
-    <p className={styles.small} id="checkout-note">El checkout estará disponible en una próxima entrega. Los importes son estimados y deben confirmarse al reservar. Tu selección no retiene inventario ni confirma una reserva.</p>
+    <p className={styles.small} id="checkout-note">Continúa para revisar tu selección antes de ingresar tus datos. Los importes son estimados y deben confirmarse al reservar. Tu selección no retiene inventario ni confirma una reserva.</p>
   </Modal></div>;
 }

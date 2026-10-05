@@ -27,6 +27,8 @@ GTQ es solamente una moneda de presentación para cotizaciones USD. Se utiliza u
 
 Checkout, admisión transaccional y confirmación siguen pendientes de su entrega correspondiente. El botón del carrito explica ese estado. No se expone RoomId físico ni se implementan pagos.
 
+Actualización 2026-10-05: [la entrega de revisión](41_PUBLIC_BOOKING_SELECTION_REVIEW.md) habilita el acceso al Paso 1 desde selección/drawer y un destino inicial de datos del huésped. Sustituye el CTA de selección que permanecía en el detalle por navegación a `/reserva`; admisión, garantía/pago y confirmación siguen pendientes.
+
 ## Validación
 
 Pruebas de componentes y dominio cubren galería/teclado/imagen fallida, retorno con criterios, cuota y desglose, selección y cambio de tarifa, moneda compartida, búsqueda incompleta, RoomType o tarifa no disponible, metadata opcional ausente y recuperación de error/offline. Se mantienen las validaciones previas del mapper y del catálogo.

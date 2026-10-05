@@ -16,3 +16,11 @@ export function publicRoomHref(roomTypeId: string, criteria: Partial<BookingSear
   if (ratePlanId) query.set('ratePlanId', ratePlanId);
   return `/habitaciones/${encodeURIComponent(roomTypeId)}${query.size ? `?${query}` : ''}`;
 }
+
+export function publicSelectionHref(criteria: Partial<BookingSearchCriteria>): string {
+  return publicResultsHref(criteria).replace('/habitaciones', '/reserva');
+}
+
+export function publicGuestDataHref(criteria: Partial<BookingSearchCriteria>): string {
+  return publicResultsHref(criteria).replace('/habitaciones', '/reserva/checkout');
+}

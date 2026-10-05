@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, useTransition } from 'react';
 import { usePublicAvailability } from '@/modules/availability';
 import { Button, EmptyState, ErrorState, LoadingState } from '@/shared/components';
 import { getPublicEnvironment } from '@/lib/env';
 import { validateBookingSearchCriteria, type BookingSearchCriteria } from '../domain/booking-search-criteria';
-import { publicResultsHref, publicRoomHref } from '../domain/public-room-navigation';
+import { publicResultsHref, publicRoomHref, publicSelectionHref } from '../domain/public-room-navigation';
 import { displayMoney } from '../domain/display-currency';
 import { resolveSelection } from '../domain/room-catalogue';
 import { usePublicBookingSession, usePublicRoomSelection } from '../components/public-booking-provider';
@@ -25,6 +26,8 @@ export function PublicRoomDetailPage(props: { roomTypeId: string; initialCriteri
 }
 
 function RoomDetail({ roomTypeId, initialCriteria, initialRatePlanId }: { roomTypeId: string; initialCriteria: Partial<BookingSearchCriteria>; initialRatePlanId?: string }) {
+  const router = useRouter();
+  const [navigating, startNavigation] = useTransition();
   const [criteria, setCriteria] = useState(initialCriteria);
   const [rateId, setRateId] = useState(initialRatePlanId ?? '');
   const [editing, setEditing] = useState(false);
@@ -112,10 +115,11 @@ function RoomDetail({ roomTypeId, initialCriteria, initialRatePlanId }: { roomTy
                     <div><dt>Impuestos estimados</dt><dd>{rate.priceBreakdown ? money(rate.priceBreakdown.estimatedTaxes) : 'Pendientes'}</dd></div>
                     <div className={styles.total}><dt>Total estimado</dt><dd>{rate.priceBreakdown ? money(rate.priceBreakdown.estimatedTotal) : 'Por confirmar'}</dd></div>
                   </dl>
-                  <Button className={styles.selectRoom} disabled={!ready || sameRateSelected} aria-pressed={sameRateSelected} onClick={() => {
+                  <Button className={styles.selectRoom} disabled={!ready} isLoading={navigating} loadingText="Abriendo tu selección…" aria-pressed={sameRateSelected} onClick={() => {
                     setSelection(items => items.some(item => item.roomTypeId === roomTypeId) ? items.map(item => item.roomTypeId === roomTypeId ? { ...item, ratePlanId: rate.ratePlanId } : item) : [...items, { roomTypeId, ratePlanId: rate.ratePlanId, quantity: 1 }]);
                     setToast(`${room.name} ${selected ? 'actualizada' : 'agregada'} a tu selección.`);
-                  }}>{sameRateSelected ? <><BookingIcon name="check" />Seleccionada</> : selected ? 'Actualizar selección' : 'Seleccionar habitación'}</Button>
+                    startNavigation(() => router.push(publicSelectionHref(criteria)));
+                  }}>{sameRateSelected ? <><BookingIcon name="check" />Revisar mi selección</> : selected ? 'Actualizar selección' : 'Seleccionar habitación'}</Button>
                   <p className={styles.small}>Precio por habitación para tu estancia. {currency === 'GTQ' && rate.currency === 'USD' ? 'Conversión indicativa a quetzales. ' : ''}La selección no retiene inventario.</p>
                   {criteria.promoCode?.trim() && <p className={styles.small}>El código {criteria.promoCode} aún debe validarse; no se aplicó un descuento.</p>}
                 </>}
@@ -128,7 +132,7 @@ function RoomDetail({ roomTypeId, initialCriteria, initialRatePlanId }: { roomTy
       </button>
     </div>
     <div className={styles.toast} role="status" aria-live="polite">{toast && <><BookingIcon name="check" /><span>{toast}</span><button type="button" aria-label="Cerrar notificación" onClick={() => setToast('')}>×</button></>}</div>
-    {cartOpen && <CatalogueSelectionDrawer items={resolveSelection(selection, query.data?.roomTypes ?? [])} nights={nights} available={ready} onClose={closeCart} returnFocusRef={trigger}
+    {cartOpen && <CatalogueSelectionDrawer items={resolveSelection(selection, query.data?.roomTypes ?? [])} nights={nights} available={ready} criteria={criteria} onClose={closeCart} returnFocusRef={trigger}
       onRemove={id => setSelection(items => items.filter(item => item.roomTypeId !== id))}
       onQuantity={(id, quantity) => setSelection(items => items.map(item => item.roomTypeId === id ? { ...item, quantity } : item))} />}
   </div>;
