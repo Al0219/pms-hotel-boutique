@@ -1,5 +1,12 @@
 # AlanHandoff — Seguimiento Backend
 
+## BE-010B-ONBOOKS-01 — Actualización de seguimiento (2026-10-05)
+
+- **Cierre técnico:** BE-010B ya está técnicamente cerrada; se conserva el estado registrado en la entrada histórica.
+- **Revisiones:** BD2/BD3 y Web son seguimiento colaborativo no bloqueante. Solo pasan a bloqueo bajo las excepciones del DoD común vigente en AlanPlan.
+- **Alcance:** BFF Web queda fuera del alcance Backend y corresponde a un incremento Web posterior.
+- **Siguiente paso Backend:** acordar y registrar una nueva tarea con DoR completo. Actualmente no hay otro incremento Backend READY.
+
 ## BE-010B-ONBOOKS-01 — On-books diario Backend HTTP (2026-10-05)
 
 - **Estado:** COMPLETADA e integrada en `main` por PR #109 (`7e0bda0`).
