@@ -1,5 +1,7 @@
 # Public — Reserva como invitado y Mis reservas
 
+Actualización posterior: pago/confirmación de demostración se implementan en [la entrega 44](44_PUBLIC_BOOKING_PAYMENT_GUARANTEE.md). Los límites de persistencia, correo real e historial aquí descritos se conservan.
+
 ## Alcance autorizado
 
 José aprueba conservar checkout sin cuenta y desarrollar únicamente el frontend de acceso → vinculación por referencia/código → historial. Se amplían los slices existentes de acceso `IMP-WEB-0202` y cuenta/historial `IMP-WEB-0205–0206` (WEB-2; revisión WEB-1/WEB-3 según backlog). El XLSX mantiene sus estados. No se declara terminada la integración real, la revisión Figma ni los checks de GitHub.

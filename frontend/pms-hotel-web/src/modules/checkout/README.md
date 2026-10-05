@@ -20,7 +20,9 @@ selection, and reviews contact fields locally without creating an account,
 profile, reservation or payment. Fields remain in component memory only.
 The original Structure Freeze below describes the baseline shell; this limited
 UI delivery is documented in `docs/41_PUBLIC_BOOKING_SELECTION_REVIEW.md`.
-Payment, occupants per stay, final admission and confirmation remain pending.
+Payment/confirmation now have a frontend-only demonstration documented in
+`docs/44_PUBLIC_BOOKING_PAYMENT_GUARANTEE.md`. Real payment, occupants per stay
+and transactional admission remain pending.
 
 ## Does not own
 
