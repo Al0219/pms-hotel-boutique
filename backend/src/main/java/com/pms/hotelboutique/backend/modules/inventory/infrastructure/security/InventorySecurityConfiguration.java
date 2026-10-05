@@ -13,7 +13,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-/** Adapts BD1 Staff authentication only to the published BD2 property routes. */
+/** Applies Staff authentication to property operations and commercial reporting. */
 @Configuration
 public class InventorySecurityConfiguration {
     @Bean
@@ -25,7 +25,8 @@ public class InventorySecurityConfiguration {
                         "/api/v1/properties/*/availability", "/api/v1/properties/*/room-types",
                         "/api/v1/properties/*/room-types/*", "/api/v1/properties/*/rooms",
                         "/api/v1/properties/*/rooms/*", "/api/v1/properties/*/rate-plans",
-                        "/api/v1/properties/*/rate-plans/*")
+                        "/api/v1/properties/*/rate-plans/*",
+                        "/api/v1/reports/on-books/daily")
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(errors -> errors

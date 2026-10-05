@@ -997,7 +997,7 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 ### BE-010 — Reportes, exportaciones y revenue KPIs
 
 - **Estado:** BE-010A COMPLETADA (C7 aprobada parcialmente para On-books diario);
-  BE-010B PENDIENTE por reporte/KPI.
+  BE-010B EN_PROGRESO con HTTP On-books diario EN_QA; otros reportes/KPIs pendientes.
 - **Dependencias:** A inventaría tablas y fórmulas con BD2/BD3; B requiere C7/A,
   BE-014A y fuentes reales de cada indicador. Folio PAYMENT no prueba capture.
 - **Entrega A / DoR B:** definir occupancy/rooms sold/available, ADR/RevPAR/revenue,
@@ -1037,6 +1037,37 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
   Maven: solo documentación.
 - **Dependencias posteriores:** BE-010B On-books requiere contrato HTTP/BFF y
   revisión de acceso; revenue/ADR/RevPAR requieren D03, y pace requiere D05.
+
+#### BE-010B-ONBOOKS-01 — Consulta Backend HTTP On-books diario
+
+- **Estado:** COMPLETADA (2026-10-05); contrato Backend HTTP aprobado e
+  implementado, QA manual confirmada por el usuario y CI de PR #109 PASS.
+- **Rama/base:** `feature/bd1-daily-on-books-report` desde `main` actualizado
+  `b5d6630` (PR #106 integra C7).
+- **DoR:** C7-D01/D02/D06/D07/D08 aprobadas para primer reporte; C2 Staff,
+  PropertyScopeResolver, tablas Rooms/OOO/Reservations/Stays y ATS SQL existen.
+  C7-D03 pendiente no bloquea On-books sin importes.
+- **Alcance/archivos:** consulta de inventario por property/stay date y
+  `GET /api/v1/reports/on-books/daily`, autorización Staff `COMMERCIAL_MANAGE`
+  y `MULTI_PROPERTY_READ` explícito para ALL_PROPERTIES, SQL scoped, DTO,
+  `Cache-Control: private, no-store`, tests PostgreSQL/HTTP, contrato y
+  colección Postman. BFF Web sujeto a revisión del owner; no revenue, ADR,
+  RevPAR ni CSV en este incremento.
+- **Aceptación/DoD:** capacidad física−OOO única; OOS intacto; stays elegibles
+  por noche y padre no cancelado; multi-room, cero denominador, property ajena,
+  sesión revocada y multi-property probados. Rango ≤366 noches, límite de filas,
+  porcentaje reproducible y HTTP 400/401/403/200. Tests focalizados + verify
+  completo, diff, Postman y QA manual.
+- **Evidencia local:** 10 pruebas focalizadas PASS; `verify` completo 331 PASS,
+  cero failures/errors/skipped y BUILD SUCCESS en PostgreSQL 17/Java 21.
+  Contrato Backend aprobado en
+  `docs/34_BD1_ON_BOOKS_HTTP_CONTRACT_PROPOSAL.md`; QA en
+  `docs/35_BD1_DAILY_ON_BOOKS_QA.md`. QA manual confirmó 200 en ambos scopes,
+  401/403/400, límites 366/367 noches, no-store, DTO/cero denominador y orden.
+  Tras fallo CI por `too many clients already`, `verify` 331 PASS con
+  PostgreSQL de 100 conexiones y pool Hikari de test limitado a 5. En PR #109,
+  `verify-backend` y `verify-stack` SUCCESS con hotfix `d2c1a21`.
+  Revisión BD2/BD3 y Web pendiente para integración.
 
 ### BE-011 — MFA local Staff
 
