@@ -1,38 +1,45 @@
-# PMS Hotel Boutique — Backend AGENTS
+# PMS Hotel Boutique — Backend
 
-Backend no debe asumir que los DTO provisionales del Frontend son contratos definitivos.
+Aplica `../AGENTS.md`.
 
-Leer AGENTS/docs globales.
+Cuando apliquen al flujo, Backend valida sesión, permisos, membership y property scope; nunca confía en UI/BFF ni filtra datos globales después de consultar. Auditoría e idempotencia donde apliquen; no PAN/CVV.
 
-Antes de crear API:
-- definir arquitectura Backend;
-- confirmar dominios;
-- confirmar auth;
-- confirmar property scope;
-- confirmar persistence;
-- definir contratos;
-- publicar contract docs.
+Al tocar identidad o reservas, preservar separaciones Guest/Staff, GuestAccount/GuestProfile y Reservation/ReservationStay. DTOs/mocks frontend no definen API Backend; no copiar modelos UI a persistencia sin análisis.
 
-## Seguimiento Backend
+Para tarea nueva: buscar **solo su sección** y «Control operativo, DoR y DoD comunes» en `docs/AlanPlan.md`; verificar dependencias, owner/reviewers, aceptación y contrato. Consultar la entrada pertinente o estado reciente de `docs/AlanHandoff.md`.
 
-El control operativo de Backend usa `docs/AlanPlan.md` y
-`docs/AlanHandoff.md`. No se agregan ni se actualizan tareas Backend en
-`docs/Backlog_Implementacion_PMS_V1.xlsx`.
+`docs/AlanPlan.md` y `docs/AlanHandoff.md` son el control operativo Backend, no el XLSX.
 
-Antes de iniciar una tarea Backend:
-- verificar su dependencia y DoR en `AlanPlan.md`;
-- marcar el estado en el mismo archivo;
-- registrar rama, evidencia y siguiente paso en `AlanHandoff.md`.
+Para determinar estado, READY, siguiente tarea o dependencias Backend, usar primero `AlanPlan.md` y `AlanHandoff.md`. No consultar el backlog global/XLSX ni `docs/12_BACKLOG_AND_DELIVERY.md` salvo que AlanPlan los referencie para esa decisión o exista una contradicción que requiera verificarlos.
 
-## MUST
-- validar permisos backend;
-- validar property scope backend;
-- no confiar en UI;
-- idempotency en operaciones que lo requieran;
-- audit;
-- no almacenar PAN/CVV.
+Inspeccionar código y tests afectados. Actualizar plan/handoff al cambiar estado o entregar evidencia: entrada breve con estado, pruebas, bloqueos y siguiente paso; sin transcripciones. No avanzar a otra tarea sin autorización.
 
-## MUST NOT
-- copiar modelos de UI como entidades persistence sin análisis;
-- tratar GuestAccount=GuestProfile;
-- tratar Reservation=Stay.
+## Router Backend (`docs/`)
+
+| Tema | Archivo |
+| --- | --- |
+| arquitectura/API | `01_BACKEND_ARCHITECTURE_TODO.md`, `02_API_CONTRACT_POLICY.md` |
+| auth/scope | `03_AUTH_AND_SCOPE.md`, `06_SECURITY.md` y contrato C2/C3 aplicable |
+| persistencia/migraciones | `04_PERSISTENCE_RULES.md` |
+| idempotencia/auditoría | `05_IDEMPOTENCY_AND_AUDIT.md` |
+| pruebas/QA | `07_TESTING_STRATEGY.md`, guía de la tarea |
+
+Buscar otros contratos por ID/módulo y verificar aprobación.
+
+Abrir docs globales de dominio, seguridad, scope o cross-app **solo si el cambio los afecta**.
+
+Antes de crear o modificar una API, confirmar únicamente lo necesario para esa tarea:
+- contrato;
+- auth/permisos si aplican;
+- property scope si aplica;
+- persistencia si aplica;
+- idempotencia/auditoría si aplica;
+- pruebas/QA requeridas.
+
+Detenerse antes de:
+- inventar contratos, endpoints, permisos, roles, estados o reglas de negocio;
+- modificar migraciones ya aplicadas sin autorización;
+- modificar secretos;
+- introducir dependencias externas sin justificación/aprobación;
+- hacer commit, push o merge;
+- avanzar a otra tarea sin autorización explícita.

@@ -2,8 +2,9 @@
 
 ## BE-010B-ONBOOKS-01 — On-books diario Backend HTTP (2026-10-05)
 
-- **Estado:** COMPLETADA; QA manual confirmada por el usuario y CI de PR #109
-  PASS (`verify-backend` y `verify-stack`).
+- **Estado:** COMPLETADA e integrada en `main` por PR #109 (`7e0bda0`).
+  El fix CI de conexiones quedó integrado por PR #110 (`5b2746e`). QA manual
+  confirmada por el usuario; `verify-backend` y `verify-stack` de PR #109 PASS.
 - **Rama/base:** `feature/bd1-daily-on-books-report` desde `main` actualizado
   `b5d6630` (PR #106 integra C7); árbol limpio al iniciar.
 - **DoR:** C7 habilita On-books sin D03; Staff Auth/C2 y ATS SQL disponibles.
@@ -21,19 +22,18 @@
   El PostgreSQL descartable de `compose.bd2-test.yaml` admite 200 conexiones
   para los contextos Spring y pruebas concurrentes. Guía
   `docs/35_BD1_DAILY_ON_BOOKS_QA.md`; Postman JSON y `git diff --check` PASS.
-- **CI:** PR #109 falló en `SecurityConfigurationIntegrationTests` porque
-  PostgreSQL rechazó Liquibase con `FATAL: sorry, too many clients already`;
-  las 330 pruebas previas no tuvieron errores. Surefire limita a 5 conexiones
-  Hikari por contexto de test, sin alterar producción. Reproducción local con
-  PostgreSQL `max_connections=100`: `verify` 331 PASS, cero errores y BUILD
-  SUCCESS, incluidas las pruebas concurrentes y la de seguridad. En el PR #109,
-  `verify-backend` y `verify-stack` finalizaron SUCCESS con el hotfix `d2c1a21`.
+- **CI:** el primer intento de PR #109 agotó conexiones al iniciar Liquibase.
+  La verificación local con PostgreSQL `max_connections=100` pasó con 331
+  pruebas. PR #109 pasó `verify-backend` y `verify-stack` con el límite Hikari
+  de pruebas (`d2c1a21`); PR #110 integró en `backend-ci.yml` pool máximo 2 y
+  mínimo idle 0 para contener el consumo de conexiones de CI.
 - **QA manual:** 200 por property y ALL_PROPERTIES; 401 sin Staff; 403 sin
   permiso, property ajena o falta de MULTI_PROPERTY_READ; 400 con scope doble
   o ausente, fechas invertidas y 367 noches. 366 noches válido; no-store, DTO,
   denominador cero y orden PASS, según confirmación del usuario.
-- **Siguiente paso:** revisión y merge del PR #109. BD2/BD3 revisan paridad
-  ATS/ReservationStay; owner Web revisa BFF.
+- **Siguiente paso:** BD2/BD3 revisan paridad ATS/ReservationStay y el owner Web
+  revisa el BFF. Tras esas revisiones, acordar y registrar la siguiente tarea
+  Backend con DoR completo; no hay otro incremento Backend READY registrado.
 
 ## BE-010A-01 — Propuesta de reporting C7 (2026-10-04)
 

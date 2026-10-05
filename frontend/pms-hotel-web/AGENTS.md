@@ -1,79 +1,21 @@
-# PMS Hotel Boutique — Web AGENTS
+# PMS Hotel Boutique — Web
 
-## Lectura obligatoria
+Aplica también `../../AGENTS.md`. Route Groups: `src/app/(public)` y `src/app/(private)`. Flujo obligatorio: `Service -> DTO -> Mapper -> Domain Model -> Hook/State -> UI`. Dependencias: `app -> modules -> shared/lib`; prohibidos `shared/lib -> modules` y deep imports entre módulos.
 
-Primero:
-- `../../AGENTS.md`
-- `../../docs/*`
-- `../../docs/Backlog_Implementacion_PMS_V1.xlsx`
+La UI no hace fetch directo, consume DTO crudo ni normaliza respuestas API. Service usa la infraestructura aprobada y devuelve DTO; Mapper es puro, convierte a Domain y produce `DomainMappingError` ante un dato obligatorio inválido.
 
-Luego según tarea:
-- inicio -> `docs/00_START_HERE.md`
-- Figma -> `docs/01_FIGMA_SCREEN_CATALOG.md`
-- rutas -> `docs/02_ROUTE_ARCHITECTURE.md`
-- arquitectura -> `docs/03_FRONTEND_ARCHITECTURE.md`
-- flujo de datos -> `docs/04_LAYERED_DATA_FLOW.md`
-- boundaries/imports -> `docs/04_MODULE_BOUNDARIES.md`
-- módulos -> `docs/05_MODULE_CATALOG.md`
-- DTO -> `docs/06_DTO_RULES.md`
-- mapper -> `docs/07_MAPPER_RULES.md`
-- model -> `docs/08_DOMAIN_MODEL_RULES.md`
-- service -> `docs/09_SERVICE_RULES.md`
-- hooks/state -> `docs/10_HOOK_AND_STATE_RULES.md`
-- public -> `docs/11_PUBLIC_WEB.md`
-- private -> `docs/12_PRIVATE_WEB.md`
-- auth -> `docs/13_AUTH_AND_SESSIONS.md`
-- reservations -> `docs/14_RESERVATIONS.md`
-- availability/rates -> `docs/15_AVAILABILITY_AND_RATES.md`
-- folio/payments -> `docs/16_FOLIO_AND_PAYMENTS.md`
-- operations -> `docs/17_OPERATIONS.md`
-- B2B/groups -> `docs/18_B2B_AND_GROUPS.md`
-- integrations -> `docs/19_INTEGRATIONS.md`
-- reporting -> `docs/20_REPORTING.md`
-- multi-property -> `docs/21_MULTI_PROPERTY.md`
-- shared -> `docs/22_SHARED_COMPONENTS.md`
-- mocks -> `docs/23_MOCK_API.md`
-- errors -> `docs/24_ERROR_LOADING_OFFLINE.md`
-- a11y -> `docs/25_ACCESSIBILITY.md`
-- testing -> `docs/26_TESTING.md`
-- ownership -> `docs/27_TEAM_OWNERSHIP.md`
-- git -> `docs/28_GIT_AND_PR_RULES.md`
-- ready -> `docs/29_DEFINITION_OF_READY.md`
-- done -> `docs/30_DEFINITION_OF_DONE.md`
-- tokens -> `docs/31_DESIGN_TOKEN_FOUNDATION.md`
+Para una tarea nueva, localizar **solo su fila** en `../../docs/Backlog_Implementacion_PMS_V1.xlsx`: autorización/READY, dependencias, owner/reviewer, Figma/fuente, DoR, aceptación y DoD. Trabajar únicamente esa tarea; no editar el XLSX sin instrucción explícita. Para una corrección localizada, inspeccionar código/tests y abrir solo documentos relacionados.
 
-## Route Groups obligatorios
-`src/app/(public)` y `src/app/(private)`.
+## Router Web (`docs/` de esta área)
 
-## Arquitectura obligatoria
-`Service -> DTO -> Mapper -> Domain Model -> Hook/State -> UI`.
+| Tema | Documento |
+| --- | --- |
+| rutas; arquitectura/capas; límites de módulos | `02_ROUTE_ARCHITECTURE.md`; `03_FRONTEND_ARCHITECTURE.md`, `04_LAYERED_DATA_FLOW.md`; `04_MODULE_BOUNDARIES.md` |
+| DTO; mapper; dominio; service; hooks/state | `06_DTO_RULES.md`; `07_MAPPER_RULES.md`; `08_DOMAIN_MODEL_RULES.md`; `09_SERVICE_RULES.md`; `10_HOOK_AND_STATE_RULES.md` |
+| auth/sesión; mocks; pruebas; tokens | `13_AUTH_AND_SESSIONS.md`; `23_MOCK_API.md`; `26_TESTING.md`; `31_DESIGN_TOKEN_FOUNDATION.md` |
+| ownership; DoR/DoD; Git | `27_TEAM_OWNERSHIP.md`; `29_DEFINITION_OF_READY.md`, `30_DEFINITION_OF_DONE.md`; `28_GIT_AND_PR_RULES.md` |
 
-### UI MUST NOT
-- hacer fetch directo;
-- consumir DTO;
-- normalizar API;
-- importar internals de otro módulo.
-
-### Service MUST
-- disparar request mediante la infraestructura aprobada;
-- retornar DTO;
-- manejar transporte, no presentación.
-
-### Mapper MUST
-- ser puro;
-- convertir DTO -> Domain;
-- producir `DomainMappingError` ante dato obligatorio inválido.
-
-## Dependencias
-`app -> modules -> shared/lib`.
-
-Prohibido:
-- `shared -> modules`
-- `lib -> modules`
-- deep imports cross-module.
-
-## Backlog
-Codex trabaja únicamente la siguiente tarea `READY` autorizada. No modifica el XLSX salvo instrucción explícita.
+Para un dominio, pantalla o feature concreta, buscar por tema/ID en `docs/` y abrir solo su documento y contrato aplicable; `docs/00_START_HERE.md` sirve de índice operativo. Verificar aprobación antes de tratar una propuesta frontend/mock como contrato Backend.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

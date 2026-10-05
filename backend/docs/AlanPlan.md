@@ -996,8 +996,10 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 
 ### BE-010 — Reportes, exportaciones y revenue KPIs
 
-- **Estado:** BE-010A COMPLETADA (C7 aprobada parcialmente para On-books diario);
-  BE-010B EN_PROGRESO con HTTP On-books diario EN_QA; otros reportes/KPIs pendientes.
+- **Estado:** BE-010A y BE-010B-ONBOOKS-01 COMPLETADAS; el HTTP On-books diario
+  está integrado en `main` por PR #109. Revisiones de paridad ATS/ReservationStay
+  y del BFF Web pendientes; otros reportes/KPIs siguen pendientes de sus fuentes
+  y decisiones específicas.
 - **Dependencias:** A inventaría tablas y fórmulas con BD2/BD3; B requiere C7/A,
   BE-014A y fuentes reales de cada indicador. Folio PAYMENT no prueba capture.
 - **Entrega A / DoR B:** definir occupancy/rooms sold/available, ADR/RevPAR/revenue,
@@ -1035,13 +1037,16 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 - **Evidencia local:** nueve enlaces válidos, D01–D09 presentes y
   `git diff --check` PASS. QA de decisiones del usuario registrada; no aplica
   Maven: solo documentación.
-- **Dependencias posteriores:** BE-010B On-books requiere contrato HTTP/BFF y
-  revisión de acceso; revenue/ADR/RevPAR requieren D03, y pace requiere D05.
+- **Dependencias posteriores:** BE-010B On-books está completada. Siguen abiertas
+  la revisión BD2/BD3 de paridad ATS/ReservationStay y la revisión Web del BFF;
+  revenue/ADR/RevPAR requieren D03 y pace requiere D05.
 
 #### BE-010B-ONBOOKS-01 — Consulta Backend HTTP On-books diario
 
-- **Estado:** COMPLETADA (2026-10-05); contrato Backend HTTP aprobado e
-  implementado, QA manual confirmada por el usuario y CI de PR #109 PASS.
+- **Estado:** COMPLETADA (2026-10-05) e integrada en `main` por PR #109
+  (`7e0bda0`); QA manual confirmada por el usuario y `verify-backend`/
+  `verify-stack` PASS. El ajuste de conexiones de CI quedó integrado por PR #110
+  (`5b2746e`).
 - **Rama/base:** `feature/bd1-daily-on-books-report` desde `main` actualizado
   `b5d6630` (PR #106 integra C7).
 - **DoR:** C7-D01/D02/D06/D07/D08 aprobadas para primer reporte; C2 Staff,
@@ -1066,8 +1071,9 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
   401/403/400, límites 366/367 noches, no-store, DTO/cero denominador y orden.
   Tras fallo CI por `too many clients already`, `verify` 331 PASS con
   PostgreSQL de 100 conexiones y pool Hikari de test limitado a 5. En PR #109,
-  `verify-backend` y `verify-stack` SUCCESS con hotfix `d2c1a21`.
-  Revisión BD2/BD3 y Web pendiente para integración.
+  `verify-backend` y `verify-stack` SUCCESS con hotfix `d2c1a21`; PR #110 integra
+  el límite Hikari de CI. Quedan pendientes la revisión BD2/BD3 de paridad ATS/
+  ReservationStay y la revisión del BFF por el owner Web.
 
 ### BE-011 — MFA local Staff
 
@@ -1206,11 +1212,10 @@ evidencia HTTP/SQL/externa y límites; impedimentos/decisiones pendientes; sigui
 paso concreto. Mantener historial append-only y anteponer la actualización nueva.
 No llevar tareas Backend al XLSX. No actualizar memorias externas como parte del plan.
 
-**Próximo paso concreto:** publicar BE-008A/C6 en su rama. BE-008B permanece
-pendiente de BE-014A y de la arquitectura/API específica. Preparar BE-006A/C4
-para administración Staff. Coordinar guards de sesión/actor y AD-02 financiero
-con los owners antes de nuevas APIs; no crear endpoints ni permisos desde una
-propuesta no aprobada.
+**Próximo paso concreto:** completar la revisión BD2/BD3 de paridad ATS/
+ReservationStay para On-books diario y la revisión Web del BFF. Después, acordar
+y registrar la siguiente tarea Backend con su DoR completo. No hay otro
+incremento Backend READY registrado.
 
 ## Entorno de validación
 
