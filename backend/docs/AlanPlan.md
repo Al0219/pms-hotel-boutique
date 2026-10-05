@@ -1040,8 +1040,9 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 
 #### BE-010B-ONBOOKS-01 — Consulta Backend HTTP On-books diario
 
-- **Estado:** COMPLETADA (2026-10-05); contrato Backend HTTP aprobado e
-  implementado, QA manual confirmada por el usuario. Lista para commit/push.
+- **Estado:** COMPLETADA funcionalmente (2026-10-05); contrato Backend HTTP
+  aprobado e implementado, QA manual confirmada por el usuario. Corrección del
+  límite de conexiones de CI de PR #109 en validación.
 - **Rama/base:** `feature/bd1-daily-on-books-report` desde `main` actualizado
   `b5d6630` (PR #106 integra C7).
 - **DoR:** C7-D01/D02/D06/D07/D08 aprobadas para primer reporte; C2 Staff,
@@ -1064,6 +1065,8 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
   `docs/34_BD1_ON_BOOKS_HTTP_CONTRACT_PROPOSAL.md`; QA en
   `docs/35_BD1_DAILY_ON_BOOKS_QA.md`. QA manual confirmó 200 en ambos scopes,
   401/403/400, límites 366/367 noches, no-store, DTO/cero denominador y orden.
+  Tras fallo CI por `too many clients already`, `verify` 331 PASS con
+  PostgreSQL de 100 conexiones y pool Hikari de test limitado a 5.
   Revisión BD2/BD3 y Web pendiente para integración.
 
 ### BE-011 — MFA local Staff

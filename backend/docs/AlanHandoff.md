@@ -2,7 +2,8 @@
 
 ## BE-010B-ONBOOKS-01 — On-books diario Backend HTTP (2026-10-05)
 
-- **Estado:** COMPLETADA; QA manual confirmada por el usuario, commit/push autorizado por el flujo acordado.
+- **Estado:** COMPLETADA funcionalmente; QA manual confirmada por el usuario.
+  Corrección de CI de PR #109 en validación.
 - **Rama/base:** `feature/bd1-daily-on-books-report` desde `main` actualizado
   `b5d6630` (PR #106 integra C7); árbol limpio al iniciar.
 - **DoR:** C7 habilita On-books sin D03; Staff Auth/C2 y ATS SQL disponibles.
@@ -20,11 +21,17 @@
   El PostgreSQL descartable de `compose.bd2-test.yaml` admite 200 conexiones
   para los contextos Spring y pruebas concurrentes. Guía
   `docs/35_BD1_DAILY_ON_BOOKS_QA.md`; Postman JSON y `git diff --check` PASS.
+- **CI:** PR #109 falló en `SecurityConfigurationIntegrationTests` porque
+  PostgreSQL rechazó Liquibase con `FATAL: sorry, too many clients already`;
+  las 330 pruebas previas no tuvieron errores. Surefire limita a 5 conexiones
+  Hikari por contexto de test, sin alterar producción. Reproducción local con
+  PostgreSQL `max_connections=100`: `verify` 331 PASS, cero errores y BUILD
+  SUCCESS, incluidas las pruebas concurrentes y la de seguridad.
 - **QA manual:** 200 por property y ALL_PROPERTIES; 401 sin Staff; 403 sin
   permiso, property ajena o falta de MULTI_PROPERTY_READ; 400 con scope doble
   o ausente, fechas invertidas y 367 noches. 366 noches válido; no-store, DTO,
   denominador cero y orden PASS, según confirmación del usuario.
-- **Siguiente paso:** commit/push de esta rama y revisión de integración.
+- **Siguiente paso:** publicar la corrección y comprobar el nuevo CI del PR.
   BD2/BD3 revisan paridad ATS/ReservationStay; owner Web revisa BFF.
 
 ## BE-010A-01 — Propuesta de reporting C7 (2026-10-04)
