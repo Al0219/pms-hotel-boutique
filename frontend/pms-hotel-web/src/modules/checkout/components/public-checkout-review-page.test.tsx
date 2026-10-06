@@ -39,7 +39,7 @@ describe('Final checkout review', () => {
     expect(steps).toHaveLength(4); expect(steps[2]).toHaveAttribute('aria-current', 'step'); expect(steps[0]).toHaveTextContent('✓'); expect(steps[3]).toHaveTextContent('Pago y garantía');
     expect(screen.getByText('Carlos Mendoza')).toBeInTheDocument(); expect(screen.getByText(/guest@example.com · \+50255555555/)).toBeInTheDocument(); expect(screen.getByText('Guatemala')).toBeInTheDocument(); expect(screen.getByText(/Llegada tardía después/)).toBeInTheDocument();
     expect(screen.getByText(/3 noches · 2 huéspedes · 1 habitación/)).toBeInTheDocument();
-    const total = screen.getByRole('complementary'); for (const amount of ['US$ 435.00','US$ 22.00','US$ 48.00','US$ 505.00']) expect(total).toHaveTextContent(amount);
+    const total = screen.getByRole('complementary'); for (const amount of ['Q 3,323.99','Q 168.11','Q 366.79','Q 3,858.89']) expect(total).toHaveTextContent(amount);
     fireEvent.click(screen.getByRole('button', { name: /Continuar al pago/ })); expect(push).toHaveBeenCalledWith('/reserva/checkout/pago?checkIn=2026-10-10&checkOut=2026-10-13&adults=2&children=0&roomsCount=1');
     expect(writes).not.toHaveBeenCalled(); expect(localStorage.length).toBe(0); expect(sessionStorage.length).toBe(0);
   });
@@ -56,7 +56,7 @@ describe('Final checkout review', () => {
     view.rerender(<PublicCheckoutReviewPage initialCriteria={criteria}/>); expect(await screen.findByText(/corrected@example.com/)).toBeInTheDocument();
   }, 10000); // Multiple page transitions and two validated guest-form submissions.
   it('totals multiple rooms and retains the selected display currency', async () => {
-    await prepared(true); expect(screen.getByRole('complementary')).toHaveTextContent('US$ 950.00'); expect(screen.getByText('Doble Superior')).toBeInTheDocument();
+    await prepared(true); expect(screen.getByRole('complementary')).toHaveTextContent('Q 7,259.29'); expect(screen.getByText('Doble Superior')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Mostrar precios en'), { target: { value: 'GTQ' } }); expect(screen.getByRole('complementary')).toHaveTextContent('Q 7,259.29');
   });
   it('guards direct access without a selected room', async () => {
@@ -70,7 +70,7 @@ describe('Final checkout review', () => {
     mockServer.use(http.get('*/api/v1/public/availability', ({ request }) => { const dto = structuredClone(buildPublicAvailabilityMock(new URL(request.url).searchParams, publicCatalogueFixture)!); const rate = dto.available_room_types[0].rate_plans[0]; rate.base_nightly_rate = '146.00'; rate.total_amount = '438.00'; rate.stay_price_breakdown!.estimated_total = '508.00'; return HttpResponse.json(dto); }));
     await clients[0].invalidateQueries(); view.rerender(<PublicPaymentReviewPage initialCriteria={criteria}/>);
     expect(await screen.findByRole('region', { name: 'Revisa tu reserva antes de continuar' })).toBeInTheDocument(); expect(screen.queryByRole('button', { name: 'Garantizar y confirmar reserva' })).not.toBeInTheDocument();
-    view.rerender(<PublicCheckoutReviewPage initialCriteria={criteria}/>); expect(await screen.findByRole('button', { name: /Continuar al pago/ })).toBeEnabled(); expect(screen.getByRole('complementary')).toHaveTextContent('US$ 508.00');
+    view.rerender(<PublicCheckoutReviewPage initialCriteria={criteria}/>); expect(await screen.findByRole('button', { name: /Continuar al pago/ })).toBeEnabled(); expect(screen.getByRole('complementary')).toHaveTextContent('Q 3,881.81');
     fireEvent.click(screen.getByRole('button', { name: /Continuar al pago/ })); view.rerender(<PublicPaymentReviewPage initialCriteria={criteria}/>); expect(await screen.findByRole('button', { name: 'Garantizar y confirmar reserva' })).toBeEnabled();
   });
   it('never treats missing estimated taxes as zero or allows payment with incomplete quotes', async () => {

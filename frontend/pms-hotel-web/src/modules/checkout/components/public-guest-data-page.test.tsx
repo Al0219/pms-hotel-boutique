@@ -52,7 +52,7 @@ describe('Guest checkout data', () => {
   });
   it('retains data to step 3 and back without financial writes or browser storage', async () => {
     const mutations = vi.fn(); mockServer.use(http.post('*', () => { mutations(); return HttpResponse.json({}); }));
-    const view = await selected(); fill(); expect(screen.getByRole('complementary')).toHaveTextContent('US$ 505.00');
+    const view = await selected(); fill(); expect(screen.getByRole('complementary')).toHaveTextContent('Q 3,858.89');
     submit(); submit(); expect(screen.getByRole('button', { name: /Procesando/ })).toBeDisabled();
     await waitFor(() => expect(push).toHaveBeenCalledTimes(1));
     expect(push).toHaveBeenCalledWith('/reserva/checkout/revision?checkIn=2026-10-10&checkOut=2026-10-13&adults=2&children=0&roomsCount=1');

@@ -74,6 +74,10 @@ El Paso 4 permite abono de una noche, 50%, monto personalizado o pago total,
 con validaciones de tarjeta por campo en el simulador aislado. Detalles en
 [Modalidades de pago](docs/47_PUBLIC_BOOKING_PAYMENT_MODES.md).
 
+Los precios públicos inician en quetzales y permiten cambiar a dólares. La
+garantía personalizada incluye su propio selector Q/USD, que convierte el
+importe ingresado y sus límites usando la referencia de demostración existente.
+
 ## Backlog y reglas
 
 El backlog canónico es `../../docs/Backlog_Implementacion_PMS_V1.xlsx`. Antes de una tarea, leer `AGENTS.md`, la fila del backlog y los documentos indicados.

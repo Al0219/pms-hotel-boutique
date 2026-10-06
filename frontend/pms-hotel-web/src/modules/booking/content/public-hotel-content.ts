@@ -5,7 +5,6 @@ export const publicHotelContent = {
   name: 'Hotel Boutique',
   description: 'Hospitalidad cercana, espacios con carácter y pequeños detalles que hacen especial cada estadía.',
   locale: 'ES',
-  currency: 'USD $',
   copyrightYear: 2026,
   contact: {
     isDemo: true,
