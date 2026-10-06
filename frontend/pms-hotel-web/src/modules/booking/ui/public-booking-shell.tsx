@@ -6,10 +6,12 @@ import { Button, Modal } from '@/shared/components';
 import { useGuestSession } from '@/modules/auth';
 import { publicHotelContent, publicHotelInformation } from '../content/public-hotel-content';
 import { BookingIcon } from './booking-icon';
+import { usePublicDisplayCurrency } from '../components/public-booking-provider';
 import styles from './public-booking-shell.module.css';
 
 export function PublicBookingShell({ children }: { children: ReactNode }) {
   const { account } = useGuestSession();
+  const currency = usePublicDisplayCurrency();
   const [information, setInformation] = useState<{ title: string; text: string } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const informationTrigger = useRef<HTMLButtonElement | null>(null);
@@ -46,7 +48,7 @@ export function PublicBookingShell({ children }: { children: ReactNode }) {
           <div className={styles.footerBrand}>
             <Link href="/">{publicHotelContent.name}</Link>
             <p>{publicHotelContent.description}</p>
-            <span className={styles.locale}>{publicHotelContent.locale} <span aria-hidden="true">|</span> {publicHotelContent.currency}</span>
+            <span className={styles.locale}>{publicHotelContent.locale} <span aria-hidden="true">|</span> {currency === 'GTQ' ? 'GTQ Q' : 'USD $'}</span>
           </div>
           <nav aria-labelledby="footer-explore-title" className={styles.footerExplore}>
             <h2 id="footer-explore-title">Explorar</h2>

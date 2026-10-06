@@ -14,7 +14,7 @@ interface PublicBookingSession {
 const Context = createContext<PublicBookingSession | null>(null);
 
 export function PublicBookingProvider({ children }: { children: ReactNode }) {
-  const [currency, setCurrency] = useState<DisplayCurrency>('USD');
+  const [currency, setCurrency] = useState<DisplayCurrency>('GTQ');
   const [cart, setCart] = useState<PublicBookingSession['cart']>({ scope: '', items: [] });
   return <Context.Provider value={{ currency, setCurrency, cart, setCart }}>{children}</Context.Provider>;
 }

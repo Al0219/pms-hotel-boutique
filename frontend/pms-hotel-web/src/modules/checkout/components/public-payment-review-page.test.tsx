@@ -25,17 +25,44 @@ function mount(component = <PublicRoomDetailPage roomTypeId="rt_deluxe_king" ini
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } }); clients.push(client);
   return render(component, { wrapper: ({ children }) => <QueryClientProvider client={client}><GuestSessionProvider><PublicBookingProvider><CheckoutDraftProvider>{children}</CheckoutDraftProvider></PublicBookingProvider></GuestSessionProvider></QueryClientProvider> });
 }
-async function prepared(multiple = false) {
+async function prepared(multiple = false, useDollars = true) {
   const view = mount(); fireEvent.click(await screen.findByRole('button', { name: 'Seleccionar habitación' }));
   if (multiple) { view.rerender(<PublicRoomDetailPage roomTypeId="rt_double_superior" initialCriteria={criteria}/>); fireEvent.click(await screen.findByRole('button', { name: 'Seleccionar habitación' })); }
   view.rerender(<PublicGuestDataPage initialCriteria={criteria}/>); await screen.findByLabelText('Nombre *');
   for (const [label, value] of [['Nombre *','Carlos'],['Apellidos *','Mendoza'],['Correo electrónico *','guest@example.com'],['Teléfono *','5555 5555']]) fireEvent.change(screen.getByLabelText(label), { target: { value } });
   fireEvent.submit(screen.getByLabelText('Nombre *').closest('form')!); await waitFor(() => expect(push).toHaveBeenCalledWith(expect.stringContaining('/checkout/revision?'))); push.mockClear();
   view.rerender(<PublicCheckoutReviewPage initialCriteria={criteria}/>); fireEvent.click(await screen.findByRole('button', { name: /Continuar al pago/ })); await waitFor(() => expect(push).toHaveBeenCalledWith(expect.stringContaining('/checkout/pago?'))); push.mockClear();
-  view.rerender(<PublicPaymentReviewPage initialCriteria={criteria}/>); await screen.findByRole('button', { name: 'Garantizar y confirmar reserva' }); return view;
+  view.rerender(<PublicPaymentReviewPage initialCriteria={criteria}/>); await screen.findByRole('button', { name: 'Garantizar y confirmar reserva' });
+  if (useDollars) fireEvent.change(screen.getByLabelText('Mostrar precios en'), { target: { value: 'USD' } });
+  return view;
 }
 function confirm() { fireEvent.click(screen.getByRole('button', { name: 'Garantizar y confirmar reserva' })); }
 describe('Public payment and guarantee journey', () => {
+  it('defaults to GTQ, converts a custom input in both directions and confirms the original quote cents', async () => {
+    const view = await prepared(false, false);
+    expect(screen.getByLabelText('Mostrar precios en')).toHaveValue('GTQ');
+    expect(screen.getByRole('complementary')).toHaveTextContent('Q 3,858.89');
+    fireEvent.click(screen.getByRole('button', { name: 'Personalizado' }));
+    expect(screen.getByLabelText('Moneda del monto')).toHaveValue('GTQ');
+    const input = screen.getByLabelText('Monto a garantizar (GTQ)');
+    expect(input).toHaveAttribute('placeholder', '1286.27');
+    fireEvent.change(input, { target: { value: '1286.26' } }); expect(input).toHaveAttribute('aria-invalid', 'true');
+    fireEvent.change(input, { target: { value: '2294.32' } }); expect(input).toHaveAttribute('aria-invalid', 'false');
+    fireEvent.change(screen.getByLabelText('Moneda del monto'), { target: { value: 'USD' } });
+    expect(screen.getByLabelText('Monto a garantizar (USD)')).toHaveValue('300.25');
+    fireEvent.change(screen.getByLabelText('Moneda del monto'), { target: { value: 'GTQ' } });
+    expect(screen.getByLabelText('Monto a garantizar (GTQ)')).toHaveValue('2294.32');
+    // The page's display selector is independent of the explicitly labelled input currency.
+    fireEvent.change(screen.getByLabelText('Mostrar precios en'), { target: { value: 'USD' } });
+    expect(screen.getByLabelText('Monto a garantizar (GTQ)')).toHaveValue('2294.32');
+    expect(screen.getByRole('complementary')).toHaveTextContent('US$ 300.25');
+    const writes = vi.spyOn(globalThis, 'fetch'); confirm();
+    await waitFor(() => expect(push).toHaveBeenCalledWith(expect.stringContaining('/reserva/confirmacion?')), { timeout: 3000 });
+    const sent = writes.mock.calls.find(([url]) => String(url).includes('/__mock/checkout/confirmations'))!;
+    expect(JSON.parse(String(sent[1]?.body))).toMatchObject({ currency: 'USD', total_minor: 50500, guarantee_minor: 30025 });
+    view.rerender(<PublicBookingConfirmationPage initialCriteria={criteria}/>);
+    expect(screen.getByRole('complementary')).toHaveTextContent('US$ 204.75');
+  }, 10000);
   it.each([['full', 50500], ['half', 25250], ['custom', 30025]] as const)('confirms the selected %s amount and exact remaining balance', async (mode, expected) => {
     const view = await prepared();
     expect(screen.getByRole('radio', { name: /Pagar en el hotel/ })).toBeDisabled();

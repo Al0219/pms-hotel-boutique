@@ -47,7 +47,7 @@ describe("Public availability catalogue", () => {
     mount(); expect(screen.getByText("Buscando habitaciones…")).toBeInTheDocument();
     const card = await deluxe();
     expect(within(card).getByText("2 habitaciones disponibles para estas fechas")).toBeInTheDocument();
-    expect(within(card).getByText(/435\.00/)).toHaveTextContent("3 noches");
+    expect(within(card).getByText(/Q 3,323\.99/)).toHaveTextContent("3 noches");
     expect(within(card).getByText("Wi-Fi de alta velocidad")).toBeInTheDocument();
     expect(within(card).getByRole('link', { name: 'Ver detalles' })).toHaveAttribute('href', '/habitaciones/rt_deluxe_king?checkIn=2026-10-10&checkOut=2026-10-13&adults=2&children=0&roomsCount=1&ratePlanId=rp_flexible');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -94,7 +94,7 @@ describe("Public availability catalogue", () => {
     mount(); await deluxe();
     fireEvent.click(screen.getByLabelText("Suite")); expect(screen.getAllByRole("article")).toHaveLength(2);
     fireEvent.click(screen.getByRole("button", { name: "4+" })); expect(screen.getAllByRole("article")).toHaveLength(1);
-    fireEvent.click(screen.getByLabelText("US$181+"));
+    fireEvent.click(screen.getByLabelText("Más de Q 1,375.44"));
     expect(screen.getByRole("region", { name: "Sin habitaciones disponibles" })).toHaveTextContent("No encontramos habitaciones disponibles para las fechas o filtros seleccionados.");
     fireEvent.click(screen.getByRole("button", { name: "Restablecer filtros" }));
     expect(screen.getAllByRole("article")).toHaveLength(4);
@@ -114,12 +114,12 @@ describe("Public availability catalogue", () => {
     expect(within(card).getByRole("button", { name: "Seleccionada" })).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(screen.getByLabelText("Suite")); const drawer = cart();
     expect(within(drawer).getByText("Deluxe King")).toBeInTheDocument();
-    expect(within(drawer).getByText(/435\.00/, { selector: 'strong' })).toBeInTheDocument();
+    expect(within(drawer).getByText(/Q 3,323\.99/, { selector: 'strong' })).toBeInTheDocument();
     const increment = within(drawer).getByRole("button", { name: "Aumentar cantidad de Deluxe King" }); fireEvent.click(increment);
-    expect(increment).toBeDisabled(); expect(within(drawer).getByText(/870\.00/, { selector: 'strong' })).toBeInTheDocument();
+    expect(increment).toBeDisabled(); expect(within(drawer).getByText(/Q 6,647\.98/, { selector: 'strong' })).toBeInTheDocument();
     expect(within(drawer).getByRole("button", { name: "Continuar con el Checkout" })).toBeEnabled();
-    expect(within(drawer).getByText('US$ 96.00')).toBeInTheDocument();
-    expect(within(drawer).getByText('US$ 1,010.00')).toBeInTheDocument();
+    expect(within(drawer).getByText('Q 733.57')).toBeInTheDocument();
+    expect(within(drawer).getByText('Q 7,717.77')).toBeInTheDocument();
     fireEvent.click(within(drawer).getByRole("button", { name: "Quitar Deluxe King" }));
     expect(within(drawer).getByText(/Tu selección está vacía/)).toBeInTheDocument();
     expect(within(drawer).getByRole('button', { name: 'Continuar con el Checkout' })).toBeDisabled();
@@ -130,7 +130,7 @@ describe("Public availability catalogue", () => {
     mount(); const card = await deluxe(); fireEvent.click(within(card).getByRole("button", { name: "Agregar al carrito" }));
     fireEvent.change(within(card).getByLabelText("Tarifa de Deluxe King"), { target: { value: "rp_non_refundable" } });
     const drawer = cart(); expect(within(drawer).getByText("Tarifa no reembolsable")).toBeInTheDocument();
-    expect(within(drawer).getByText(/390\.00/, { selector: 'strong' })).toBeInTheDocument();
+    expect(within(drawer).getByText(/Q 2,980\.13/, { selector: 'strong' })).toBeInTheDocument();
     expect(within(drawer).getByText(/1 habitaciones seleccionadas/)).toBeInTheDocument();
     fireEvent.click(within(drawer).getByRole('button', { name: 'Continuar con el Checkout' }));
     expect(push).toHaveBeenCalledWith('/reserva?checkIn=2026-10-10&checkOut=2026-10-13&adults=2&children=0&roomsCount=1');

@@ -32,7 +32,7 @@ export function PublicPaymentReviewPage({ initialCriteria: criteria }: { initial
   const estimate = paymentEstimate(review.items, nights);
   const quote = quoteFingerprint(review.items, nights);
   const choice = draft.paymentChoice(quote);
-  const payment = estimate ? chosenPayment(estimate.totalMinor, estimate.guaranteeMinor, choice) : null;
+  const payment = estimate ? chosenPayment(estimate.totalMinor, estimate.guaranteeMinor, choice, estimate.currency) : null;
   const locked = checkout.isPending || draft.hasUnresolvedAttempt;
   const roomCount = review.items.reduce((count, item) => count + item.quantity, 0);
   const money = (minor: number) => displayMoney(minor / 100, estimate!.currency, currency);

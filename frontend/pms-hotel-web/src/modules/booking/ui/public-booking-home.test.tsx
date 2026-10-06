@@ -54,9 +54,12 @@ describe('Public 01 landing interactions', () => {
     expect(link).toHaveAttribute('href', '/habitaciones/rt_terrace_suite?checkIn=2026-10-10&checkOut=2026-10-15&adults=2&children=0&roomsCount=1');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
-  it('converts editorial prices to GTQ while identifying the dated reference', () => {
+  it('defaults to quetzales and lets visitors switch to dollars and back', () => {
     render(<PublicBookingHome initialCriteria={criteria} />);
     const room = screen.getByRole('article', { name: 'Deluxe King' });
+    expect(screen.getByLabelText('Mostrar precios en')).toHaveValue('GTQ');
+    expect(within(room).getByText('Q 1,108.00')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Mostrar precios en'), { target: { value: 'USD' } });
     expect(within(room).getByText('US$ 145.00')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Mostrar precios en'), { target: { value: 'GTQ' } });
     expect(within(room).getByText('Q 1,108.00')).toBeInTheDocument();

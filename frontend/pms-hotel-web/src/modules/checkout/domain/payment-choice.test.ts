@@ -2,6 +2,18 @@ import { describe, expect, it } from 'vitest';
 import { chosenPayment, defaultPaymentChoice } from './payment-choice';
 
 describe('Checkout payment choices in minor units', () => {
+  it('validates GTQ input limits before converting to the USD quote', () => {
+    const choice = { ...defaultPaymentChoice, preset: 'custom' as const, customCurrency: 'GTQ' as const, customAmount: '1286.27' };
+    expect(chosenPayment(50500, 16833, choice, 'USD').amountMinor).toBe(16833);
+    expect(chosenPayment(50500, 16833, { ...choice, customAmount: '1286.26' }, 'USD').amountMinor).toBeNull();
+    expect(chosenPayment(50500, 16833, { ...choice, customAmount: '3858.90' }, 'USD').amountMinor).toBeNull();
+    expect(chosenPayment(50500, 16833, { ...choice, customAmount: '2294.32' }, 'USD').amountMinor).toBe(30025);
+  });
+  it('preserves quoted GTQ cents across dollar input switches and rejects a mismatched anchor', () => {
+    const choice = { ...defaultPaymentChoice, preset: 'custom' as const, customCurrency: 'USD' as const, customAmount: '130.87', customQuotedMinor: 100001 };
+    expect(chosenPayment(200000, 50000, choice, 'GTQ').amountMinor).toBe(100001);
+    expect(chosenPayment(200000, 50000, { ...choice, customQuotedMinor: 100100 }, 'GTQ').amountMinor).toBeNull();
+  });
   it('keeps exact balances for one night, half and full payment', () => {
     for (const [choice, expected] of [[defaultPaymentChoice, 16833], [{ ...defaultPaymentChoice, preset: 'half' as const }, 25250], [{ ...defaultPaymentChoice, mode: 'full' as const }, 50500]] as const) {
       expect(chosenPayment(50500, 16833, choice)).toEqual({ amountMinor: expected, error: '' });
