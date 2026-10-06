@@ -11,3 +11,4 @@
 @media(max-width:800px) { .page { padding: 24px 20px 60px; }.layout { grid-template-columns: 1fr; }.summary { position: static; }.trust { gap: 16px; } }
 @media(max-width:540px) { .page { padding-inline: 16px; }.topBar { flex-direction: column; gap: 12px; }.card,.summary { padding: 24px 20px; border-radius: 20px; }.trust { grid-template-columns: 1fr; }.rooms li { flex-wrap: wrap; }.amounts .today { margin-inline: -8px; padding-inline: 8px; }.today dd { font-size: 16px; } }
 @media(prefers-reduced-motion:reduce) { .page * { transition: none; }.confirm:hover { transform: none; } }
+.securityNote { border-top: 1px solid #e6ebe0; padding-top: 14px; color: #5a6b5d; font-size: 11px; line-height: 1.8; }

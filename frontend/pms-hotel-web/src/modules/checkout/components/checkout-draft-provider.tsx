@@ -5,9 +5,10 @@ import { emptyGuest, type GuestDetails } from '../domain/guest-details';
 import type { DemoBookingConfirmation } from '@/modules/reservations';
 import { buildSearchQueryParams, validateBookingSearchCriteria, type BookingSearchCriteria } from '@/modules/booking';
 import { CheckoutAttemptError, type BookingFailure } from '../domain/booking-failure';
+import { defaultPaymentChoice, type PaymentChoice } from '../domain/payment-choice';
 
-interface Draft { scope: string; guest: GuestDetails; approvedSelection?: string; reviewedQuote?: string; confirmation?: DemoBookingConfirmation; failure?: BookingFailure }
-const Context = createContext<{ draft: Draft; update: (scope: string, patch: Partial<GuestDetails>) => void; approve: (scope: string, selection: string) => void; reviewQuote: (scope: string, selection: string, quote: string) => void; complete: (scope: string, selection: string, confirmation: DemoBookingConfirmation) => void; fail: (scope: string, failure: BookingFailure) => void; attemptKey: (scope: string, payload: string) => string; hasUnresolvedAttempt: boolean; reset: () => void } | null>(null);
+interface Draft { scope: string; guest: GuestDetails; approvedSelection?: string; reviewedQuote?: string; confirmation?: DemoBookingConfirmation; failure?: BookingFailure; payment?: { quote: string; choice: PaymentChoice } }
+const Context = createContext<{ draft: Draft; update: (scope: string, patch: Partial<GuestDetails>) => void; approve: (scope: string, selection: string) => void; reviewQuote: (scope: string, selection: string, quote: string) => void; complete: (scope: string, selection: string, confirmation: DemoBookingConfirmation) => void; fail: (scope: string, failure: BookingFailure) => void; attemptKey: (scope: string, payload: string) => string; setPayment: (scope: string, quote: string, choice: PaymentChoice) => void; hasUnresolvedAttempt: boolean; reset: () => void } | null>(null);
 
 /** Sensitive form data lives only in memory, never in URL, logs or browser storage. */
 export function CheckoutDraftProvider({ children }: { children: ReactNode }) {
@@ -31,7 +32,11 @@ export function CheckoutDraftProvider({ children }: { children: ReactNode }) {
     return attempt.current.key;
   };
   const reset = () => { attempt.current = null; setHasUnresolvedAttempt(false); setDraft({ scope: '', guest: emptyGuest }); };
-  return <Context.Provider value={{ draft, update, approve, reviewQuote, complete, fail, attemptKey, hasUnresolvedAttempt, reset }}>{children}</Context.Provider>;
+  const setPayment = (scope: string, quote: string, choice: PaymentChoice) => {
+    if (attempt.current?.unresolved) return;
+    setDraft(previous => previous.scope === scope && !previous.confirmation ? { ...previous, payment: { quote, choice } } : previous);
+  };
+  return <Context.Provider value={{ draft, update, approve, reviewQuote, complete, fail, attemptKey, setPayment, hasUnresolvedAttempt, reset }}>{children}</Context.Provider>;
 }
 
 export function useCheckoutDraft(scope: string) {
@@ -50,6 +55,8 @@ export function useCheckoutDraft(scope: string) {
     fail: (failure: BookingFailure) => context.fail(scope, failure),
     attemptKey: (payload: string) => context.attemptKey(scope, payload),
     hasUnresolvedAttempt: context.hasUnresolvedAttempt,
+    paymentChoice: (quote: string) => context.draft.scope === scope && context.draft.payment?.quote === quote ? context.draft.payment.choice : defaultPaymentChoice,
+    setPayment: (quote: string, choice: PaymentChoice) => context.setPayment(scope, quote, choice),
   };
 }
 
