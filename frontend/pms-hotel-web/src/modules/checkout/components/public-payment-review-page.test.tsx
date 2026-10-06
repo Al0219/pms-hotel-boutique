@@ -36,6 +36,26 @@ async function prepared(multiple = false) {
 }
 function confirm() { fireEvent.click(screen.getByRole('button', { name: 'Garantizar y confirmar reserva' })); }
 describe('Public payment and guarantee journey', () => {
+  it.each([['full', 50500], ['half', 25250], ['custom', 30025]] as const)('confirms the selected %s amount and exact remaining balance', async (mode, expected) => {
+    const view = await prepared();
+    expect(screen.getByRole('radio', { name: /Pagar en el hotel/ })).toBeDisabled();
+    if (mode === 'full') fireEvent.click(screen.getByRole('radio', { name: /Pagar ahora/ }));
+    else if (mode === 'half') fireEvent.click(screen.getByRole('button', { name: /50% de la estadía/ }));
+    else {
+      fireEvent.click(screen.getByRole('button', { name: 'Personalizado' }));
+      const input = screen.getByLabelText('Monto a garantizar (USD)');
+      fireEvent.change(input, { target: { value: '1' } }); expect(input).toHaveAttribute('aria-invalid', 'true'); expect(screen.getByRole('button', { name: /y confirmar reserva/ })).toBeDisabled();
+      fireEvent.change(input, { target: { value: '300.25' } }); expect(input).toHaveAttribute('aria-invalid', 'false');
+    }
+    const writes = vi.spyOn(globalThis, 'fetch');
+    fireEvent.click(screen.getByRole('button', { name: /y confirmar reserva/ }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith(expect.stringContaining('/reserva/confirmacion?')), { timeout: 3000 });
+    const sent = writes.mock.calls.find(([url]) => String(url).includes('/__mock/checkout/confirmations'))!;
+    expect(JSON.parse(String(sent[1]?.body))).toMatchObject({ total_minor: 50500, guarantee_minor: expected });
+    view.rerender(<PublicBookingConfirmationPage initialCriteria={criteria}/>);
+    const summary = screen.getByRole('complementary');
+    expect(summary).toHaveTextContent(`US$ ${(expected / 100).toFixed(2)}`); expect(summary).toHaveTextContent(`US$ ${((50500 - expected) / 100).toFixed(2)}`);
+  }, 10000);
   it('keeps contact/search, computes guarantee separately, and confirms once without creating an account', async () => {
     const view = await prepared(); const summary = screen.getByRole('complementary');
     expect(summary).toHaveTextContent('US$ 505.00'); expect(summary).toHaveTextContent('US$ 168.33'); expect(summary).toHaveTextContent('US$ 336.67');
@@ -79,7 +99,7 @@ describe('Public payment and guarantee journey', () => {
     expect(await screen.findByRole('button', { name: 'Garantizar y confirmar reserva' })).toBeDisabled(); expect(screen.queryByTitle('Formulario aislado de tarjeta de prueba')).not.toBeInTheDocument(); expect(push).not.toHaveBeenCalled();
   });
   it('retains the same key and card after a lost response across the error/payment navigation', async () => {
-    const view = await prepared(); fireEvent.change(screen.getByLabelText('Resultado de demostración'), { target: { value: 'demo_mastercard_approved' } });
+    const view = await prepared(); fireEvent.click(screen.getByRole('button', { name: /50% de la estadía/ })); fireEvent.change(screen.getByLabelText('Resultado de demostración'), { target: { value: 'demo_mastercard_approved' } });
     const originalFetch = globalThis.fetch; const keys: string[] = []; const bodies: string[] = []; let lost = false;
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, options) => {
       const booking = String(input).includes('/__mock/checkout/confirmations');
@@ -89,7 +109,7 @@ describe('Public payment and guarantee journey', () => {
       return response;
     });
     confirm(); await waitFor(() => expect(push).toHaveBeenCalledWith(expect.stringContaining('/reserva/error?')), { timeout: 3000 }); view.rerender(<PublicBookingResultPage initialCriteria={criteria} status="error"/>); expect(screen.getByRole('link', { name: 'Reintentar verificación con la misma tarjeta' })).toBeInTheDocument(); expect(screen.getByRole('button', { name: 'Modificar fechas o habitación' })).toBeDisabled();
-    push.mockClear(); view.rerender(<PublicPaymentReviewPage initialCriteria={criteria}/>); await screen.findByRole('button', { name: 'Garantizar y confirmar reserva' }); expect(screen.getByLabelText('Resultado de demostración')).toHaveValue('demo_mastercard_approved'); expect(screen.getByLabelText('Resultado de demostración')).toBeDisabled();
+    push.mockClear(); view.rerender(<PublicPaymentReviewPage initialCriteria={criteria}/>); await screen.findByRole('button', { name: 'Garantizar y confirmar reserva' }); expect(screen.getByLabelText('Resultado de demostración')).toHaveValue('demo_mastercard_approved'); expect(screen.getByLabelText('Resultado de demostración')).toBeDisabled(); expect(screen.getByRole('button', { name: /50% de la estadía/ })).toHaveAttribute('aria-pressed', 'true'); expect(screen.getByRole('button', { name: 'Personalizado' })).toBeDisabled(); expect(screen.getByRole('complementary')).toHaveTextContent('US$ 252.50');
     confirm(); await waitFor(() => expect(push).toHaveBeenCalledWith(expect.stringContaining('/reserva/confirmacion?')), { timeout: 3000 }); expect(keys).toHaveLength(2); expect(keys[1]).toBe(keys[0]); expect(bodies[1]).toBe(bodies[0]);
     view.rerender(<PublicBookingConfirmationPage initialCriteria={criteria}/>); expect(screen.getByRole('heading', { name: 'HB-2026-8942' })).toBeInTheDocument();
   }, 10000);

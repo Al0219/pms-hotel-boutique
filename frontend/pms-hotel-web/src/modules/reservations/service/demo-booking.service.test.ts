@@ -11,6 +11,11 @@ beforeEach(() => { vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'true'); resetPublicCh
 afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 const signal = () => new AbortController().signal;
 describe('Frontend-only atomic checkout contract', () => {
+  it('rejects deposits below one night, above the quote or with fractional cents', async () => {
+    for (const guaranteeMinor of [16832, 50501, 25250.5]) await expect(confirmDemoBooking({ ...input, guaranteeMinor }, signal())).rejects.toMatchObject({ status: 400 });
+    const success = await confirmDemoBooking({ ...input, guaranteeMinor: 50500 }, signal());
+    expect(success.guaranteeMinor).toBe(50500); expect(success.remainingMinor).toBe(0); expect(success.reservationId).toMatch(/-8942$/);
+  });
   it('deduplicates identical submissions and rejects a reused key with another payload', async () => {
     const first = await confirmDemoBooking(input, signal()); const second = await confirmDemoBooking(input, signal());
     expect(second.reservationId).toBe(first.reservationId); expect(second.guarantee.paymentId).toBe(first.guarantee.paymentId); expect(first.stays).toHaveLength(1);

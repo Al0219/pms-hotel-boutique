@@ -11,6 +11,7 @@ import { confirmDemoBooking } from '@/modules/reservations';
 import { paymentEstimate, quoteFingerprint } from '../domain/payment-estimate';
 import { validateGuest } from '../domain/guest-details';
 import { CheckoutAttemptError } from '../domain/booking-failure';
+import { chosenPayment } from '../domain/payment-choice';
 import { useCheckoutDraft } from '../components/checkout-draft-provider';
 import type { BookingReview } from '../components/checkout-availability-gate';
 
@@ -40,7 +41,9 @@ export function useDemoCheckout(review: BookingReview, criteria: Partial<Booking
       if (items.some(item => !item.valid)) throw new CheckoutAttemptError('availability', 'La habitación seleccionada ya no tiene disponibilidad para estas fechas o la cantidad solicitada.');
       if (!estimate || refreshed.data.propertyId !== review.availability.data?.propertyId || quoteFingerprint(items, refreshed.data.totalNights) !== quoteFingerprint(review.items, review.availability.data!.totalNights)) throw new CheckoutAttemptError('quote', 'La disponibilidad o la tarifa cambió. Revisa tu selección antes de volver a confirmar.');
       if (current.current.scope !== review.scope || current.current.selection !== review.selectionKey || current.current.guest !== draft.guest) throw new CheckoutAttemptError('quote', 'Tus datos o tu selección cambiaron. Revisa la reserva antes de continuar.');
-      const payload = { propertyId: refreshed.data.propertyId, checkIn: criteria.checkIn!, checkOut: criteria.checkOut!, adults: criteria.adults!, children: criteria.children!, items: items.map(({ roomTypeId, ratePlanId, quantity }) => ({ roomTypeId, ratePlanId, quantity })), totalMinor: estimate.totalMinor, guaranteeMinor: estimate.guaranteeMinor, currency: estimate.currency, card, bookingGuest: { firstName: draft.guest.firstName.trim(), lastName: draft.guest.lastName.trim(), email: draft.guest.email.trim() } };
+      const chosen = chosenPayment(estimate.totalMinor, estimate.guaranteeMinor, draft.paymentChoice(quoteFingerprint(items, refreshed.data.totalNights)));
+      if (chosen.amountMinor === null) throw new CheckoutAttemptError('quote', chosen.error);
+      const payload = { propertyId: refreshed.data.propertyId, checkIn: criteria.checkIn!, checkOut: criteria.checkOut!, adults: criteria.adults!, children: criteria.children!, items: items.map(({ roomTypeId, ratePlanId, quantity }) => ({ roomTypeId, ratePlanId, quantity })), totalMinor: estimate.totalMinor, guaranteeMinor: chosen.amountMinor, currency: estimate.currency, card, bookingGuest: { firstName: draft.guest.firstName.trim(), lastName: draft.guest.lastName.trim(), email: draft.guest.email.trim() } };
       const key = draft.attemptKey(JSON.stringify(payload));
       setPhase('processing');
       sent = true;
