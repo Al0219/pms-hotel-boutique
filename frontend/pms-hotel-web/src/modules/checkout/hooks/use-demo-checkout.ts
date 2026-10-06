@@ -26,7 +26,7 @@ export function useDemoCheckout(review: BookingReview, criteria: Partial<Booking
   useEffect(() => { current.current = { scope: review.scope, selection: review.selectionKey, guest: draft.guest }; }, [review.scope, review.selectionKey, draft.guest]);
   useEffect(() => () => { active.current?.abort(); }, []);
   async function submit() {
-    if (active.current || phase === 'done' || !card || !review.ready || draft.confirmation || draft.approvedSelection !== review.selectionKey || Object.keys(validateGuest(draft.guest)).length || !getPublicEnvironment().useMockApi) return;
+    if (active.current || phase === 'done' || !card || !review.ready || draft.confirmation || draft.approvedSelection !== review.selectionKey || draft.reviewedQuote !== quoteFingerprint(review.items, review.availability.data?.totalNights ?? 0) || Object.keys(validateGuest(draft.guest)).length || !getPublicEnvironment().useMockApi) return;
     const controller = new AbortController(); active.current = controller; setError(''); setPhase('checking');
     try {
       if (!onlineManager.isOnline()) throw new HttpNetworkError();

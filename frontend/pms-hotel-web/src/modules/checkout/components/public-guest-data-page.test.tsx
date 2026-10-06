@@ -7,7 +7,7 @@ import { GuestAccessPage, GuestSessionProvider } from '@/modules/auth';
 import { PublicBookingProvider, PublicRoomDetailPage } from '@/modules/booking';
 import { CheckoutDraftProvider } from './checkout-draft-provider';
 import { PublicGuestDataPage } from './public-guest-data-page';
-import { PublicPaymentReviewPage } from './public-payment-review-page';
+import { PublicCheckoutReviewPage } from './public-checkout-review-page';
 
 const push = vi.hoisted(() => vi.fn());
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
@@ -55,9 +55,9 @@ describe('Guest checkout data', () => {
     const view = await selected(); fill(); expect(screen.getByRole('complementary')).toHaveTextContent('US$ 505.00');
     submit(); submit(); expect(screen.getByRole('button', { name: /Procesando/ })).toBeDisabled();
     await waitFor(() => expect(push).toHaveBeenCalledTimes(1));
-    expect(push).toHaveBeenCalledWith('/reserva/checkout/pago?checkIn=2026-10-10&checkOut=2026-10-13&adults=2&children=0&roomsCount=1');
-    view.rerender(<PublicPaymentReviewPage initialCriteria={criteria} />);
-    expect(await screen.findAllByText('Carlos Mendoza Pérez')).toHaveLength(2); expect(screen.getByText('+50255555555')).toBeInTheDocument();
+    expect(push).toHaveBeenCalledWith('/reserva/checkout/revision?checkIn=2026-10-10&checkOut=2026-10-13&adults=2&children=0&roomsCount=1');
+    view.rerender(<PublicCheckoutReviewPage initialCriteria={criteria} />);
+    expect(await screen.findAllByText('Carlos Mendoza Pérez')).toHaveLength(1); expect(screen.getByText(/\+50255555555/)).toBeInTheDocument();
     expect(screen.getByText('Llegada tardía')).toBeInTheDocument(); expect(screen.getByText(/Sin cobros, correos ni reservas reales/)).toBeInTheDocument();
     view.rerender(<PublicGuestDataPage initialCriteria={criteria} />);
     expect(await screen.findByLabelText('Nombre *')).toHaveValue('Carlos');
@@ -65,12 +65,12 @@ describe('Guest checkout data', () => {
     expect(sessionStorage.length).toBe(0); expect(localStorage.length).toBe(0); expect(mutations).not.toHaveBeenCalled();
   });
   it('guards direct step 3 and invalidates approval after editing', async () => {
-    const view = await selected(); fill(); view.rerender(<PublicPaymentReviewPage initialCriteria={criteria} />);
+    const view = await selected(); fill(); view.rerender(<PublicCheckoutReviewPage initialCriteria={criteria} />);
     expect(await screen.findByRole('region', { name: 'Completa tus datos antes de continuar' })).toBeInTheDocument();
     view.rerender(<PublicGuestDataPage initialCriteria={criteria} />); await screen.findByLabelText('Nombre *'); submit();
     await waitFor(() => expect(push).toHaveBeenCalledTimes(1));
     fireEvent.change(screen.getByLabelText('Correo electrónico *'), { target: { value: 'changed@example.com' } });
-    view.rerender(<PublicPaymentReviewPage initialCriteria={criteria} />);
+    view.rerender(<PublicCheckoutReviewPage initialCriteria={criteria} />);
     expect(await screen.findByRole('region', { name: 'Completa tus datos antes de continuar' })).toBeInTheDocument();
   });
   it('retains currency and isolates guest data from a different search', async () => {

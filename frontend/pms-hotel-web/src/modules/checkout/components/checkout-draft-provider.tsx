@@ -5,16 +5,17 @@ import { emptyGuest, type GuestDetails } from '../domain/guest-details';
 import type { DemoBookingConfirmation } from '@/modules/reservations';
 import { buildSearchQueryParams, validateBookingSearchCriteria, type BookingSearchCriteria } from '@/modules/booking';
 
-interface Draft { scope: string; guest: GuestDetails; approvedSelection?: string; confirmation?: DemoBookingConfirmation }
-const Context = createContext<{ draft: Draft; update: (scope: string, patch: Partial<GuestDetails>) => void; approve: (scope: string, selection: string) => void; complete: (scope: string, selection: string, confirmation: DemoBookingConfirmation) => void } | null>(null);
+interface Draft { scope: string; guest: GuestDetails; approvedSelection?: string; reviewedQuote?: string; confirmation?: DemoBookingConfirmation }
+const Context = createContext<{ draft: Draft; update: (scope: string, patch: Partial<GuestDetails>) => void; approve: (scope: string, selection: string) => void; reviewQuote: (scope: string, selection: string, quote: string) => void; complete: (scope: string, selection: string, confirmation: DemoBookingConfirmation) => void } | null>(null);
 
 /** Sensitive form data lives only in memory, never in URL, logs or browser storage. */
 export function CheckoutDraftProvider({ children }: { children: ReactNode }) {
   const [draft, setDraft] = useState<Draft>({ scope: '', guest: emptyGuest });
   const update = (scope: string, patch: Partial<GuestDetails>) => setDraft(previous => ({ scope, guest: { ...(previous.scope === scope ? previous.guest : emptyGuest), ...patch } }));
-  const approve = (scope: string, selection: string) => setDraft(previous => previous.scope === scope ? { ...previous, approvedSelection: selection } : previous);
+  const approve = (scope: string, selection: string) => setDraft(previous => previous.scope === scope ? { ...previous, approvedSelection: selection, reviewedQuote: undefined } : previous);
+  const reviewQuote = (scope: string, selection: string, quote: string) => setDraft(previous => previous.scope === scope && previous.approvedSelection === selection ? { ...previous, reviewedQuote: quote } : previous);
   const complete = (scope: string, selection: string, confirmation: DemoBookingConfirmation) => setDraft(previous => previous.scope === scope && previous.approvedSelection === selection && !previous.confirmation ? { ...previous, confirmation } : previous);
-  return <Context.Provider value={{ draft, update, approve, complete }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ draft, update, approve, reviewQuote, complete }}>{children}</Context.Provider>;
 }
 
 export function useCheckoutDraft(scope: string) {
@@ -23,9 +24,11 @@ export function useCheckoutDraft(scope: string) {
   return {
     guest: context.draft.scope === scope ? context.draft.guest : emptyGuest,
     approvedSelection: context.draft.scope === scope ? context.draft.approvedSelection : undefined,
+    reviewedQuote: context.draft.scope === scope ? context.draft.reviewedQuote : undefined,
     confirmation: context.draft.scope === scope ? context.draft.confirmation : undefined,
     update: (patch: Partial<GuestDetails>) => context.update(scope, patch),
     approve: (selection: string) => context.approve(scope, selection),
+    reviewQuote: (selection: string, quote: string) => context.reviewQuote(scope, selection, quote),
     complete: (selection: string, confirmation: DemoBookingConfirmation) => context.complete(scope, selection, confirmation),
   };
 }

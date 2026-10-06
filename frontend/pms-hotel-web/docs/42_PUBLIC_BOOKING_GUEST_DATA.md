@@ -13,7 +13,7 @@ Slice frontend autorizado por José para `IMP-WEB-0107`, WEB-1 / revisión WEB-2
 - Acceso Guest opcional: la ruta de acceso acepta un retorno limitado a `/reserva/checkout` y conserva los criterios. Después de entrar, «Usar datos de mi cuenta» completa solo campos vacíos desde GuestProfile, mediante el vínculo explícito obtenido por AccountSummary. No usa el correo de GuestAccount como contacto, no infiere IDs ni modifica el perfil. País de residencia y campos opcionales se revisan manualmente.
 - Resumen revalida selección/cotizaciones existentes. Conserva USD/GTQ indicativo; cargos ausentes se muestran pendientes y monedas distintas no se suman. La selección no retiene inventario.
 - El candado dice «Datos solo en esta sesión» en HTTP y «Conexión cifrada» en HTTPS. No se promete cifrado de una reserva que todavía no existe.
-- Tras la transición visual, el destino `/reserva/checkout/pago` presenta los datos para el Paso 3. Exige una selección válida y la aprobación del formulario para esa selección; editar los datos invalida la aprobación. El destino informa que pago/garantía están pendientes. No recolecta tarjeta, llama al simulador de garantía ni crea cuentas, perfiles, reservas o pagos.
+- Tras la transición visual, el destino `/reserva/checkout/revision` presenta estadía, huésped y solicitudes en el Paso 3 de 4. Exige una selección válida y la aprobación del formulario para esa selección; editar los datos invalida la aprobación. La revisión final no recolecta tarjeta ni crea cuentas, perfiles, reservas o pagos. La garantía queda en el Paso 4; ver documentos 44 y 45.
 
 ## Arquitectura y límites
 

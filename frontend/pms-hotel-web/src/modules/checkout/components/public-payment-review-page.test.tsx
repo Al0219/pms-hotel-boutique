@@ -11,6 +11,7 @@ import { PublicBookingProvider, PublicRoomDetailPage } from '@/modules/booking';
 import { CheckoutDraftProvider } from './checkout-draft-provider';
 import { PublicGuestDataPage } from './public-guest-data-page';
 import { PublicPaymentReviewPage } from './public-payment-review-page';
+import { PublicCheckoutReviewPage } from './public-checkout-review-page';
 import { PublicBookingConfirmationPage } from './public-booking-confirmation-page';
 
 const push = vi.hoisted(() => vi.fn());
@@ -28,7 +29,8 @@ async function prepared(multiple = false) {
   if (multiple) { view.rerender(<PublicRoomDetailPage roomTypeId="rt_double_superior" initialCriteria={criteria}/>); fireEvent.click(await screen.findByRole('button', { name: 'Seleccionar habitación' })); }
   view.rerender(<PublicGuestDataPage initialCriteria={criteria}/>); await screen.findByLabelText('Nombre *');
   for (const [label, value] of [['Nombre *','Carlos'],['Apellidos *','Mendoza'],['Correo electrónico *','guest@example.com'],['Teléfono *','5555 5555']]) fireEvent.change(screen.getByLabelText(label), { target: { value } });
-  fireEvent.submit(screen.getByLabelText('Nombre *').closest('form')!); await waitFor(() => expect(push).toHaveBeenCalledWith(expect.stringContaining('/checkout/pago?'))); push.mockClear();
+  fireEvent.submit(screen.getByLabelText('Nombre *').closest('form')!); await waitFor(() => expect(push).toHaveBeenCalledWith(expect.stringContaining('/checkout/revision?'))); push.mockClear();
+  view.rerender(<PublicCheckoutReviewPage initialCriteria={criteria}/>); fireEvent.click(await screen.findByRole('button', { name: /Continuar al pago/ })); await waitFor(() => expect(push).toHaveBeenCalledWith(expect.stringContaining('/checkout/pago?'))); push.mockClear();
   view.rerender(<PublicPaymentReviewPage initialCriteria={criteria}/>); await screen.findByRole('button', { name: 'Garantizar y confirmar reserva' }); return view;
 }
 function confirm() { fireEvent.click(screen.getByRole('button', { name: 'Garantizar y confirmar reserva' })); }
@@ -36,7 +38,7 @@ describe('Public payment and guarantee journey', () => {
   it('keeps contact/search, computes guarantee separately, and confirms once without creating an account', async () => {
     const view = await prepared(); const summary = screen.getByRole('complementary');
     expect(summary).toHaveTextContent('US$ 505.00'); expect(summary).toHaveTextContent('US$ 168.33'); expect(summary).toHaveTextContent('US$ 336.67');
-    expect(screen.getByRole('link', { name: '← Volver a datos' })).toHaveAttribute('href', expect.stringContaining('checkIn=2026-10-10'));
+    expect(screen.getByRole('link', { name: '← Volver a revisión' })).toHaveAttribute('href', expect.stringContaining('checkIn=2026-10-10'));
     confirm(); await screen.findByRole('button', { name: /Procesando garantía de prueba/ }); expect(screen.getByRole('button', { name: /Procesando garantía/ })).toBeDisabled();
     await waitFor(() => expect(push).toHaveBeenCalledTimes(1), { timeout: 3000 }); expect(push).toHaveBeenCalledWith(expect.stringContaining('/reserva/confirmacion?checkIn=2026-10-10'));
     view.rerender(<PublicBookingConfirmationPage initialCriteria={criteria}/>); expect(screen.getByRole('heading', { name: 'HB-2026-8942' })).toBeInTheDocument(); expect(screen.getByText(/Sin débito real/)).toBeInTheDocument();
