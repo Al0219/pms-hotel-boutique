@@ -59,8 +59,13 @@ class OpenApiContractIntegrationTests {
         assertTrue(expected.containsAll(DOCUMENTED_EXCLUSIONS.keySet()));
         expected.removeAll(DOCUMENTED_EXCLUSIONS.keySet());
         assertEquals(expected, actual);
-        assertEquals(35, actual.size());
-        assertEquals(25, doc.path("paths").size());
+        Set<String> expectedPaths = new HashSet<>();
+        expected.forEach(mapping -> expectedPaths.add(mapping.substring(mapping.indexOf(' ') + 1)));
+        assertEquals(expectedPaths.size(), doc.path("paths").size());
+        Files.writeString(Path.of("target/openapi-inventory-counts.txt"),
+                "operations=" + actual.size() + " paths=" + doc.path("paths").size()
+                + " schemas=" + doc.path("components").path("schemas").size()
+                + " tags=" + doc.path("tags").size());
     }
     @Test
     void guestAccountSummaryDocumentsOwnIdentityAndOptionalRealDataOnly() throws Exception {
@@ -109,9 +114,10 @@ class OpenApiContractIntegrationTests {
             var op = method.getValue();
             boolean staffAuth = route.startsWith("/api/v1/staff-auth/");
             boolean guestAuth = route.startsWith("/api/v1/guest-auth/");
-            assertEquals(staffAuth || guestAuth ? "internal-bff" : "staff", op.path("x-audience").asText());
+            boolean publicAvailability = route.equals("/api/v1/public/availability") && method.getKey().equals("get");
+            assertEquals(publicAvailability ? "public" : staffAuth || guestAuth ? "internal-bff" : "staff", op.path("x-audience").asText());
             boolean anonymous = route.endsWith("/google/start") || route.endsWith("/google/exchange")
-                    || route.equals("/api/v1/staff-auth/sessions") || route.equals("/api/v1/staff-auth/login");
+                    || route.equals("/api/v1/staff-auth/sessions") || route.equals("/api/v1/staff-auth/login") || publicAvailability;
             if (anonymous) assertTrue(op.path("security").isMissingNode() || op.path("security").isEmpty());
             else {
                 String scheme = route.endsWith("/refresh") ? (staffAuth ? "staffRefreshCookie" : "guestRefreshCookie")
@@ -121,6 +127,57 @@ class OpenApiContractIntegrationTests {
             }
             assertFalse(route.startsWith("/actuator") || route.equals("/error"));
         }));
+    }
+
+    @Test
+    void publicAvailabilityDocumentsExactAnonymousContractAndSwaggerLoads() throws Exception {
+        var doc = document();
+        var op = operation(doc, "/api/v1/public/availability", "get");
+        assertEquals("publicAvailability", op.path("operationId").asText());
+        assertEquals("availability", operation(doc, "/api/v1/properties/{propertyId}/availability", "get")
+                .path("operationId").asText());
+        assertEquals("public", op.path("x-audience").asText());
+        assertTrue(op.path("security").isArray());
+        assertEquals(0, op.path("security").size());
+        assertFalse(op.has("requestBody"));
+        assertEquals(Set.of("propertyId", "arrival", "departure", "rooms"), parameterNames(op));
+        for (var parameter : op.path("parameters")) {
+            assertEquals("query", parameter.path("in").asText());
+            assertTrue(parameter.path("required").asBoolean());
+        }
+        assertEquals("uuid", parameter(op, "propertyId").path("schema").path("format").asText());
+        for (String date : List.of("arrival", "departure")) {
+            assertEquals("date", parameter(op, date).path("schema").path("format").asText());
+        }
+        assertEquals("integer", parameter(op, "rooms").path("schema").path("type").asText());
+        assertEquals(1, parameter(op, "rooms").path("schema").path("minimum").asInt());
+        assertCodes(op, "200", "400", "404", "500");
+        assertSuccessSchema(op, "200", "PublicAvailabilityResponse");
+        for (String code : List.of("400", "404", "500")) {
+            assertEquals("#/components/schemas/ProblemDetail", op.path("responses").path(code)
+                    .path("content").path("application/problem+json").path("schema").path("$ref").asText());
+        }
+        var schemas = doc.path("components").path("schemas");
+        var expected = Map.of("PublicAvailabilityResponse", Set.of("propertyId", "arrival", "departure", "currency", "offers"),
+                "PublicAvailabilityOfferResponse", Set.of("roomTypeId", "roomTypeCode", "roomTypeName", "ratePlanId",
+                        "ratePlanCode", "availableUnits", "nightlyRateMinor", "totalMinor"));
+        expected.forEach((name, fields) -> {
+            var schema = schemas.path(name);
+            Set<String> actual = new HashSet<>();
+            schema.path("properties").properties().forEach(field -> actual.add(field.getKey()));
+            assertEquals(fields, actual);
+            assertEquals(fields, strings(schema.path("required")));
+        });
+        assertEquals("#/components/schemas/PublicAvailabilityOfferResponse", schemas.path("PublicAvailabilityResponse")
+                .path("properties").path("offers").path("items").path("$ref").asText());
+        assertEquals(Set.of("GTQ"), strings(schemas.path("PublicAvailabilityResponse").path("properties").path("currency").path("enum")));
+        for (String amount : List.of("nightlyRateMinor", "totalMinor")) {
+            var schema = schemas.path("PublicAvailabilityOfferResponse").path("properties").path(amount);
+            assertEquals("integer", schema.path("type").asText());
+            assertEquals("int64", schema.path("format").asText());
+        }
+        mvc.perform(get("/swagger-ui/index.html")).andExpect(status().isOk());
+        mvc.perform(get("/v3/api-docs/swagger-config")).andExpect(status().isOk());
     }
 
     @Test
