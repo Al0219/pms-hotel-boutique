@@ -9,15 +9,30 @@ import type { GuestAccount } from '@/modules/auth';
 const push = vi.fn();
 const replace = vi.fn();
 let guestAccount: GuestAccount | null = null;
+let pathname = '/';
 const router = { push, replace };
-vi.mock('next/navigation', () => ({ useRouter: () => router }));
+vi.mock('next/navigation', () => ({ useRouter: () => router, usePathname: () => pathname }));
 vi.mock('@/modules/auth', () => ({ useGuestSession: () => ({ account: guestAccount }) }));
 const criteria = { checkIn: '2026-10-10', checkOut: '2026-10-15', adults: 2, children: 0, roomsCount: 1 };
 const render = (ui: ReactElement) => rtlRender(ui, { wrapper: PublicBookingProvider });
-beforeEach(() => { guestAccount = null; vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-04T12:00:00Z')); });
+beforeEach(() => { pathname = '/'; guestAccount = null; vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-04T12:00:00Z')); });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.clearAllMocks(); vi.unstubAllGlobals(); });
 
 describe('Public 01 landing interactions', () => {
+  it('uses a distraction-free header only on the Guest access route', () => {
+    pathname = '/acceso';
+    const view = render(<PublicBookingShell><p>Acceso</p></PublicBookingShell>);
+    const header = within(screen.getByRole('banner'));
+    expect(header.getByRole('link', { name: 'Hotel Boutique, inicio' })).toHaveAttribute('href', '/');
+    expect(header.getByRole('link', { name: '← Volver al inicio' })).toHaveAttribute('href', '/');
+    expect(header.queryByRole('navigation')).not.toBeInTheDocument();
+    expect(header.queryByRole('button', { name: 'Menú' })).not.toBeInTheDocument();
+    expect(header.queryByRole('link', { name: 'Iniciar sesión' })).not.toBeInTheDocument();
+    pathname = '/habitaciones';
+    view.rerender(<PublicBookingShell><p>Catálogo</p></PublicBookingShell>);
+    expect(header.getByRole('navigation', { name: 'Navegación pública' })).toBeInTheDocument();
+    expect(header.getByRole('link', { name: 'Iniciar sesión' })).toBeInTheDocument();
+  });
   it('preserves bookmarked criteria when submitting the compact search', () => {
     render(<PublicBookingHome initialCriteria={{ ...criteria, roomsCount: 2, promoCode: 'PROMO' }} />);
     expect(screen.getByLabelText(/^Check-in/)).toHaveValue(criteria.checkIn);
@@ -54,9 +69,12 @@ describe('Public 01 landing interactions', () => {
     expect(link).toHaveAttribute('href', '/habitaciones/rt_terrace_suite?checkIn=2026-10-10&checkOut=2026-10-15&adults=2&children=0&roomsCount=1');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
-  it('converts editorial prices to GTQ while identifying the dated reference', () => {
+  it('defaults to quetzales and lets visitors switch to dollars and back', () => {
     render(<PublicBookingHome initialCriteria={criteria} />);
     const room = screen.getByRole('article', { name: 'Deluxe King' });
+    expect(screen.getByLabelText('Mostrar precios en')).toHaveValue('GTQ');
+    expect(within(room).getByText('Q 1,108.00')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Mostrar precios en'), { target: { value: 'USD' } });
     expect(within(room).getByText('US$ 145.00')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Mostrar precios en'), { target: { value: 'GTQ' } });
     expect(within(room).getByText('Q 1,108.00')).toBeInTheDocument();
@@ -66,7 +84,8 @@ describe('Public 01 landing interactions', () => {
     render(<PublicBookingShell><p>Contenido público</p></PublicBookingShell>);
     const navigation = screen.getByRole('navigation', { name: 'Navegación pública' });
     expect(within(navigation).getByRole('link', { name: 'Habitaciones' })).toHaveAttribute('href', '/habitaciones');
-    expect(within(navigation).getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/acceso');
+    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/acceso');
+    expect(within(navigation).queryByRole('link', { name: 'Iniciar sesión' })).not.toBeInTheDocument();
     expect(within(navigation).getByRole('link', { name: 'Mis reservas' })).toHaveAttribute('href', '/acceso?returnTo=%2Fmis-reservas');
     const toggle = screen.getByRole('button', { name: /Menú/ });
     fireEvent.click(toggle);
@@ -86,21 +105,23 @@ describe('Public 01 landing interactions', () => {
   it('keeps navigation public and directs signed-in Guests to their linked reservations', () => {
     const view = render(<PublicBookingShell><p>Contenido público</p></PublicBookingShell>);
     expect(screen.getByRole('link', { name: 'Mis reservas' })).toHaveAttribute('href', '/acceso?returnTo=%2Fmis-reservas');
+    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/acceso');
     guestAccount = { id: 'guest-demo', email: 'demo@example.com', externalIdentities: [] };
     view.rerender(<PublicBookingShell><p>Contenido público</p></PublicBookingShell>);
     const navigation = screen.getByRole('navigation', { name: 'Navegación pública' });
     expect(within(navigation).getByRole('link', { name: 'Mis reservas' })).toHaveAttribute('href', '/mis-reservas');
+    expect(screen.getByRole('link', { name: 'Mi cuenta' })).toHaveAttribute('href', '/cuenta');
+    expect(screen.queryByRole('link', { name: 'Iniciar sesión' })).not.toBeInTheDocument();
     guestAccount = null;
     view.rerender(<PublicBookingShell><p>Contenido público</p></PublicBookingShell>);
     expect(screen.getByRole('link', { name: 'Mis reservas' })).toHaveAttribute('href', '/acceso?returnTo=%2Fmis-reservas');
+    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/acceso');
   });
-  it('clearly identifies fictional contacts and opens social and FAQ information', () => {
+  it('keeps customer-facing footer copy and opens social and FAQ information', () => {
     render(<PublicBookingShell><p>Contenido público</p></PublicBookingShell>);
-    fireEvent.click(screen.getByRole('button', { name: 'Datos de demostración' }));
-    expect(screen.getByRole('dialog')).toHaveTextContent('son ficticios');
-    fireEvent.click(screen.getByRole('button', { name: 'Cerrar' }));
+    expect(screen.queryByRole('button', { name: 'Datos de demostración' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Instagram' }));
-    expect(screen.getByRole('dialog', { name: 'Instagram' })).toHaveTextContent('pendiente de configuración');
+    expect(screen.getByRole('dialog', { name: 'Instagram' })).toHaveTextContent('Descubre nuestras habitaciones');
     fireEvent.click(screen.getByRole('button', { name: 'Cerrar' }));
     fireEvent.click(screen.getByRole('button', { name: 'Preguntas frecuentes (FAQ)' }));
     expect(screen.getByRole('dialog')).toHaveTextContent('Para consultar tus reservas necesitas acceder');

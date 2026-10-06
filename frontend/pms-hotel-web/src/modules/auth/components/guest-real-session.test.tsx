@@ -2,6 +2,7 @@ import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderToString } from "react-dom/server";
+import { AppRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { http, HttpResponse } from "msw";
 import { mockServer } from "@/data/mocks/server";
@@ -17,9 +18,9 @@ beforeEach(() => vi.stubEnv("NEXT_PUBLIC_USE_MOCK_API", "false"));
 afterEach(() => { cleanup(); vi.unstubAllEnvs(); setAuthToken(null); });
 
 function Observer() {
-  const { account, status, signIn } = useGuestSession();
+  const { account, status, signIn, accessMethod } = useGuestSession();
   return <>
-    <output aria-label="Guest session">{JSON.stringify({ account, status })}</output>
+    <output aria-label="Guest session">{JSON.stringify({ account, status, accessMethod })}</output>
     <button onClick={() => void signIn({ method: "GOOGLE" })}>Simular acceso</button>
   </>;
 }
@@ -27,9 +28,9 @@ function Observer() {
 function setup(page: "account" | "access" = "account") {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   function Harness({ page }: { page: "account" | "access" }) {
-    return <QueryClientProvider client={client}><GuestSessionProvider><Observer />
+    return <AppRouterContext.Provider value={{ replace: vi.fn(), push: vi.fn(), back: vi.fn(), forward: vi.fn(), refresh: vi.fn(), prefetch: vi.fn(), bfcacheId: "real-session-test" }}><QueryClientProvider client={client}><GuestSessionProvider><Observer />
       {page === "access" ? <GuestAccessPage /> : <GuestAccountGate><h1>Cuenta autenticada</h1></GuestAccountGate>}
-    </GuestSessionProvider></QueryClientProvider>;
+    </GuestSessionProvider></QueryClientProvider></AppRouterContext.Provider>;
   }
   const view = render(<Harness page={page} />);
   return { client, user: userEvent.setup(), navigate: (page: "account" | "access") => view.rerender(<Harness page={page} />) };
@@ -114,6 +115,7 @@ describe("Guest session through the real BFF", () => {
     const { client } = setup();
     await screen.findByRole("heading", { name: "Cuenta autenticada" });
     const state = JSON.parse(screen.getByLabelText("Guest session").textContent!);
+    expect(state.accessMethod).toBeNull();
     expect(state.account).toEqual({ id: dto.guestAccountId, email: dto.email });
     expect(client.getQueryData(["guest-session"])).toEqual({ id: dto.sessionId, context: "GUEST", account: state.account });
     expect(JSON.stringify(client.getQueryData(["guest-session"]))).not.toMatch(/Token|synthetic-|externalIdentities/);
@@ -121,7 +123,7 @@ describe("Guest session through the real BFF", () => {
     expect(sessionStorage.length).toBe(0);
   });
 
-  it("awaits BFF DELETE before clearing Guest state/data and preserves Staff queries", async () => {
+  it.each(["account", "access"] as const)("awaits BFF DELETE before clearing Guest state/data and preserves Staff queries on %s", async page => {
     let finish!: () => void;
     const deletes: Request[] = [];
     mockServer.use(http.get(endpoint, () => HttpResponse.json(dto)), http.delete(endpoint, async ({ request }) => {
@@ -129,13 +131,14 @@ describe("Guest session through the real BFF", () => {
       await new Promise<void>(resolve => { finish = resolve; });
       return new HttpResponse(null, { status: 204 });
     }));
-    const { client, user } = setup();
-    await screen.findByRole("heading", { name: "Cuenta autenticada" });
+    const { client, user } = setup(page);
+    const heading = page === "account" ? "Cuenta autenticada" : "Tu cuenta está lista";
+    await screen.findByRole("heading", { name: heading });
     client.setQueryData(["guest", "profile"], { name: "Disposable" });
     client.setQueryData(["staff", "profile"], { name: "Staff" });
     await user.click(screen.getByRole("button", { name: "Cerrar sesión" }));
     expect(screen.getByRole("button", { name: "Cerrando sesión…" })).toBeDisabled();
-    expect(screen.getByRole("heading", { name: "Cuenta autenticada" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
     expect(client.getQueryData(["guest", "profile"])).toBeDefined();
     await waitFor(() => expect(finish).toBeDefined());
     await act(async () => finish());
@@ -148,16 +151,17 @@ describe("Guest session through the real BFF", () => {
     expect(client.getQueryData(["staff", "profile"])).toEqual({ name: "Staff" });
   });
 
-  it("keeps account/cache on logout failure and allows retry", async () => {
+  it.each(["account", "access"] as const)("keeps account/cache on logout failure and allows retry on %s", async page => {
     let attempts = 0;
     mockServer.use(http.get(endpoint, () => HttpResponse.json(dto)), http.delete(endpoint, () => ++attempts === 1
       ? new HttpResponse(null, { status: 503 }) : new HttpResponse(null, { status: 204 })));
-    const { client, user } = setup();
-    await screen.findByRole("heading", { name: "Cuenta autenticada" });
+    const { client, user } = setup(page);
+    const heading = page === "account" ? "Cuenta autenticada" : "Tu cuenta está lista";
+    await screen.findByRole("heading", { name: heading });
     client.setQueryData(["guest", "profile"], { name: "Disposable" });
     await user.click(screen.getByRole("button", { name: "Cerrar sesión" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo cerrar la sesión");
-    expect(screen.getByRole("heading", { name: "Cuenta autenticada" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
     expect(client.getQueryData(["guest", "profile"])).toBeDefined();
     await user.click(screen.getByRole("button", { name: "Cerrar sesión" }));
     expect(await screen.findByRole("heading", { name: "Accede a tu cuenta" })).toBeInTheDocument();
@@ -181,10 +185,10 @@ describe("Guest session through the real BFF", () => {
     mockServer.use(http.get(endpoint, bff), http.delete(endpoint, bff));
     const { user } = setup("access");
     await user.click(screen.getByRole("button", { name: "Continuar con Google" }));
-    await user.click(screen.getByRole("button", { name: "Continuar retorno al PMS" }));
     expect(await screen.findByRole("heading", { name: "Tu cuenta está lista" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Cerrar sesión" }));
     expect(screen.getByLabelText("Guest session")).toHaveTextContent('"status":"signed-out"');
+    expect(screen.getByLabelText("Guest session")).toHaveTextContent('"accessMethod":null');
     expect(bff).not.toHaveBeenCalled();
   });
 });

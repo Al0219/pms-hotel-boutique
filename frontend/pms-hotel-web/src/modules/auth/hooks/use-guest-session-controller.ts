@@ -16,6 +16,8 @@ const sessionKey = ["guest-session"] as const;
 export function useGuestSessionController() {
   const mockMode = getPublicEnvironment().useMockApi;
   const [mockAccount, setAccount] = useState<GuestAccount | null>(null);
+  // Mock-only presentation metadata, never a verified credential or ExternalIdentity.
+  const [accessMethod, setAccessMethod] = useState<GuestAccessInput['method'] | null>(null);
   const activeRequest = useRef<AbortController | null>(null);
   const closing = useRef(false);
   const queryClient = useQueryClient();
@@ -50,6 +52,7 @@ export function useGuestSessionController() {
       const result = await mutation.mutateAsync({ input, signal: controller.signal });
       if (controller.signal.aborted) return false;
       setAccount(result);
+      setAccessMethod(input.method);
       return true;
     } catch {
       return false;
@@ -79,6 +82,7 @@ export function useGuestSessionController() {
     activeRequest.current?.abort();
     activeRequest.current = null;
     setAccount(null);
+    setAccessMethod(null);
     mutation.reset();
     // Clear only Guest data; Staff and operational queries remain independent.
     void queryClient.cancelQueries({ queryKey: ["guest"] });
@@ -88,6 +92,7 @@ export function useGuestSessionController() {
 
   return {
     account,
+    accessMethod: mockMode ? accessMethod : null,
     status: !mockMode && (session.isPending || session.isFetching) ? "checking" as const
       : !mockMode && session.isError ? "error" as const
       : account ? "signed-in" as const : "signed-out" as const,

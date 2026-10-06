@@ -1,5 +1,7 @@
 # Public — Reserva como invitado y Mis reservas
 
+Actualización de presentación: [textos finales para clientes](48_PUBLIC_BOOKING_CUSTOMER_COPY.md). Referencias/OTP de ejemplo e instrucciones de simulación quedan solo en documentación y fixtures, sin mostrarse en la interfaz. El botón de acceso Google ahora se llama «Acceder con Google».
+
 Actualización posterior: pago/confirmación de demostración se implementan en [la entrega 44](44_PUBLIC_BOOKING_PAYMENT_GUARANTEE.md). Los límites de persistencia, correo real e historial aquí descritos se conservan.
 
 ## Alcance autorizado

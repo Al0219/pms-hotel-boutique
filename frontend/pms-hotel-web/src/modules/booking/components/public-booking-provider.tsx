@@ -14,7 +14,7 @@ interface PublicBookingSession {
 const Context = createContext<PublicBookingSession | null>(null);
 
 export function PublicBookingProvider({ children }: { children: ReactNode }) {
-  const [currency, setCurrency] = useState<DisplayCurrency>('USD');
+  const [currency, setCurrency] = useState<DisplayCurrency>('GTQ');
   const [cart, setCart] = useState<PublicBookingSession['cart']>({ scope: '', items: [] });
   return <Context.Provider value={{ currency, setCurrency, cart, setCart }}>{children}</Context.Provider>;
 }
@@ -28,6 +28,12 @@ export function usePublicBookingSession() {
 /** Read the display preference without exposing the cart to other modules. */
 export function usePublicDisplayCurrency() {
   return usePublicBookingSession().currency;
+}
+
+/** Clear the booking cart without changing currency preference or Guest Auth. */
+export function useResetPublicBooking() {
+  const { setCart } = usePublicBookingSession();
+  return () => setCart({ scope: '', items: [] });
 }
 
 export function usePublicRoomSelection(criteria: Partial<BookingSearchCriteria>, propertyId?: string) {

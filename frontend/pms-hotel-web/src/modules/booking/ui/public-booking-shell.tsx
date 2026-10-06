@@ -1,15 +1,19 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useRef, useState, type ReactNode } from 'react';
 import { Button, Modal } from '@/shared/components';
 import { useGuestSession } from '@/modules/auth';
 import { publicHotelContent, publicHotelInformation } from '../content/public-hotel-content';
 import { BookingIcon } from './booking-icon';
+import { usePublicDisplayCurrency } from '../components/public-booking-provider';
 import styles from './public-booking-shell.module.css';
 
 export function PublicBookingShell({ children }: { children: ReactNode }) {
+  const isAccessPage = usePathname() === '/acceso';
   const { account } = useGuestSession();
+  const currency = usePublicDisplayCurrency();
   const [information, setInformation] = useState<{ title: string; text: string } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const informationTrigger = useRef<HTMLButtonElement | null>(null);
@@ -25,18 +29,26 @@ export function PublicBookingShell({ children }: { children: ReactNode }) {
     <header className={styles.header}>
       <div className={styles.headerInner}>
         <Link href="/" className={styles.brand} aria-label="Hotel Boutique, inicio">Hotel Boutique</Link>
-        <button ref={menuTrigger} type="button" className={styles.menuToggle}
-          aria-expanded={menuOpen} aria-controls="public-navigation" onClick={() => setMenuOpen(open => !open)}>
-          {menuOpen ? 'Cerrar menú' : 'Menú'}<span aria-hidden="true">{menuOpen ? '×' : '☰'}</span>
-        </button>
+        {isAccessPage ? <Link href="/" className={styles.authReturn}>← Volver al inicio</Link> : <>
         <nav id="public-navigation" aria-label="Navegación pública" className={`${styles.navigation} ${menuOpen ? styles.navigationOpen : ''}`}
           onClick={() => setMenuOpen(false)} onKeyDown={event => {
             if (event.key === 'Escape') { setMenuOpen(false); menuTrigger.current?.focus(); }
           }}>
           <Link href="/habitaciones">Habitaciones</Link><Link href="/#amenidades">Amenidades</Link>
           <Link href={account ? '/mis-reservas' : '/acceso?returnTo=%2Fmis-reservas'}>Mis reservas</Link>
-          <Link href={account ? '/cuenta' : '/acceso'}>{account ? 'Mi cuenta' : 'Iniciar sesión'}</Link>
         </nav>
+        <div className={styles.headerActions}>
+          <button ref={menuTrigger} type="button" className={styles.menuToggle}
+            aria-label={menuOpen ? 'Cerrar menú' : 'Menú'} aria-expanded={menuOpen} aria-controls="public-navigation" onClick={() => setMenuOpen(open => !open)}>
+            <span className={styles.menuLabel}>{menuOpen ? 'Cerrar menú' : 'Menú'}</span><span aria-hidden="true">{menuOpen ? '×' : '☰'}</span>
+          </button>
+          <Link className={styles.accountAction} href={account ? '/cuenta' : '/acceso'}
+            aria-label={account ? 'Mi cuenta' : 'Iniciar sesión'} title={account ? 'Ir a mi cuenta' : 'Iniciar sesión'} onClick={() => setMenuOpen(false)}>
+            <span className={styles.accountIcon}><BookingIcon name="account" /></span>
+            <span className={styles.accountLabel}>{account ? 'Mi cuenta' : 'Iniciar sesión'}</span>
+          </Link>
+        </div>
+        </>}
       </div>
     </header>
     <main id="public-content" className={styles.main} tabIndex={-1}>{children}</main>
@@ -46,7 +58,7 @@ export function PublicBookingShell({ children }: { children: ReactNode }) {
           <div className={styles.footerBrand}>
             <Link href="/">{publicHotelContent.name}</Link>
             <p>{publicHotelContent.description}</p>
-            <span className={styles.locale}>{publicHotelContent.locale} <span aria-hidden="true">|</span> {publicHotelContent.currency}</span>
+            <span className={styles.locale}>{publicHotelContent.locale} <span aria-hidden="true">|</span> {currency === 'GTQ' ? 'GTQ Q' : 'USD $'}</span>
           </div>
           <nav aria-labelledby="footer-explore-title" className={styles.footerExplore}>
             <h2 id="footer-explore-title">Explorar</h2>
@@ -64,8 +76,6 @@ export function PublicBookingShell({ children }: { children: ReactNode }) {
               <p><BookingIcon name="phone" /><span>{publicHotelContent.contact.phone}</span></p>
               <p><BookingIcon name="mail" /><span>{publicHotelContent.contact.email}</span></p>
             </address>
-            {publicHotelContent.contact.isDemo && <button type="button" className={styles.demoContact}
-              onClick={event => openInformation(event.currentTarget, publicHotelInformation.contact)}>Datos de demostración</button>}
           </section>
           <section className={styles.footerSocial} aria-labelledby="footer-social-title">
             <h2 id="footer-social-title">Síguenos</h2><p>{publicHotelContent.socialIntroduction}</p>
@@ -73,7 +83,7 @@ export function PublicBookingShell({ children }: { children: ReactNode }) {
               {publicHotelContent.socialProfiles.map(profile => profile.url
                 ? <a href={profile.url} key={profile.name} aria-label={profile.name} target="_blank" rel="noopener noreferrer"><BookingIcon name={profile.icon} /></a>
                 : <button key={profile.name} type="button" aria-label={profile.name} onClick={event => openInformation(event.currentTarget, {
-                  title: profile.name, text: `El perfil de ${profile.name} del hotel está pendiente de configuración. Este botón forma parte de la demostración.`,
+                  title: profile.name, text: `Descubre nuestras habitaciones, experiencias y novedades en ${profile.name}.`,
                 })}><BookingIcon name={profile.icon} /></button>)}
             </div>
           </section>

@@ -35,8 +35,10 @@ export const publicCheckoutHandlers = [http.post('http://pms.test/__mock/checkou
     if (rate.currency !== input.currency) return reject('QUOTE_CHANGED', 409);
     total += Math.round(Number(rate.stay_price_breakdown.estimated_total) * 100) * item.quantity;
   }
-  const guarantee = Math.round(total / quote.total_nights);
-  if (total !== input.total_minor || guarantee !== input.guarantee_minor) return reject('QUOTE_CHANGED', 409);
+  const minimum = Math.round(total / quote.total_nights);
+  const guarantee = input.guarantee_minor as number;
+  if (total !== input.total_minor) return reject('QUOTE_CHANGED', 409);
+  if (!Number.isSafeInteger(guarantee) || guarantee < minimum || guarantee > total) return reject('INVALID_DEMO_DEPOSIT');
   if (input.card_token === 'demo_card_declined') return reject('DEMO_CARD_DECLINED', 422);
   if (input.card_token === 'demo_gateway_error') return reject('DEMO_GATEWAY_UNAVAILABLE', 503);
   const reservationId = `HB-${new Date().getUTCFullYear()}-${8942 + confirmations.size}`;

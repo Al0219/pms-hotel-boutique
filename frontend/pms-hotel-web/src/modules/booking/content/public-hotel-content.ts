@@ -5,10 +5,8 @@ export const publicHotelContent = {
   name: 'Hotel Boutique',
   description: 'Hospitalidad cercana, espacios con carácter y pequeños detalles que hacen especial cada estadía.',
   locale: 'ES',
-  currency: 'USD $',
   copyrightYear: 2026,
   contact: {
-    isDemo: true,
     address: 'Av. Las Magnolias #123, Zona Rosa',
     phone: '+1 (202) 555-0147',
     email: 'reservas@hotelboutique.example',
@@ -23,11 +21,10 @@ export const publicHotelContent = {
 } as const;
 
 export const publicHotelInformation = {
-  gallery: { title: 'Galería', text: 'Las fotografías del hotel se publicarán aquí. Por ahora puedes explorar las vistas de referencia de nuestras habitaciones.' },
+  gallery: { title: 'Galería', text: 'Explora las fotografías de nuestras habitaciones y descubre los espacios que acompañarán tu próxima estadía.' },
   offers: { title: 'Ofertas especiales', text: 'Consulta tus fechas para conocer las tarifas disponibles. Los códigos promocionales requieren validación antes de confirmar una reserva.' },
   faq: { title: 'Preguntas frecuentes', text: 'Puedes buscar disponibilidad sin iniciar sesión. Para consultar tus reservas necesitas acceder a tu cuenta. Las tarifas y condiciones se muestran en los resultados para las fechas seleccionadas.' },
   privacy: { title: 'Política de privacidad', text: 'La política de privacidad del hotel está pendiente de publicación. Solicita al hotel información sobre el tratamiento de tus datos antes de enviar información personal.' },
   terms: { title: 'Términos y condiciones', text: 'Los términos y condiciones del hotel están pendientes de publicación. Consulta las condiciones de la tarifa antes de confirmar tu reserva.' },
   cookies: { title: 'Política de cookies', text: 'La información sobre cookies del hotel está pendiente de publicación. Las funciones de acceso a la cuenta utilizan cookies de sesión.' },
-  contact: { title: 'Contacto de demostración', text: 'La dirección, el teléfono y el correo mostrados son ficticios y sirven para presentar el diseño. No corresponden a un canal de atención real.' },
 } as const;

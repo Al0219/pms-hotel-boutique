@@ -2,20 +2,21 @@
 
 ## Alcance y fuentes
 
-José autoriza únicamente frontend: Paso 3 «Pago y garantía» y navegación hacia una confirmación simulada, conservando checkout como invitado. Se reutilizan los contratos provisionales de Payments y el draft en memoria de Checkout. Backlog relacionado: IMP-WEB-0109/0110/0111/0112, owners WEB-4/WEB-1/WEB-3 y reviewers correspondientes. Dependencias formales, contrato productivo, revisión de equipo y Figma siguen pendientes; no se cambia el XLSX ni se declara integración Backend completa.
+José autoriza únicamente frontend: «Pago y garantía» y navegación hacia una confirmación simulada, conservando checkout como invitado. La revisión intermedia autorizada posteriormente (documento 45) convierte el pago en el Paso 4. Se reutilizan los contratos provisionales de Payments y el draft en memoria de Checkout. Backlog relacionado: IMP-WEB-0109/0110/0111/0112, owners WEB-4/WEB-1/WEB-3 y reviewers correspondientes. Dependencias formales, contrato productivo, revisión de equipo y Figma siguen pendientes; no se cambia el XLSX ni se declara integración Backend completa.
 
 La vista anterior de handoff se sustituye por esta demostración. No se toca Backend, BFF, credenciales, proveedores ni dependencias. GuestAccount no se crea ni vincula automáticamente; una confirmación contiene una Reservation de ejemplo con N identificadores de ReservationStay.
 
 ## Comportamiento
 
-- `/reserva/checkout/pago` exige selección vigente y datos aprobados del Paso 2. «Volver a datos» conserva campos y query de búsqueda; la tarjeta toma el nombre de su responsable.
+- `/reserva/checkout/pago` exige selección vigente, datos aprobados del Paso 2 y revisión de la cotización del Paso 3. «Volver a revisión» conserva el borrador y la búsqueda; «Editar mis datos» regresa al formulario. La tarjeta toma el nombre de su responsable.
 - Resumen dinámico para una o varias habitaciones, fechas, adultos/niños y noches. El total incluye el desglose estimado recibido, sin inventar impuestos cuando faltan.
-- Regla **ilustrativa autorizada**: una noche de garantía = total estimado / noches, redondeada a centavos. El restante es la diferencia exacta. US$505 / 3 → US$168.33 y US$336.67. No es una política de hotel productiva. Cotizaciones incompletas o con monedas mezcladas bloquean la confirmación.
+- Regla **ilustrativa autorizada**: una noche de garantía = total estimado / noches, redondeada a centavos. Es el valor predeterminado; el refactor del documento 47 añade pago total, 50% y monto personalizado entre esa noche y el total. El restante es la diferencia exacta. US$505 / 3 → US$168.33 y US$336.67. No es una política de hotel productiva. Cotizaciones incompletas o con monedas mezcladas bloquean la confirmación.
 - USD/GTQ reutiliza la conversión referencial existente, solo para visualización; no cambia la moneda ni el importe base enviados al simulador.
 - Antes de enviar, se consulta nuevamente disponibilidad y se compara tarifa, total, condiciones, fechas, propiedad y selección. Cambios impiden confirmar hasta revisión. La consulta no retiene inventario ni reemplaza admisión transaccional real.
-- El envío tiene bloqueo inmediato de clics repetidos, loading, cancelación al salir y reintento explícito. Una misma solicitud conserva su clave en la instancia montada; MSW devuelve el mismo resultado para clave/payload idénticos y 409 para otra carga.
+- El envío tiene bloqueo inmediato de clics repetidos, loading, cancelación al salir y reintento explícito. Una misma solicitud conserva su clave en el provider de Checkout incluso al navegar a error y volver; MSW devuelve el mismo resultado para clave/payload idénticos y 409 para otra carga. Ver documento 46 para manejo de respuesta perdida.
 - El simulador comprueba cotización y ATS de los fixtures; construye garantía CAPTURED y Reservation en una respuesta atómica de demostración. No consume inventario real, no llama PSP y no crea persistencia ni correo.
 - `/reserva/confirmacion` solo muestra el resultado recibido y validado de esta sesión. Visitar directamente, cambiar búsqueda o recargar muestra vacío; volver al pago tras éxito no repite la garantía. Las reservas vinculables de «Mis reservas» siguen siendo ejemplos independientes, explicados en la confirmación.
+- Los fallos navegan a `/reserva/error`, nunca a confirmación. Conservan intención, huésped y tarjeta de prueba; permiten resolver el mismo intento o revisar la selección, según su causa. «Volver al inicio» limpia el borrador de reserva y carrito.
 
 ## Tarjeta aislada
 
@@ -41,7 +42,7 @@ Response: referencia, propiedad, fechas, timestamp UTC, estado CONFIRMED de ejem
 
 ## Prueba manual
 
-Con mocks habilitados: `npm run dev -- --port 3000`. Inicio → búsqueda → selección → datos del huésped → pago. Comprobar montos, ida/vuelta y cambio de moneda; probar rechazo/error y después aprobación. Abrir tarjeta de prueba, verificar formato/error y confirmar. Revisar una sola referencia con todas las estadías; recargar y comprobar que no se inventa una confirmación.
+Con mocks habilitados: `npm run dev -- --port 3000`. Inicio → búsqueda → selección → datos del huésped → revisión final → pago. Comprobar montos, ida/vuelta y cambio de moneda; probar rechazo/error y después aprobación. Abrir tarjeta de prueba, verificar formato/error y confirmar. Revisar una sola referencia con todas las estadías; recargar y comprobar que no se inventa una confirmación.
 
 ## Límites de entrega
 

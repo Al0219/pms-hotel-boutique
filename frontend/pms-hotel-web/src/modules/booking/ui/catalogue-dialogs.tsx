@@ -48,7 +48,7 @@ export function CatalogueSelectionDrawer({ items, nights, available, criteria, o
           <button type="button" className={styles.remove} onClick={() => onRemove(item.roomTypeId)}>Quitar {item.room?.name}</button></div>
       </li>)}</ul>}
     <div className={styles.totals}><h3>Resumen de la estancia</h3>
-      {prices.rooms.map(total => <p key={total.currency}><span>Habitaciones ({total.currency})</span><strong>{displayMoney(total.amount, total.currency, currency)}</strong></p>)}
+      {prices.rooms.map(total => <p key={total.currency}><span>Habitaciones ({total.currency === 'USD' || total.currency === 'GTQ' ? currency : total.currency})</span><strong>{displayMoney(total.amount, total.currency, currency)}</strong></p>)}
       {prices.completeEstimate ? <>{prices.service.map(total => <p key={total.currency}><span>Cargo de servicio</span><span>{displayMoney(total.amount, total.currency, currency)}</span></p>)}
         {prices.taxes.map(total => <p key={total.currency}><span>Impuestos estimados</span><span>{displayMoney(total.amount, total.currency, currency)}</span></p>)}
         {prices.estimated.map(total => <p key={total.currency}><span>Total estimado</span><strong>{displayMoney(total.amount, total.currency, currency)}</strong></p>)}</> :

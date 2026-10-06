@@ -16,10 +16,10 @@ export interface AccountFixture {
   invoices: GuestInvoiceDTO[];
 }
 const accounts = new Map<string, AccountFixture>();
-export const demoAccountIds = ["guest-demo-01", "guest-demo-google", "guest-demo-empty", "guest-demo-data-error", "guest-demo-data-offline", "guest-demo-save-error"];
+export const demoAccountIds = ["guest-demo-01", "guest-demo-google", "guest-demo-apple", "guest-demo-register", "guest-demo-empty", "guest-demo-data-error", "guest-demo-data-offline", "guest-demo-save-error"];
 
 export function initializeAccountFixture(accountId: string, email: string): AccountFixture {
-  const empty = accountId === "guest-demo-empty" || accountId === 'guest-demo-google';
+  const empty = ['guest-demo-empty', 'guest-demo-google', 'guest-demo-apple', 'guest-demo-register'].includes(accountId);
   const profileId = `profile-${accountId}`;
   const profile: GuestProfileDTO = { profile_id: profileId, first_name: "Alan", last_name: "Palacios", email, phone: "+502 5555 5555", country: "Guatemala", preferred_language: "Español",
     preferences: { bed_type: "King", room_vibe: "tranquila", floor_preference: "Piso alto · evitar zonas ruidosas", privacy_level: "SOLO CUENTA", revocable_consent: true } };

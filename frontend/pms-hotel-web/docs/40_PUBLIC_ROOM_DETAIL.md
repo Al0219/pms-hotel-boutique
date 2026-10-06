@@ -23,7 +23,7 @@ Las fixtures de demostración incluyen el ejemplo solicitado (Deluxe, tres noche
 
 Las imágenes locales son ilustraciones generadas, no fotografías de un hotel real. Su procedencia y prompts están en [README de imágenes](../public/images/rooms/demo/README.md).
 
-GTQ es solamente una moneda de presentación para cotizaciones USD. Se utiliza una referencia fechada, no una tasa en vivo: USD 1 = GTQ 7.64136, Banco de Guatemala, 2026-10-04, [fuente](https://www.banguat.gob.gt/tipo_cambio/TipoCambio/). Cada importe se redondea por separado. Otras monedas conservan su moneda original. No se cambia la moneda de la cotización, pago o liquidación.
+Por decisión explícita de José, GTQ es la moneda inicial de presentación del flujo público (Inicio, catálogo/carrito, detalle y checkout/resultado). El selector permite USD y conserva la elección durante la navegación; recargar vuelve a GTQ. El footer refleja la elección y los filtros de precio muestran sus equivalentes en esa moneda. Se utiliza una referencia fechada, no una tasa en vivo: USD 1 = GTQ 7.64136, Banco de Guatemala, 2026-10-04, [fuente](https://www.banguat.gob.gt/tipo_cambio/TipoCambio/). La conversión USD/GTQ funciona en ambas direcciones; cada importe se redondea por separado. Otras monedas conservan su moneda original. No se cambia la moneda de la cotización, pago o liquidación. La garantía personalizada admite entrada Q/USD y normaliza a la moneda cotizada; ver documento 47.
 
 Checkout, admisión transaccional y confirmación siguen pendientes de su entrega correspondiente. El botón del carrito explica ese estado. No se expone RoomId físico ni se implementan pagos.
 
@@ -37,4 +37,4 @@ QA en Chrome sobre `http://localhost:3000`: Inicio → detalle → catálogo; fo
 
 ## Prueba manual
 
-Ejecutar `npm run dev -- --port 3000` desde `frontend/pms-hotel-web`, usando la configuración mock local del proyecto. Abrir Inicio y elegir fechas futuras, o visitar `/habitaciones/rt_deluxe_king?checkIn=2026-10-10&checkOut=2026-10-13&adults=2&children=0&roomsCount=1`. Cambiar a GTQ, recorrer fotos, seleccionar, volver al catálogo y abrir Mi Selección. Cambiar al plan no reembolsable y verificar que la política y la tarifa permanezcan al regresar.
+Ejecutar `npm run dev -- --port 3000` desde `frontend/pms-hotel-web`, usando la configuración mock local del proyecto. Abrir Inicio y elegir fechas futuras, o visitar `/habitaciones/rt_deluxe_king?checkIn=2026-10-10&checkOut=2026-10-13&adults=2&children=0&roomsCount=1`. Comprobar GTQ inicial, cambiar a USD y volver a Q; recorrer fotos, seleccionar, volver al catálogo y abrir Mi Selección. Cambiar al plan no reembolsable y verificar que la política y la tarifa permanezcan al regresar.

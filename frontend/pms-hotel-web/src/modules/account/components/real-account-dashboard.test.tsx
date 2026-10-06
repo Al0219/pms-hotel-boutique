@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { http, HttpResponse } from "msw";
 import { mockServer } from "@/data/mocks/server";
 import { GuestAccountGate, GuestSessionProvider } from "@/modules/auth";
-import { PublicBookingShell } from "@/modules/booking";
+import { PublicBookingShell, PublicBookingProvider } from "@/modules/booking";
 import { setAuthToken } from "@/lib/http/interceptors";
 import { AccountDashboardPage } from "./account-dashboard-page";
 import type { AccountSummaryDTO } from "../dtos/account.dto";
@@ -22,7 +22,7 @@ afterEach(() => { cleanup(); vi.unstubAllEnvs(); setAuthToken(null); });
 function setup(withPublicShell = false) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   const content = <GuestAccountGate><AccountDashboardPage /></GuestAccountGate>;
-  render(<QueryClientProvider client={client}><GuestSessionProvider>{withPublicShell ? <PublicBookingShell>{content}</PublicBookingShell> : content}</GuestSessionProvider></QueryClientProvider>);
+  render(<QueryClientProvider client={client}><GuestSessionProvider>{withPublicShell ? <PublicBookingProvider><PublicBookingShell>{content}</PublicBookingShell></PublicBookingProvider> : content}</GuestSessionProvider></QueryClientProvider>);
   return { client, user: userEvent.setup() };
 }
 

@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 import { Button, EmptyState, ErrorState, LoadingState } from '@/shared/components';
-import { getPublicEnvironment } from '@/lib/env';
 import type { BookingSearchCriteria } from '../domain/booking-search-criteria';
 import { publicResultsHref, publicGuestDataHref } from '../domain/public-room-navigation';
 import { displayMoney } from '../domain/display-currency';
@@ -26,7 +25,7 @@ export function PublicBookingReviewPage({ initialCriteria: criteria }: { initial
   const nights = availability.data?.totalNights ?? 0;
   return <div className={styles.page}>
     <div className={styles.topBar}><Link href={publicResultsHref(criteria)}>← Volver a resultados</Link><PublicCurrencySelector id="review-display-currency" /></div>
-    <header className={styles.heading}><p className={styles.eyebrow}>TU PRÓXIMA ESTANCIA</p><h1>Revisa tu selección</h1><p>Paso 1 de 3 · Habitación seleccionada</p></header>
+    <header className={styles.heading}><p className={styles.eyebrow}>TU PRÓXIMA ESTANCIA</p><h1>Revisa tu selección</h1><p>Paso 1 de 4 · Habitación seleccionada</p></header>
     <BookingStepper step={1} />
     {!hydrated ? <LoadingState message="Preparando tu selección…" /> : !validCriteria ?
       <EmptyState title="Completa tu búsqueda" description="Necesitamos fechas y huéspedes válidos para revisar la selección." /> :
@@ -34,7 +33,6 @@ export function PublicBookingReviewPage({ initialCriteria: criteria }: { initial
       availability.isFetching ? <LoadingState message="Verificando disponibilidad y tarifas…" /> :
       availability.isError ? <ErrorState title="No pudimos verificar tu selección" message="No se confirmó ninguna reserva. Reintenta o vuelve al catálogo." onRetry={() => { void availability.refetch(); }} /> :
       ready && (items.length === 0 ? <EmptyState title="Tu selección está vacía" description="Vuelve al catálogo para elegir una habitación. Conservamos las fechas y los huéspedes de tu búsqueda." /> : <>
-        {getPublicEnvironment().useMockApi && <p className={styles.demo}>Demostración: habitaciones, condiciones y precios de ejemplo. No se confirma ninguna reserva.</p>}
         <div className={styles.layout}><div className={styles.roomList}>
           {items.map(item => <article className={styles.roomCard} key={item.roomTypeId} aria-label={item.room?.name ?? 'Habitación no disponible'}>
             {item.room && <div className={styles.photo}><CatalogueRoomImage room={item.room} /></div>}

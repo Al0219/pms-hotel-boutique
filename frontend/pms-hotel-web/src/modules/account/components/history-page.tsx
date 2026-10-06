@@ -12,7 +12,6 @@ export function HistoryPage({ title = 'Reservas e historial' }: { title?: string
   const offline = query.fetchStatus === 'paused';
   const error = offline ? new HttpNetworkError() : query.error;
   return <AccountSection title={title} description="Reservas actuales y pasadas vinculadas a tu cuenta. Cada reserva puede incluir varias estadías.">
-    {getPublicEnvironment().useMockApi && <p className={styles.demo}>Demostración frontend: datos ficticios, sin correos ni conexión al backend. Puedes reservar como invitado; el acceso permite consultar tus reservas vinculadas.</p>}
     <div className={styles.layout}><div className={styles.list}>
       <AccountFeedback loading={query.isPending && !offline} error={error} retry={() => void query.refetch()} />
       {!error && query.data && (query.data.length === 0 ? <div className={styles.empty}><h2>Tu próxima estancia comienza aquí</h2><p>No tienes reservas vinculadas.</p><p>Si reservaste como invitado, utiliza el formulario de vinculación. Puedes agregar varias reservas a tu cuenta.</p><Link href="/habitaciones">Explorar habitaciones →</Link></div> : <>
