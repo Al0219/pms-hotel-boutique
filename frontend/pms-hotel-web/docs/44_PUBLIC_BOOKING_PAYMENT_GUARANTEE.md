@@ -13,9 +13,10 @@ La vista anterior de handoff se sustituye por esta demostración. No se toca Bac
 - Regla **ilustrativa autorizada**: una noche de garantía = total estimado / noches, redondeada a centavos. El restante es la diferencia exacta. US$505 / 3 → US$168.33 y US$336.67. No es una política de hotel productiva. Cotizaciones incompletas o con monedas mezcladas bloquean la confirmación.
 - USD/GTQ reutiliza la conversión referencial existente, solo para visualización; no cambia la moneda ni el importe base enviados al simulador.
 - Antes de enviar, se consulta nuevamente disponibilidad y se compara tarifa, total, condiciones, fechas, propiedad y selección. Cambios impiden confirmar hasta revisión. La consulta no retiene inventario ni reemplaza admisión transaccional real.
-- El envío tiene bloqueo inmediato de clics repetidos, loading, cancelación al salir y reintento explícito. Una misma solicitud conserva su clave en la instancia montada; MSW devuelve el mismo resultado para clave/payload idénticos y 409 para otra carga.
+- El envío tiene bloqueo inmediato de clics repetidos, loading, cancelación al salir y reintento explícito. Una misma solicitud conserva su clave en el provider de Checkout incluso al navegar a error y volver; MSW devuelve el mismo resultado para clave/payload idénticos y 409 para otra carga. Ver documento 46 para manejo de respuesta perdida.
 - El simulador comprueba cotización y ATS de los fixtures; construye garantía CAPTURED y Reservation en una respuesta atómica de demostración. No consume inventario real, no llama PSP y no crea persistencia ni correo.
 - `/reserva/confirmacion` solo muestra el resultado recibido y validado de esta sesión. Visitar directamente, cambiar búsqueda o recargar muestra vacío; volver al pago tras éxito no repite la garantía. Las reservas vinculables de «Mis reservas» siguen siendo ejemplos independientes, explicados en la confirmación.
+- Los fallos navegan a `/reserva/error`, nunca a confirmación. Conservan intención, huésped y tarjeta de prueba; permiten resolver el mismo intento o revisar la selección, según su causa. «Volver al inicio» limpia el borrador de reserva y carrito.
 
 ## Tarjeta aislada
 

@@ -66,6 +66,10 @@ El Paso 4 incluye tarjeta de prueba aislada, garantía de una noche, revalidaci�
 y confirmación ficticia. Casos de aprobación/rechazo/error y límites en
 [Pago y garantía](docs/44_PUBLIC_BOOKING_PAYMENT_GUARANTEE.md).
 
+La confirmación permite copiar referencia, imprimir/guardar PDF y descargar
+calendario (.ics). El error conserva los datos para reintentar; volver al inicio
+limpia el carrito y borrador. Detalles en [Resultado de reserva](docs/46_PUBLIC_BOOKING_OUTCOME.md).
+
 ## Backlog y reglas
 
 El backlog canónico es `../../docs/Backlog_Implementacion_PMS_V1.xlsx`. Antes de una tarea, leer `AGENTS.md`, la fila del backlog y los documentos indicados.

@@ -7,19 +7,20 @@ import { publicCatalogueFixture } from '@/data/mocks/public-catalogue';
 import { buildPublicAvailabilityMock } from '@/data/mocks/public-availability';
 import { resetPublicCheckoutFixtures } from '@/data/mocks/public-checkout-handlers';
 import { GuestSessionProvider } from '@/modules/auth';
-import { PublicBookingProvider, PublicRoomDetailPage } from '@/modules/booking';
+import { PublicBookingProvider, PublicRoomDetailPage, PublicBookingReviewPage } from '@/modules/booking';
 import { CheckoutDraftProvider } from './checkout-draft-provider';
 import { PublicGuestDataPage } from './public-guest-data-page';
 import { PublicPaymentReviewPage } from './public-payment-review-page';
 import { PublicCheckoutReviewPage } from './public-checkout-review-page';
 import { PublicBookingConfirmationPage } from './public-booking-confirmation-page';
+import { PublicBookingResultPage } from './public-booking-result-page';
 
 const push = vi.hoisted(() => vi.fn());
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 const criteria = { checkIn: '2026-10-10', checkOut: '2026-10-13', adults: 2, children: 0, roomsCount: 1 };
 const clients: QueryClient[] = [];
 beforeEach(() => { push.mockClear(); vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-05T12:00:00Z')); vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://pms.test'); vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'true'); resetPublicCheckoutFixtures(); });
-afterEach(() => { cleanup(); clients.splice(0).forEach(client => client.clear()); onlineManager.setOnline(true); vi.useRealTimers(); vi.unstubAllEnvs(); });
+afterEach(() => { cleanup(); clients.splice(0).forEach(client => client.clear()); onlineManager.setOnline(true); vi.useRealTimers(); vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 function mount(component = <PublicRoomDetailPage roomTypeId="rt_deluxe_king" initialCriteria={criteria}/>) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } }); clients.push(client);
   return render(component, { wrapper: ({ children }) => <QueryClientProvider client={client}><GuestSessionProvider><PublicBookingProvider><CheckoutDraftProvider>{children}</CheckoutDraftProvider></PublicBookingProvider></GuestSessionProvider></QueryClientProvider> });
@@ -46,23 +47,27 @@ describe('Public payment and guarantee journey', () => {
     expect(localStorage.length).toBe(0); expect(sessionStorage.length).toBe(0);
   });
   it('recovers from declined cards and provider errors and preserves the same guest data', async () => {
-    await prepared();
-    fireEvent.change(screen.getByLabelText('Resultado de demostración'), { target: { value: 'demo_card_declined' } }); confirm(); expect(await screen.findByRole('alert')).toHaveTextContent(/rechazada/); expect(push).not.toHaveBeenCalled();
-    fireEvent.change(screen.getByLabelText('Resultado de demostración'), { target: { value: 'demo_gateway_error' } }); confirm(); expect(await screen.findByRole('alert')).toHaveTextContent(/no está disponible/); expect(push).not.toHaveBeenCalled();
-    fireEvent.change(screen.getByLabelText('Resultado de demostración'), { target: { value: 'demo_visa_approved' } }); confirm(); await waitFor(() => expect(push).toHaveBeenCalledTimes(1), { timeout: 3000 });
-  });
+    const view = await prepared();
+    for (const [token, message] of [['demo_card_declined', /rechazada/], ['demo_gateway_error', /no está disponible/]] as const) {
+      fireEvent.change(screen.getByLabelText('Resultado de demostración'), { target: { value: token } }); confirm(); await waitFor(() => expect(push).toHaveBeenCalledWith(expect.stringContaining('/reserva/error?')), { timeout: 3000 });
+      view.rerender(<PublicBookingResultPage initialCriteria={criteria} status="error"/>); expect(screen.getByRole('heading', { name: 'No pudimos completar tu reserva' })).toBeInTheDocument(); expect(screen.getByRole('alert')).toHaveTextContent(message); expect(screen.getByText('Carlos Mendoza')).toBeInTheDocument(); expect(screen.getByText('guest@example.com')).toBeInTheDocument(); expect(screen.getByRole('link', { name: 'Reintentar pago con otra tarjeta' })).toHaveAttribute('href', expect.stringContaining('/checkout/pago?checkIn=2026-10-10'));
+      view.rerender(<PublicBookingConfirmationPage initialCriteria={criteria}/>); expect(screen.getByRole('region', { name: 'No hay una confirmación en esta sesión' })).toBeInTheDocument();
+      push.mockClear(); view.rerender(<PublicPaymentReviewPage initialCriteria={criteria}/>); await screen.findByRole('button', { name: 'Garantizar y confirmar reserva' });
+    }
+    fireEvent.change(screen.getByLabelText('Resultado de demostración'), { target: { value: 'demo_visa_approved' } }); confirm(); await waitFor(() => expect(push).toHaveBeenCalledWith(expect.stringContaining('/reserva/confirmacion?')), { timeout: 3000 });
+  }, 10000);
   it('rejects price changes before submitting a guarantee', async () => {
     await prepared(); const writes = vi.fn(); mockServer.use(http.post('http://pms.test/__mock/checkout/confirmations', () => { writes(); return HttpResponse.json({}); }), http.get('*/api/v1/public/availability', ({ request }) => {
       const dto = structuredClone(buildPublicAvailabilityMock(new URL(request.url).searchParams, publicCatalogueFixture)!);
       const rate = dto.available_room_types[0].rate_plans[0]; rate.base_nightly_rate = '146.00'; rate.total_amount = '438.00'; rate.stay_price_breakdown!.estimated_total = '508.00'; return HttpResponse.json(dto);
     }));
-    confirm(); expect(await screen.findByRole('alert')).toHaveTextContent(/tarifa cambió/); expect(writes).not.toHaveBeenCalled(); expect(push).not.toHaveBeenCalled();
+    confirm(); expect(await screen.findByRole('alert')).toHaveTextContent(/tarifa cambió/); expect(writes).not.toHaveBeenCalled(); expect(push).toHaveBeenCalledWith(expect.stringContaining('/reserva/error?'));
   });
   it('blocks exhausted availability and offline submission', async () => {
-    await prepared(); const writes = vi.fn(); mockServer.use(http.post('http://pms.test/__mock/checkout/confirmations', () => { writes(); return HttpResponse.json({}); }));
-    onlineManager.setOnline(false); confirm(); expect(await screen.findByRole('alert')).toHaveTextContent(/Sin conexión/); expect(writes).not.toHaveBeenCalled(); onlineManager.setOnline(true);
+    const view = await prepared(); const writes = vi.fn(); mockServer.use(http.post('http://pms.test/__mock/checkout/confirmations', () => { writes(); return HttpResponse.json({}); }));
+    onlineManager.setOnline(false); confirm(); expect(await screen.findByRole('alert')).toHaveTextContent(/Sin conexión/); expect(writes).not.toHaveBeenCalled(); onlineManager.setOnline(true); push.mockClear();
     mockServer.use(http.get('*/api/v1/public/availability', ({ request }) => { const dto = structuredClone(buildPublicAvailabilityMock(new URL(request.url).searchParams, publicCatalogueFixture)!); dto.available_room_types[0].available_rooms_count = 0; return HttpResponse.json(dto); }));
-    confirm(); expect(await screen.findByRole('region', { name: 'Revisa tu selección antes de continuar' })).toBeInTheDocument(); expect(writes).not.toHaveBeenCalled(); expect(push).not.toHaveBeenCalled();
+    confirm(); await waitFor(() => expect(push).toHaveBeenCalledWith(expect.stringContaining('/reserva/error?'))); view.rerender(<PublicBookingResultPage initialCriteria={criteria} status="error"/>); expect(screen.getByRole('alert')).toHaveTextContent(/ya no tiene disponibilidad/); expect(screen.getByText('Deluxe King')).toBeInTheDocument(); expect(screen.getByRole('link', { name: 'Modificar fechas o habitación' })).toHaveAttribute('href', expect.stringContaining('/habitaciones?checkIn=2026-10-10')); expect(writes).not.toHaveBeenCalled();
   });
   it('returns a single confirmation with all stays in a multi-room selection', async () => {
     const view = await prepared(true); expect(screen.getByRole('complementary')).toHaveTextContent('US$ 950.00'); confirm(); await waitFor(() => expect(push).toHaveBeenCalledTimes(1), { timeout: 3000 });
@@ -73,4 +78,26 @@ describe('Public payment and guarantee journey', () => {
     const payment = await prepared(); vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'false'); payment.rerender(<PublicPaymentReviewPage initialCriteria={criteria}/>);
     expect(await screen.findByRole('button', { name: 'Garantizar y confirmar reserva' })).toBeDisabled(); expect(screen.queryByTitle('Formulario aislado de tarjeta de prueba')).not.toBeInTheDocument(); expect(push).not.toHaveBeenCalled();
   });
+  it('retains the same key and card after a lost response across the error/payment navigation', async () => {
+    const view = await prepared(); fireEvent.change(screen.getByLabelText('Resultado de demostración'), { target: { value: 'demo_mastercard_approved' } });
+    const originalFetch = globalThis.fetch; const keys: string[] = []; const bodies: string[] = []; let lost = false;
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, options) => {
+      const booking = String(input).includes('/__mock/checkout/confirmations');
+      if (booking) { keys.push(new Headers(options?.headers).get('Idempotency-Key')!); bodies.push(String(options?.body)); }
+      const response = await originalFetch(input, options);
+      if (booking && !lost) { lost = true; throw new TypeError('Connection lost after response'); }
+      return response;
+    });
+    confirm(); await waitFor(() => expect(push).toHaveBeenCalledWith(expect.stringContaining('/reserva/error?')), { timeout: 3000 }); view.rerender(<PublicBookingResultPage initialCriteria={criteria} status="error"/>); expect(screen.getByRole('link', { name: 'Reintentar verificación con la misma tarjeta' })).toBeInTheDocument(); expect(screen.getByRole('button', { name: 'Modificar fechas o habitación' })).toBeDisabled();
+    push.mockClear(); view.rerender(<PublicPaymentReviewPage initialCriteria={criteria}/>); await screen.findByRole('button', { name: 'Garantizar y confirmar reserva' }); expect(screen.getByLabelText('Resultado de demostración')).toHaveValue('demo_mastercard_approved'); expect(screen.getByLabelText('Resultado de demostración')).toBeDisabled();
+    confirm(); await waitFor(() => expect(push).toHaveBeenCalledWith(expect.stringContaining('/reserva/confirmacion?')), { timeout: 3000 }); expect(keys).toHaveLength(2); expect(keys[1]).toBe(keys[0]); expect(bodies[1]).toBe(bodies[0]);
+    view.rerender(<PublicBookingConfirmationPage initialCriteria={criteria}/>); expect(screen.getByRole('heading', { name: 'HB-2026-8942' })).toBeInTheDocument();
+  }, 10000);
+  it('clears checkout and cart on the home action while keeping the currency preference', async () => {
+    const view = await prepared(); confirm(); await waitFor(() => expect(push).toHaveBeenCalledWith(expect.stringContaining('/reserva/confirmacion?')), { timeout: 3000 });
+    view.rerender(<PublicBookingConfirmationPage initialCriteria={criteria}/>); fireEvent.change(screen.getByLabelText('Mostrar precios en'), { target: { value: 'GTQ' } }); fireEvent.click(screen.getByRole('button', { name: 'Volver al inicio' })); expect(push).toHaveBeenLastCalledWith('/');
+    view.rerender(<PublicBookingConfirmationPage initialCriteria={criteria}/>); expect(screen.getByRole('region', { name: 'No hay una confirmación en esta sesión' })).toBeInTheDocument();
+    view.rerender(<PublicBookingReviewPage initialCriteria={criteria}/>); expect(await screen.findByRole('region', { name: 'Tu selección está vacía' })).toBeInTheDocument();
+    view.rerender(<PublicRoomDetailPage roomTypeId="rt_deluxe_king" initialCriteria={criteria}/>); fireEvent.click(await screen.findByRole('button', { name: 'Seleccionar habitación' })); view.rerender(<PublicGuestDataPage initialCriteria={criteria}/>); expect(await screen.findByLabelText('Nombre *')).toHaveValue(''); expect(screen.getByLabelText('Mostrar precios en')).toHaveValue('GTQ');
+  }, 10000);
 });
