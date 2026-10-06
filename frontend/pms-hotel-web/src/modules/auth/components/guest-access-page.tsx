@@ -1,82 +1,134 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { getPublicEnvironment } from "@/lib/env";
-import { HttpNetworkError } from "@/lib/http/errors";
-import { useGuestSession } from "./guest-session-provider";
-import styles from "./guest-access-page.module.css";
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { getPublicEnvironment } from '@/lib/env';
+import { HttpNetworkError } from '@/lib/http/errors';
+import { Modal, Button } from '@/shared/components';
+import { useGuestSession } from './guest-session-provider';
 import { guestAccessReturn } from '../model/checkout-return';
+import type { AuthMode, GuestAccessDetails } from '../model/guest-credentials';
+import type { GuestAccessInput } from '../model/guest-access';
+import { AuthModeTabs } from './auth-mode-tabs';
+import { AuthSocialButtons, type SocialAccessProvider } from './auth-social-buttons';
+import { GuestCredentialsForm } from './guest-credentials-form';
+import styles from './guest-access-page.module.css';
 
-type AccessStep = "options" | "email" | "google";
+const accessInformation = {
+  recovery: { title: 'Recupera el acceso a tu cuenta', text: 'La recuperación de contraseña por correo no está disponible en este momento. Si accediste con Google o Apple, utiliza ese mismo método. Puedes seguir reservando como invitado.' },
+  terms: { title: 'Términos y condiciones', text: 'Los términos y condiciones del hotel están pendientes de publicación. Consulta al hotel las condiciones antes de crear tu cuenta.' },
+  privacy: { title: 'Política de privacidad', text: 'La política de privacidad del hotel está pendiente de publicación. Solicita al hotel información sobre el tratamiento de tus datos antes de enviar información personal.' },
+} as const;
 
 export function GuestAccessPage({ returnTo }: { returnTo?: string } = {}) {
-  const checkoutHref = guestAccessReturn(returnTo);
-  const reservationsAccess = checkoutHref === '/mis-reservas';
-  const [step, setStep] = useState<AccessStep>("options");
-  const [email, setEmail] = useState("");
-  const [showHelp, setShowHelp] = useState(false);
+  const destination = guestAccessReturn(returnTo);
+  const reservationsAccess = destination === '/mis-reservas';
+  const router = useRouter();
+  const [authMode, setAuthMode] = useState<AuthMode>('login');
+  const [email, setEmail] = useState('');
+  const [terms, setTerms] = useState(false);
+  const [completion, setCompletion] = useState<AuthMode | null>(null);
+  const [pendingProvider, setPendingProvider] = useState<SocialAccessProvider>();
+  const [notice, setNotice] = useState<string>();
+  const [information, setInformation] = useState<keyof typeof accessInformation | null>(null);
+  const informationTrigger = useRef<HTMLElement | null>(null);
+  const requestActive = useRef(false);
   const { account, signIn, signOut, isPending, error, resetError } = useGuestSession();
+  const busy = isPending || completion !== null;
 
-  function changeStep(next: AccessStep) {
-    resetError();
-    setShowHelp(false);
-    setStep(next);
+  useEffect(() => {
+    if (!completion || !account) return;
+    const timeout = window.setTimeout(() => router.replace(destination ?? '/mis-reservas'), 900);
+    return () => window.clearTimeout(timeout);
+  }, [completion, account, destination, router]);
+
+  function openInformation(key: keyof typeof accessInformation) {
+    informationTrigger.current = document.activeElement as HTMLElement;
+    setInformation(key);
   }
-
-  if (reservationsAccess && !getPublicEnvironment().useMockApi) return <section className={styles.page}><div className={styles.content}><h1>Mis reservas</h1><p>El acceso a tus reservas no está disponible en este momento. Inténtalo más tarde.</p><Link className={styles.secondary} href="/habitaciones">Reservar como invitado</Link></div></section>;
-
-  if (account) {
-    return <section className={styles.page} aria-labelledby="access-success-title">
-      <div className={styles.content}>
-        <p className={styles.eyebrow} role="status">ACCESO COMPLETADO</p>
-        <h1 id="access-success-title">Tu cuenta está lista</h1>
-        <p>Tu sesión está iniciada. Puedes consultar tu cuenta o continuar reservando.</p>
-        <div className={styles.card}>
-          <p>{account.email ?? "Cuenta de huésped"}</p>
-          <p>Método de acceso <strong>{account.externalIdentities.some(identity => identity.provider === "GOOGLE") ? "Google" : "Correo electrónico"}</strong></p>
-        </div>
-        <Link className={styles.primary} href="/cuenta">Ir a mi cuenta</Link>
-        <Link className={styles.secondary} href={checkoutHref ?? '/'}>{reservationsAccess ? 'Ir a Mis reservas' : checkoutHref ? 'Continuar mi reserva' : 'Continuar reservando'}</Link>
-        {reservationsAccess && !account.externalIdentities.some(identity => identity.provider === 'GOOGLE') && <p>Para vincular tu reserva, accede con Google utilizando el mismo correo de la reserva.</p>}
-        <button className={styles.secondary} type="button" onClick={signOut}>Cerrar sesión</button>
-      </div>
-    </section>;
+  function closeInformation() {
+    setInformation(null);
+    informationTrigger.current?.focus();
+  }
+  function changeMode(mode: AuthMode) {
+    if (busy) return;
+    resetError(); setNotice(undefined); setTerms(false); setAuthMode(mode);
+  }
+  async function access(input: GuestAccessInput): Promise<boolean> {
+    if (busy || requestActive.current) return false;
+    if (!getPublicEnvironment().useMockApi) {
+      setNotice('El acceso a tu cuenta no está disponible en este momento. Inténtalo más tarde o continúa como invitado.');
+      return false;
+    }
+    requestActive.current = true;
+    resetError(); setNotice(undefined);
+    try {
+      const accepted = await signIn(input);
+      if (accepted) { setCompletion(authMode); setEmail(''); }
+      return accepted;
+    } finally { requestActive.current = false; setPendingProvider(undefined); }
+  }
+  function socialAccess(provider: SocialAccessProvider) {
+    if (authMode === 'register' && !terms) {
+      setNotice('Acepta los términos y la política de privacidad para continuar.');
+      document.getElementById('auth-terms')?.focus();
+      return;
+    }
+    setPendingProvider(provider);
+    void access({ method: provider });
+  }
+  function credentialsAccess(details: GuestAccessDetails) {
+    return access({ method: 'EMAIL', email: details.email,
+      ...(authMode === 'register' ? { registration: { fullName: details.fullName } } : {}) });
   }
 
   const errorMessage = error instanceof HttpNetworkError
-    ? "No pudimos conectar. Comprueba tu conexión y vuelve a intentarlo."
-    : "No pudimos completar el acceso. Revisa los datos o vuelve a intentarlo.";
+    ? 'No pudimos conectar. Comprueba tu conexión y vuelve a intentarlo.'
+    : 'No pudimos completar el acceso. Revisa los datos o vuelve a intentarlo.';
 
-  return <section className={styles.page} aria-labelledby="access-title" aria-busy={isPending}>
-    {step === "options"
-      ? <Link className={styles.back} href={reservationsAccess ? '/' : checkoutHref ?? '/'}>{reservationsAccess ? '← Volver al inicio' : checkoutHref ? '← Volver a los datos de mi reserva' : '← Volver al inicio'}</Link>
-      : <button className={styles.back} disabled={isPending} onClick={() => changeStep("options")} type="button">← Volver a opciones</button>}
+  if (account) return <section className={`${styles.page} ${styles.authPage}`} aria-labelledby="access-success-title">
     <div className={styles.content}>
-      <h1 id="access-title">{step === "email" ? "Accede con tu correo" : step === "google" ? "Continuar con Google" : "Accede a tu cuenta"}</h1>
-      <p>Consulta tus reservas, beneficios y preferencias. También puedes reservar sin crear una cuenta.</p>
-      {reservationsAccess && <div className={styles.notice}><strong>¿Reservaste como invitado?</strong><p>Inicia sesión para vincular y consultar tu reserva. Utiliza la misma cuenta de Google cuyo correo ingresaste al reservar. Después verificaremos tu referencia con un código temporal.</p></div>}
-      {step === "options" ? <div className={styles.card}>
-        <h2>Elige cómo continuar</h2>
-        <button className={styles.google} onClick={() => changeStep("google")} type="button"><span aria-hidden="true">G</span>Continuar con Google</button>
-        {!reservationsAccess && <button className={styles.primary} onClick={() => changeStep("email")} type="button">Continuar con correo</button>}
-        <Link className={styles.secondary} href={reservationsAccess ? '/habitaciones' : checkoutHref ?? '/'}>{reservationsAccess ? 'Reservar como invitado' : 'Continuar como invitado'}</Link>
-      </div> : step === "email" ? <form className={styles.card} onSubmit={event => {
-        event.preventDefault();
-        if (!email.trim()) return;
-        void signIn({ method: "EMAIL", email: email.trim() });
-      }}>
-        <label htmlFor="guest-email">Correo electrónico</label>
-        <input autoComplete="email" id="guest-email" disabled={isPending} onChange={event => { setEmail(event.target.value); resetError(); }} required type="email" value={email} aria-describedby={error ? "access-error" : undefined} />
-        <button className={styles.recovery} onClick={() => setShowHelp(!showHelp)} type="button" aria-expanded={showHelp} aria-controls="access-help">¿Problemas para acceder?</button>
-        {showHelp && <p id="access-help">Revisa el correo e intenta de nuevo. También puedes volver a opciones y continuar como invitado.</p>}
-        <button className={styles.primary} disabled={isPending} type="submit">{isPending ? "Accediendo…" : "Acceder con correo"}</button>
-      </form> : <div className={styles.card}>
-        <p>Accede con tu cuenta de Google. También puedes continuar reservando como invitado.</p>
-        {getPublicEnvironment().useMockApi ? <button className={styles.primary} disabled={isPending} onClick={() => void signIn({ method: "GOOGLE" })} type="button">{isPending ? "Accediendo…" : "Acceder con Google"}</button> : <a className={styles.primary} href="/api/auth/guest/google">Continuar con Google</a>}
-      </div>}
-      {isPending && <p className={styles.status} role="status">Verificando acceso…</p>}
-      {error && <p id="access-error" className={styles.status} role="alert">{errorMessage}</p>}
+      <div className={styles.successMark} aria-hidden="true">✓</div>
+      <h1 id="access-success-title">{completion === 'register' ? 'Tu cuenta está creada' : 'Tu cuenta está lista'}</h1>
+      <p role="status">{completion ? 'Ya puedes continuar. Te estamos redirigiendo…' : 'Tu sesión está iniciada. Puedes consultar tus reservas o continuar reservando.'}</p>
+      <div className={`${styles.card} ${styles.authCard} ${styles.successCard}`}>
+        <p>{account.email ?? 'Cuenta de huésped'}</p>
+        <Link className={styles.primary} href={destination ?? '/mis-reservas'}>{destination && !reservationsAccess ? 'Continuar mi reserva' : 'Ir a Mis reservas'}</Link>
+        <Link className={styles.secondary} href="/cuenta">Ir a mi cuenta</Link>
+        <button className={styles.recovery} type="button" onClick={() => { setCompletion(null); signOut(); }}>Cerrar sesión</button>
+      </div>
     </div>
+  </section>;
+
+  return <section className={`${styles.page} ${styles.authPage}`} aria-labelledby="access-title" aria-busy={busy}>
+    <div className={styles.content}>
+      <p className={styles.eyebrow}>TU PRÓXIMA ESTADÍA COMIENZA AQUÍ</p>
+      <h1 id="access-title">Accede a tu cuenta</h1>
+      <p>Consulta tus reservas, beneficios y preferencias. Iniciar sesión es opcional: puedes buscar y reservar sin crear una cuenta.</p>
+      <div className={`${styles.card} ${styles.authCard}`}>
+        <AuthModeTabs mode={authMode} disabled={busy} onChange={changeMode} />
+        <div id={`auth-panel-${authMode === 'login' ? 'register' : 'login'}`} role="tabpanel"
+          aria-labelledby={`auth-tab-${authMode === 'login' ? 'register' : 'login'}`} hidden />
+        <div id={`auth-panel-${authMode}`} role="tabpanel" aria-labelledby={`auth-tab-${authMode}`} tabIndex={0}>
+          {authMode === 'register' && <p className={styles.welcome}>Regístrate para guardar tu historial de reservas y obtener tarifas exclusivas.</p>}
+          {reservationsAccess && <div className={styles.linkNotice}><strong>¿Reservaste como invitado?</strong><p>Accede con Google para vincular y consultar tu reserva. Necesitarás su referencia y un código enviado al correo registrado.</p></div>}
+          <AuthSocialButtons mode={authMode} disabled={busy} pendingProvider={isPending ? pendingProvider : undefined} onAccess={socialAccess} />
+          <div className={styles.divider}><span>o continúa con correo</span></div>
+          <GuestCredentialsForm key={authMode} mode={authMode} busy={busy} email={email} terms={terms}
+            onTermsChange={accepted => { setTerms(accepted); setNotice(undefined); }}
+            onEmailChange={value => { setEmail(value); resetError(); setNotice(undefined); }}
+            onSubmit={credentialsAccess} onRecovery={() => openInformation('recovery')} onLegal={openInformation} />
+          {isPending && <p className={styles.status} role="status">Verificando acceso…</p>}
+          {(error || notice) && <p id="access-error" className={styles.accessError} role="alert">{notice ?? errorMessage}</p>}
+        </div>
+        <div className={styles.guestOption}>
+          <Link className={styles.secondary} href={reservationsAccess ? '/habitaciones' : destination ?? '/'}>Continuar como invitado</Link>
+          <p>Al crear una cuenta podrás consultar reservas, beneficios y preferencias. La reserva pública funciona también sin cuenta.</p>
+        </div>
+      </div>
+    </div>
+    {information && <div className={styles.modalLayer}><Modal title={accessInformation[information].title} onClose={closeInformation}
+      footer={<Button onClick={closeInformation}>Entendido</Button>}><p>{accessInformation[information].text}</p></Modal></div>}
   </section>;
 }

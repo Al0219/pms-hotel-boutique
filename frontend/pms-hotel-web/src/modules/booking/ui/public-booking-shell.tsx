@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useRef, useState, type ReactNode } from 'react';
 import { Button, Modal } from '@/shared/components';
 import { useGuestSession } from '@/modules/auth';
@@ -10,6 +11,7 @@ import { usePublicDisplayCurrency } from '../components/public-booking-provider'
 import styles from './public-booking-shell.module.css';
 
 export function PublicBookingShell({ children }: { children: ReactNode }) {
+  const isAccessPage = usePathname() === '/acceso';
   const { account } = useGuestSession();
   const currency = usePublicDisplayCurrency();
   const [information, setInformation] = useState<{ title: string; text: string } | null>(null);
@@ -27,6 +29,7 @@ export function PublicBookingShell({ children }: { children: ReactNode }) {
     <header className={styles.header}>
       <div className={styles.headerInner}>
         <Link href="/" className={styles.brand} aria-label="Hotel Boutique, inicio">Hotel Boutique</Link>
+        {isAccessPage ? <Link href="/" className={styles.authReturn}>← Volver al inicio</Link> : <>
         <nav id="public-navigation" aria-label="Navegación pública" className={`${styles.navigation} ${menuOpen ? styles.navigationOpen : ''}`}
           onClick={() => setMenuOpen(false)} onKeyDown={event => {
             if (event.key === 'Escape') { setMenuOpen(false); menuTrigger.current?.focus(); }
@@ -45,6 +48,7 @@ export function PublicBookingShell({ children }: { children: ReactNode }) {
             <span className={styles.accountLabel}>{account ? 'Mi cuenta' : 'Iniciar sesión'}</span>
           </Link>
         </div>
+        </>}
       </div>
     </header>
     <main id="public-content" className={styles.main} tabIndex={-1}>{children}</main>
