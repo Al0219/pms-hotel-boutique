@@ -6,7 +6,7 @@ Refactorización frontend solicitada por José para WEB-2 / `IMP-WEB-0202`, ruta
 
 El backlog conserva `IMP-WEB-0201` y `IMP-WEB-0202` PENDIENTE. El código de 0201 (GuestAccount/ExternalIdentity, service y mapper) ya existe y se reutiliza. La autorización del usuario cubre este incremento de presentación y prototipo local; no modifica el XLSX ni declara terminada la integración de autenticación real.
 
-## Comportamiento
+## Comportamiento del prototipo local (`NEXT_PUBLIC_USE_MOCK_API=true`)
 
 - Encabezado exclusivo de `/acceso`: Hotel Boutique e inicio. Las otras rutas conservan navegación y acceso a cuenta de WEB-1.
 - Tarjeta responsive con pestañas login/registro, operables con flechas, Home/End y teclado. Email se conserva al alternar; contraseñas se descartan.
@@ -21,7 +21,7 @@ El backlog conserva `IMP-WEB-0201` y `IMP-WEB-0202` PENDIENTE. El código de 020
 
 La decisión `DEC-B-004` continúa rigiendo la autenticación **real**: cuenta Guest mediante Google OIDC. La especificación del usuario añade credenciales al **frontend**; Apple queda excluido por la corrección solicitada el 2026-10-06. Este incremento prepara sus interacciones locales; no cambia el backend, proveedores externos aprobados, permisos, BFF, cookies o JWT. BD1 debe acordar esos métodos antes de conectarlos.
 
-El transporte existente sigue siendo exclusivamente MSW: `POST http://pms.test/__mock/guest-access`. No es un endpoint Backend confirmado. Entradas del prototipo:
+El transporte del prototipo local sigue siendo exclusivamente MSW: `POST http://pms.test/__mock/guest-access`. No es un endpoint Backend confirmado. Entradas del prototipo:
 
 ```ts
 type GuestAccessInput =
@@ -35,7 +35,7 @@ Las contraseñas y su confirmación permanecen únicamente en los inputs transit
 
 El registro local usa `guest-demo-register`, empieza sin reservas y aplica el nombre a su fixture **GuestProfile**, nunca a GuestAccount. Nombre y apellido son obligatorios en el mapper GuestProfile existente; el formulario solicita ambos dentro de Nombre completo para no producir un perfil inválido. El acceso posterior con el mismo correo conserva ese perfil mientras la aplicación siga abierta. El checkbox de marketing es presentación local: no afirma registrar un consentimiento real o suscribir un correo. Las políticas del hotel siguen pendientes de publicación y se muestran como tales en sus diálogos.
 
-Con `NEXT_PUBLIC_USE_MOCK_API=false`, estos botones/formularios muestran indisponibilidad sin iniciar requests de autenticación ni contactar el BFF. El servicio mantiene además su guard independiente. La recarga completa termina la sesión local en memoria.
+Tras la integración de BD1 en `main` el 2026-10-06, `NEXT_PUBLIC_USE_MOCK_API=false` utiliza la sesión Guest y el acceso Google reales mediante el BFF existente. No ofrece formularios locales de correo/registro ni Apple. Se conserva la comprobación de sesión, el logout real y el resumen de cuenta integrado, sin modificar sus contratos. El servicio de acceso simulado mantiene su guard independiente. La recarga completa termina únicamente la sesión local del prototipo en memoria. Véase [integración de cuenta](33_PUBLIC_ACCOUNT_FRONTEND.md).
 
 ## Verificación manual en puerto 3000
 
@@ -70,3 +70,11 @@ La revisión WEB-1 y comparación con Figma siguen siendo requisitos de cierre f
 - `npm run test -- src/modules/auth/components/guest-access-page.test.tsx src/modules/auth/service/guest-access.service.test.ts src/modules/account --pool=threads --maxWorkers=1 --reporter=dot`: PASS, 8 archivos / 53 pruebas. La primera ejecución concurrente con build/lint agotó el límite de 5 segundos de una prueba de vinculación; la repetición sin otras validaciones en paralelo pasó, sin alterar límites ni assertions.
 - `npm run lint`, `npm run build`, `npm run typecheck` (tras build) y `git diff --check`: PASS. Se descarta el cambio generado de `next-env.d.ts`.
 - Chrome sobre el servidor de desarrollo en `localhost:3000`: PASS para ausencia de Apple en login/registro, Google, formularios, errores recuperables y retorno al checkout. Responsive sin overflow a 320–1440 px; sin errores de consola, requests de autenticación al Backend ni transporte de contraseñas. Servidor iniciado con `NEXT_PUBLIC_USE_MOCK_API=true`; no se valida autenticación real.
+
+## Resolución preparada frente a `origin/main` — 2026-10-06
+
+Validación temporal frente a `ea3ac86`, sin modificar la rama publicada. Se combinan los cambios de BD1 en cuenta/sesión real con la eliminación de Apple; se conserva el correo único en la cuenta y el guard de identidades opcionales. Los dos conflictos corresponden a `account-dashboard-page.tsx` y `guest-access-page.test.tsx`.
+
+- `npm run test -- src/modules/auth src/modules/account src/app/api/auth --pool=threads --maxWorkers=1 --reporter=dot`: PASS, 19 archivos / 166 pruebas, incluidos sesión real y BFF.
+- `npm run lint`, `NEXT_PUBLIC_USE_MOCK_API=true npm run build`, `npm run typecheck` tras build: PASS.
+- Sin marcadores de conflicto; diff contra `origin/main` limitado a los ocho archivos de la eliminación de Apple. No se modifican contratos ni código Backend.

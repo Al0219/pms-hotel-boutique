@@ -19,8 +19,8 @@ function SessionObserver() {
   const { status } = useGuestSession();
   return <output aria-label="Guest session">{status}</output>;
 }
-function setup(returnTo?: string) {
-  vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'true');
+function setup(returnTo?: string, mockMode = true) {
+  vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', String(mockMode));
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   clients.push(client);
   function Harness({ page }: { page: 'access' | 'account' | 'profile' }) {
@@ -65,7 +65,9 @@ describe('Guest identity frontend', () => {
     expect(await screen.findByRole('heading', { name: 'Tu cuenta está lista' })).toBeInTheDocument();
     navigate('account');
     expect(await screen.findByRole('heading', { name: 'Mi cuenta' })).toBeInTheDocument();
-    expect(screen.getByText(/Acceso por correo · demo@example.com/)).toBeInTheDocument();
+    expect(screen.getByText(/Acceso por correo/)).toBeInTheDocument();
+    expect(screen.getAllByText("demo@example.com")).toHaveLength(1);
+    expect(screen.queryByRole("navigation", { name: "Navegación principal" })).not.toBeInTheDocument();
     expect(screen.queryByText(/Google conectado/)).not.toBeInTheDocument();
     navigate('profile');
     expect(screen.getByText('Perfil del huésped')).toBeInTheDocument();
@@ -100,7 +102,8 @@ describe('Guest identity frontend', () => {
     await user.click(screen.getByRole('button', { name: 'Continuar con Google' }));
     await screen.findByRole('heading', { name: 'Tu cuenta está lista' });
     navigate('account');
-    expect(await screen.findByText(/Google conectado · guest.google@example.com/)).toBeInTheDocument();
+    expect(await screen.findByText(/Google conectado/)).toBeInTheDocument();
+    expect(screen.getAllByText("guest.google@example.com")).toHaveLength(1);
   });
 
   it('offers Google without Apple in both login and registration', async () => {
@@ -248,10 +251,16 @@ describe('Guest identity frontend', () => {
     expect(screen.getByRole('checkbox', { name: /Acepto los Términos/ })).not.toBeChecked();
   });
 
-  it('makes no authentication request when local mocks are off', async () => {
-    const requests = vi.fn(); mockServer.use(http.post(endpoint, () => { requests(); return HttpResponse.json({}); }));
-    setup(); vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'false'); fillEmail(); submit();
-    expect(await screen.findByRole('alert')).toHaveTextContent('no está disponible');
+  it('offers only the real Google BFF when local mocks are off', async () => {
+    const requests = vi.fn();
+    mockServer.use(http.post(endpoint, () => { requests(); return HttpResponse.json({}); }),
+      http.get('*/api/auth/guest/session', () => new HttpResponse(null, { status: 401 })));
+    setup(undefined, false);
+    expect(await screen.findByRole('link', { name: 'Continuar con Google' })).toHaveAttribute('href', '/api/auth/guest/google');
+    expect(screen.queryByLabelText('Correo electrónico')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Contraseña')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Apple/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument();
     expect(requests).not.toHaveBeenCalled(); expect(navigation.replace).not.toHaveBeenCalled();
     expect(screen.getByLabelText('Guest session')).toHaveTextContent('signed-out');
   });

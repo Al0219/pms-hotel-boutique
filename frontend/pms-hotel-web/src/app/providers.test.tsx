@@ -3,6 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { renderToString } from "react-dom/server";
 import { hydrateRoot } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { http, HttpResponse } from "msw";
+import { mockServer } from "@/data/mocks/server";
 
 import { enableMocking } from "@/data/mocks/enable";
 
@@ -14,6 +16,7 @@ afterEach(() => { cleanup(); vi.unstubAllEnvs(); vi.mocked(enableMocking).mockRe
 describe("Providers", () => {
   it("renders technical children through the Query provider", async () => {
     vi.stubEnv("NEXT_PUBLIC_USE_MOCK_API", "false");
+    mockServer.use(http.get("*/api/auth/guest/session", () => new HttpResponse(null, { status: 401 })));
     vi.mocked(enableMocking).mockResolvedValue(undefined);
     render(<Providers><p>Technical shell</p></Providers>);
     await act(async () => {});

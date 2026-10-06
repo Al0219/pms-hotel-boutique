@@ -7,6 +7,7 @@ import { getPublicEnvironment } from '@/lib/env';
 import { HttpNetworkError } from '@/lib/http/errors';
 import { Modal, Button } from '@/shared/components';
 import { useGuestSession } from './guest-session-provider';
+import { GuestSessionCheck } from './guest-session-check';
 import { guestAccessReturn } from '../model/checkout-return';
 import type { AuthMode, GuestAccessDetails } from '../model/guest-credentials';
 import type { GuestAccessInput } from '../model/guest-access';
@@ -22,6 +23,43 @@ const accessInformation = {
 } as const;
 
 export function GuestAccessPage({ returnTo }: { returnTo?: string } = {}) {
+  const { status } = useGuestSession();
+  if (status === 'checking' || status === 'error') return <GuestSessionCheck />;
+  return getPublicEnvironment().useMockApi
+    ? <MockGuestAccessPage returnTo={returnTo} />
+    : <RealGuestAccessPage returnTo={returnTo} />;
+}
+
+function RealGuestAccessPage({ returnTo }: { returnTo?: string }) {
+  const destination = guestAccessReturn(returnTo);
+  const reservationsAccess = destination === '/mis-reservas';
+  const { account, signOut, isPending, error } = useGuestSession();
+  return <section className={`${styles.page} ${styles.authPage}`} aria-labelledby={account ? 'access-success-title' : 'access-title'} aria-busy={isPending}>
+    <div className={styles.content}>
+      {account ? <>
+        <h1 id="access-success-title">Tu cuenta está lista</h1>
+        <p>Tu sesión está iniciada. Puedes consultar tu cuenta o continuar reservando.</p>
+        <div className={`${styles.card} ${styles.authCard}`}>
+          <p>{account.email ?? 'Cuenta de huésped'}</p>
+          <Link className={styles.primary} href="/cuenta">Ir a mi cuenta</Link>
+          <Link className={styles.secondary} href={destination ?? '/'}>{reservationsAccess ? 'Ir a Mis reservas' : destination ? 'Continuar mi reserva' : 'Continuar reservando'}</Link>
+          <button className={styles.secondary} type="button" disabled={isPending} onClick={() => void signOut()}>{isPending ? 'Cerrando sesión…' : 'Cerrar sesión'}</button>
+          {error && <p role="alert">No se pudo cerrar la sesión. Inténtalo nuevamente.</p>}
+        </div>
+      </> : <>
+        <h1 id="access-title">Accede a tu cuenta</h1>
+        <p>Tu cuenta se vincula de forma segura mediante Google. También puedes reservar sin crear una cuenta.</p>
+        <div className={`${styles.card} ${styles.authCard}`}>
+          {reservationsAccess && <p>Accede con Google para vincular y consultar tu reserva. Necesitarás su referencia y un código enviado al correo registrado.</p>}
+          <a className={styles.google} href="/api/auth/guest/google">Continuar con Google</a>
+          <Link className={styles.secondary} href={reservationsAccess ? '/habitaciones' : destination ?? '/'}>Continuar como invitado</Link>
+        </div>
+      </>}
+    </div>
+  </section>;
+}
+
+function MockGuestAccessPage({ returnTo }: { returnTo?: string }) {
   const destination = guestAccessReturn(returnTo);
   const reservationsAccess = destination === '/mis-reservas';
   const router = useRouter();
@@ -96,7 +134,7 @@ export function GuestAccessPage({ returnTo }: { returnTo?: string } = {}) {
         <p>{account.email ?? 'Cuenta de huésped'}</p>
         <Link className={styles.primary} href={destination ?? '/mis-reservas'}>{destination && !reservationsAccess ? 'Continuar mi reserva' : 'Ir a Mis reservas'}</Link>
         <Link className={styles.secondary} href="/cuenta">Ir a mi cuenta</Link>
-        <button className={styles.recovery} type="button" onClick={() => { setCompletion(null); signOut(); }}>Cerrar sesión</button>
+        <button className={styles.recovery} type="button" disabled={isPending} onClick={() => { setCompletion(null); void signOut(); }}>Cerrar sesión</button>
       </div>
     </div>
   </section>;

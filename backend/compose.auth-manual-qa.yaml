@@ -1,0 +1,41 @@
+# Optional isolated evidence for BE-005-AUTH-API-01; integrated PMS uses root compose.yaml.
+# Not used by verify, Web/BFF or Google integrated flows.
+services:
+  # Disposable synthetic credentials: ONLY this isolated manual QA profile.
+  # No env_file or interpolation of normal application/production credentials.
+  manual-postgres:
+    profiles: ["manual-qa"]
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: pms_manual_qa
+      POSTGRES_USER: pms_qa
+      POSTGRES_PASSWORD: disposable-manual-qa-db-password
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pms_qa -d pms_manual_qa"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  manual-backend:
+    profiles: ["manual-qa"]
+    build:
+      context: .
+    environment:
+      PMS_DATABASE_URL: jdbc:postgresql://manual-postgres:5432/pms_manual_qa
+      PMS_DATABASE_USERNAME: pms_qa
+      PMS_DATABASE_PASSWORD: disposable-manual-qa-db-password
+      PMS_BOOTSTRAP_ADMIN_USERNAME: qa_staff
+      PMS_BOOTSTRAP_ADMIN_EMAIL: qa_staff@example.test
+      PMS_BOOTSTRAP_ADMIN_PASSWORD: QA-Disposable-Staff-Only!2026
+    ports:
+      - "127.0.0.1:18086:8080"
+    depends_on:
+      manual-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/actuator/health"]
+      start_period: 30s
+      interval: 2s
+      timeout: 3s
+      retries: 30

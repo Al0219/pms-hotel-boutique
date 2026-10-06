@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
   try { credentials = await request.json(); } catch { return NextResponse.json({ error: "Invalid Staff credentials" }, { status: 400 }); }
   if (!validCredentials(credentials)) return NextResponse.json({ error: "Invalid Staff credentials" }, { status: 400 });
   try {
-    const backend = await backendStaffRequest("/api/v1/staff-auth/sessions", {
+    const backend = await backendStaffRequest("/api/v1/staff-auth/login", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ username: credentials.username.trim(), password: credentials.password }),
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
   const access = request.cookies.get(staffAccessCookie)?.value;
   if (!access) return NextResponse.json({ error: "Staff session required" }, { status: 401 });
   try {
-    const backend = await backendStaffRequest("/api/v1/staff-auth/session", { headers: { authorization: `Bearer ${access}` } });
+    const backend = await backendStaffRequest("/api/v1/staff-auth/me", { headers: { authorization: `Bearer ${access}` } });
     if (!backend.ok) return NextResponse.json({ error: "Staff session required" }, { status: 401 });
     return NextResponse.json(await backend.json());
   } catch { return NextResponse.json({ error: "Staff session unavailable" }, { status: 503 }); }
@@ -41,7 +41,7 @@ export async function DELETE(request: NextRequest) {
   const access = request.cookies.get(staffAccessCookie)?.value;
   const response = new NextResponse(null, { status: 204 });
   if (access) {
-    try { await backendStaffRequest("/api/v1/staff-auth/session", { method: "DELETE", headers: { authorization: `Bearer ${access}` } }); }
+    try { await backendStaffRequest("/api/v1/staff-auth/logout", { method: "POST", headers: { authorization: `Bearer ${access}` } }); }
     catch { /* Cookie clearing still terminates the browser session. */ }
   }
   clearStaffCookies(response);

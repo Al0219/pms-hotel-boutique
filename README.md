@@ -12,24 +12,47 @@ frontend/
 backend/
 ```
 
-## Ejecución con Docker
+## Stack local integrado con Docker
 
-Desde la raíz, levantar la pila Web + Backend + PostgreSQL con un solo comando:
+PostgreSQL + Backend + Web se levantan desde compose.yaml en la raíz.
+Preparar `.env` a partir de [`.env.example`](.env.example) (sin sobrescribir uno
+existente), completar Google y, para Staff local, los tres PMS_BOOTSTRAP_ADMIN_*.
+La cuenta sintética opcional local_staff está documentada en el ejemplo; el
+bootstrap permanece deshabilitado si los tres valores quedan vacíos. No usar
+esa contraseña en producción ni sustituir credenciales de una BD existente.
 
 ```bash
-docker compose up --build
+test -f .env || cp .env.example .env
+# Editar .env antes del primer arranque; el archivo está ignorado por Git.
+docker compose --env-file .env up -d --build
 ```
 
-Abrir `http://localhost:3000`. Si ese puerto está ocupado, usar
-`PMS_WEB_PORT=3001 docker compose up --build` y abrir el puerto elegido. El
-servicio Web es el único publicado al host; PostgreSQL y Spring Boot se
-comunican dentro de la red privada de Compose. Para detener y eliminar los
-datos locales: `docker compose down -v`.
+Con el ejemplo: Web en http://localhost:3001 y Swagger en
+http://localhost:8081/swagger-ui/index.html. PMS_WEB_PORT/PMS_BACKEND_PORT permiten
+cambiar esos puertos. PMS_WEB_PUBLIC_URL y GOOGLE_REDIRECT_URI deben usar el mismo
+origen Web; el callback es `/api/auth/guest/google/callback`, registrado exactamente
+en Google. NEXT_PUBLIC_USE_MOCK_API=false permite consumir el BFF real.
 
-Los valores predeterminados son solo para desarrollo local. Copiar
-[`.env.example`](.env.example) a `.env` para cambiar el puerto Web o la
-contraseña local de PostgreSQL. Android se ejecuta fuera de Compose mediante
-Expo, porque requiere un emulador o dispositivo del host.
+Web usa PMS_BACKEND_INTERNAL_URL=http://backend:8080; Backend usa postgres:5432.
+Los puertos host no cambian esas URLs internas. PostgreSQL no publica puerto;
+Backend se publica solo en 127.0.0.1 para desarrollo/Swagger. Google recibe las
+variables server-side del .env; el navegador pasa por Web/BFF, con cookies
+HttpOnly y sin tokens en respuestas JSON al JavaScript de la aplicación.
+
+[Guía completa: preparación, Staff, Google Guest y comprobaciones](docs/13_LOCAL_INTEGRATED_STACK.md).
+[QA de login/me/logout y Swagger](backend/docs/41_EXPLICIT_AUTH_ENDPOINTS_QA.md).
+
+```bash
+docker compose --env-file .env config --quiet
+docker compose --env-file .env ps
+docker compose --env-file .env down
+```
+
+`down` conserva el volumen local. El reset `down -v` elimina sus datos y se usa
+solo cuando se decide descartar esa BD. Android se ejecuta fuera de Compose
+mediante Expo. backend/compose.bd2-test.yaml se usa exclusivamente para verify
+con PostgreSQL efímero, independiente del stack raíz. Los puertos 18085/18086
+pertenecen a evidencia/QA aislada y no son necesarios para Staff/Guest integrados.
 
 ## Presentación del Backend con Postman
 

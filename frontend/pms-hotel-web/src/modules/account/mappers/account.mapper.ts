@@ -1,16 +1,17 @@
 import { DomainMappingError } from "@/lib/errors/domain-mapping-error";
 
-import type { AccountSummaryDTO, StayHistoryItemDTO } from "../dtos/account.dto";
-import type { AccountSummary, StayHistoryItem } from "../model/account";
+import type { AccountSummaryDTO, MockAccountSummaryDTO, StayHistoryItemDTO } from "../dtos/account.dto";
+import type { RealAccountSummary, MockAccountSummary, StayHistoryItem } from "../model/account";
 
 function requiredText(value: string | undefined | null, code: string): string {
-  const normalized = value?.trim();
+  const normalized = typeof value === "string" ? value.trim() : undefined;
   if (!normalized) throw new DomainMappingError(code);
   return normalized;
 }
 
-export function mapAccountSummary(dto: AccountSummaryDTO): AccountSummary {
+export function mapMockAccountSummary(dto: MockAccountSummaryDTO): MockAccountSummary {
   return {
+    source: "mock",
     accountId: requiredText(dto.account_id, "INVALID_ACCOUNT_ID"),
     profileId: dto.profile_id == null ? null : requiredText(dto.profile_id, "INVALID_PROFILE_ID"),
     guestName: requiredText(dto.guest_name, "INVALID_GUEST_NAME"),
@@ -66,4 +67,41 @@ export function mapStayHistoryItem(dto: StayHistoryItemDTO): StayHistoryItem {
     stayId: requiredText(dto.stay_id, "INVALID_STAY_ID"),
     status: dto.status || "COMPLETADA",
   };
+}
+
+function dateOnly(value: string): string {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)
+      || Number.isNaN(Date.parse(value)) || new Date(value).toISOString().slice(0, 10) !== value) {
+    throw new DomainMappingError("INVALID_STAY_DATE");
+  }
+  return value;
+}
+
+export function mapAccountSummary(dto: AccountSummaryDTO): RealAccountSummary {
+  if (!dto || !Array.isArray(dto.profiles) || typeof dto.active !== "boolean"
+      || !Number.isSafeInteger(dto.linkedReservationsCount) || dto.linkedReservationsCount < 0
+      || dto.upcomingStay === undefined) throw new DomainMappingError("INVALID_ACCOUNT_SUMMARY");
+  const profiles = dto.profiles.map(p => {
+    if (!p || !["ACTIVE", "INACTIVE"].includes(p.status)
+        || (p.preferredLanguage !== null && typeof p.preferredLanguage !== "string")) {
+      throw new DomainMappingError("INVALID_ACCOUNT_PROFILE");
+    }
+    return { id: requiredText(p.profileId, "INVALID_PROFILE_ID"),
+      firstName: requiredText(p.firstName, "INVALID_PROFILE_NAME"), lastName: requiredText(p.lastName, "INVALID_PROFILE_NAME"),
+      preferredLanguage: p.preferredLanguage, status: p.status };
+  });
+  const stay = dto.upcomingStay;
+  const upcomingStay = stay === null ? null : {
+    reservationId: requiredText(stay.reservationId, "INVALID_RESERVATION_ID"),
+    stayId: requiredText(stay.stayId, "INVALID_STAY_ID"),
+    confirmationCode: requiredText(stay.confirmationCode, "INVALID_RESERVATION_CODE"),
+    arrival: dateOnly(stay.arrival), departure: dateOnly(stay.departure),
+  };
+  if (upcomingStay && (upcomingStay.arrival >= upcomingStay.departure || dto.linkedReservationsCount === 0)) {
+    throw new DomainMappingError("INVALID_UPCOMING_STAY");
+  }
+  return { source: "real", accountId: requiredText(dto.guestAccountId, "INVALID_ACCOUNT_ID"),
+    email: requiredText(dto.email, "INVALID_GUEST_EMAIL"), isActive: dto.active, profiles,
+    profileId: profiles.length === 1 ? profiles[0].id : null,
+    linkedReservationsCount: dto.linkedReservationsCount, upcomingStay };
 }

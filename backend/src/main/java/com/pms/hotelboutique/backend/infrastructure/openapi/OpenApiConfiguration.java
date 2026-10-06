@@ -4,6 +4,10 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springdoc.core.customizers.OperationCustomizer;
+import org.springdoc.core.customizers.OpenApiCustomizer;
+import io.swagger.v3.oas.models.media.Schema;
+import java.util.List;
+import java.util.Set;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 @Configuration
@@ -33,6 +37,20 @@ public class OpenApiConfiguration {
                 .type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.COOKIE).name("pms_guest_refresh")
                 .description("Refresh opaco Guest reenviado por BFF; independiente de Staff."));
     }
+    @Bean
+    OpenApiCustomizer guestAccountSummaryNullability() {
+        return api -> {
+            Schema<?> summary = api.getComponents().getSchemas().get("GuestAccountSummaryResponse");
+            if (summary == null) return;
+            var properties = summary.getProperties();
+            // OpenAPI 3.1: object reference OR null, not a reference intersected with type:null.
+            String description = properties.get("upcomingStay").getDescription();
+            properties.put("upcomingStay", new Schema<>().description(description).anyOf(List.of(
+                    new Schema<>().$ref("#/components/schemas/UpcomingStay"),
+                    new Schema<>().types(Set.of("null")))));
+        };
+    }
+
     @Bean
     OperationCustomizer applicationAudience() {
         return (operation, handler) -> {

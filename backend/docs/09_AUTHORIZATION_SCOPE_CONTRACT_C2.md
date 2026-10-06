@@ -111,3 +111,16 @@ se incluyen en el JWT: se resuelven desde PostgreSQL para cada petición.
 - Route Handlers BFF y sustitución del mock Web: BE-005.
 - CRUD de Staff, propiedades, roles o memberships: tarea de administración
   posterior con auditoría y revocación de sesiones.
+
+## Addendum BE-005-AUTH-API-01 — usuario actual
+
+GET `/api/v1/staff-auth/me` devuelve exactamente StaffSessionResponse de
+GET `/api/v1/staff-auth/session`: staffUserId/sessionId/username/roleCode/
+permissions/memberships recalculados. Bearer Staff y membership activa; no
+requiere nuevo permiso ni property scope de entrada, no devuelve tokens.
+El endpoint session permanece compatible, deprecated solo en OpenAPI.
+POST login/logout reutilizan los handlers C1 existentes; las rutas públicas
+BFF de BE-005 y sus cookies no se migran en este incremento. Implementación
+autorizada el 2026-10-05; EN_QA hasta QA manual PASS.
+[Contrato/evidencia](40_EXPLICIT_AUTH_ENDPOINTS_INCREMENT.md) y
+[QA específica](41_EXPLICIT_AUTH_ENDPOINTS_QA.md).

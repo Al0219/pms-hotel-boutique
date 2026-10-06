@@ -1,4 +1,4 @@
-import type { AccountSummaryDTO } from "@/modules/account/dtos/account.dto";
+import type { MockAccountSummaryDTO } from "@/modules/account/dtos/account.dto";
 import type { GuestReservationDTO } from "@/modules/account/dtos/guest-reservation.dto";
 import type { GuestInvoiceDTO } from "@/modules/account/dtos/invoice.dto";
 import type { GuestProfileDTO } from "@/modules/profile/dtos/profile.dto";
@@ -67,7 +67,7 @@ export function peekAccountFixture(id: string) { return accounts.get(id); }
 export function resetAccountFixtures() { accounts.clear(); resetReservationLinkFixtures(); }
 
 /** Summary derives from the same records as the detail screens. No reward/price engine. */
-export function summarizeAccount(data: AccountFixture): AccountSummaryDTO {
+export function summarizeAccount(data: AccountFixture): MockAccountSummaryDTO {
   const current = data.reservations.find(item => item.period === "CURRENT");
   const name = `${data.profile.first_name} ${data.profile.last_name}`;
   const eligible = data.promotions.filter(item => item.is_eligible);
