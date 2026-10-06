@@ -30,6 +30,12 @@ export function usePublicDisplayCurrency() {
   return usePublicBookingSession().currency;
 }
 
+/** Clear the booking cart without changing currency preference or Guest Auth. */
+export function useResetPublicBooking() {
+  const { setCart } = usePublicBookingSession();
+  return () => setCart({ scope: '', items: [] });
+}
+
 export function usePublicRoomSelection(criteria: Partial<BookingSearchCriteria>, propertyId?: string) {
   const { cart, setCart } = usePublicBookingSession();
   const scope = propertyId && Object.keys(validateBookingSearchCriteria(criteria)).length === 0 ? `${propertyId}:${buildSearchQueryParams(criteria as BookingSearchCriteria)}` : '';
