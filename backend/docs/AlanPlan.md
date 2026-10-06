@@ -31,6 +31,60 @@ se documenta su ejecución manual en la guía QA de la tarea.
 | Sesiones | Guest y Staff son contextos separados. |
 | Scope | `ALL_PROPERTIES` es el conjunto autorizado de la sesión. |
 
+## Reserva pública — A1: tarifas demo autoritativas
+
+- **Estado:** COMPLETADA; QA técnico PASS y QA manual PASS confirmado por Alan;
+  cierre formal autorizado por el usuario el 2026-10-06.
+  Incremento público superior PENDIENTE; A2/A3 no iniciadas. No existe un plan
+  público previo en este archivo; esta entrada registra solo el alcance aprobado A1.
+- **Owner / seguimiento:** Alan / BD1; consumidores futuros Availability y Booking.
+  Sin dependencia HTTP, Auth, OpenAPI ni módulo tarifario definitivo para A1.
+- **DoR / decisiones:** GTQ; Standard/Classic Q650, Deluxe Q850, Suite Q1200 por
+  noche; sin impuestos, descuentos, temporadas, promociones ni servicios externos.
+  Backend es autoridad; ningún precio del cliente participa en el cálculo.
+- **Inspección:** RoomType.code existe, UNIQUE(property_id, code), editable por
+  catálogo; no depende del UUID generado ni del nombre. Property tiene Currency;
+  RatePlan ya usa MonetaryAmount/MinorUnits(long), reutilizados sin alterar esos
+  modelos. Migraciones no incluyen seeds RoomType; PostgreSQL local consultado
+  tiene cero RoomTypes. Los fixtures semánticos usan STD/Std, DLX/Deluxe,
+  SUITE/Suite, KING/King y TWIN/Twin; SOLD/Sold out y códigos JPA/RT/ATS/PM son QA.
+- **Mapeo exacto aprobado y decisión demo:**
+
+  | RoomType code | Tarifa GTQ/noche | Minor units |
+  | --- | ---: | ---: |
+  | STANDARD | 650.00 | 65000 |
+  | CLASSIC | 650.00 | 65000 |
+  | STD | 650.00 | 65000 |
+  | KING | 650.00 | 65000 |
+  | TWIN | 650.00 | 65000 |
+  | DELUXE | 850.00 | 85000 |
+  | DLX | 850.00 | 85000 |
+  | SUITE | 1200.00 | 120000 |
+
+  STANDARD/CLASSIC/DELUXE son los códigos autorizados por el usuario; no se crean
+  entidades para ellos. KING/TWIN reciben explícitamente la base Q650 temporal:
+  su nombre de cama no confirma categoría Deluxe/Suite. No se tarifan fixtures
+  sintéticos ni se interpreta el nombre. Códigos nuevos o renombrados requieren
+  configuración explícita; no hay tarifa por defecto ni normalización implícita.
+- **Diseño / archivos:** inventory/application/DemoRatePolicy como bean reusable
+  con rateFor(RoomType) y totalFor(RoomType, arrival, departure). Reutiliza
+  StayDateRange para arrival < departure; noches calendario departure-arrival y
+  Math.multiplyExact(long,long). Error interno DemoRateNotConfiguredException con
+  DEMO_RATE_NOT_CONFIGURED; traducción HTTP futura. Tests DemoRatePolicyTests y
+  registro AlanPlan/AlanHandoff; sin cambios de persistencia/dependencias externas.
+- **Aceptación / DoD:** tarifas y totales de ejemplo exactos; GTQ siempre; fechas
+  iguales/invertidas y códigos no configurados rechazados; identidad independiente
+  de UUID/nombre, cálculo long sin float/double; focalizados y verify completos PASS,
+  diff revisado. QA manual PASS confirmado por Alan; tarifas del mapeo aprobadas
+  y cierre formal A1 registrado en AlanHandoff.
+- **Evidencia técnica:** DemoRatePolicyTests 20 PASS; mvn -B
+  --no-transfer-progress verify 405 PASS, cero failures/errors/skipped, BUILD SUCCESS
+  con Maven 3.9.11/Java 21/PostgreSQL 17.11 en Compose aislado pms-public-a1-qa.
+  Revisión de bytecode confirma multiplyExact(JJ)J sin float/double; git diff
+  --check PASS, incluidos los tres archivos nuevos revisados sin staging.
+- **Siguiente:** A1 cerrada; esperar autorización para otra tarea. Sin QA HTTP
+  aplicable a A1; trabajo detenido antes de A2.
+
 ## Registro Liquibase por módulo
 
 | Prefijo | Módulo | Dueño | Estado |

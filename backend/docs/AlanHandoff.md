@@ -1,5 +1,52 @@
 # AlanHandoff — Seguimiento Backend
 
+## Reserva pública — A1: cierre formal y QA manual PASS (2026-10-06)
+
+- **Estado:** A1 COMPLETADA; QA manual PASS confirmado por Alan y cierre formal
+  autorizado por el usuario. QA técnico previo conservado: 20 focalizados PASS,
+  verify 405 PASS, cero failures/errors/skipped; sin repetir suites.
+- **Tarifas aprobadas GTQ/noche:** STANDARD/CLASSIC/STD/KING/TWIN Q650 (65000);
+  DELUXE/DLX Q850 (85000); SUITE Q1200 (120000).
+- **Alcance:** cierre documental únicamente en AlanPlan/AlanHandoff; código e
+  historial previo conservados. Rama feature/backend-public-availability;
+  sin commit/push. Incremento público superior PENDIENTE; A2/A3 no iniciadas.
+- **Validación:** git diff --check PASS; git status revisado, conservando los tres
+  archivos nuevos de código/tests de la implementación anterior.
+- **Siguiente:** A1 cerrada; esperar autorización para otra tarea, sin avanzar a A2.
+
+## Reserva pública — A1: tarifas demo autoritativas (2026-10-06)
+
+- **Estado:** EN_QA; A1 implementada, QA técnico PASS; confirmación manual del usuario
+  pendiente. Alcance A1 explícitamente autorizado. Incremento público
+  superior PENDIENTE; A2/A3 no iniciadas. Historial Auth/Account conservado.
+- **Rama/base:** feature/backend-public-availability, HEAD cae59de; árbol inicial
+  limpio. Sin commit/push/merge.
+- **Decisión / inspección:** GTQ y tarifas aprobadas por el usuario; RoomType.code
+  es identidad de catálogo por propiedad, independiente de UUID/nombre. Fixtures
+  STD, DLX, SUITE, KING y TWIN; PostgreSQL de aplicación consultado en lectura:
+  cero RoomTypes. Sin seeds/migraciones de tipos ni nuevos registros de catálogo.
+  KING/TWIN base Q650 explícita; tabla completa y códigos QA excluidos en AlanPlan.
+- **Entrega:** DemoRatePolicy en inventory/application, reusable por Availability
+  y Booking futuros; MonetaryAmount/MinorUnits existentes, rango StayDateRange,
+  noches calendario y multiplicación exacta long. Sin precio externo, impuestos,
+  descuentos, temporadas ni promociones. Error DEMO_RATE_NOT_CONFIGURED explícito.
+- **Pruebas / evidencia:** mvn -B --no-transfer-progress -Dtest=DemoRatePolicyTests
+  test: 20 PASS. mvn -B --no-transfer-progress verify: 405 PASS, cero
+  failures/errors/skipped, BUILD SUCCESS (1m11s). Maven 3.9.11/Java 21/PostgreSQL
+  17.11 efímero, Compose pms-public-a1-qa independiente, sin exclusiones.
+  Casos: ocho códigos, totales 65000/255000/240000, GTQ, fechas iguales/invertidas,
+  códigos sin tarifa/nombres engañosos, independencia UUID/propiedad/nombre y
+  rango amplio exacto en long. Bytecode multiplyExact(JJ)J sin float/double;
+  git diff --check PASS y archivos nuevos revisados sin staging. Logs sanitizados:
+  /tmp/pms-public-a1-focused.log y /tmp/pms-public-a1-verify.log.
+- **Límite:** ningún endpoint, SecurityConfiguration ni OpenAPI modificado;
+  sin integración A2/A3 ni cambios en Auth/Account. Catálogo local vacío: A1 no
+  implica disponibilidad pública consumible. code es editable; renombrarlo a un
+  código no configurado falla explícitamente hasta revisar el mapeo.
+- **Siguiente:** revisión/QA A1 del usuario: confirmar tabla de tarifas y ejemplos
+  de totales; no hay QA HTTP aplicable. No marcar COMPLETADA hasta confirmación.
+  Trabajo detenido al finalizar A1; no avanzar a A2.
+
 ## BE-005-AUTH-API-01 / BE-004-ACCOUNT-SUMMARY-01 — Cierre QA manual final (2026-10-06)
 
 - **Estado:** ambos incrementos **COMPLETADA**, por confirmación manual final
