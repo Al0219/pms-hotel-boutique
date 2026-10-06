@@ -6,7 +6,7 @@ import { useAccountSummary } from "../hooks/use-account-summary";
 import styles from "./account-dashboard-page.module.css";
 
 export function AccountDashboardPage() {
-  const { account, accessMethod } = useGuestSession();
+  const { account } = useGuestSession();
   const { data: summary, isPending, error, refetch } = useAccountSummary();
   if (!account) return null;
   if (isPending) return <section className={styles.page} role="status">Cargando tu cuenta…</section>;
@@ -39,7 +39,7 @@ export function AccountDashboardPage() {
           <h1>Mi cuenta</h1>
           <p>Hola, {summary.guestName}. Consulta tus reservas, facturas, rewards y promociones desde un solo lugar.</p>
           <span className={styles.statusTag}>
-            {summary.isActive ? "Cuenta activa" : "Cuenta inactiva"} · {account.externalIdentities.some(identity => identity.provider === "GOOGLE") ? "Google conectado" : accessMethod === 'APPLE' ? 'Acceso con Apple' : "Acceso por correo"} · {account.email} · {summary.linkedReservationsCount} reservas vinculadas
+            {summary.isActive ? "Cuenta activa" : "Cuenta inactiva"} · {account.externalIdentities.some(identity => identity.provider === "GOOGLE") ? "Google conectado" : "Acceso por correo"} · {account.email} · {summary.linkedReservationsCount} reservas vinculadas
           </span>
         </div>
         <div className={styles.actions}>

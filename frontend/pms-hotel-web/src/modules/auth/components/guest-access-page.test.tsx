@@ -103,14 +103,13 @@ describe('Guest identity frontend', () => {
     expect(await screen.findByText(/Google conectado · guest.google@example.com/)).toBeInTheDocument();
   });
 
-  it('previews Apple without fabricating a verified Google or Apple identity', async () => {
-    const { user, navigate } = setup();
-    await user.click(screen.getByRole('button', { name: 'Continuar con Apple' }));
-    await screen.findByRole('heading', { name: 'Tu cuenta está lista' });
-    navigate('account');
-    expect(await screen.findByText(/Acceso con Apple · guest.apple@example.com/)).toBeInTheDocument();
-    expect(screen.queryByText(/Google conectado/)).not.toBeInTheDocument();
-    expect(screen.getByText(/0 reservas vinculadas/)).toBeInTheDocument();
+  it('offers Google without Apple in both login and registration', async () => {
+    const { user } = setup();
+    expect(screen.getByRole('button', { name: 'Continuar con Google' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Apple/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: 'Crear cuenta' }));
+    expect(screen.getByRole('button', { name: 'Registrarse con Google' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Apple/ })).not.toBeInTheDocument();
   });
 
   it('blocks duplicate submissions and never transports passwords or confirmation', async () => {
