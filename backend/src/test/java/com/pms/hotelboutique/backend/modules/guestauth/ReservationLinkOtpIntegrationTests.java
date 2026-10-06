@@ -55,6 +55,7 @@ class ReservationLinkOtpIntegrationTests {
     private static final UUID PROPERTY = UUID.fromString("3dcd0a8e-5c6a-46e7-8d51-7c95d86b232d");
 
     @Autowired ReservationLinkOtpService links;
+    @Autowired com.pms.hotelboutique.backend.modules.guestauth.application.GuestAccountSummaryService summary;
     @Autowired GuestProfileService profiles;
     @Autowired ReservationService reservations;
     @Autowired JdbcTemplate jdbc;
@@ -135,6 +136,9 @@ class ReservationLinkOtpIntegrationTests {
                 Long.class, request, delivered.get()));
 
         assertTrue(links.verify(guest, request, delivered.get()));
+        // Summary reads the durable ownership produced by the real OTP service, not email/profile.
+        assertEquals(1, summary.ownSummary(guest).linkedReservationsCount());
+        assertTrue(summary.ownSummary(guest).profiles().isEmpty());
         assertFalse(links.verify(guest, request, delivered.get()));
         assertEquals(guest.guestAccountId(), jdbc.queryForObject(
                 "SELECT guest_account_id FROM guest_reservation_links WHERE reservation_id=?", UUID.class, reservationId));

@@ -56,7 +56,8 @@ describe("Guest access and shared session", () => {
     expect(screen.getByRole("link", { name: "Ir a mi cuenta" })).toHaveAttribute("href", "/cuenta");
     navigate("account");
     expect(await screen.findByRole("heading", { name: "Mi cuenta" })).toBeInTheDocument();
-    expect(screen.getByText(/Acceso por correo · demo@example.com/)).toBeInTheDocument();
+    expect(screen.getByText(/Acceso por correo ·/)).toBeInTheDocument();
+    expect(screen.getAllByText("demo@example.com")).toHaveLength(1);
     expect(screen.queryByText(/Google conectado/)).not.toBeInTheDocument();
     navigate("profile");
     expect(screen.getByText("Perfil del huésped")).toBeInTheDocument();
@@ -95,7 +96,8 @@ describe("Guest access and shared session", () => {
     await user.click(screen.getByRole("button", { name: "Continuar retorno al PMS" }));
     expect(await screen.findByRole("heading", { name: "Tu cuenta está lista" })).toBeInTheDocument();
     navigate("account");
-    expect(await screen.findByText(/Google conectado · guest.google@example.com/)).toBeInTheDocument();
+    expect(await screen.findByText(/Google conectado ·/)).toBeInTheDocument();
+    expect(screen.getAllByText("guest.google@example.com")).toHaveLength(1);
   });
 
   it("blocks duplicate form submissions while the request is pending", async () => {

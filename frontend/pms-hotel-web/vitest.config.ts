@@ -8,6 +8,8 @@ export default defineConfig({
     },
   },
   test: {
+    // Route Handlers run server-side; use Next's server-only marker for that context.
+    alias: { "server-only": fileURLToPath(new URL("./node_modules/next/dist/compiled/server-only/empty.js", import.meta.url)) },
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.test.{ts,tsx}"],

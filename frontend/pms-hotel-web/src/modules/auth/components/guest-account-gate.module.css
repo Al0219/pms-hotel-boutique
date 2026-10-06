@@ -1,0 +1,58 @@
+.sessionBar {
+  width: min(1120px, calc(100% - var(--space-16)));
+  margin-inline: auto;
+  padding-block: var(--space-2);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2) var(--space-6);
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-label-md);
+  line-height: var(--line-height-label-md);
+  color: var(--color-text-secondary);
+}
+
+.sessionBar > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sessionBar p {
+  flex-basis: 100%;
+  margin: 0;
+  text-align: right;
+}
+
+.signOut {
+  min-height: var(--space-12);
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-brand);
+  font: inherit;
+  cursor: pointer;
+}
+
+.signOut:hover:not(:disabled) {
+  background: var(--color-brand-subtle);
+}
+
+.signOut:focus-visible {
+  outline: 2px solid var(--color-brand-primary-strong);
+  outline-offset: var(--space-2);
+}
+
+.signOut:disabled {
+  color: var(--color-text-secondary);
+  cursor: wait;
+}
+
+@media (max-width: 900px) {
+  .sessionBar {
+    width: calc(100% - var(--space-10));
+    justify-content: space-between;
+    column-gap: var(--space-3);
+  }
+}

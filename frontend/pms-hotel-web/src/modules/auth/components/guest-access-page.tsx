@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getPublicEnvironment } from "@/lib/env";
 import { HttpNetworkError } from "@/lib/http/errors";
 import { useGuestSession } from "./guest-session-provider";
+import { GuestSessionCheck } from "./guest-session-check";
 import styles from "./guest-access-page.module.css";
 import { guestAccessReturn } from '../model/checkout-return';
 
@@ -16,7 +17,10 @@ export function GuestAccessPage({ returnTo }: { returnTo?: string } = {}) {
   const [step, setStep] = useState<AccessStep>("options");
   const [email, setEmail] = useState("");
   const [showHelp, setShowHelp] = useState(false);
-  const { account, signIn, signOut, isPending, error, resetError } = useGuestSession();
+  const { account, signIn, signOut, status, isPending, error, resetError } = useGuestSession();
+  const mockMode = getPublicEnvironment().useMockApi;
+
+  if (status === "checking" || status === "error") return <GuestSessionCheck />;
 
   function changeStep(next: AccessStep) {
     resetError();
@@ -31,15 +35,16 @@ export function GuestAccessPage({ returnTo }: { returnTo?: string } = {}) {
       <div className={styles.content}>
         <p className={styles.eyebrow} role="status">ACCESO COMPLETADO</p>
         <h1 id="access-success-title">Tu cuenta está lista</h1>
-        <p>La sesión de demostración está iniciada. Puedes consultar tu cuenta o continuar reservando.</p>
+        <p>{mockMode ? "La sesión de demostración está iniciada." : "Tu sesión está iniciada."} Puedes consultar tu cuenta o continuar reservando.</p>
         <div className={styles.card}>
           <p>{account.email ?? "Cuenta de huésped"}</p>
-          <p>Método de acceso <strong>{account.externalIdentities.some(identity => identity.provider === "GOOGLE") ? "Google" : "Correo electrónico"}</strong></p>
+          {mockMode && <p>Método de acceso <strong>{account.externalIdentities?.some(identity => identity.provider === "GOOGLE") ? "Google" : "Correo electrónico"}</strong></p>}
         </div>
         <Link className={styles.primary} href="/cuenta">Ir a mi cuenta</Link>
         <Link className={styles.secondary} href={checkoutHref ?? '/'}>{reservationsAccess ? 'Ir a Mis reservas' : checkoutHref ? 'Continuar mi reserva' : 'Continuar reservando'}</Link>
-        {reservationsAccess && !account.externalIdentities.some(identity => identity.provider === 'GOOGLE') && <p>Para vincular una reserva en esta demostración, cierra esta sesión y continúa con Google.</p>}
-        <button className={styles.secondary} type="button" onClick={signOut}>Cerrar sesión</button>
+        {reservationsAccess && !account.externalIdentities?.some(identity => identity.provider === 'GOOGLE') && <p>Para vincular una reserva en esta demostración, cierra esta sesión y continúa con Google.</p>}
+        <button className={styles.secondary} type="button" disabled={isPending} onClick={() => void signOut()}>{isPending ? "Cerrando sesión…" : "Cerrar sesión"}</button>
+        {error && <p role="alert">No se pudo cerrar la sesión. Inténtalo nuevamente.</p>}
       </div>
     </section>;
   }
@@ -59,8 +64,9 @@ export function GuestAccessPage({ returnTo }: { returnTo?: string } = {}) {
       <p>{getPublicEnvironment().useMockApi ? "Acceso de demostración: no se envían correos ni se conecta con Google." : "Tu cuenta se vincula de forma segura mediante Google."}</p>
       {step === "options" ? <div className={styles.card}>
         <h2>Elige cómo continuar</h2>
-        <button className={styles.google} onClick={() => changeStep("google")} type="button"><span aria-hidden="true">G</span>Continuar con Google</button>
-        {!reservationsAccess && <button className={styles.primary} onClick={() => changeStep("email")} type="button">Continuar con correo</button>}
+        {mockMode ? <button className={styles.google} onClick={() => changeStep("google")} type="button"><span aria-hidden="true">G</span>Continuar con Google</button>
+          : <a className={styles.google} href="/api/auth/guest/google"><span aria-hidden="true">G</span>Continuar con Google</a>}
+        {mockMode && !reservationsAccess && <button className={styles.primary} onClick={() => changeStep("email")} type="button">Continuar con correo</button>}
         <Link className={styles.secondary} href={reservationsAccess ? '/habitaciones' : checkoutHref ?? '/'}>{reservationsAccess ? 'Reservar como invitado' : 'Continuar como invitado'}</Link>
       </div> : step === "email" ? <form className={styles.card} onSubmit={event => {
         event.preventDefault();
@@ -73,7 +79,7 @@ export function GuestAccessPage({ returnTo }: { returnTo?: string } = {}) {
         {showHelp && <p id="access-help">Revisa el correo e intenta de nuevo. También puedes volver a opciones y continuar como invitado.</p>}
         <button className={styles.primary} disabled={isPending} type="submit">{isPending ? "Accediendo…" : "Acceder con correo"}</button>
       </form> : <div className={styles.card}>
-        <p>Continúa con la cuenta Google de demostración. Este método es opcional.</p>
+        <p>{mockMode ? "Continúa con la cuenta Google de demostración. Este método es opcional." : "Continúa con tu cuenta de Google para iniciar sesión."}</p>
         {getPublicEnvironment().useMockApi ? <button className={styles.primary} disabled={isPending} onClick={() => void signIn({ method: "GOOGLE" })} type="button">{isPending ? "Accediendo…" : "Continuar retorno al PMS"}</button> : <a className={styles.primary} href="/api/auth/guest/google">Continuar con Google</a>}
       </div>}
       {isPending && <p className={styles.status} role="status">Verificando acceso…</p>}

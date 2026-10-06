@@ -157,6 +157,119 @@ dependencias; un perfil parcial incluye solo su módulo y sus dependencias.
   y smoke completo login/sesión/refresh/logout registrados en `AlanHandoff.md`.
 
 
+#### BE-004-ACCOUNT-SUMMARY-01 — Resumen Guest real propio (2026-10-06)
+
+- **Estado:** COMPLETADA (2026-10-06); QA manual final real y visual PASS
+  confirmado por el usuario. Historial: DoR READY → EN_PROGRESO → EN_QA;
+  entrega end-to-end autorizada, incremento separado de AUTH-API-01.
+- **Owner:** Alan/BD1 + Web; BD3 adaptador Reservations, revisión colaborativa.
+- **Rama/base:** feature/backend-guest-account-summary-01, HEAD 9ade01d;
+  cambios previos del working tree preservados, sin commit/push/merge.
+- **DoR:** C3/BE-004, L-01 a L-07/BE-013B aprobados; GuestAccount, perfiles
+  asociados y vínculo OTP persistente disponibles. Sin decisiones faltantes.
+- **Alcance:** GET Guest/BFF account summary desde GuestPrincipal; cuenta,
+  perfiles propios, count de vínculos OTP y próxima estancia confirmada real.
+  DTO/mapper/model/hook/UI y OpenAPI actualizados en el mismo incremento.
+  Sin accountId del Browser, tokens JS, mutaciones o exposición comercial/fiscal.
+- **Aceptación/DoD:** contrato/QA [42](42_GUEST_ACCOUNT_SUMMARY_CONTRACT_QA.md),
+  PostgreSQL/auth/titularidad, paridad OpenAPI, Web/mock/errores, verify completo,
+  suite/typecheck/lint/build, stack healthy y QA manual final del usuario.
+- **Evidencia:** 31 Backend relevantes y verify final 385 PASS, cero failures/
+  errors/skipped; Web 120 relevantes y 1055 PASS/214 archivos, typecheck/lint/
+  build PASS. OpenAPI vivo/test 35/25/32/10 y cinco legacy deprecated;
+  nullabilidad real objeto/null probada, headers/security/scoping correctos.
+  Stack reconstruido healthy, Web/Swagger/doc 200, summary anónimo 401 y
+  DNS interno Backend correcto. Auth/migraciones/Compose/.env preservados;
+  diff --check PASS. Tests aislados retirados sin tocar BD integrada.
+- **Seguimiento anterior (histórico):** QA 42 Google → summary 200 → dashboard
+  real → logout y QA visual pendientes; ambos incrementos permanecían EN_QA.
+- **QA manual final (2026-10-06):** usuario confirma summary BFF 200, dashboard
+  con datos reales, ausencia de perfil/reservas correcta, logout con summary/
+  session 401 y QA visual del rediseño PASS.
+- **Siguiente:** incremento cerrado; esperar autorización para nueva tarea.
+  Sin commit/push/merge.
+
+#### BE-005-AUTH-API-01 — Login/logout/refresh/me explícitos y compatibles
+
+- **Estado:** COMPLETADA (2026-10-06); QA manual final real PASS confirmado
+  por el usuario. Historial: entrega EN_QA (2026-10-05), implementación
+  autorizada, automatizados y smoke HTTP PASS; confirmación final entonces pendiente.
+- **Owner:** Alan / BD1; reviewers Web/BFF y Android colaborativos, revisión local Codex.
+- **Rama/base:** `feature/backend-explicit-auth-api-01`, HEAD `9ade01d`;
+  rama nueva de implementación; registro documental READY previo preservado.
+  Sin commit/push/merge.
+- **Dependencias/DoR:** BE-001/002/003/004/005, OPENAPI-01 y AUTH-03 cerrados;
+  C1/C2/C3 aprobados, extensión aditiva autorizada por el usuario.
+  [Contrato/evidencia 40](40_EXPLICIT_AUTH_ENDPOINTS_INCREMENT.md) y
+  [guía QA 41](41_EXPLICIT_AUTH_ENDPOINTS_QA.md).
+- **Entregado:** cinco aliases: Staff POST login/logout y GET me; Guest POST
+  logout y GET me; delegan en handlers existentes. Refresh/Google conservados;
+  cinco rutas antiguas compatibles y deprecated solo en OpenAPI, sin retirada,
+  redirect ni cambio semántico. Sin cambios JWT/cookies/permisos/scope/auditoría,
+  servicios de negocio, migraciones, dependencias, Frontend o BFF.
+- **Aceptación/DoD automatizado:** equivalencia viejo/nuevo, 401/validación,
+  revocación/rotación/aislamiento/C2 y auditoría sin duplicación PASS. OpenAPI
+  real 34 operaciones/24 paths/29 schemas/nueve tags; auth/DTOs/status/summaries,
+  deprecated y paridad exacta PASS, sin exclusiones nuevas.
+- **Pruebas reales:** focalizados **56 PASS**, incluidos nueve tests HTTP
+  (ocho MockMvc y uno Servlet real), nueve OpenAPI; verify completo **374 PASS**,
+  BUILD SUCCESS, cero failures/errors/skipped, Java 21/PostgreSQL 17 aislados.
+  JAR HTTP: doc/UI/config 200; paths/components idénticos a tests; cuatro
+  combinaciones Staff login/logout nuevo/legacy, refresh y revocación PASS.
+  `git diff --check`, enlaces, JSON/scripts Postman y preservación de los once
+  cuerpos de métodos Auth originales PASS. Colección ampliada, previos intactos.
+- **Hallazgo/límites:** JSON inválido login/sessions produce 400 en MockMvc pero
+  401 vacío en Servlet por redispatch a /error protegido. Comportamiento heredado
+  preservado, descrito en OpenAPI/QA y cubierto por test HTTP real; no se amplía
+  /error. Guest autenticado probado con GoogleOidcClient de test, sin afirmar
+  Google externo vivo ni ejecución manual Postman/Swagger por el usuario.
+- **Mejora QA manual (2026-10-05):** profile manual-qa en Compose de pruebas,
+  manual-backend + manual-postgres tmpfs, bootstrap real para qa_staff sintético
+  SUPER_ADMIN. Comando único y credenciales exclusivas QA en guía 41; Swagger
+  localhost:18086. postgres/verify sin cambios ni bootstrap; BD automatizada
+  contiene cero qa_staff. Cold start/reinicio sin duplicación, flujo HTTP
+  login/me/logout/revocación y Swagger PASS; verify completo nuevamente
+  **374 PASS**, cero failures/errors/skipped. API y OpenAPI no cambian ni incluyen
+  las credenciales QA. Sin defaults normales/producción/migraciones/secretos.
+- **Stack integrado canónico (2026-10-05):** root compose.yaml publica Backend
+  por PMS_BACKEND_PORT=8081 local; Web del .env en 3001, BFF backend:8080 y
+  datasource postgres interno. Bootstrap local opt-in por PMS_BOOTSTRAP_ADMIN_*,
+  sin defaults activos/secretos versionados; .env existente intacto. Tests
+  postgres/verify originales, QA manual histórico movido a archivo propio.
+  README/guía local 13/QA 41/DEC/preflight actualizados. Comando raíz exacto PASS,
+  tres servicios healthy, Web/Swagger/doc 200, DNS interno 200, Staff directo y
+  BFF PASS; Google start/callback inválido al mismo Backend PASS, consentimiento
+  manual pendiente. Verify **374 PASS**, paridad OpenAPI 34/24 y diff --check PASS.
+- **QA manual previo confirmado (2026-10-05):** usuario reporta Staff BFF
+  login/sesión/refresh/logout PASS y Guest Google real login → session 200 →
+  refresh 200 → session 200 → logout 204 → session 401 PASS. Evidencia conservada.
+- **Corrección BFF final autorizada:** working tree aún consumía legacy en cinco
+  llamadas. Dos session/route.ts Web migran a login/me/POST logout; rutas públicas,
+  refresh/Google, cookies y errores intactos. Test nuevo 37 casos; 62 relevantes y
+  suite Web completa **1006 PASS**, typecheck/lint PASS. Next typegen resuelve
+  tipos generados obsoletos sin alterar rutas ni next-env. Backend/src y helpers
+  sin cambios; verify Backend no repetido. OpenAPI HTTP 200, explícitos y cinco
+  legacy deprecated correctos, paridad 34/24. Docs 40/41 y handoff actualizados.
+- **Corrección Guest UI/BFF (2026-10-06):** bug de account=null sin hidratación
+  confirmado en working tree. Query de GET BFF session al montar en real,
+  DTO/modelo/mapper de identidad confirmada sin tokens ni ExternalIdentity
+  inventada. 200 signed-in, checking sin flash, 401 signed-out y 503/red error
+  con retry. Logout real DELETE BFF antes de limpiar Guest; Staff preservado.
+  Mock correo/Google intacto; Google real usa enlace BFF desde opción inicial.
+  95 relevantes y suite Web 1026 PASS/211 archivos; typecheck/lint/diff --check
+  y build Web PASS. Stack healthy, HTTP auth SSR checking sin flash y Swagger
+  200/34/24/security/legacy PASS. Backend/helpers/.env preservados por hashes,
+  sin verify nuevo. Resumen de cuenta aún provisional y fuera
+  del arreglo de sesión; evidencia y QA final actualizados en docs 40/41.
+- **Seguimiento anterior (histórico):** callback Google → /cuenta sin reload →
+  logout UI y regresión Staff pendientes; incremento mantenido EN_QA.
+- **QA manual final (2026-10-06):** usuario confirma Google real → callback →
+  /cuenta reconocida sin reload, Guest session 200, refresh, logout UI, sesión
+  revocada 401 y Staff login/session/refresh/logout PASS. BFF consume endpoints
+  explícitos login/me/logout/refresh.
+- **Siguiente:** incremento cerrado; esperar autorización para nueva tarea.
+  Sin commit/push/merge.
+
 #### BE-005-OPENAPI-01 — Baseline y puesta al día OpenAPI/Swagger
 
 - **Estado:** COMPLETADA; QA visual/manual ejecutado y confirmado PASS
@@ -1645,11 +1758,11 @@ evidencia HTTP/SQL/externa y límites; impedimentos/decisiones pendientes; sigui
 paso concreto. Mantener historial append-only y anteponer la actualización nueva.
 No llevar tareas Backend al XLSX. No actualizar memorias externas como parte del plan.
 
-**Próximo paso concreto:** esperar autorización para acordar el siguiente
-incremento Backend. BE-008B-AUTH-03 COMPLETADA con QA manual PASS; no se inicia
-ni modifica el estado de otra tarea en este cierre. Proyección/consulta y
-C6-D06 mantienen su alcance y dependencias pendientes. Commit/push/merge
-requieren autorización explícita.
+**Próximo paso concreto:** BE-004-ACCOUNT-SUMMARY-01 y BE-005-AUTH-API-01
+COMPLETADAS con QA manual final real PASS confirmado por el usuario (2026-10-06);
+esperar autorización para una nueva tarea. BE-008B-AUTH-03 y BE-005-OPENAPI-01
+mantienen su cierre con QA manual PASS. Proyección/consulta y C6-D06 mantienen su alcance y dependencias
+pendientes. Commit/push/merge requieren autorización explícita.
 
 ## Entorno de validación
 
