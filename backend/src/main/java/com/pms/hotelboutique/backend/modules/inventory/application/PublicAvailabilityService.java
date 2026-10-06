@@ -1,6 +1,7 @@
 package com.pms.hotelboutique.backend.modules.inventory.application;
 
 import com.pms.hotelboutique.backend.modules.inventory.domain.RoomType;
+import com.pms.hotelboutique.backend.modules.inventory.domain.Property;
 import com.pms.hotelboutique.backend.modules.inventory.infrastructure.persistence.PublicAvailabilityCatalogRepository;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -27,10 +28,11 @@ public class PublicAvailabilityService {
     public PublicAvailabilityView search(PublicAvailabilityQuery query) {
         Objects.requireNonNull(query, "query");
         var property = catalog.findProperty(query.propertyId()).orElseThrow(PropertyNotFoundException::new);
+        if (property.getStatus() != Property.Status.ACTIVE) {
+            throw new PropertyNotFoundException();
+        }
         if (!rates.currency().equals(property.getCurrency())) {
-            throw new IllegalStateException("DEMO_CURRENCY_MISMATCH: property currency "
-                    + property.getCurrency().getCurrencyCode() + "; demo currency "
-                    + rates.currency().getCurrencyCode());
+            throw new DemoCurrencyMismatchException(property.getCurrency(), rates.currency());
         }
         var dates = new StayDateRange(query.arrival(), query.departure());
         var offers = new ArrayList<PublicAvailabilityOfferView>();

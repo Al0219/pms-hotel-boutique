@@ -5,6 +5,35 @@
 árbol limpio al iniciar. Mantenimiento autorizado por el usuario; estado EN_QA
 hasta su QA manual PASS. Sin commit/push/merge.
 
+## Evolución A3 — Disponibilidad pública (2026-10-06)
+
+Rama `feature/backend-public-availability`, base `b653804`; A3 EN_QA, A2 EN_QA,
+A1 COMPLETADA. Baseline anterior leída de `/v3/api-docs` del runtime: **35 operaciones /
+25 paths / 32 schemas / 10 tags**. Documento generado tras A3 y comparado con mappings
+reales: **36 operaciones / 26 paths / 34 schemas / 11 tags**, sin exclusiones.
+Los conteos se extraen del documento/mappings, no se presupone el incremento.
+
+| Método | Path adicional | Autenticación | Scope / elegibilidad | Request → response | Respuestas |
+| --- | --- | --- | --- | --- | --- |
+| GET | `/api/v1/public/availability` | Pública; sin JWT/cookie requerido, security=[] | propertyId explícito, Property ACTIVE; inactiva/inexistente 404 | propertyId UUID, arrival/departure date, rooms int > 0 → PublicAvailabilityResponse | 200, 400, 404, 500 |
+
+Dos schemas HTTP nuevos: PublicAvailabilityResponse/PublicAvailabilityOfferResponse,
+campos exactos aprobados, UUID real de RoomType, GTQ y minor units int64. Catálogo/ATS
+vacío devuelve 200 offers=[]; configuración demo inválida devuelve ProblemDetail 500
+con code DEMO_RATE_NOT_CONFIGURED/DEMO_CURRENCY_MISMATCH, sin respuesta parcial.
+Única nueva audiencia x-audience=public para esta operación; las operaciones Staff y
+BFF conservan sus cuatro esquemas y anotaciones. Única apertura Security GET exacto
+de la ruta nueva. operationId publicAvailability explícito, sin colisión con
+availability Staff; todos los paths previos y security schemes se comparan intactos
+con la baseline anterior. Tests validan paridad, esquema/params/status/security y Swagger.
+[Contrato y QA 43](43_PUBLIC_AVAILABILITY_CONTRACT_QA.md); evidencia final en AlanHandoff.
+Focalizados 48 PASS (11 OpenAPI) y verify 449 PASS sin exclusiones. Documento vivo
+del JAR validado en runtime efímero coincide con generado en paths/components;
+/v3/api-docs, /swagger-ui/index.html y swagger-config 200. GET público anónimo
+200 [] con catálogo vacío, inválido 400, inexistente 404 y Staff vecino 401.
+No se atribuye QA manual vendible ni visual; A2/A3 permanecen EN_QA.
+Las secciones Auth/Account y baseline anteriores siguen como historial.
+
 ## Evolución BE-005-AUTH-API-01 (2026-10-05)
 
 Inventario vigente de esta compilación: **34 operaciones / 24 paths / 29 schemas**,

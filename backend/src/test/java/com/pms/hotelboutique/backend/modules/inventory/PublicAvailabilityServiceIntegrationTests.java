@@ -123,9 +123,15 @@ class PublicAvailabilityServiceIntegrationTests {
     }
 
     @Test
+    void inactivePropertyIsUnavailableToTheApplicationFacade() {
+        jdbc.update("UPDATE properties SET status='INACTIVE' WHERE id=?", property);
+        assertThrows(PropertyNotFoundException.class, () -> search(1));
+    }
+
+    @Test
     void incompatiblePropertyCurrencyFailsEvenWithEmptyCatalog() {
         jdbc.update("UPDATE properties SET currency='USD' WHERE id=?", property);
-        var error = assertThrows(IllegalStateException.class, () -> search(1));
+        var error = assertThrows(DemoCurrencyMismatchException.class, () -> search(1));
         assertTrue(error.getMessage().startsWith("DEMO_CURRENCY_MISMATCH:"));
     }
 

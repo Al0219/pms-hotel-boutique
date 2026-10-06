@@ -15,6 +15,9 @@
     ]
   },
   "variable": [
+    {"key": "publicArrival", "value": "2026-11-01", "type": "string"},
+    {"key": "publicDeparture", "value": "2026-11-03", "type": "string"},
+    {"key": "publicRooms", "value": "1", "type": "string"},
     {"key": "staffUsername", "value": "", "type": "string"},
     {"key": "staffPassword", "value": "", "type": "string"},
     {"key": "staffRefreshToken", "value": "", "type": "string"},
@@ -946,6 +949,33 @@
             "pm.test('No cache privado', () => { const cache = pm.response.headers.get('Cache-Control') || ''; pm.expect(cache).to.include('private'); pm.expect(cache).to.include('no-store'); });",
             "if (pm.response.code === 200) { const body = pm.response.json(); pm.test('Filas ordenadas', () => { const keys = body.rows.map(row => row.propertyId + '/' + row.stayDate); pm.expect(keys).to.eql([...keys].sort()); }); }"
           ]}}]
+        }
+      ]
+    },
+    {
+      "name": "Public Availability — A3",
+      "item": [
+        {
+          "name": "GET disponibilidad pública — sin credenciales",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/v1/public/availability?propertyId={{propertyId}}&arrival={{publicArrival}}&departure={{publicDeparture}}&rooms={{publicRooms}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) { const body = pm.response.json(); pm.test('DTO público GTQ', () => { pm.expect(body).to.have.all.keys('propertyId','arrival','departure','currency','offers'); pm.expect(body.currency).to.eql('GTQ'); pm.expect(body.propertyId).to.eql(pm.variables.get('propertyId')); pm.expect(body.offers).to.be.an('array'); body.offers.forEach(o => { pm.expect(o).to.have.all.keys('roomTypeId','roomTypeCode','roomTypeName','ratePlanId','ratePlanCode','availableUnits','nightlyRateMinor','totalMinor'); pm.expect(o.availableUnits).to.be.at.least(Number(pm.variables.get('publicRooms'))); pm.expect(o.ratePlanId).to.eql(o.ratePlanCode); }); }); }"
+                ]
+              }
+            }
+          ]
         }
       ]
     }

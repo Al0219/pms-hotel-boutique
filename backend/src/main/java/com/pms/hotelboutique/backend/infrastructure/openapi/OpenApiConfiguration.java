@@ -1,5 +1,6 @@
 package com.pms.hotelboutique.backend.infrastructure.openapi;
 
+import com.pms.hotelboutique.backend.modules.inventory.api.PublicAvailabilityController;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityScheme;
@@ -19,7 +20,7 @@ public class OpenApiConfiguration {
             .info(new Info()
                 .title("PMS Hotel Boutique API")
                 .version("v1")
-                .description("Contratos Backend aprobados de integración Staff y BFF Guest/Staff. "
+                .description("Contratos Backend aprobados de integración Staff, BFF Guest/Staff y disponibilidad pública. "
                     + "Las operaciones x-audience=internal-bff son para transporte privado BFF→Backend; "
                     + "no exponen tokens a JavaScript. Actuator es infraestructura y queda fuera de esta API."))
             .schemaRequirement("bearerAuth", new SecurityScheme()
@@ -57,6 +58,9 @@ public class OpenApiConfiguration {
             String packageName = handler.getBeanType().getPackageName();
             if (packageName.contains(".modules.securityauth.") || packageName.contains(".modules.guestauth.")) {
                 operation.addExtension("x-audience", "internal-bff");
+            } else if (handler.getBeanType().equals(PublicAvailabilityController.class)) {
+                operation.addExtension("x-audience", "public");
+                operation.setSecurity(List.of());
             } else if (packageName.contains(".modules.inventory.")) {
                 operation.addExtension("x-audience", "staff");
             }

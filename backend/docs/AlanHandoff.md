@@ -1,5 +1,75 @@
 # AlanHandoff — Seguimiento Backend
 
+## Reserva pública — A2/A3: cierre formal y QA manual PASS (2026-10-06)
+
+- **Estado:** A2 y A3 COMPLETADAS; QA técnico y QA manual PASS confirmado por Alan,
+  cierre formal autorizado por el usuario. A1 conserva COMPLETADA; incremento
+  público superior PENDIENTE. Rama feature/backend-public-availability, base A3
+  b653804; historial previo conservado.
+- **QA manual PASS (Alan):** entorno aislado y login Staff sintético; Property
+  ACTIVE/GTQ, STD/DLX/SUITE con dos Rooms físicas por tipo. Para dos noches,
+  availableUnits=2 en los tres tipos; nightly/total minor units STD 65000/130000,
+  DLX 85000/170000, SUITE 120000/240000. rooms=1/2 → tres ofertas;
+  rooms=3 → 200 offers=[]. Fecha inválida, rooms=0 y UUID inválido → 400;
+  Property inexistente → 404; público sin token → 200; Staff vecino sin token → 401.
+  OpenAPI path presente, operationId=publicAvailability, security=[] y Swagger UI
+  200 PASS. Cleanup del entorno QA completado.
+- **Evidencia técnica previa conservada:** focalizados PASS (A3 48), mvn -B
+  --no-transfer-progress verify 449 PASS y git diff --check PASS; sin repetir suites.
+  Contrato/procedimiento/evidencia en [43](43_PUBLIC_AVAILABILITY_CONTRACT_QA.md).
+- **Alcance / validación:** cierre documental únicamente en AlanPlan, AlanHandoff
+  y estado/resultado de 43; git diff --check PASS y status/stat/name-only revisados.
+  Código y cambios previos preservados; sin commit/push ni cambios de Auth/Account.
+- **Siguiente:** A2/A3 cerradas; esperar autorización para otra tarea. Sin booking.
+
+## Reserva pública — A3: endpoint HTTP availability (2026-10-06)
+
+- **Estado:** EN_QA; únicamente A3 autorizada. A2 permanece EN_QA hasta QA manual
+  conjunto; A1 COMPLETADA. Owner Alan / BD1; historial Auth/Account/A1/A2 conservado.
+- **Rama/base:** feature/backend-public-availability, HEAD b653804; árbol inicial
+  limpio, sin commit/push/merge.
+- **Entrega:** GET /api/v1/public/availability, cuatro params obligatorios
+  propertyId/arrival/departure/rooms; rooms mapea roomsRequested. DTO HTTP separados
+  de views con mapper explícito, campos aprobados sin datos Staff. Reutiliza ATS
+  y pricing A1/A2. Contrato/QA en [43](43_PUBLIC_AVAILABILITY_CONTRACT_QA.md).
+- **Decisión:** solo Property ACTIVE; INACTIVE e inexistente reciben 404 idéntico.
+  Fachada valida estado antes de pricing/tipos. 400 inválidos; sin capacidad 200 [];
+  errores de configuración demo 500 con code explícito ProblemDetail, sin detalles
+  internos ni respuesta parcial. Moneda incompatible nunca se convierte.
+- **Seguridad / OpenAPI:** única apertura GET exacto de esta ruta; Staff vecinos
+  siguen protegidos. security=[] y x-audience=public; DTOs, params y 200/400/404/500
+  anotados. Baseline runtime previo verificado 35 operaciones/25 paths/32 schemas/
+  10 tags; posterior generado/vivo 36 operaciones/26 paths/34 schemas/11 tags,
+  paridad con mappings y documento vivo paths/components PASS, sin exclusiones.
+- **Pruebas PASS:** mvn -B --no-transfer-progress
+  -Dtest=PublicAvailabilityHttpIntegrationTests,PublicAvailabilityServiceIntegrationTests,OpenApiContractIntegrationTests,SecurityConfigurationIntegrationTests
+  test: 48 PASS (21 HTTP, 14 application, 11 OpenAPI, 2 seguridad). mvn -B
+  --no-transfer-progress verify: 449 PASS, cero failures/errors/skipped, BUILD SUCCESS.
+  Maven 3.9.11/Java 21/PostgreSQL 17.11 efímero pms-public-a3-qa, sin exclusiones.
+  HTTP cubre acceso anónimo, identidad/precios reales, DTO exacto sin Staff,
+  catálogo/ATS vacío, 404 inexistente/inactiva, fechas/UUID/int inválidos y ausentes,
+  alias no aceptado, 500 de tarifa/moneda y protección Staff/otros métodos/paths.
+  OpenAPI detectó inicialmente rooms como string; anotación corregida a int32
+  antes del PASS final. Comparación aditiva detectó colisión del operationId
+  availability; A3 usa publicAvailability para preservar availability Staff.
+  Paths previos y cuatro security schemes conservados exactamente; tests y
+  verify reejecutados tras la corrección. git diff --check PASS (incluidos nuevos sin staging),
+  status/stat/name-only revisados; colección BD1/Auth e historial Handoff conservados.
+- **Smoke runtime PASS:** JAR del verify en contenedor temporal sin bootstrap,
+  misma BD efímera reiniciada (solo Property seed ACTIVE GTQ, cero RoomTypes),
+  127.0.0.1:18087. /v3/api-docs, Swagger UI HTML y swagger-config 200; público sin
+  credencial 200 offers=[], rooms=0 400, Property inexistente 404, Staff vecino 401.
+  No prueba manual vendible ni navegador visual; stack normal intacto. Entorno
+  temporal retirado; override en /tmp, ningún Compose repo modificado. Logs
+  /tmp/pms-public-a3-focused.log, /tmp/pms-public-a3-verify.log y
+  /tmp/pms-public-a3-runtime-smoke.json.
+- **Datos QA:** repo ofrece perfil manual-qa efímero y CRUD/colecciones Staff para
+  catálogo. Propuesta 43 reutiliza esos mecanismos para una Property ACTIVE y
+  STD/DLX/SUITE con dos Rooms cada uno. Sin ejecutar población ni crear seeds.
+- **Límites / siguiente:** QA manual vendible pendiente de Alan; no atribuir PASS
+  al catálogo vacío. Ningún booking/frontend, migración ni Auth/Account alterado.
+  Detenerse al finalizar A3.
+
 ## Reserva pública — A2: disponibilidad pública real application (2026-10-06)
 
 - **Estado:** EN_QA inicial/final por instrucción del usuario; solo A2 autorizada,
