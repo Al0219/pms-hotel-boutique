@@ -24,21 +24,21 @@ export function GuestAccessPage({ returnTo }: { returnTo?: string } = {}) {
     setStep(next);
   }
 
-  if (reservationsAccess && !getPublicEnvironment().useMockApi) return <section className={styles.page}><div className={styles.content}><h1>Mis reservas</h1><p>Esta entrega permite probar el acceso y la vinculación en modo demostración. La conexión real está pendiente.</p><Link className={styles.secondary} href="/habitaciones">Reservar como invitado</Link></div></section>;
+  if (reservationsAccess && !getPublicEnvironment().useMockApi) return <section className={styles.page}><div className={styles.content}><h1>Mis reservas</h1><p>El acceso a tus reservas no está disponible en este momento. Inténtalo más tarde.</p><Link className={styles.secondary} href="/habitaciones">Reservar como invitado</Link></div></section>;
 
   if (account) {
     return <section className={styles.page} aria-labelledby="access-success-title">
       <div className={styles.content}>
         <p className={styles.eyebrow} role="status">ACCESO COMPLETADO</p>
         <h1 id="access-success-title">Tu cuenta está lista</h1>
-        <p>La sesión de demostración está iniciada. Puedes consultar tu cuenta o continuar reservando.</p>
+        <p>Tu sesión está iniciada. Puedes consultar tu cuenta o continuar reservando.</p>
         <div className={styles.card}>
           <p>{account.email ?? "Cuenta de huésped"}</p>
           <p>Método de acceso <strong>{account.externalIdentities.some(identity => identity.provider === "GOOGLE") ? "Google" : "Correo electrónico"}</strong></p>
         </div>
         <Link className={styles.primary} href="/cuenta">Ir a mi cuenta</Link>
         <Link className={styles.secondary} href={checkoutHref ?? '/'}>{reservationsAccess ? 'Ir a Mis reservas' : checkoutHref ? 'Continuar mi reserva' : 'Continuar reservando'}</Link>
-        {reservationsAccess && !account.externalIdentities.some(identity => identity.provider === 'GOOGLE') && <p>Para vincular una reserva en esta demostración, cierra esta sesión y continúa con Google.</p>}
+        {reservationsAccess && !account.externalIdentities.some(identity => identity.provider === 'GOOGLE') && <p>Para vincular tu reserva, accede con Google utilizando el mismo correo de la reserva.</p>}
         <button className={styles.secondary} type="button" onClick={signOut}>Cerrar sesión</button>
       </div>
     </section>;
@@ -56,7 +56,6 @@ export function GuestAccessPage({ returnTo }: { returnTo?: string } = {}) {
       <h1 id="access-title">{step === "email" ? "Accede con tu correo" : step === "google" ? "Continuar con Google" : "Accede a tu cuenta"}</h1>
       <p>Consulta tus reservas, beneficios y preferencias. También puedes reservar sin crear una cuenta.</p>
       {reservationsAccess && <div className={styles.notice}><strong>¿Reservaste como invitado?</strong><p>Inicia sesión para vincular y consultar tu reserva. Utiliza la misma cuenta de Google cuyo correo ingresaste al reservar. Después verificaremos tu referencia con un código temporal.</p></div>}
-      <p>{getPublicEnvironment().useMockApi ? "Acceso de demostración: no se envían correos ni se conecta con Google." : "Tu cuenta se vincula de forma segura mediante Google."}</p>
       {step === "options" ? <div className={styles.card}>
         <h2>Elige cómo continuar</h2>
         <button className={styles.google} onClick={() => changeStep("google")} type="button"><span aria-hidden="true">G</span>Continuar con Google</button>
@@ -73,8 +72,8 @@ export function GuestAccessPage({ returnTo }: { returnTo?: string } = {}) {
         {showHelp && <p id="access-help">Revisa el correo e intenta de nuevo. También puedes volver a opciones y continuar como invitado.</p>}
         <button className={styles.primary} disabled={isPending} type="submit">{isPending ? "Accediendo…" : "Acceder con correo"}</button>
       </form> : <div className={styles.card}>
-        <p>Continúa con la cuenta Google de demostración. Este método es opcional.</p>
-        {getPublicEnvironment().useMockApi ? <button className={styles.primary} disabled={isPending} onClick={() => void signIn({ method: "GOOGLE" })} type="button">{isPending ? "Accediendo…" : "Continuar retorno al PMS"}</button> : <a className={styles.primary} href="/api/auth/guest/google">Continuar con Google</a>}
+        <p>Accede con tu cuenta de Google. También puedes continuar reservando como invitado.</p>
+        {getPublicEnvironment().useMockApi ? <button className={styles.primary} disabled={isPending} onClick={() => void signIn({ method: "GOOGLE" })} type="button">{isPending ? "Accediendo…" : "Acceder con Google"}</button> : <a className={styles.primary} href="/api/auth/guest/google">Continuar con Google</a>}
       </div>}
       {isPending && <p className={styles.status} role="status">Verificando acceso…</p>}
       {error && <p id="access-error" className={styles.status} role="alert">{errorMessage}</p>}

@@ -16,7 +16,11 @@ export { usePublicBookingReview } from './hooks/use-public-booking-review';
 export { publicResultsHref, publicSelectionHref, publicGuestDataHref } from './domain/public-room-navigation';
 export { PublicCurrencySelector } from './ui/public-currency-selector';
 export { usePublicDisplayCurrency } from './components/public-booking-provider';
+export { useResetPublicBooking } from './components/public-booking-provider';
 export { displayMoney } from './domain/display-currency';
+export { convertCurrencyMinor } from './domain/display-currency';
+export { resolveSelection } from './domain/room-catalogue';
+export { selectionPriceSummary } from './domain/selection-price-summary';
 export type { PublicSearchFormProps } from './ui/public-search-form';
 
 export {

@@ -43,10 +43,11 @@ public class StaffBootstrapConfiguration {
             return;
         }
         Instant now = Instant.now();
-        StaffUser user = staffUsers.save(new StaffUser(UUID.randomUUID(), username.trim(), email.trim(),
+        StaffUser user = staffUsers.saveAndFlush(new StaffUser(UUID.randomUUID(), username.trim(), email.trim(),
                 passwordEncoder.encode(password), "SUPER_ADMIN", now));
-        authorizationRepository.ensureSuperAdminMembership(user.getId(), UUID.fromString("4f63ec16-4b5c-4daf-a9ba-fc4251fb81d1"));
-        auditEvents.save(new AuthAuditEvent("STAFF_BOOTSTRAP_CREATED", user.getId(), null, "deployment_secret", now));
+        UUID organizationId = UUID.fromString("4f63ec16-4b5c-4daf-a9ba-fc4251fb81d1");
+        authorizationRepository.ensureSuperAdminMembership(user.getId(), organizationId);
+        auditEvents.save(AuthAuditEvent.bootstrapCreated(user.getId(), organizationId, now));
     }
 
     private boolean blank(String value) { return value == null || value.isBlank(); }

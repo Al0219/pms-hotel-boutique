@@ -8,7 +8,9 @@ WEB-2: Identity/Account/Rewards.
 Login NO obligatorio.
 
 Journey:
-Search -> Availability -> Room -> Selection -> Guest Data -> Guarantee/Payment -> Confirmation.
+Search -> Availability -> Room -> Selection -> Guest Data -> Final Review -> Guarantee/Payment -> Confirmation.
+
+Checkout público de cuatro pasos: selección, datos del huésped, revisión final y pago/garantía. La revisión final no confirma ni cobra; permite corregir datos antes del pago.
 
 ## Google
 Opcional.

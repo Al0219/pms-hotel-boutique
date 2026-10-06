@@ -14,6 +14,19 @@ MyReservationsPage también redirige con replace al acceso si no hay cuenta:
 sus tarjetas no se renderizan para visitantes ni después de cerrar sesión.
 No altera Guest Auth, Staff Auth, cookies, endpoints ni contratos.
 
+Por corrección posterior de José, el acceso a la cuenta es un botón oliva con
+icono de usuario en la esquina derecha del header, fuera del menú desplegable.
+Con GuestAccount activa muestra «Mi cuenta» y abre `/cuenta`; sin sesión muestra
+«Iniciar sesión» y abre `/acceso`. En móvil permanece visible como botón de icono
+con nombre accesible, tooltip y área mínima de 44 px. No duplica el enlace de
+acceso dentro de la navegación ni consulta si un correo tiene cuenta registrada.
+
+Validación de este ajuste: 11 pruebas existentes de header/inicio, ESLint,
+TypeScript y build con mocks: PASS. Chrome en el puerto 3000 verifica login,
+acceso a `/cuenta` y logout, botón visible con menú abierto/cerrado y ausencia
+de overflow a 320, 390, 540, 768, 960, 1024 y 1440 px. Capturas de escritorio y
+móvil revisadas; sin errores de consola ni solicitudes Backend. Artefactos en TEMP.
+
 Límite existente: useGuestSession representa una sesión de demostración en
 memoria. La restauración de sesión real vía BFF y la consulta de reservas
 vinculadas al GuestAccount siguen siendo trabajo de integración. Este cambio

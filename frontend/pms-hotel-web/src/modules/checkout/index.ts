@@ -6,3 +6,6 @@
 export { PublicGuestDataPage } from './components/public-guest-data-page';
 export { CheckoutDraftProvider } from './components/checkout-draft-provider';
 export { PublicPaymentReviewPage } from './components/public-payment-review-page';
+export { PublicCheckoutReviewPage } from './components/public-checkout-review-page';
+export { PublicBookingConfirmationPage } from './components/public-booking-confirmation-page';
+export { PublicBookingResultPage } from './components/public-booking-result-page';

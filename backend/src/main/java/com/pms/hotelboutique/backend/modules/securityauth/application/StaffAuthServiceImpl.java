@@ -60,7 +60,7 @@ public class StaffAuthServiceImpl implements StaffAuthService {
         authorizationService.resolve(user.getId());
         AuthSession session = sessions.save(new AuthSession(UUID.randomUUID(), user, now.plus(refreshTokenTtl), now));
         StaffTokenPair tokens = createTokenPair(session, UUID.randomUUID(), now);
-        auditEvents.save(new AuthAuditEvent("STAFF_LOGIN_SUCCEEDED", user.getId(), session.getId(), "password", now));
+        auditEvents.save(AuthAuditEvent.staffAction("STAFF_LOGIN_SUCCEEDED", user.getId(), session.getId(), "password", now, user.getId()));
         return tokens;
     }
 
@@ -73,12 +73,12 @@ public class StaffAuthServiceImpl implements StaffAuthService {
         RefreshToken current = refreshTokens.findByTokenHash(hash(rawRefreshToken)).orElseThrow(StaffAuthenticationException::new);
         AuthSession session = current.getSession();
         if (!current.isActive(now) || !session.isActive(now) || !session.getStaffUser().isActive()) {
-            revokeSession(session, now, "refresh_rejected");
+            revokeSession(session, now, "refresh_rejected", null);
             throw new StaffAuthenticationException();
         }
         current.revoke(now);
         StaffTokenPair tokens = createTokenPair(session, current.getFamilyId(), now);
-        auditEvents.save(new AuthAuditEvent("STAFF_REFRESH_ROTATED", session.getStaffUser().getId(), session.getId(), "rotated", now));
+        auditEvents.save(AuthAuditEvent.staffAction("STAFF_REFRESH_ROTATED", session.getStaffUser().getId(), session.getId(), "rotated", now, session.getStaffUser().getId()));
         return tokens;
     }
 
@@ -97,8 +97,9 @@ public class StaffAuthServiceImpl implements StaffAuthService {
 
     @Override
     public void logout(StaffPrincipal principal) {
-        AuthSession session = sessions.findById(principal.sessionId()).orElseThrow(StaffAuthenticationException::new);
-        revokeSession(session, Instant.now(), "logout");
+        StaffPrincipal active = getActivePrincipal(principal);
+        AuthSession session = sessions.findById(active.sessionId()).orElseThrow(StaffAuthenticationException::new);
+        revokeSession(session, Instant.now(), "logout", active.staffUserId());
     }
 
     private StaffTokenPair createTokenPair(AuthSession session, UUID familyId, Instant now) {
@@ -111,13 +112,17 @@ public class StaffAuthServiceImpl implements StaffAuthService {
         return new StaffTokenPair(jwtService.issue(principal, now), rawRefreshToken, jwtService.accessTokenExpiresInSeconds());
     }
 
-    private void revokeSession(AuthSession session, Instant now, String detail) {
+    private void revokeSession(AuthSession session, Instant now, String detail, UUID authenticatedActorId) {
         if (session.isActive(now)) {
             session.revoke(now);
         }
         List<RefreshToken> tokens = refreshTokens.findAllBySession_Id(session.getId());
         tokens.forEach(token -> token.revoke(now));
-        auditEvents.save(new AuthAuditEvent("STAFF_SESSION_REVOKED", session.getStaffUser().getId(), session.getId(), detail, now));
+        AuthAuditEvent event = authenticatedActorId == null
+                ? new AuthAuditEvent("STAFF_SESSION_REVOKED", session.getStaffUser().getId(), session.getId(), detail, now)
+                : AuthAuditEvent.staffAction("STAFF_SESSION_REVOKED", session.getStaffUser().getId(), session.getId(),
+                        detail, now, authenticatedActorId);
+        auditEvents.save(event);
     }
 
     private String newRefreshToken() {

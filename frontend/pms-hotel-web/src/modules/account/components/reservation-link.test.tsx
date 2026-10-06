@@ -40,15 +40,15 @@ describe('Guest reservation link demonstration', () => {
     await login();
     fireEvent.submit(screen.getByLabelText('Referencia de reserva').closest('form')!);
     expect(screen.getByRole('alert')).toHaveTextContent('Ingresa la referencia'); expect(screen.getByLabelText('Referencia de reserva')).toHaveFocus();
-    send(); const otp = await screen.findByLabelText('Código de verificación'); expect(otp).toHaveFocus();
+    send(); const otp = await screen.findByLabelText('Código de verificación'); expect(otp).toHaveFocus(); expect(screen.queryByText(/12345678/)).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'HB-2026-10420' })).not.toBeInTheDocument();
     await verify('00000000'); expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos verificar la reserva');
     expect(screen.queryByRole('link', { name: 'HB-2026-10420' })).not.toBeInTheDocument();
-    await verify(); await screen.findByText('Reserva HB-2026-10420 vinculada en la demostración.');
+    await verify(); await screen.findByText('Reserva HB-2026-10420 vinculada.');
     expect(screen.getByRole('link', { name: 'HB-2026-10420' })).toHaveAttribute('href', '/cuenta/reservas/HB-2026-10420');
     expect(screen.getByText(/2 estadías · Responsable: Carlos Mendoza/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Vincular otra reserva' }));
-    send('HB-2026-10421'); await verify(); await screen.findByText('Reserva HB-2026-10421 vinculada en la demostración.');
+    send('HB-2026-10421'); await verify(); await screen.findByText('Reserva HB-2026-10421 vinculada.');
     expect(screen.getByText('2 reservas vinculadas')).toBeInTheDocument(); expect(screen.getByRole('link', { name: 'HB-2026-10421' })).toBeInTheDocument();
     expect(localStorage.length).toBe(0); expect(sessionStorage.length).toBe(0);
   });
@@ -56,10 +56,10 @@ describe('Guest reservation link demonstration', () => {
     let requests = 0;
     mockServer.events.on('request:start', ({ request }) => { if (request.url.endsWith('/__mock/reservation-links/challenges')) requests++; });
     await login(); send(); fireEvent.submit(screen.getByLabelText('Referencia de reserva').closest('form')!);
-    expect(screen.getByRole('button', { name: 'Preparando código…' })).toBeDisabled();
-    await verify(); await screen.findByText('Reserva HB-2026-10420 vinculada en la demostración.'); expect(requests).toBe(1);
+    expect(screen.getByRole('button', { name: 'Solicitando código…' })).toBeDisabled();
+    await verify(); await screen.findByText('Reserva HB-2026-10420 vinculada.'); expect(requests).toBe(1);
     fireEvent.click(screen.getByRole('button', { name: 'Vincular otra reserva' })); send(); await verify();
-    await screen.findByText('Reserva HB-2026-10420 vinculada en la demostración.'); expect(screen.getByText('1 reserva vinculada')).toBeInTheDocument();
+    await screen.findByText('Reserva HB-2026-10420 vinculada.'); expect(screen.getByText('1 reserva vinculada')).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'HB-2026-10420' })).toHaveLength(1);
     mockServer.events.removeAllListeners('request:start');
   });
@@ -67,9 +67,9 @@ describe('Guest reservation link demonstration', () => {
     vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-05T12:00:00Z'));
     await login(); send(); await screen.findByLabelText('Código de verificación');
     vi.setSystemTime(new Date('2026-10-05T12:06:00Z')); await verify(); expect(await screen.findByRole('alert')).toHaveTextContent('El código venció');
-    fireEvent.click(screen.getByRole('button', { name: 'Reenviar código de prueba' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reenviar código' }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'Verificar y vincular reserva' })).not.toBeDisabled());
-    await verify(); expect(await screen.findByText('Reserva HB-2026-10420 vinculada en la demostración.')).toBeInTheDocument();
+    await verify(); expect(await screen.findByText('Reserva HB-2026-10420 vinculada.')).toBeInTheDocument();
   });
   it('keeps the reference on network failure and recovers without queuing a link', async () => {
     await login(); act(() => onlineManager.setOnline(false)); send();
@@ -82,7 +82,7 @@ describe('Guest reservation link demonstration', () => {
     mockServer.use(http.post('http://pms.test/__mock/reservation-links/verify', async ({ request }) => { const input = await request.json() as { request_id: string }; await delay(500); return HttpResponse.json({ account_id: 'guest-demo-google', request_id: input.request_id, reservation_id: 'HB-2026-10420' }); }));
     await verify(); fireEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }));
     await waitFor(() => expect(client.getQueriesData({ queryKey: ['guest'] })).toHaveLength(0));
-    expect(screen.queryByText(/vinculada en la demostración/)).not.toBeInTheDocument(); expect(client.getQueryData(['staff', 'sentinel'])).toEqual({ active: true });
+    expect(screen.queryByText(/vinculada/)).not.toBeInTheDocument(); expect(client.getQueryData(['staff', 'sentinel'])).toEqual({ active: true });
     expect(screen.queryByLabelText('Código de verificación')).not.toBeInTheDocument();
   });
   it('offers Google for linking from an email demo session without exposing the link form', async () => {

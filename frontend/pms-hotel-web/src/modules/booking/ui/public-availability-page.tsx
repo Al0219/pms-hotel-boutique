@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 import { usePublicAvailability } from "@/modules/availability";
 import { Button, EmptyState, ErrorState, LoadingState } from "@/shared/components";
-import { getPublicEnvironment } from "@/lib/env";
 import { HttpNetworkError } from "@/lib/http";
 import { buildSearchQueryParams, isBookingCalendarDate, validateBookingSearchCriteria, type BookingSearchCriteria } from "../domain/booking-search-criteria";
 import { catalogueOptions, clearCatalogueFilters, resolveSelection, type CatalogueSort } from "../domain/room-catalogue";
@@ -81,7 +80,6 @@ function CatalogueSearch({ initialCriteria }: { initialCriteria: Partial<Booking
           </select></label></div>
       </header>
       {notice && <p role="status" className={styles.small}>{notice}</p>}
-      {getPublicEnvironment().useMockApi && <p className={styles.notice}>Demostración: habitaciones y precios de ejemplo. No se realiza ninguna reserva.</p>}
       {criteria.promoCode?.trim() && <p className={styles.small}>Los precios mostrados no incluyen descuentos por el código promocional. Su aplicación debe validarse antes de confirmar.</p>}
       <div className={styles.layout}><CatalogueFilterPanel filters={filters} onChange={setFilters} onClear={resetFilters} />
         <section className={styles.results} aria-label="Resultados de disponibilidad" aria-busy={availability.isFetching}>

@@ -14,6 +14,6 @@ export function GuestReservationsPage() {
   const router = useRouter();
   useEffect(() => { if (!account) router.replace('/acceso?returnTo=%2Fmis-reservas'); }, [account, router]);
   if (!account) return <LoadingState message="Abriendo el acceso a tus reservas…" />;
-  if (!getPublicEnvironment().useMockApi) return <AccountSection title="Mis reservas" description="El listado y la vinculación de esta entrega están disponibles en modo demostración. La conexión real está pendiente."><Link href="/habitaciones">Reservar como invitado</Link></AccountSection>;
+  if (!getPublicEnvironment().useMockApi) return <AccountSection title="Mis reservas" description="No podemos cargar tus reservas en este momento. Inténtalo más tarde."><Link href="/habitaciones">Reservar como invitado</Link></AccountSection>;
   return <GuestAccountGate><HistoryPage title="Mis reservas" /></GuestAccountGate>;
 }

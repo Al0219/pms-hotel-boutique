@@ -47,16 +47,40 @@ No agregar secretos ni tokens de sesión al frontend.
 
 ## Checkout público
 
-Inicio → catálogo → detalle → revisión → datos del huésped → destino de pago.
+Inicio → catálogo → detalle → selección → datos del huésped → revisión final → pago → confirmación.
 Usar `npm run dev -- --port 3000` y abrir `http://localhost:3000`.
 Seleccionar primero una habitación con fechas futuras. El borrador se conserva
 durante la navegación; recargar descarta carrito y datos personales. La vista
-de pago es un destino de revisión, todavía no cobra ni confirma reservas.
+de pago permite ahora una garantía y confirmación simuladas, sin cobros ni reservas reales.
 Detalles y validación en [Datos del huésped](docs/42_PUBLIC_BOOKING_GUEST_DATA.md).
 
 «Mis reservas» permite probar acceso Google simulado, vinculación mediante
 referencia/código y listado/detalle únicamente de reservas vinculadas.
 Instrucciones y límites en [Reserva como invitado y Mis reservas](docs/43_PUBLIC_GUEST_RESERVATION_LINK.md).
+
+El Paso 3 permite revisar estadía, contacto, solicitudes y desglose antes del pago.
+Los enlaces de edición conservan la búsqueda y los datos del borrador.
+Detalles en [Revisión final](docs/45_PUBLIC_BOOKING_FINAL_REVIEW.md).
+
+El Paso 4 incluye tarjeta de prueba aislada, garantía de una noche, revalidación
+y confirmación ficticia. Casos de aprobación/rechazo/error y límites en
+[Pago y garantía](docs/44_PUBLIC_BOOKING_PAYMENT_GUARANTEE.md).
+
+La confirmación permite copiar referencia, imprimir/guardar PDF y descargar
+calendario (.ics). El error conserva los datos para reintentar; volver al inicio
+limpia el carrito y borrador. Detalles en [Resultado de reserva](docs/46_PUBLIC_BOOKING_OUTCOME.md).
+
+El Paso 4 permite abono de una noche, 50%, monto personalizado o pago total,
+con validaciones de tarjeta por campo en el simulador aislado. Detalles en
+[Modalidades de pago](docs/47_PUBLIC_BOOKING_PAYMENT_MODES.md).
+
+Los precios públicos inician en quetzales y permiten cambiar a dólares. La
+garantía personalizada incluye su propio selector Q/USD, que convierte el
+importe ingresado y sus límites usando la referencia de demostración existente.
+
+Public 01 utiliza [textos finales para clientes](docs/48_PUBLIC_BOOKING_CUSTOMER_COPY.md).
+Los avisos y controles de simulación ya no aparecen en las rutas públicas;
+los servicios siguen en modo mock hasta integrar Backend/PSP.
 
 ## Backlog y reglas
 

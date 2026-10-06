@@ -42,13 +42,14 @@ describe('Public booking selection review', () => {
     fireEvent.click(screen.getByRole('button', { name: /Continuar con mis datos/ }));
     expect(push).toHaveBeenLastCalledWith('/reserva/checkout?checkIn=2026-10-10&checkOut=2026-10-13&adults=2&children=0&roomsCount=1&promoCode=BOUTIQUE');
   });
-  it('queries the selected property, shows the three-step process and exact server estimate', async () => {
+  it('queries the selected property, shows the four-step process and exact server estimate', async () => {
     const properties: (string | null)[] = [];
     mockServer.use(http.get('*/api/v1/public/availability', ({ request }) => { properties.push(new URL(request.url).searchParams.get('property_id')); return HttpResponse.json({ ...publicCatalogueFixture, check_in_date: criteria.checkIn, check_out_date: criteria.checkOut }); }));
     mount(); const price = await screen.findByRole('complementary', { name: 'Resumen de precio' });
     expect(properties).toContain('prop_boutique_01');
-    for (const amount of ['US$ 435.00', 'US$ 22.00', 'US$ 48.00', 'US$ 505.00']) expect(within(price).getByText(amount)).toBeInTheDocument();
+    for (const amount of ['Q 3,323.99', 'Q 168.11', 'Q 366.79', 'Q 3,858.89']) expect(within(price).getByText(amount)).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Pasos de la reserva' }).querySelector('[aria-current="step"]')).toHaveTextContent('Revisa tu selección');
+    expect(within(screen.getByRole('navigation', { name: 'Pasos de la reserva' })).getAllByRole('listitem')).toHaveLength(4);
     expect(screen.getByText('La disponibilidad se verificará nuevamente antes de confirmar la reserva.')).toBeInTheDocument();
     expect(screen.getByRole('article', { name: 'Deluxe King' })).toHaveTextContent('3 noches');
   });
@@ -56,7 +57,7 @@ describe('Public booking selection review', () => {
     mount(criteria, [...defaultSelection.map(value => ({ ...value, quantity: 2 })), { roomTypeId: 'rt_terrace_suite', ratePlanId: 'rp_terrace', quantity: 1 }]);
     const price = await screen.findByRole('complementary', { name: 'Resumen de precio' });
     expect(screen.getAllByRole('article')).toHaveLength(2); expect(price).toHaveTextContent('3 habitaciones');
-    expect(within(price).getByText('US$ 1,710.00')).toBeInTheDocument();
+    expect(within(price).getByText('Q 13,066.73')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Continuar con mis datos/ })).toBeEnabled();
   });
   it.each([{ ...defaultSelection[0], ratePlanId: 'rp_missing' }, { ...defaultSelection[0], quantity: 3 }])('blocks a stale rate or ATS quantity instead of silently replacing it: %o', async selection => {
@@ -71,8 +72,8 @@ describe('Public booking selection review', () => {
       available_room_types: publicCatalogueFixture.available_room_types.map(room => ({ ...room, rate_plans: room.rate_plans.map(rate => ({ ...rate, total_amount: '499.00', stay_price_breakdown: undefined })) })),
     })));
     mount(); const price = await screen.findByRole('complementary', { name: 'Resumen de precio' });
-    expect(within(price).getByText('US$ 499.00')).toBeInTheDocument(); expect(within(price).getByText('Por confirmar')).toBeInTheDocument();
-    expect(within(price).queryByText('US$ 505.00')).not.toBeInTheDocument();
+    expect(within(price).getByText('Q 3,813.04')).toBeInTheDocument(); expect(within(price).getByText('Por confirmar')).toBeInTheDocument();
+    expect(within(price).queryByText('Q 3,858.89')).not.toBeInTheDocument();
   });
   it('shows an empty selection after removal', async () => {
     mount(); await screen.findByRole('article', { name: 'Deluxe King' });
@@ -102,6 +103,6 @@ describe('Public booking selection review', () => {
     await act(async () => { onlineManager.setOnline(true); });
     expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos verificar tu selección');
     mockServer.resetHandlers(); fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
-    expect(await screen.findByRole('complementary', { name: 'Resumen de precio' })).toHaveTextContent('US$ 505.00');
+    expect(await screen.findByRole('complementary', { name: 'Resumen de precio' })).toHaveTextContent('Q 3,858.89');
   });
 });
