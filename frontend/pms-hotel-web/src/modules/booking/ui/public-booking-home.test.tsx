@@ -69,7 +69,8 @@ describe('Public 01 landing interactions', () => {
     render(<PublicBookingShell><p>Contenido público</p></PublicBookingShell>);
     const navigation = screen.getByRole('navigation', { name: 'Navegación pública' });
     expect(within(navigation).getByRole('link', { name: 'Habitaciones' })).toHaveAttribute('href', '/habitaciones');
-    expect(within(navigation).getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/acceso');
+    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/acceso');
+    expect(within(navigation).queryByRole('link', { name: 'Iniciar sesión' })).not.toBeInTheDocument();
     expect(within(navigation).getByRole('link', { name: 'Mis reservas' })).toHaveAttribute('href', '/acceso?returnTo=%2Fmis-reservas');
     const toggle = screen.getByRole('button', { name: /Menú/ });
     fireEvent.click(toggle);
@@ -89,13 +90,17 @@ describe('Public 01 landing interactions', () => {
   it('keeps navigation public and directs signed-in Guests to their linked reservations', () => {
     const view = render(<PublicBookingShell><p>Contenido público</p></PublicBookingShell>);
     expect(screen.getByRole('link', { name: 'Mis reservas' })).toHaveAttribute('href', '/acceso?returnTo=%2Fmis-reservas');
+    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/acceso');
     guestAccount = { id: 'guest-demo', email: 'demo@example.com', externalIdentities: [] };
     view.rerender(<PublicBookingShell><p>Contenido público</p></PublicBookingShell>);
     const navigation = screen.getByRole('navigation', { name: 'Navegación pública' });
     expect(within(navigation).getByRole('link', { name: 'Mis reservas' })).toHaveAttribute('href', '/mis-reservas');
+    expect(screen.getByRole('link', { name: 'Mi cuenta' })).toHaveAttribute('href', '/cuenta');
+    expect(screen.queryByRole('link', { name: 'Iniciar sesión' })).not.toBeInTheDocument();
     guestAccount = null;
     view.rerender(<PublicBookingShell><p>Contenido público</p></PublicBookingShell>);
     expect(screen.getByRole('link', { name: 'Mis reservas' })).toHaveAttribute('href', '/acceso?returnTo=%2Fmis-reservas');
+    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/acceso');
   });
   it('keeps customer-facing footer copy and opens social and FAQ information', () => {
     render(<PublicBookingShell><p>Contenido público</p></PublicBookingShell>);
