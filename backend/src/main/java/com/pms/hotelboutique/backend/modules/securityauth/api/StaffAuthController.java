@@ -5,10 +5,15 @@ import com.pms.hotelboutique.backend.modules.securityauth.application.StaffAutho
 import com.pms.hotelboutique.backend.modules.securityauth.application.StaffPrincipal;
 import com.pms.hotelboutique.backend.modules.securityauth.application.StaffTokenPair;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -18,7 +23,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 @RestController
 @RequestMapping("/api/v1/staff-auth")
 @Tag(name = "Staff authentication", description = "Internal endpoints consumed only by the Next.js BFF.")
@@ -33,20 +37,31 @@ public class StaffAuthController {
     }
 
     @PostMapping("/sessions")
+    @ApiResponse(responseCode = "201", description = "Sesión Staff creada; tokens solo para BFF.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StaffAuthResponse.class)))
+    @ApiResponse(responseCode = "400", description = "JSON o credenciales de entrada inválidos.", content = @Content)
+    @ApiResponse(responseCode = "401", description = "Credenciales/identidad/autorización Staff inválidas; error genérico.", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     @Operation(summary = "Create a Staff session", description = "BFF-only. It must keep both returned tokens in HttpOnly cookies.")
-    public ResponseEntity<StaffAuthResponse> login(@Valid @RequestBody StaffLoginRequest request) {
+    public ResponseEntity<StaffAuthResponse> login(@Valid @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true, content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = StaffLoginRequest.class))) @RequestBody StaffLoginRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(staffAuthService.login(request.username(), request.password())));
     }
 
     @PostMapping("/refresh")
+    @SecurityRequirement(name = "staffRefreshCookie")
+    @ApiResponse(responseCode = "200", description = "Tokens Staff rotados; BFF reemplaza cookies HttpOnly.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StaffAuthResponse.class)))
+    @ApiResponse(responseCode = "401", description = "Cookie ausente o refresh/sesión Staff inválidos.", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     @Operation(summary = "Rotate a Staff refresh token", description = "BFF-only. The BFF forwards its HttpOnly refresh cookie and replaces it with the response value.")
     public StaffAuthResponse refresh(@CookieValue(name = REFRESH_COOKIE, required = false) @Schema(hidden = true) String refreshToken) {
         return toResponse(staffAuthService.refresh(refreshToken));
     }
 
     @GetMapping("/session")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponse(responseCode = "200", description = "Identidad y autorización C2 vigentes; no devuelve tokens.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StaffSessionResponse.class)))
+    @ApiResponse(responseCode = "401", description = "JWT/sesión Staff inválidos; el filtro puede responder sin cuerpo de aplicación.", content = @Content)
     @Operation(summary = "Read the active Staff session", description = "BFF-only. Permissions and authorized properties are recalculated for this request; no tokens are returned.")
-    public StaffSessionResponse session(@AuthenticationPrincipal StaffPrincipal principal) {
+    public StaffSessionResponse session(@Parameter(hidden = true) @AuthenticationPrincipal StaffPrincipal principal) {
         StaffPrincipal active = staffAuthService.getActivePrincipal(principal);
         var snapshot = authorizationService.resolve(active.staffUserId());
         var memberships = snapshot.properties().stream().map(property -> new StaffSessionResponse.PropertyMembershipResponse(
@@ -56,8 +71,11 @@ public class StaffAuthController {
     }
 
     @DeleteMapping("/session")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponse(responseCode = "204", description = "Sesión y refresh Staff revocados; sin cuerpo.", content = @Content)
+    @ApiResponse(responseCode = "401", description = "JWT/sesión Staff inválidos. Guest no habilita Staff.", content = @Content)
     @Operation(summary = "Revoke the active Staff session")
-    public ResponseEntity<Void> logout(@AuthenticationPrincipal StaffPrincipal principal) {
+    public ResponseEntity<Void> logout(@Parameter(hidden = true) @AuthenticationPrincipal StaffPrincipal principal) {
         staffAuthService.logout(principal);
         return ResponseEntity.noContent().build();
     }

@@ -28,6 +28,10 @@ Inspeccionar código y tests afectados. Cerrar técnicamente con tests automatiz
 
 Buscar otros contratos por ID/módulo y verificar aprobación.
 
+Endpoint HTTP nuevo/modificado: actualizar y validar OpenAPI/Swagger en el mismo
+incremento; OpenAPI desactualizado no cumple DoD. Detalles y exclusiones explícitas
+justificadas en docs/02_API_CONTRACT_POLICY.md.
+
 Abrir docs globales de dominio, seguridad, scope o cross-app **solo si el cambio los afecta**.
 
 Antes de crear o modificar una API, confirmar únicamente lo necesario para esa tarea:

@@ -156,6 +156,47 @@ dependencias; un perfil parcial incluye solo su módulo y sus dependencias.
 - **DoD:** contrato C2 y OpenAPI documentados; pruebas Backend/Web, build Docker
   y smoke completo login/sesión/refresh/logout registrados en `AlanHandoff.md`.
 
+
+#### BE-005-OPENAPI-01 — Baseline y puesta al día OpenAPI/Swagger
+
+- **Estado:** COMPLETADA; QA visual/manual ejecutado y confirmado PASS
+  por el usuario (2026-10-05); evidencia automatizada previa conservada.
+- **Rama/base:** chore/backend-openapi-contract-baseline, HEAD 8cb2811;
+  árbol limpio al iniciar, sin commit/push/merge.
+- **Owner:** Alan / BD1; reviewers de módulos afectados colaborativos.
+- **DoR/alcance:** springdoc existente; C1/C2/C3, contratos BD2 de catálogos/
+  disponibilidad y On-books/OTP aprobados disponibles. Inventario de controllers,
+  reglas permanentes y documentación de DTOs/auth/respuestas; sin endpoints,
+  permisos, lógica de negocio, persistencia ni dependencias nuevos.
+- **Baseline real:** /v3/api-docs OpenAPI 3.1.0, 29 operaciones en 9 controllers;
+  paths/métodos completos pero auth, respuestas y schemas incompletos.
+- **Aceptación/DoD:** paridad de mappings y documento generado; parámetros,
+  DTOs, status, Bearer/cookies, límites y audiencia correctos según fuentes.
+  Tests estructurales de contrato + focalizados + verify completo y diff --check;
+  inventario/gaps en docs/39_BACKEND_OPENAPI_BASELINE.md. Conservar EN_QA hasta
+  QA manual del usuario PASS conforme al DoD común; exclusiones explícitas.
+- **Evidencia:** 29/29 operaciones, 19 paths, 29 schemas; ocho tests OpenAPI;
+  focalizados 68 PASS y verify 363 PASS (0 failures/errors/skipped), JAR generado.
+  HTTP QA /v3/api-docs, Swagger UI y swagger-config 200; paths/components
+  idénticos a tests. Cuatro securitySchemes, 26 operaciones protegidas, tres
+  sin credencial previa; Actuator/error fuera del inventario de negocio.
+  Comparación funcional Java contra HEAD PASS; diff --check PASS.
+- **Gaps/exclusiones:** sin mappings de aplicación excluidos ni endpoints
+  actuales sin fuente de contrato; conservar límites BFF-only y ejemplos C1
+  conceptuales según el inventario, sin inventar DTOs/error codes.
+- **QA visual confirmado:** Swagger UI carga sin errores; nueve tags y 29
+  operaciones visibles; paridad con mappings 29/29. Bearer Staff/Guest y
+  refresh cookies separados; Actuator/error fuera de la API de negocio.
+  Códigos, DTOs, parámetros, headers y nullability revisados PASS por el usuario.
+- **Regla permanente conservada:** todo endpoint HTTP nuevo/modificado debe
+  actualizar y validar OpenAPI/Swagger dentro del mismo incremento, conforme
+  a backend/AGENTS.md y docs/02_API_CONTRACT_POLICY.md; sin editar esas fuentes.
+- **Cierre:** QA manual PASS más focalizados 68 PASS y verify 363 PASS previos;
+  cierre documental exclusivo en AlanPlan/AlanHandoff, diff --check PASS.
+- **Siguiente:** esperar autorización para otro incremento o publicación;
+  no iniciar otra tarea ni hacer commit/push/merge.
+
+
 ## BD2 — Core PMS
 
 Los estados actuales incorporan el cierre BD2-010 sobre main `345481b`.
