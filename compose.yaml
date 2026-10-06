@@ -34,6 +34,8 @@ services:
       RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}
     expose:
       - "8080"
+    ports:
+      - "127.0.0.1:${PMS_BACKEND_PORT:-8081}:8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -54,7 +56,7 @@ services:
       HOSTNAME: 0.0.0.0
       PORT: "3000"
       PMS_BACKEND_INTERNAL_URL: http://backend:8080
-      PMS_WEB_PUBLIC_URL: ${PMS_WEB_PUBLIC_URL:-http://localhost:3000}
+      PMS_WEB_PUBLIC_URL: ${PMS_WEB_PUBLIC_URL:-http://localhost:${PMS_WEB_PORT:-3000}}
     ports:
       - "${PMS_WEB_PORT:-3000}:3000"
     depends_on:
