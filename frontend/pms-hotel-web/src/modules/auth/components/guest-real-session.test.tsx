@@ -27,13 +27,14 @@ function Observer() {
 
 function setup(page: "account" | "access" = "account") {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  const navigation = { replace: vi.fn(), push: vi.fn(), back: vi.fn(), forward: vi.fn(), refresh: vi.fn(), prefetch: vi.fn(), bfcacheId: "real-session-test" };
   function Harness({ page }: { page: "account" | "access" }) {
-    return <AppRouterContext.Provider value={{ replace: vi.fn(), push: vi.fn(), back: vi.fn(), forward: vi.fn(), refresh: vi.fn(), prefetch: vi.fn(), bfcacheId: "real-session-test" }}><QueryClientProvider client={client}><GuestSessionProvider><Observer />
+    return <AppRouterContext.Provider value={navigation}><QueryClientProvider client={client}><GuestSessionProvider><Observer />
       {page === "access" ? <GuestAccessPage /> : <GuestAccountGate><h1>Cuenta autenticada</h1></GuestAccountGate>}
     </GuestSessionProvider></QueryClientProvider></AppRouterContext.Provider>;
   }
   const view = render(<Harness page={page} />);
-  return { client, user: userEvent.setup(), navigate: (page: "account" | "access") => view.rerender(<Harness page={page} />) };
+  return { client, navigation, user: userEvent.setup(), navigate: (page: "account" | "access") => view.rerender(<Harness page={page} />) };
 }
 
 describe("Guest session through the real BFF", () => {
@@ -41,7 +42,7 @@ describe("Guest session through the real BFF", () => {
     const requests: Request[] = [];
     setAuthToken("synthetic-staff-token");
     mockServer.use(http.get(endpoint, ({ request }) => { requests.push(request); return HttpResponse.json(dto); }));
-    const { navigate } = setup();
+    const { navigate, navigation } = setup();
     expect(await screen.findByRole("heading", { name: "Cuenta autenticada" })).toBeInTheDocument();
     expect(screen.getByLabelText("Guest session")).toHaveTextContent('"status":"signed-in"');
     expect(screen.getByText(dto.email)).toBeInTheDocument();
@@ -49,8 +50,8 @@ describe("Guest session through the real BFF", () => {
     expect(new URL(requests[0].url).origin).toBe(window.location.origin);
     expect(requests[0].headers.has("authorization")).toBe(false);
     navigate("access");
-    expect(screen.getByRole("heading", { name: "Tu cuenta está lista" })).toBeInTheDocument();
-    expect(screen.getByText(/Tu sesión está iniciada/)).toBeInTheDocument();
+    expect(navigation.replace).toHaveBeenCalledExactlyOnceWith('/cuenta');
+    expect(screen.queryByRole("heading", { name: "Cuenta vinculada" })).not.toBeInTheDocument();
     expect(screen.queryByText(/demostración está iniciada|Correo electrónico/)).not.toBeInTheDocument();
     navigate("account");
     expect(screen.getByRole("heading", { name: "Cuenta autenticada" })).toBeInTheDocument();
@@ -71,12 +72,16 @@ describe("Guest session through the real BFF", () => {
       await new Promise<void>(resolve => { finish = resolve; });
       return HttpResponse.json(dto);
     }));
-    setup(page);
+    const { navigation } = setup(page);
     expect(screen.getByText("Comprobando tu sesión…")).toHaveAttribute("role", "status");
     expect(screen.queryByRole("heading", { name: "Accede a tu cuenta" })).not.toBeInTheDocument();
     await waitFor(() => expect(finish).toBeDefined());
     await act(async () => finish());
-    expect(await screen.findByRole("heading", { name: page === "account" ? "Cuenta autenticada" : "Tu cuenta está lista" })).toBeInTheDocument();
+    if (page === "account") expect(await screen.findByRole("heading", { name: "Cuenta autenticada" })).toBeInTheDocument();
+    else {
+      await waitFor(() => expect(navigation.replace).toHaveBeenCalledExactlyOnceWith('/cuenta'));
+      expect(screen.queryByRole("heading", { name: "Cuenta vinculada" })).not.toBeInTheDocument();
+    }
   });
 
   it("server rendering also starts in checking, without reading browser cookies", () => {
@@ -131,8 +136,12 @@ describe("Guest session through the real BFF", () => {
       await new Promise<void>(resolve => { finish = resolve; });
       return new HttpResponse(null, { status: 204 });
     }));
-    const { client, user } = setup(page);
-    const heading = page === "account" ? "Cuenta autenticada" : "Tu cuenta está lista";
+    const { client, user, navigate, navigation } = setup(page);
+    if (page === "access") {
+      await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith('/cuenta'));
+      navigate("account");
+    }
+    const heading = "Cuenta autenticada";
     await screen.findByRole("heading", { name: heading });
     client.setQueryData(["guest", "profile"], { name: "Disposable" });
     client.setQueryData(["staff", "profile"], { name: "Staff" });
@@ -155,8 +164,12 @@ describe("Guest session through the real BFF", () => {
     let attempts = 0;
     mockServer.use(http.get(endpoint, () => HttpResponse.json(dto)), http.delete(endpoint, () => ++attempts === 1
       ? new HttpResponse(null, { status: 503 }) : new HttpResponse(null, { status: 204 })));
-    const { client, user } = setup(page);
-    const heading = page === "account" ? "Cuenta autenticada" : "Tu cuenta está lista";
+    const { client, user, navigate, navigation } = setup(page);
+    if (page === "access") {
+      await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith('/cuenta'));
+      navigate("account");
+    }
+    const heading = "Cuenta autenticada";
     await screen.findByRole("heading", { name: heading });
     client.setQueryData(["guest", "profile"], { name: "Disposable" });
     await user.click(screen.getByRole("button", { name: "Cerrar sesión" }));
@@ -183,9 +196,10 @@ describe("Guest session through the real BFF", () => {
     vi.stubEnv("NEXT_PUBLIC_USE_MOCK_API", "true");
     const bff = vi.fn(() => new HttpResponse(null, { status: 401 }));
     mockServer.use(http.get(endpoint, bff), http.delete(endpoint, bff));
-    const { user } = setup("access");
+    const { user, navigate, navigation } = setup("access");
     await user.click(screen.getByRole("button", { name: "Continuar con Google" }));
-    expect(await screen.findByRole("heading", { name: "Tu cuenta está lista" })).toBeInTheDocument();
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledExactlyOnceWith('/cuenta'));
+    navigate("account");
     await user.click(screen.getByRole("button", { name: "Cerrar sesión" }));
     expect(screen.getByLabelText("Guest session")).toHaveTextContent('"status":"signed-out"');
     expect(screen.getByLabelText("Guest session")).toHaveTextContent('"accessMethod":null');

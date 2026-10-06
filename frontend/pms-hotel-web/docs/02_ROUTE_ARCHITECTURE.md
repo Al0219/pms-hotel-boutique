@@ -47,6 +47,10 @@ Staff ni exige su sesión. El tablero conserva su layout privado y reglas de acc
 
 ## Layouts
 
+### Vinculación de reserva Guest — 2026-10-06
+
+Vista frontend solicitada por José: `(public)/cuenta/reservas/vincular/page.tsx` → `/cuenta/reservas/vincular`. Segmento estático junto al detalle dinámico `[reservationId]`; no representa un ID comercial de reserva. Reutiliza el guard Guest del layout de cuenta, conserva el destino al iniciar sesión y no crea endpoints Backend.
+
 ### Public
 Header + main + Footer.
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getPublicEnvironment } from '@/lib/env';
@@ -8,7 +8,9 @@ import { HttpNetworkError } from '@/lib/http/errors';
 import { Modal, Button } from '@/shared/components';
 import { useGuestSession } from './guest-session-provider';
 import { GuestSessionCheck } from './guest-session-check';
+import { GuestLinkedAccount } from './guest-linked-account';
 import { guestAccessReturn } from '../model/checkout-return';
+import { clearGuestCheckoutReturn, readGuestCheckoutReturn, rememberGuestCheckoutReturn } from '../model/guest-checkout-context';
 import type { AuthMode, GuestAccessDetails } from '../model/guest-credentials';
 import type { GuestAccessInput } from '../model/guest-access';
 import { AuthModeTabs } from './auth-mode-tabs';
@@ -22,64 +24,59 @@ const accessInformation = {
   privacy: { title: 'Política de privacidad', text: 'La política de privacidad del hotel está pendiente de publicación. Solicita al hotel información sobre el tratamiento de tus datos antes de enviar información personal.' },
 } as const;
 
-export function GuestAccessPage({ returnTo }: { returnTo?: string } = {}) {
-  const { status } = useGuestSession();
+export function GuestAccessPage({ returnTo, confirmation }: { returnTo?: string; confirmation?: ReactNode } = {}) {
+  const { status, account } = useGuestSession();
   if (status === 'checking' || status === 'error') return <GuestSessionCheck />;
   return getPublicEnvironment().useMockApi
-    ? <MockGuestAccessPage returnTo={returnTo} />
-    : <RealGuestAccessPage returnTo={returnTo} />;
+    ? <MockGuestAccessPage returnTo={returnTo} confirmation={confirmation} />
+    : account ? <GuestSignInRedirect returnTo={returnTo} /> : <RealGuestAccessPage returnTo={returnTo} />;
+}
+
+function GuestSignInRedirect({ returnTo }: { returnTo?: string }) {
+  const router = useRouter();
+  const redirected = useRef(false);
+  useEffect(() => {
+    if (redirected.current) return;
+    redirected.current = true;
+    const destination = guestAccessReturn(returnTo)
+      ?? (returnTo === undefined ? readGuestCheckoutReturn() : undefined) ?? '/cuenta';
+    clearGuestCheckoutReturn();
+    router.replace(destination);
+  }, [returnTo, router]);
+  return <section className={styles.page} aria-busy="true"><div className={styles.content}>
+    <p role="status">Acceso correcto. Redirigiendo…</p>
+  </div></section>;
 }
 
 function RealGuestAccessPage({ returnTo }: { returnTo?: string }) {
   const destination = guestAccessReturn(returnTo);
-  const reservationsAccess = destination === '/mis-reservas';
-  const { account, signOut, isPending, error } = useGuestSession();
-  return <section className={`${styles.page} ${styles.authPage}`} aria-labelledby={account ? 'access-success-title' : 'access-title'} aria-busy={isPending}>
+  const reservationsAccess = destination === '/mis-reservas' || destination === '/cuenta/reservas/vincular';
+  return <section className={`${styles.page} ${styles.authPage}`} aria-labelledby="access-title">
     <div className={styles.content}>
-      {account ? <>
-        <h1 id="access-success-title">Tu cuenta está lista</h1>
-        <p>Tu sesión está iniciada. Puedes consultar tu cuenta o continuar reservando.</p>
-        <div className={`${styles.card} ${styles.authCard}`}>
-          <p>{account.email ?? 'Cuenta de huésped'}</p>
-          <Link className={styles.primary} href="/cuenta">Ir a mi cuenta</Link>
-          <Link className={styles.secondary} href={destination ?? '/'}>{reservationsAccess ? 'Ir a Mis reservas' : destination ? 'Continuar mi reserva' : 'Continuar reservando'}</Link>
-          <button className={styles.secondary} type="button" disabled={isPending} onClick={() => void signOut()}>{isPending ? 'Cerrando sesión…' : 'Cerrar sesión'}</button>
-          {error && <p role="alert">No se pudo cerrar la sesión. Inténtalo nuevamente.</p>}
-        </div>
-      </> : <>
         <h1 id="access-title">Accede a tu cuenta</h1>
         <p>Tu cuenta se vincula de forma segura mediante Google. También puedes reservar sin crear una cuenta.</p>
         <div className={`${styles.card} ${styles.authCard}`}>
           {reservationsAccess && <p>Accede con Google para vincular y consultar tu reserva. Necesitarás su referencia y un código enviado al correo registrado.</p>}
-          <a className={styles.google} href="/api/auth/guest/google">Continuar con Google</a>
+          <a className={styles.google} href="/api/auth/guest/google" onClick={() => rememberGuestCheckoutReturn(returnTo)}>Continuar con Google</a>
           <Link className={styles.secondary} href={reservationsAccess ? '/habitaciones' : destination ?? '/'}>Continuar como invitado</Link>
         </div>
-      </>}
     </div>
   </section>;
 }
 
-function MockGuestAccessPage({ returnTo }: { returnTo?: string }) {
+function MockGuestAccessPage({ returnTo, confirmation }: { returnTo?: string; confirmation?: ReactNode }) {
   const destination = guestAccessReturn(returnTo);
-  const reservationsAccess = destination === '/mis-reservas';
-  const router = useRouter();
+  const reservationsAccess = destination === '/mis-reservas' || destination === '/cuenta/reservas/vincular';
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
   const [terms, setTerms] = useState(false);
-  const [completion, setCompletion] = useState<AuthMode | null>(null);
   const [pendingProvider, setPendingProvider] = useState<SocialAccessProvider>();
   const [notice, setNotice] = useState<string>();
   const [information, setInformation] = useState<keyof typeof accessInformation | null>(null);
   const informationTrigger = useRef<HTMLElement | null>(null);
   const requestActive = useRef(false);
-  const { account, signIn, signOut, isPending, error, resetError } = useGuestSession();
-  const busy = isPending || completion !== null;
-
-  useEffect(() => {
-    if (!completion || !account) return;
-    const timeout = window.setTimeout(() => router.replace(destination ?? '/mis-reservas'), 900);
-    return () => window.clearTimeout(timeout);
-  }, [completion, account, destination, router]);
+  const { account, accessMethod, signIn, isPending, error, resetError } = useGuestSession();
+  const busy = isPending;
 
   function openInformation(key: keyof typeof accessInformation) {
     informationTrigger.current = document.activeElement as HTMLElement;
@@ -103,7 +100,6 @@ function MockGuestAccessPage({ returnTo }: { returnTo?: string }) {
     resetError(); setNotice(undefined);
     try {
       const accepted = await signIn(input);
-      if (accepted) { setCompletion(authMode); setEmail(''); }
       return accepted;
     } finally { requestActive.current = false; setPendingProvider(undefined); }
   }
@@ -125,19 +121,9 @@ function MockGuestAccessPage({ returnTo }: { returnTo?: string }) {
     ? 'No pudimos conectar. Comprueba tu conexión y vuelve a intentarlo.'
     : 'No pudimos completar el acceso. Revisa los datos o vuelve a intentarlo.';
 
-  if (account) return <section className={`${styles.page} ${styles.authPage}`} aria-labelledby="access-success-title">
-    <div className={styles.content}>
-      <div className={styles.successMark} aria-hidden="true">✓</div>
-      <h1 id="access-success-title">{completion === 'register' ? 'Tu cuenta está creada' : 'Tu cuenta está lista'}</h1>
-      <p role="status">{completion ? 'Ya puedes continuar. Te estamos redirigiendo…' : 'Tu sesión está iniciada. Puedes consultar tus reservas o continuar reservando.'}</p>
-      <div className={`${styles.card} ${styles.authCard} ${styles.successCard}`}>
-        <p>{account.email ?? 'Cuenta de huésped'}</p>
-        <Link className={styles.primary} href={destination ?? '/mis-reservas'}>{destination && !reservationsAccess ? 'Continuar mi reserva' : 'Ir a Mis reservas'}</Link>
-        <Link className={styles.secondary} href="/cuenta">Ir a mi cuenta</Link>
-        <button className={styles.recovery} type="button" disabled={isPending} onClick={() => { setCompletion(null); void signOut(); }}>Cerrar sesión</button>
-      </div>
-    </div>
-  </section>;
+  if (account) return authMode === 'register'
+    ? confirmation ?? <GuestLinkedAccount authProvider={accessMethod === 'EMAIL' ? 'email' : 'google'} returnTo={returnTo} />
+    : <GuestSignInRedirect returnTo={returnTo} />;
 
   return <section className={`${styles.page} ${styles.authPage}`} aria-labelledby="access-title" aria-busy={busy}>
     <div className={styles.content}>
@@ -150,7 +136,7 @@ function MockGuestAccessPage({ returnTo }: { returnTo?: string }) {
           aria-labelledby={`auth-tab-${authMode === 'login' ? 'register' : 'login'}`} hidden />
         <div id={`auth-panel-${authMode}`} role="tabpanel" aria-labelledby={`auth-tab-${authMode}`} tabIndex={0}>
           {authMode === 'register' && <p className={styles.welcome}>Regístrate para guardar tu historial de reservas y obtener tarifas exclusivas.</p>}
-          {reservationsAccess && <div className={styles.linkNotice}><strong>¿Reservaste como invitado?</strong><p>Accede con Google para vincular y consultar tu reserva. Necesitarás su referencia y un código enviado al correo registrado.</p></div>}
+          {reservationsAccess && <div className={styles.linkNotice}><strong>¿Reservaste como invitado?</strong><p>Accede con el mismo correo de tu reserva. Necesitarás su referencia y un código de verificación para vincularla.</p></div>}
           <AuthSocialButtons mode={authMode} disabled={busy} pendingProvider={isPending ? pendingProvider : undefined} onAccess={socialAccess} />
           <div className={styles.divider}><span>o continúa con correo</span></div>
           <GuestCredentialsForm key={authMode} mode={authMode} busy={busy} email={email} terms={terms}

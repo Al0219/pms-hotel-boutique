@@ -39,6 +39,16 @@ describe('Public 01 landing interactions', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Buscar disponibilidad' }));
     expect(push).toHaveBeenCalledWith('/habitaciones?checkIn=2026-10-10&checkOut=2026-10-15&adults=2&children=0&roomsCount=2&promoCode=PROMO');
   });
+  it('shows only the hotel brand in the header after authentication on the access route', () => {
+    pathname = '/acceso';
+    guestAccount = { id: 'guest-demo-01', email: 'guest@example.com', externalIdentities: [] };
+    render(<PublicBookingShell><p>Cuenta vinculada</p></PublicBookingShell>);
+    const header = within(screen.getByRole('banner'));
+    expect(header.getAllByRole('link')).toHaveLength(1);
+    expect(header.getByRole('link', { name: 'Hotel Boutique, inicio' })).toHaveAttribute('href', '/');
+    expect(header.queryByRole('navigation')).not.toBeInTheDocument();
+    expect(header.queryByRole('button')).not.toBeInTheDocument();
+  });
   it('edits guests and rooms and restores focus when the disclosure is closed', () => {
     render(<PublicBookingHome initialCriteria={criteria} />);
     const toggle = screen.getByRole('button', { name: 'Huéspedes 2 adultos' });
