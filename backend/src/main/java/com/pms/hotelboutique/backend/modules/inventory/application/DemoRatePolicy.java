@@ -14,23 +14,40 @@ import org.springframework.stereotype.Service;
 @Service
 public class DemoRatePolicy {
     private static final Currency GTQ = Currency.getInstance("GTQ");
-    private static final Map<String, Long> NIGHTLY_MINOR_UNITS = Map.of(
-            "STANDARD", 65000L,
-            "CLASSIC", 65000L,
-            "STD", 65000L,
-            "KING", 65000L,
-            "TWIN", 65000L,
-            "DELUXE", 85000L,
-            "DLX", 85000L,
-            "SUITE", 120000L);
+    private enum DemoRate {
+        DEMO_STANDARD(65000L), DEMO_DELUXE(85000L), DEMO_SUITE(120000L);
+
+        private final long nightlyMinorUnits;
+
+        DemoRate(long nightlyMinorUnits) { this.nightlyMinorUnits = nightlyMinorUnits; }
+    }
+
+    private static final Map<String, DemoRate> RATES = Map.of(
+            "STANDARD", DemoRate.DEMO_STANDARD,
+            "CLASSIC", DemoRate.DEMO_STANDARD,
+            "STD", DemoRate.DEMO_STANDARD,
+            "KING", DemoRate.DEMO_STANDARD,
+            "TWIN", DemoRate.DEMO_STANDARD,
+            "DELUXE", DemoRate.DEMO_DELUXE,
+            "DLX", DemoRate.DEMO_DELUXE,
+            "SUITE", DemoRate.DEMO_SUITE);
+
+    public Currency currency() { return GTQ; }
+
+    /** Stable demo identity, shared as ratePlanId and ratePlanCode; never a persisted UUID. */
+    public String ratePlanCodeFor(RoomType roomType) { return configuredRate(roomType).name(); }
 
     public MonetaryAmount rateFor(RoomType roomType) {
+        return new MonetaryAmount(new MinorUnits(configuredRate(roomType).nightlyMinorUnits), GTQ);
+    }
+
+    private DemoRate configuredRate(RoomType roomType) {
         Objects.requireNonNull(roomType, "roomType");
-        Long minorUnits = NIGHTLY_MINOR_UNITS.get(roomType.getCode());
-        if (minorUnits == null) {
+        DemoRate rate = RATES.get(roomType.getCode());
+        if (rate == null) {
             throw new DemoRateNotConfiguredException(roomType.getCode());
         }
-        return new MonetaryAmount(new MinorUnits(minorUnits), GTQ);
+        return rate;
     }
 
     /** Arrival inclusive, departure exclusive; no taxes, discounts or promotions. */

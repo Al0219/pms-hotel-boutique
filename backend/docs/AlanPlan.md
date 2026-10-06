@@ -35,7 +35,7 @@ se documenta su ejecución manual en la guía QA de la tarea.
 
 - **Estado:** COMPLETADA; QA técnico PASS y QA manual PASS confirmado por Alan;
   cierre formal autorizado por el usuario el 2026-10-06.
-  Incremento público superior PENDIENTE; A2/A3 no iniciadas. No existe un plan
+  Incremento público superior PENDIENTE; A2 EN_QA, A3 no iniciada. No existe un plan
   público previo en este archivo; esta entrada registra solo el alcance aprobado A1.
 - **Owner / seguimiento:** Alan / BD1; consumidores futuros Availability y Booking.
   Sin dependencia HTTP, Auth, OpenAPI ni módulo tarifario definitivo para A1.
@@ -84,6 +84,65 @@ se documenta su ejecución manual en la guía QA de la tarea.
   --check PASS, incluidos los tres archivos nuevos revisados sin staging.
 - **Siguiente:** A1 cerrada; esperar autorización para otra tarea. Sin QA HTTP
   aplicable a A1; trabajo detenido antes de A2.
+
+## Reserva pública — A2: disponibilidad pública real (application)
+
+- **Estado inicial/final:** EN_QA por instrucción del usuario (2026-10-06);
+  implementación autorizada únicamente A2. A1 COMPLETADA en 42a785a; A3 no iniciada,
+  incremento público superior PENDIENTE. Owner Alan / BD1; revisión del usuario
+  pendiente. Rama feature/backend-public-availability, base 42a785a, árbol limpio.
+- **DoR / contrato aprobado:** PublicAvailabilityQuery(propertyId UUID, arrival
+  LocalDate, departure LocalDate, roomsRequested int > 0); todos requeridos y
+  arrival < departure. PublicAvailabilityView(propertyId, arrival, departure,
+  currency String, offers List); PublicAvailabilityOfferView(roomTypeId UUID,
+  roomTypeCode/name String, ratePlanId/code String, availableUnits int,
+  nightlyRateMinor/totalMinor long). Valores referidos a un RoomType para todo el
+  rango; totalMinor es tarifa por noche × noches, sin multiplicar roomsRequested.
+- **Autoridad / composición:** PublicAvailabilityService.search(query) reutiliza
+  AvailabilityPort → AvailabilityService.calculateATS(propertyId, roomTypeId,
+  StayDateRange). SQL existente descuenta OOO no liberado y stays RESERVED/IN_HOUSE
+  de reservas no CANCELLED; excluye OOS y aplica overbooking=0, mínimo por noche
+  con piso cero. No duplicar estas reglas ni usar InventoryAdmissionService en
+  lectura: admisión/locks corresponden al futuro booking.
+- **Catálogo / moneda:** nuevo PublicAvailabilityCatalogRepository de solo
+  consultas JPA, con predicado propertyId en Property y RoomTypes. Repositorios
+  Staff y sus scopes/permisos intactos. Property.getCurrency() es autoridad de
+  moneda; se exige igualdad con DemoRatePolicy.currency() GTQ antes de leer tipos,
+  incluso en catálogo vacío. Moneda incompatible → IllegalStateException con
+  DEMO_CURRENCY_MISMATCH, sin conversión ni respuesta parcial.
+- **Pricing / identidad:** extensión mínima de DemoRatePolicy con un único mapa
+  code → clasificación → minor units; ratePlanCodeFor(RoomType) devuelve
+  DEMO_STANDARD para STANDARD/CLASSIC/STD/KING/TWIN, DEMO_DELUXE para DELUXE/DLX,
+  DEMO_SUITE para SUITE. Mismo String como ratePlanId/code, sin UUID ni RatePlans
+  persistidos. Fachada delega nightly a rateFor y total a totalFor de A1, sin fórmula
+  adicional. DEMO_RATE_NOT_CONFIGURED se propaga en tipos vendibles sin tarifa.
+- **Lectura / orden:** transacción readOnly REPEATABLE_READ para snapshot consistente
+  entre catálogo y ATS cuando inicia la transacción; no reserva ni garantiza
+  capacidad al confirmar una reserva. Solo ofertas ATS >= roomsRequested, orden
+  lexicográfico Java por RoomType.code, independiente de orden/collation PostgreSQL.
+  List de salida inmutable. Sin catálogo real → offers vacío en GTQ.
+- **Errores:** validación IllegalArgumentException (patrón existente), Property
+  inexistente → PropertyNotFoundException existente. No HTTP status ni handlers.
+- **Archivos / aceptación:** records Query/View/OfferView, Service y repositorio
+  público nuevos; DemoRatePolicy y su test extendidos; unit/integration A2 nuevos,
+  AlanPlan/AlanHandoff. Tests de composición con ATS real, fixtures deterministas
+  transaccionales aislados: identidad, pricing, filtros de capacidad, rango/OOO/stays,
+  aislamiento Property, orden, validaciones, catálogo vacío y errores explícitos.
+  Ningún seed productivo, migración, Compose, Controller, SecurityConfiguration,
+  OpenAPI, Auth/Account ni dependencias nuevas. Sin commit/push.
+- **Validación técnica PASS:** mvn -B --no-transfer-progress
+  -Dtest=DemoRatePolicyTests,PublicAvailabilityServiceTests,PublicAvailabilityServiceIntegrationTests
+  test: 41 PASS (20 policy, 8 unit A2, 13 integration A2). mvn -B
+  --no-transfer-progress verify: 426 PASS, cero failures/errors/skipped, BUILD SUCCESS
+  (1m02s), Maven 3.9.11/Java 21/PostgreSQL 17.11 efímero, sin exclusiones.
+  git diff --check/status/stat/name-only ejecutados; whitespace PASS en archivos
+  existentes y siete nuevos sin staging. Historial Handoff y A1 COMPLETADA
+  comprobados. Logs /tmp/pms-public-a2-focused.log y /tmp/pms-public-a2-verify.log.
+- **Límites / siguiente:** revisión A2 del usuario pendiente, no COMPLETADA.
+  Datos para QA manual A3 y política de elegibilidad/publicación de Property no
+  definidos por esta fachada; consulta por existencia/propertyId sin inventar un
+  gate de estado comercial. HTTP, traducción de errores y datos QA se decidirán
+  después; trabajo detenido al finalizar A2, no implementar A3.
 
 ## Registro Liquibase por módulo
 

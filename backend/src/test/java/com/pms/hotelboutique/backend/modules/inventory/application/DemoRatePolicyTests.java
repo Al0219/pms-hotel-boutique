@@ -16,12 +16,15 @@ class DemoRatePolicyTests {
     private final LocalDate arrival = LocalDate.of(2026, 10, 6);
 
     @ParameterizedTest
-    @CsvSource({"STANDARD,65000", "CLASSIC,65000", "STD,65000", "KING,65000",
-            "TWIN,65000", "DELUXE,85000", "DLX,85000", "SUITE,120000"})
-    void returnsExplicitNightlyRatesInGtq(String code, long expected) {
+    @CsvSource({"STANDARD,65000,DEMO_STANDARD", "CLASSIC,65000,DEMO_STANDARD",
+            "STD,65000,DEMO_STANDARD", "KING,65000,DEMO_STANDARD", "TWIN,65000,DEMO_STANDARD",
+            "DELUXE,85000,DEMO_DELUXE", "DLX,85000,DEMO_DELUXE", "SUITE,120000,DEMO_SUITE"})
+    void returnsExplicitNightlyRatesInGtq(String code, long expected, String ratePlanCode) {
         var rate = policy.rateFor(type(code));
         assertEquals(expected, rate.minorUnits().value());
         assertEquals("GTQ", rate.currency().getCurrencyCode());
+        assertEquals(rate.currency(), policy.currency());
+        assertEquals(ratePlanCode, policy.ratePlanCodeFor(type(code)));
     }
 
     @ParameterizedTest
@@ -51,6 +54,7 @@ class DemoRatePolicyTests {
         var error = assertThrows(DemoRateNotConfiguredException.class,
                 () -> policy.rateFor(roomType));
         assertEquals("DEMO_RATE_NOT_CONFIGURED: " + code, error.getMessage());
+        assertThrows(DemoRateNotConfiguredException.class, () -> policy.ratePlanCodeFor(roomType));
         assertThrows(DemoRateNotConfiguredException.class,
                 () -> policy.totalFor(roomType, arrival, arrival.plusDays(1)));
     }

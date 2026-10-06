@@ -1,5 +1,48 @@
 # AlanHandoff — Seguimiento Backend
 
+## Reserva pública — A2: disponibilidad pública real application (2026-10-06)
+
+- **Estado:** EN_QA inicial/final por instrucción del usuario; solo A2 autorizada,
+  pendiente de nuestra revisión. A1 COMPLETADA en 42a785a; A3 no iniciada, incremento
+  superior PENDIENTE. Owner Alan / BD1; historial previo Auth/Account/A1 conservado.
+- **Rama/base:** feature/backend-public-availability, HEAD 42a785a; árbol inicial
+  limpio. Sin commit/push/merge.
+- **Entrega / contrato:** PublicAvailabilityService.search(PublicAvailabilityQuery)
+  devuelve PublicAvailabilityView con offers reales, ATS y precio GTQ por tipo para
+  todo el rango. Query requiere propertyId/arrival/departure, arrival < departure y
+  roomsRequested > 0. Campos exactos y semántica en AlanPlan; sin HTTP.
+- **Autoridades:** AvailabilityPort/AvailabilityService calculan mínimo vendible
+  por noche con reglas vigentes OOO/stays/overbooking=0; no se reimplementan.
+  Repo público de solo consulta restringe Property/RoomTypes por propertyId sin
+  tocar repositorios/scope Staff. Moneda viene de Property y debe coincidir con
+  DemoRatePolicy.currency(); mismatch explícito, sin conversión.
+- **Pricing:** DemoRatePolicy mantiene un solo mapa, ahora también clasifica
+  DEMO_STANDARD/DEMO_DELUXE/DEMO_SUITE; identidad String en ratePlanId/code.
+  rateFor/totalFor siguen siendo autoridad de importes; ninguna fórmula nueva ni
+  RatePlan persistido. Tarifas aprobadas A1 intactas. Error sin tarifa se propaga.
+- **Lectura / errores:** snapshot readOnly REPEATABLE_READ; no asigna habitaciones
+  ni escribe inventario/reservas. ATS < roomsRequested omite oferta; orden lexical
+  Java por code. PropertyNotFoundException, IllegalArgumentException y error interno
+  DEMO_CURRENCY_MISMATCH, sin traducción HTTP.
+- **Pruebas PASS:** mvn -B --no-transfer-progress
+  -Dtest=DemoRatePolicyTests,PublicAvailabilityServiceTests,PublicAvailabilityServiceIntegrationTests
+  test: 41 PASS (20 policy, 8 unit A2, 13 integration A2). mvn -B
+  --no-transfer-progress verify: 426 PASS, cero failures/errors/skipped, BUILD SUCCESS
+  (1m02s), Maven 3.9.11/Java 21/PostgreSQL 17.11 efímero, sin exclusiones,
+  Compose pms-public-a2-qa retirado al finalizar. Fixtures deterministas rollback,
+  sin seeds ni población del catálogo de aplicación. Casos de composición: datos
+  reales/GTQ, ATS 0/insuficiente/igual/superior, tres tarifas, rango restrictivo,
+  OOO y stays consumidores, validaciones, Property inexistente/ajena, orden estable,
+  sin tarifa, moneda incompatible y catálogo vacío. Test unit verifica delegación
+  de ATS y total, evitando fórmula duplicada. Logs /tmp/pms-public-a2-focused.log
+  y /tmp/pms-public-a2-verify.log. git diff --check PASS (incluye revisión de siete
+  nuevos sin staging); git status/stat/name-only revisados, historial previo intacto.
+- **Límites / siguiente:** revisión A2 del usuario pendiente; A3 decidirá exposición
+  HTTP/errores y preparación QA manual. Elegibilidad pública de Property (estado/
+  publicación) no definida en A2; solo existencia/propertyId. Ningún Controller,
+  SecurityConfiguration/OpenAPI, Auth/Account, migración ni Compose modificado.
+  Detenerse al finalizar A2; no iniciar A3.
+
 ## Reserva pública — A1: cierre formal y QA manual PASS (2026-10-06)
 
 - **Estado:** A1 COMPLETADA; QA manual PASS confirmado por Alan y cierre formal
