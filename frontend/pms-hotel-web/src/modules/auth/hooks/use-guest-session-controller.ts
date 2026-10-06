@@ -9,6 +9,8 @@ import { simulateGuestAccess } from "../service/guest-access.service";
 
 export function useGuestSessionController() {
   const [account, setAccount] = useState<GuestAccount | null>(null);
+  // Presentation metadata for the local preview, never an ExternalIdentity or verified credential.
+  const [accessMethod, setAccessMethod] = useState<GuestAccessInput['method'] | null>(null);
   const activeRequest = useRef<AbortController | null>(null);
   const queryClient = useQueryClient();
   const mutation = useMutation({
@@ -26,6 +28,7 @@ export function useGuestSessionController() {
       const result = await mutation.mutateAsync({ input, signal: controller.signal });
       if (controller.signal.aborted) return false;
       setAccount(result);
+      setAccessMethod(input.method);
       return true;
     } catch {
       return false;
@@ -38,6 +41,7 @@ export function useGuestSessionController() {
     activeRequest.current?.abort();
     activeRequest.current = null;
     setAccount(null);
+    setAccessMethod(null);
     mutation.reset();
     // Clear only Guest data; Staff and operational queries remain independent.
     void queryClient.cancelQueries({ queryKey: ["guest"] });
@@ -46,6 +50,7 @@ export function useGuestSessionController() {
 
   return {
     account,
+    accessMethod,
     status: account ? "signed-in" as const : "signed-out" as const,
     isPending: mutation.isPending,
     error: mutation.error,

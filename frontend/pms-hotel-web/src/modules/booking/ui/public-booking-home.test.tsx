@@ -9,15 +9,30 @@ import type { GuestAccount } from '@/modules/auth';
 const push = vi.fn();
 const replace = vi.fn();
 let guestAccount: GuestAccount | null = null;
+let pathname = '/';
 const router = { push, replace };
-vi.mock('next/navigation', () => ({ useRouter: () => router }));
+vi.mock('next/navigation', () => ({ useRouter: () => router, usePathname: () => pathname }));
 vi.mock('@/modules/auth', () => ({ useGuestSession: () => ({ account: guestAccount }) }));
 const criteria = { checkIn: '2026-10-10', checkOut: '2026-10-15', adults: 2, children: 0, roomsCount: 1 };
 const render = (ui: ReactElement) => rtlRender(ui, { wrapper: PublicBookingProvider });
-beforeEach(() => { guestAccount = null; vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-04T12:00:00Z')); });
+beforeEach(() => { pathname = '/'; guestAccount = null; vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-04T12:00:00Z')); });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.clearAllMocks(); vi.unstubAllGlobals(); });
 
 describe('Public 01 landing interactions', () => {
+  it('uses a distraction-free header only on the Guest access route', () => {
+    pathname = '/acceso';
+    const view = render(<PublicBookingShell><p>Acceso</p></PublicBookingShell>);
+    const header = within(screen.getByRole('banner'));
+    expect(header.getByRole('link', { name: 'Hotel Boutique, inicio' })).toHaveAttribute('href', '/');
+    expect(header.getByRole('link', { name: '← Volver al inicio' })).toHaveAttribute('href', '/');
+    expect(header.queryByRole('navigation')).not.toBeInTheDocument();
+    expect(header.queryByRole('button', { name: 'Menú' })).not.toBeInTheDocument();
+    expect(header.queryByRole('link', { name: 'Iniciar sesión' })).not.toBeInTheDocument();
+    pathname = '/habitaciones';
+    view.rerender(<PublicBookingShell><p>Catálogo</p></PublicBookingShell>);
+    expect(header.getByRole('navigation', { name: 'Navegación pública' })).toBeInTheDocument();
+    expect(header.getByRole('link', { name: 'Iniciar sesión' })).toBeInTheDocument();
+  });
   it('preserves bookmarked criteria when submitting the compact search', () => {
     render(<PublicBookingHome initialCriteria={{ ...criteria, roomsCount: 2, promoCode: 'PROMO' }} />);
     expect(screen.getByLabelText(/^Check-in/)).toHaveValue(criteria.checkIn);

@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { mockServer } from '@/data/mocks/server';
@@ -10,14 +11,15 @@ import { PublicGuestDataPage } from './public-guest-data-page';
 import { PublicCheckoutReviewPage } from './public-checkout-review-page';
 
 const push = vi.hoisted(() => vi.fn());
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
+const appRouter = { push, replace: push, back: vi.fn(), forward: vi.fn(), refresh: vi.fn(), prefetch: vi.fn(), bfcacheId: 'guest-checkout-test' };
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push, replace: push }) }));
 const criteria = { checkIn: '2026-10-10', checkOut: '2026-10-13', adults: 2, children: 0, roomsCount: 1 };
 const clients: QueryClient[] = [];
 beforeEach(() => { push.mockClear(); vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-05T12:00:00Z')); vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://pms.test'); vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'true'); });
 afterEach(() => { cleanup(); clients.splice(0).forEach(client => client.clear()); vi.useRealTimers(); vi.unstubAllEnvs(); });
 function mount(detail = false) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } }); clients.push(client);
-  const wrapper = ({ children }: { children: React.ReactNode }) => <QueryClientProvider client={client}><GuestSessionProvider><PublicBookingProvider><CheckoutDraftProvider>{children}</CheckoutDraftProvider></PublicBookingProvider></GuestSessionProvider></QueryClientProvider>;
+  const wrapper = ({ children }: { children: React.ReactNode }) => <AppRouterContext.Provider value={appRouter}><QueryClientProvider client={client}><GuestSessionProvider><PublicBookingProvider><CheckoutDraftProvider>{children}</CheckoutDraftProvider></PublicBookingProvider></GuestSessionProvider></QueryClientProvider></AppRouterContext.Provider>;
   return render(detail ? <PublicRoomDetailPage roomTypeId="rt_deluxe_king" initialCriteria={criteria} /> : <PublicGuestDataPage initialCriteria={criteria} />, { wrapper });
 }
 async function selected() {
@@ -90,8 +92,8 @@ describe('Guest checkout data', () => {
     const view = await selected(); fireEvent.change(screen.getByLabelText('Nombre *'), { target: { value: 'Nombre manual' } });
     expect(screen.getByRole('link', { name: /Inicia sesión para autocompletar/ })).toHaveAttribute('href', expect.stringContaining('/acceso?returnTo='));
     view.rerender(<GuestAccessPage returnTo="/reserva/checkout?checkIn=2026-10-10&checkOut=2026-10-13&adults=2&children=0&roomsCount=1" />);
-    fireEvent.click(screen.getByRole('button', { name: 'Continuar con correo' }));
     fireEvent.change(screen.getByLabelText('Correo electrónico'), { target: { value: 'access@example.com' } });
+    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'ExamplePass42!' } });
     fireEvent.submit(screen.getByLabelText('Correo electrónico').closest('form')!); await screen.findByRole('link', { name: 'Continuar mi reserva' });
     view.rerender(<PublicGuestDataPage initialCriteria={criteria} />); fireEvent.click(await screen.findByRole('button', { name: 'Usar datos de mi cuenta' }));
     expect(screen.getByLabelText('Nombre *')).toHaveValue('Nombre manual'); expect(screen.getByLabelText('Apellidos *')).toHaveValue('Palacios');
