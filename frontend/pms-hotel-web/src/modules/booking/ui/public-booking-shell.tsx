@@ -66,8 +66,6 @@ export function PublicBookingShell({ children }: { children: ReactNode }) {
               <p><BookingIcon name="phone" /><span>{publicHotelContent.contact.phone}</span></p>
               <p><BookingIcon name="mail" /><span>{publicHotelContent.contact.email}</span></p>
             </address>
-            {publicHotelContent.contact.isDemo && <button type="button" className={styles.demoContact}
-              onClick={event => openInformation(event.currentTarget, publicHotelInformation.contact)}>Datos de demostración</button>}
           </section>
           <section className={styles.footerSocial} aria-labelledby="footer-social-title">
             <h2 id="footer-social-title">Síguenos</h2><p>{publicHotelContent.socialIntroduction}</p>
@@ -75,7 +73,7 @@ export function PublicBookingShell({ children }: { children: ReactNode }) {
               {publicHotelContent.socialProfiles.map(profile => profile.url
                 ? <a href={profile.url} key={profile.name} aria-label={profile.name} target="_blank" rel="noopener noreferrer"><BookingIcon name={profile.icon} /></a>
                 : <button key={profile.name} type="button" aria-label={profile.name} onClick={event => openInformation(event.currentTarget, {
-                  title: profile.name, text: `El perfil de ${profile.name} del hotel está pendiente de configuración. Este botón forma parte de la demostración.`,
+                  title: profile.name, text: `Descubre nuestras habitaciones, experiencias y novedades en ${profile.name}.`,
                 })}><BookingIcon name={profile.icon} /></button>)}
             </div>
           </section>

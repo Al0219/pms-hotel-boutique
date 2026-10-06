@@ -6,7 +6,7 @@ import { chosenPayment, type PaymentChoice } from '../domain/payment-choice';
 import styles from './payment-mode-selector.module.css';
 
 // No approved public property policy/response supports payment at reception yet.
-const demoPolicy = { allowPayAtHotel: false, reason: 'Pendiente de habilitación por la propiedad en este recorrido de demostración.' };
+const paymentPolicy = { allowPayAtHotel: false, reason: 'Esta modalidad no está disponible para la tarifa seleccionada.' };
 
 export function PaymentModeSelector({ totalMinor, minimumMinor, currency, displayCurrency, choice, onChange, disabled }: {
   totalMinor: number; minimumMinor: number; currency: string; displayCurrency: ReturnType<typeof usePublicDisplayCurrency>;
@@ -26,7 +26,7 @@ export function PaymentModeSelector({ totalMinor, minimumMinor, currency, displa
   const error = touched && choice.mode === 'partial' && choice.preset === 'custom' ? payment.error : '';
   return <fieldset className={styles.fieldset} disabled={disabled}>
     <legend>¿Cómo prefieres pagar?</legend>
-    <p className={styles.intro}>Elige el monto de este recorrido. No se realizará ningún cobro real.</p>
+    <p className={styles.intro}>Elige cuánto abonar para confirmar tu reserva.</p>
     <label className={`${styles.option} ${choice.mode === 'full' ? styles.active : ''}`}>
       <input type="radio" name={`${id}-mode`} value="full" checked={choice.mode === 'full'} onChange={() => onChange({ ...choice, mode: 'full' })}/>
       <span><strong>Pagar ahora</strong><small>Se realizará el cargo completo para confirmar tu reserva hoy.</small></span><b>{money(totalMinor)}</b>
@@ -34,7 +34,7 @@ export function PaymentModeSelector({ totalMinor, minimumMinor, currency, displa
     <div className={`${styles.partial} ${choice.mode === 'partial' ? styles.active : ''}`}>
       <label className={styles.option}><input type="radio" name={`${id}-mode`} value="partial" checked={choice.mode === 'partial'} onChange={() => onChange({ ...choice, mode: 'partial' })}/><span><strong>Garantizar con tarjeta</strong><small>Asocia tu tarjeta como garantía o realiza un abono parcial.</small></span></label>
       {choice.mode === 'partial' && <div className={styles.deposit}>
-        <p>En esta demo, la garantía representa un abono simulado.</p>
+        <p>El abono se descontará del total de tu estadía.</p>
         <div className={styles.presets} role="group" aria-label="Monto de la garantía">
           <button type="button" aria-pressed={choice.preset === 'night'} onClick={() => onChange({ ...choice, preset: 'night' })}>1 noche <span>{money(minimumMinor)}</span></button>
           <button type="button" aria-pressed={choice.preset === 'half'} disabled={halfTooLow} title={halfTooLow ? 'El mínimo de esta estadía es el total de una noche' : undefined} onClick={() => onChange({ ...choice, preset: 'half' })}>50% de la estadía <span>{money(Math.round(totalMinor / 2))}</span></button>
@@ -45,11 +45,11 @@ export function PaymentModeSelector({ totalMinor, minimumMinor, currency, displa
           <input id={`${id}-amount`} type="text" inputMode="decimal" autoComplete="off" value={choice.customAmount} aria-invalid={Boolean(error)} aria-describedby={`${id}-limits${error ? ` ${id}-error` : ''}`} placeholder={(minimumInput / 100).toFixed(2)} onBlur={() => setTouched(true)} onChange={event => { setTouched(true); onChange({ ...choice, customCurrency: inputCurrency, customAmount: event.target.value, customQuotedMinor: undefined }); }}/>
           <small id={`${id}-limits`}>Mínimo {displayMoney(minimumMinor / 100, currency, inputCurrency)} · Máximo {displayMoney(totalMinor / 100, currency, inputCurrency)}. Al cambiar la moneda del monto convertimos el valor ingresado.</small>
           {minimumMinor === totalMinor && <small>Para una estadía de una noche, la garantía mínima equivale al total.</small>}
-          {inputCurrency !== currency && <small>Conversión referencial. {payment.amountMinor !== null ? `Equivalente del abono: ${displayMoney(payment.amountMinor / 100, currency, currency === 'GTQ' ? 'GTQ' : 'USD')}.` : ''} La cotización y el abono simulado se procesan en {currency}.</small>}
+          {inputCurrency !== currency && <small>Conversión referencial. {payment.amountMinor !== null ? `Equivalente del abono: ${displayMoney(payment.amountMinor / 100, currency, currency === 'GTQ' ? 'GTQ' : 'USD')}.` : ''} La moneda de la cotización y del abono es {currency}.</small>}
           {error && <p id={`${id}-error`} className={styles.error} role="alert">⚠ {error}</p>}
         </div>}
       </div>}
     </div>
-    <label className={`${styles.option} ${styles.unavailable}`}><input type="radio" name={`${id}-mode`} disabled={!demoPolicy.allowPayAtHotel} checked={false} readOnly aria-describedby={`${id}-hotel-policy`}/><span><strong>Pagar en el hotel <em>No disponible</em></strong><small>Sin cobro inmediato. Paga directamente durante tu check-in en recepción.</small><small id={`${id}-hotel-policy`}>{demoPolicy.reason}</small></span></label>
+    <label className={`${styles.option} ${styles.unavailable}`}><input type="radio" name={`${id}-mode`} disabled={!paymentPolicy.allowPayAtHotel} checked={false} readOnly aria-describedby={`${id}-hotel-policy`}/><span><strong>Pagar en el hotel <em>No disponible</em></strong><small>Sin cobro inmediato. Paga directamente durante tu check-in en recepción.</small><small id={`${id}-hotel-policy`}>{paymentPolicy.reason}</small></span></label>
   </fieldset>;
 }

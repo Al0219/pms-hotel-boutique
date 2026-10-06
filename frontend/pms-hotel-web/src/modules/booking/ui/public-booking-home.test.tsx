@@ -97,13 +97,11 @@ describe('Public 01 landing interactions', () => {
     view.rerender(<PublicBookingShell><p>Contenido público</p></PublicBookingShell>);
     expect(screen.getByRole('link', { name: 'Mis reservas' })).toHaveAttribute('href', '/acceso?returnTo=%2Fmis-reservas');
   });
-  it('clearly identifies fictional contacts and opens social and FAQ information', () => {
+  it('keeps customer-facing footer copy and opens social and FAQ information', () => {
     render(<PublicBookingShell><p>Contenido público</p></PublicBookingShell>);
-    fireEvent.click(screen.getByRole('button', { name: 'Datos de demostración' }));
-    expect(screen.getByRole('dialog')).toHaveTextContent('son ficticios');
-    fireEvent.click(screen.getByRole('button', { name: 'Cerrar' }));
+    expect(screen.queryByRole('button', { name: 'Datos de demostración' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Instagram' }));
-    expect(screen.getByRole('dialog', { name: 'Instagram' })).toHaveTextContent('pendiente de configuración');
+    expect(screen.getByRole('dialog', { name: 'Instagram' })).toHaveTextContent('Descubre nuestras habitaciones');
     fireEvent.click(screen.getByRole('button', { name: 'Cerrar' }));
     fireEvent.click(screen.getByRole('button', { name: 'Preguntas frecuentes (FAQ)' }));
     expect(screen.getByRole('dialog')).toHaveTextContent('Para consultar tus reservas necesitas acceder');

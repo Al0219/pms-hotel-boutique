@@ -83,7 +83,6 @@ function RoomDetail({ roomTypeId, initialCriteria, initialRatePlanId }: { roomTy
             <header className={styles.title}><p className={styles.eyebrow}>TU REFUGIO EN HOTEL BOUTIQUE</p><h1>{room.name}</h1>
               <p>{room.maxOccupancy} huéspedes{room.bedDescription && ` · Cama ${room.bedDescription}`}{room.areaSquareMeters && ` · ${room.areaSquareMeters} m²`}{room.viewDescription && ` · ${room.viewDescription}`}</p>
             </header>
-            {getPublicEnvironment().useMockApi && <p className={styles.demo}>Demostración: imágenes, servicios, políticas y cotizaciones de ejemplo. No se confirma ninguna reserva.</p>}
             <div className={styles.layout}>
               <div className={styles.information}>
                 <RoomPhotoCarousel key={room.roomTypeId} images={room.images} name={room.name} illustrative={getPublicEnvironment().useMockApi} />

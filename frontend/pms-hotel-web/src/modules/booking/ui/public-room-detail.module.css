@@ -5,7 +5,6 @@
 .title h1 { font-family: var(--font-family-display); font-size: clamp(36px, 4vw, 52px); font-weight: 400; margin: 10px 0 16px; line-height: 1.15; }
 .title > p:last-child { color: #6a736a; font-size: 14px; margin: 0 0 26px; }
 .eyebrow { letter-spacing: .17em; font-size: 10px; color: #63715c; }
-.demo { font-size: 11px; color: #59664f; padding: 12px 16px; background: #eaf0e4; border-radius: 8px; margin-bottom: 24px; }
 .layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); gap: 32px; align-items: start; }
 .information { min-width: 0; }
 .heroPhoto { position: relative; aspect-ratio: 1.65; border-radius: 24px; background: #dbe2d5; overflow: hidden; }

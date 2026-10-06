@@ -38,7 +38,6 @@
 .footerContact address p { display: flex; align-items: flex-start; gap: 12px; font-size: 12px; color: #c7cec8; line-height: 1.9; margin: 0 0 14px; }
 .footerContact address svg { flex-shrink: 0; margin-top: 2px; color: #b0c0b2; }
 .footerContact address span { min-width: 0; overflow-wrap: anywhere; }
-.demoContact { color: #c7cec8; font: inherit; font-size: 10px; background: transparent; border: 0; border-bottom: 1px dotted #8e9b90; padding: 4px 0; cursor: pointer; }
 .footerSocial p { margin-top: 0; }
 .socialLinks { display: flex; gap: 12px; margin-top: 20px; }
 .socialLinks a, .socialLinks button { display: grid; place-items: center; width: 40px; height: 40px; background: rgb(255 255 255 / 5%); border: 1px solid rgb(255 255 255 / 15%); color: #e1e7e1; border-radius: 50%; cursor: pointer; transition: transform .2s ease, background .2s ease; }

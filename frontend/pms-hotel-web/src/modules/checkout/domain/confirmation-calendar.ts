@@ -16,11 +16,11 @@ function foldLine(line: string) {
 export function confirmationCalendar(confirmation: Pick<DemoBookingConfirmation, 'reservationId' | 'confirmedAt' | 'arrival' | 'departure' | 'stays'>) {
   const stamp = new Date(confirmation.confirmedAt).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
   return [
-    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Hotel Boutique//Checkout Demo//ES', 'CALSCALE:GREGORIAN',
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Hotel Boutique//Reservas//ES', 'CALSCALE:GREGORIAN',
     'BEGIN:VEVENT', `UID:${escapeText(confirmation.reservationId)}@hotelboutique.example`, `DTSTAMP:${stamp}`,
     `DTSTART;VALUE=DATE:${confirmation.arrival.replace(/-/g, '')}`, `DTEND;VALUE=DATE:${confirmation.departure.replace(/-/g, '')}`,
-    `SUMMARY:${escapeText(`Hotel Boutique · ${confirmation.reservationId} (demostración)`)}`,
-    `DESCRIPTION:${escapeText(`Confirmación ficticia; no existe reserva en el hotel.\n${confirmation.stays.map(stay => stay.roomName).join(', ')}`)}`,
+    `SUMMARY:${escapeText(`Hotel Boutique · ${confirmation.reservationId}`)}`,
+    `DESCRIPTION:${escapeText(`Estadía en Hotel Boutique.\n${confirmation.stays.map(stay => stay.roomName).join(', ')}`)}`,
     'CLASS:PRIVATE', 'TRANSP:TRANSPARENT', 'END:VEVENT', 'END:VCALENDAR', '',
   ].map(foldLine).join('\r\n');
 }

@@ -43,7 +43,7 @@ describe("Guest access and shared session", () => {
     expect(screen.getByRole('link', { name: 'Reservar como invitado' })).toHaveAttribute('href', '/habitaciones');
     expect(screen.queryByRole('button', { name: 'Continuar con correo' })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Continuar con Google' }));
-    await user.click(screen.getByRole('button', { name: 'Continuar retorno al PMS' }));
+    await user.click(screen.getByRole('button', { name: 'Acceder con Google' }));
     expect(await screen.findByRole('link', { name: 'Ir a Mis reservas' })).toHaveAttribute('href', '/mis-reservas');
   });
   it("signs in through Service/Mapper, retains the session across routes, and clears Guest data on sign-out", async () => {
@@ -92,7 +92,7 @@ describe("Guest access and shared session", () => {
   it("supports optional Google through the same session authority", async () => {
     const { user, navigate } = setup();
     await user.click(screen.getByRole("button", { name: "Continuar con Google" }));
-    await user.click(screen.getByRole("button", { name: "Continuar retorno al PMS" }));
+    await user.click(screen.getByRole("button", { name: "Acceder con Google" }));
     expect(await screen.findByRole("heading", { name: "Tu cuenta está lista" })).toBeInTheDocument();
     navigate("account");
     expect(await screen.findByText(/Google conectado · guest.google@example.com/)).toBeInTheDocument();

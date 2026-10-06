@@ -1,5 +1,7 @@
 # Public 01 — Resultado de reserva: confirmación y error
 
+Actualización de presentación: [textos finales para clientes](48_PUBLIC_BOOKING_CUSTOMER_COPY.md). Ticket, panel financiero y calendario usan redacción final; esta actualización no añade persistencia, correo ni integración Backend.
+
 ## Alcance
 
 Rediseño frontend solicitado por José para IMP-WEB-0112 (WEB-1 / revisión WEB-3). Se revisaron la fila y la dependencia IMP-WEB-0111. Reutiliza la respuesta Domain del simulador ya existente: Reservation con N stays, IDs business y garantía validada. La dependencia formal y el contrato productivo siguen pendientes; no se modifica el backlog ni se afirma creación Backend real.

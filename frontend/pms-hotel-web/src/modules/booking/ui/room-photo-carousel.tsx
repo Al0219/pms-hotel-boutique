@@ -27,6 +27,6 @@ export function RoomPhotoCarousel({ images, name, illustrative }: { images: stri
       <button key={photo} type="button" aria-label={`Ver fotografía ${i + 1}`} aria-pressed={i === index} onClick={() => setActive(i)}>
         {failed.includes(photo) ? <span>Vista {i + 1}</span> : <Image src={photo} alt="" fill sizes="160px" onError={() => setFailed(value => [...value, photo])} />}
       </button>)}</div>}
-    {illustrative && <p className={styles.small}>Imágenes ilustrativas de demostración; no son fotografías de un hotel real.</p>}
+    {illustrative && <p className={styles.small}>Imágenes ilustrativas de la habitación.</p>}
   </section>;
 }

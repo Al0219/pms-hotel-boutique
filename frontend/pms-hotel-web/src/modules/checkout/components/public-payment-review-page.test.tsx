@@ -17,6 +17,11 @@ import { PublicBookingResultPage } from './public-booking-result-page';
 
 const push = vi.hoisted(() => vi.fn());
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
+// Only this test harness enables synthetic outcomes; public routes do not.
+vi.mock('@/modules/payments', async () => {
+  const actual = await vi.importActual<typeof import('@/modules/payments')>('@/modules/payments');
+  return { ...actual, DemoCardGateway: (props: Parameters<typeof actual.DemoCardGateway>[0]) => <actual.DemoCardGateway {...props} showTestControls /> };
+});
 const criteria = { checkIn: '2026-10-10', checkOut: '2026-10-13', adults: 2, children: 0, roomsCount: 1 };
 const clients: QueryClient[] = [];
 beforeEach(() => { push.mockClear(); vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-05T12:00:00Z')); vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://pms.test'); vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'true'); resetPublicCheckoutFixtures(); });
@@ -87,10 +92,10 @@ describe('Public payment and guarantee journey', () => {
     const view = await prepared(); const summary = screen.getByRole('complementary');
     expect(summary).toHaveTextContent('US$ 505.00'); expect(summary).toHaveTextContent('US$ 168.33'); expect(summary).toHaveTextContent('US$ 336.67');
     expect(screen.getByRole('link', { name: '← Volver a revisión' })).toHaveAttribute('href', expect.stringContaining('checkIn=2026-10-10'));
-    confirm(); await screen.findByRole('button', { name: /Procesando garantía de prueba/ }); expect(screen.getByRole('button', { name: /Procesando garantía/ })).toBeDisabled();
+    confirm(); await screen.findByRole('button', { name: /Procesando garantía/ }); expect(screen.getByRole('button', { name: /Procesando garantía/ })).toBeDisabled();
     await waitFor(() => expect(push).toHaveBeenCalledTimes(1), { timeout: 3000 }); expect(push).toHaveBeenCalledWith(expect.stringContaining('/reserva/confirmacion?checkIn=2026-10-10'));
-    view.rerender(<PublicBookingConfirmationPage initialCriteria={criteria}/>); expect(screen.getByRole('heading', { name: 'HB-2026-8942' })).toBeInTheDocument(); expect(screen.getByText(/Sin débito real/)).toBeInTheDocument();
-    view.rerender(<PublicPaymentReviewPage initialCriteria={criteria}/>); expect(await screen.findByText('Ya completaste esta demostración')).toBeInTheDocument(); expect(screen.queryByRole('button', { name: 'Garantizar y confirmar reserva' })).not.toBeInTheDocument();
+    view.rerender(<PublicBookingConfirmationPage initialCriteria={criteria}/>); expect(screen.getByRole('heading', { name: 'HB-2026-8942' })).toBeInTheDocument(); expect(screen.getByText('Abono confirmado')).toBeInTheDocument(); expect(screen.queryByText(/Sin débito real/)).not.toBeInTheDocument();
+    view.rerender(<PublicPaymentReviewPage initialCriteria={criteria}/>); expect(await screen.findByText('Tu reserva ya está confirmada')).toBeInTheDocument(); expect(screen.queryByRole('button', { name: 'Garantizar y confirmar reserva' })).not.toBeInTheDocument();
     expect(localStorage.length).toBe(0); expect(sessionStorage.length).toBe(0);
   });
   it('recovers from declined cards and provider errors and preserves the same guest data', async () => {
@@ -118,12 +123,12 @@ describe('Public payment and guarantee journey', () => {
   });
   it('returns a single confirmation with all stays in a multi-room selection', async () => {
     const view = await prepared(true); expect(screen.getByRole('complementary')).toHaveTextContent('US$ 950.00'); confirm(); await waitFor(() => expect(push).toHaveBeenCalledTimes(1), { timeout: 3000 });
-    view.rerender(<PublicBookingConfirmationPage initialCriteria={criteria}/>); expect(screen.getByText(/Confirmación simulada · 2 habitaciones/)).toBeInTheDocument(); expect(screen.getByText('Deluxe King')).toBeInTheDocument(); expect(screen.getByText('Doble Superior')).toBeInTheDocument();
+    view.rerender(<PublicBookingConfirmationPage initialCriteria={criteria}/>); expect(screen.getByText(/2 habitaciones/)).toBeInTheDocument(); expect(screen.getByText('Deluxe King')).toBeInTheDocument(); expect(screen.getByText('Doble Superior')).toBeInTheDocument();
   });
   it('guards direct/reloaded confirmation and never posts with mocks disabled', async () => {
     const view = mount(<PublicBookingConfirmationPage initialCriteria={criteria}/>); expect(screen.getByRole('region', { name: 'No hay una confirmación en esta sesión' })).toBeInTheDocument(); view.unmount();
     const payment = await prepared(); vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'false'); payment.rerender(<PublicPaymentReviewPage initialCriteria={criteria}/>);
-    expect(await screen.findByRole('button', { name: 'Garantizar y confirmar reserva' })).toBeDisabled(); expect(screen.queryByTitle('Formulario aislado de tarjeta de prueba')).not.toBeInTheDocument(); expect(push).not.toHaveBeenCalled();
+    expect(await screen.findByRole('button', { name: 'Garantizar y confirmar reserva' })).toBeDisabled(); expect(screen.queryByTitle('Formulario de tarjeta')).not.toBeInTheDocument(); expect(push).not.toHaveBeenCalled();
   });
   it('retains the same key and card after a lost response across the error/payment navigation', async () => {
     const view = await prepared(); fireEvent.click(screen.getByRole('button', { name: /50% de la estadía/ })); fireEvent.change(screen.getByLabelText('Resultado de demostración'), { target: { value: 'demo_mastercard_approved' } });
