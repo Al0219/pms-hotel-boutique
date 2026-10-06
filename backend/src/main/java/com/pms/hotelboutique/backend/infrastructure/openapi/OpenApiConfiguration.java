@@ -3,9 +3,9 @@ package com.pms.hotelboutique.backend.infrastructure.openapi;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.springdoc.core.customizers.OperationCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
 @Configuration
 public class OpenApiConfiguration {
 
@@ -15,10 +15,34 @@ public class OpenApiConfiguration {
             .info(new Info()
                 .title("PMS Hotel Boutique API")
                 .version("v1")
-                .description("Los endpoints de negocio se publican al completar su DoR."))
+                .description("Contratos Backend aprobados de integración Staff y BFF Guest/Staff. "
+                    + "Las operaciones x-audience=internal-bff son para transporte privado BFF→Backend; "
+                    + "no exponen tokens a JavaScript. Actuator es infraestructura y queda fuera de esta API."))
             .schemaRequirement("bearerAuth", new SecurityScheme()
                 .type(SecurityScheme.Type.HTTP)
                 .scheme("bearer")
-                .bearerFormat("JWT"));
+                .bearerFormat("JWT")
+                .description("Access JWT Staff; sesión activa y permisos/property scope C2 recalculados."))
+            .schemaRequirement("guestBearerAuth", new SecurityScheme()
+                .type(SecurityScheme.Type.HTTP).scheme("bearer").bearerFormat("JWT")
+                .description("Access JWT Guest de C3; no habilita APIs Staff."))
+            .schemaRequirement("staffRefreshCookie", new SecurityScheme()
+                .type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.COOKIE).name("pms_staff_refresh")
+                .description("Refresh opaco Staff reenviado por BFF; no JSON. El BFF reemplaza sus cookies HttpOnly."))
+            .schemaRequirement("guestRefreshCookie", new SecurityScheme()
+                .type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.COOKIE).name("pms_guest_refresh")
+                .description("Refresh opaco Guest reenviado por BFF; independiente de Staff."));
+    }
+    @Bean
+    OperationCustomizer applicationAudience() {
+        return (operation, handler) -> {
+            String packageName = handler.getBeanType().getPackageName();
+            if (packageName.contains(".modules.securityauth.") || packageName.contains(".modules.guestauth.")) {
+                operation.addExtension("x-audience", "internal-bff");
+            } else if (packageName.contains(".modules.inventory.")) {
+                operation.addExtension("x-audience", "staff");
+            }
+            return operation;
+        };
     }
 }

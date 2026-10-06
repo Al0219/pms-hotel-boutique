@@ -3,6 +3,7 @@ package com.pms.hotelboutique.backend.modules.inventory.api;
 import com.pms.hotelboutique.backend.modules.inventory.application.InventoryAvailabilityQueryService;
 import com.pms.hotelboutique.backend.modules.inventory.application.StayDateRange;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -17,7 +18,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 @RestController
 @RequestMapping("/api/v1/properties")
 @Tag(name = "Inventory", description = "Staff availability queries restricted to authorized properties")
@@ -42,9 +42,9 @@ public class InventoryController {
     @ApiResponse(responseCode = "403", description = "Insufficient permission or unauthorized property", content = @Content)
     @ApiResponse(responseCode = "404", description = "Room type does not exist in the authorized property",
             content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
-    public AvailabilityResponse availability(@PathVariable UUID propertyId, @RequestParam UUID roomTypeId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate arrival,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure) {
+    public AvailabilityResponse availability(@Parameter(description = "UUID de propiedad autorizada; scope PROPERTY, sin ALL_PROPERTIES.") @PathVariable UUID propertyId, @Parameter(description = "UUID del tipo perteneciente a la propiedad.") @RequestParam UUID roomTypeId,
+            @Parameter(description = "Fecha local inclusiva; arrival < departure.") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate arrival,
+            @Parameter(description = "Fecha local exclusiva de salida.") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure) {
         var dates = new StayDateRange(arrival, departure);
         return new AvailabilityResponse(propertyId, roomTypeId, arrival, departure,
                 queries.calculate(propertyId, roomTypeId, dates));

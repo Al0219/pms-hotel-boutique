@@ -1,5 +1,65 @@
 # AlanHandoff — Seguimiento Backend
 
+## BE-005-OPENAPI-01 — Cierre con QA visual PASS (2026-10-05)
+
+- **Estado:** COMPLETADA; QA visual/manual ejecutado y confirmado PASS por
+  el usuario. Cierre exclusivo en AlanPlan/AlanHandoff; sin código funcional,
+  migraciones, commit/push/merge ni cambios de estado en otros incrementos.
+- **Evidencia manual confirmada:** Swagger UI carga sin errores; nueve tags
+  y 29 operaciones visibles; paridad con mappings 29/29. Bearer Staff/Guest y
+  refresh cookies separados. Actuator/error no aparecen como API de negocio.
+  Códigos, DTOs, parámetros, headers y nullability revisados PASS.
+- **Validación previa conservada:** focalizados **68 PASS**, incluidos ocho
+  tests OpenAPI; `mvn verify` completo **363 PASS**, BUILD SUCCESS, cero
+  failures/errors/skipped. Smoke HTTP y artefactos permanecen registrados en
+  la entrega anterior; no se repiten suites por este cierre documental.
+- **Regla permanente conservada:** todo endpoint HTTP nuevo/modificado debe
+  actualizar y validar OpenAPI/Swagger dentro del mismo incremento. Sigue
+  vigente en backend/AGENTS.md y docs/02_API_CONTRACT_POLICY.md, sin modificar
+  esas fuentes; OpenAPI desactualizado no cumple DoD y las exclusiones requieren
+  justificación explícita conforme a la política existente.
+- **Preservación/pruebas de cierre:** historial anterior íntegro y append-only;
+  cambios preexistentes preservados. `git diff --check` PASS.
+- **Siguiente:** esperar autorización para otro incremento o publicación;
+  no iniciar otra tarea ni hacer commit/push/merge.
+
+## BE-005-OPENAPI-01 — Entrega OpenAPI/Swagger EN_QA (2026-10-05)
+
+- **Estado:** EN_QA; validación automatizada y smoke HTTP PASS. Pendiente QA
+  visual/manual del usuario según DoD común; no COMPLETADA.
+- **Rama/base:** chore/backend-openapi-contract-baseline, HEAD 8cb2811;
+  árbol limpio al iniciar. Sin commit/push/merge; otros estados preservados.
+- **Entrega:** 29 operaciones/19 paths en nueve controllers y 29 schemas,
+  29/29 documentadas; auth/DTO/nullability/params/respuestas/headers/límites
+  actualizados, BFF interno distinguido de Staff. Regla breve en AGENTS y
+  política detallada en 02; inventario/fuentes/QA en
+  [39_BACKEND_OPENAPI_BASELINE.md](39_BACKEND_OPENAPI_BASELINE.md).
+- **Seguridad:** Bearer Staff/Guest y cookies refresh separados, sin valores de
+  credenciales/PII en ejemplos. 26 operaciones protegidas, tres sin credencial
+  previa; Actuator/error no son negocio; ninguna exclusión de aplicación.
+- **Pruebas reales:** focalizados **68 PASS**, incluidos ocho tests OpenAPI;
+  `mvn verify` completo **363 PASS**, BUILD SUCCESS, 0 failures/errors/skipped.
+  JAR QA: GET /v3/api-docs, /swagger-ui/index.html y swagger-config **200**;
+  paths/components idénticos a tests. Artefactos regenerables en target y
+  logs locales /tmp/openapi-focused.log, openapi-verify.log, openapi-http-smoke.log.
+- **Preservación:** comparación lexical de 31 archivos Java de aplicación con
+  HEAD, sin anotaciones Swagger/imports/whitespace/comentarios, PASS. Sin cambios
+  funcionales HTTP/seguridad/negocio, persistencia/migraciones o dependencias.
+  `git diff --check` PASS; historia anterior intacta; QA temporal detenido.
+- **Gaps/siguiente:** sin gaps bloqueantes de endpoints actuales. QA visual
+  Swagger del usuario según documento 39; esperar PASS, sin iniciar otra tarea.
+
+## BE-005-OPENAPI-01 — Inicio de baseline OpenAPI (2026-10-05)
+
+- **Estado:** EN_PROGRESO; puesta al día autorizada por el usuario.
+- **Rama/base:** chore/backend-openapi-contract-baseline, HEAD 8cb2811;
+  árbol limpio al iniciar. Sin commit/push/merge.
+- **Baseline:** 29 operaciones en 9 controllers, presentes en /v3/api-docs
+  3.1.0. Auth/respuestas/params/schemas requieren actualización; sin código
+  de negocio, seguridad funcional, migraciones ni endpoints nuevos.
+- **Siguiente:** documentar y validar paridad/auth/DTO/respuestas, focalizados
+  y verify completo; registrar inventario/gaps y entregar EN_QA.
+
 ## BE-008B-AUTH-03 — Cierre con QA manual PASS (2026-10-05)
 
 - **Estado:** COMPLETADA; QA manual ejecutado y confirmado PASS por el usuario.
