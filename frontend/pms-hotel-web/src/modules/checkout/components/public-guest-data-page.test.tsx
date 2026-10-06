@@ -58,7 +58,7 @@ describe('Guest checkout data', () => {
     expect(push).toHaveBeenCalledWith('/reserva/checkout/revision?checkIn=2026-10-10&checkOut=2026-10-13&adults=2&children=0&roomsCount=1');
     view.rerender(<PublicCheckoutReviewPage initialCriteria={criteria} />);
     expect(await screen.findAllByText('Carlos Mendoza Pérez')).toHaveLength(1); expect(screen.getByText(/\+50255555555/)).toBeInTheDocument();
-    expect(screen.getByText('Llegada tardía')).toBeInTheDocument(); expect(screen.getByText(/Sin cobros, correos ni reservas reales/)).toBeInTheDocument();
+    expect(screen.getByText('Llegada tardía')).toBeInTheDocument(); expect(screen.queryByText(/Sin cobros, correos ni reservas reales/)).not.toBeInTheDocument(); expect(screen.getByText(/verificará nuevamente la disponibilidad/)).toBeInTheDocument();
     view.rerender(<PublicGuestDataPage initialCriteria={criteria} />);
     expect(await screen.findByLabelText('Nombre *')).toHaveValue('Carlos');
     expect(screen.getByLabelText('Documento de identificación (opcional)')).toHaveValue('DOC-DEMO');

@@ -5,7 +5,7 @@ const confirmation = { reservationId: 'HB-2026-8942', confirmedAt: '2026-10-05T1
 describe('Confirmation calendar export', () => {
   it('exports a private all-day stay with an exclusive departure, stable UID and UTC timestamp', () => {
     const result = confirmationCalendar(confirmation);
-    expect(result).toContain('DTSTART;VALUE=DATE:20261010\r\nDTEND;VALUE=DATE:20261013'); expect(result).toContain('DTSTAMP:20261005T120000Z'); expect(result).toContain('UID:HB-2026-8942@hotelboutique.example'); expect(result).toContain('CLASS:PRIVATE'); expect(result).toContain('demostración'); expect(result).not.toContain('ATTENDEE'); expect(result).not.toContain('ORGANIZER');
+    expect(result).toContain('DTSTART;VALUE=DATE:20261010\r\nDTEND;VALUE=DATE:20261013'); expect(result).toContain('DTSTAMP:20261005T120000Z'); expect(result).toContain('UID:HB-2026-8942@hotelboutique.example'); expect(result).toContain('CLASS:PRIVATE'); expect(result).toContain('SUMMARY:Hotel Boutique · HB-2026-8942'); expect(result).not.toMatch(/demostración|ficticia|Demo/); expect(result).not.toContain('ATTENDEE'); expect(result).not.toContain('ORGANIZER');
   });
   it('escapes calendar text and folds UTF-8 lines without splitting characters or injecting fields', () => {
     const roomName = 'Habitación 🛏️ '.repeat(20) + ', terraza; jardín\\vista\r\nATTENDEE:intruder@example.com';

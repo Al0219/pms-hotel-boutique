@@ -1,5 +1,7 @@
 # Public 01 — Paso 4: modalidades y validación de tarjeta
 
+Actualización de presentación: [textos finales para clientes](48_PUBLIC_BOOKING_CUSTOMER_COPY.md). Los controles de simulación ya no se muestran en rutas públicas; los límites técnicos descritos aquí se conservan.
+
 ## Alcance autorizado
 
 Refactor frontend pedido por José: tarjetas radio, monto de garantía configurable y errores por campo. Relacionado con IMP-WEB-0110/0111, WEB-1/WEB-3 y revisión WEB-4 por pagos. Dependencias formales del backlog, revisión de owners y política productiva siguen pendientes; no se cambia el XLSX. No hay nuevas dependencias, contratos Backend, BFF ni procesamiento financiero real.

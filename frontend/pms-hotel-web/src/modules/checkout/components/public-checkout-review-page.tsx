@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 import { BookingStepper, PublicCurrencySelector, displayMoney, publicGuestDataHref, publicSelectionHref, usePublicBookingReview, usePublicDisplayCurrency, type BookingSearchCriteria } from '@/modules/booking';
-import { getPublicEnvironment } from '@/lib/env';
 import { Button, EmptyState } from '@/shared/components';
 import { countries, internationalPhone, validateGuest } from '../domain/guest-details';
 import { paymentEstimate, quoteFingerprint } from '../domain/payment-estimate';
@@ -37,7 +36,6 @@ export function PublicCheckoutReviewPage({ initialCriteria: criteria }: { initia
     <div className={styles.topBar}><Link className={styles.back} href={guestHref}>← Volver a datos</Link><PublicCurrencySelector id="final-review-display-currency" /></div>
     <header><p className={styles.eyebrow}>TU ESTANCIA, A TU MEDIDA</p><h1>Revisa y confirma tu reserva</h1><p>Paso 3 de 4 · Verifica todos los datos antes de continuar al pago</p></header>
     <BookingStepper step={3} />
-    {getPublicEnvironment().useMockApi && <p className={styles.demo}>Modo demostración · Sin cobros, correos ni reservas reales.</p>}
     <CheckoutAvailabilityGate review={review}>{!validGuest ? <><EmptyState title="Completa tus datos antes de continuar" description="Revisa la información del huésped para esta selección antes de pasar al pago." /><Link className={styles.back} href={guestHref}>Completar mis datos →</Link></> : <div className={styles.layout}>
       <section className={styles.card} aria-label="Datos de tu reserva">
         <section className={styles.block} aria-labelledby="final-review-stay"><div className={styles.blockHeading}><h2 id="final-review-stay">Estadía</h2><Link className={styles.edit} href={publicSelectionHref(criteria)} aria-label="Editar estadía">Editar</Link></div>

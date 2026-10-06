@@ -78,6 +78,10 @@ Los precios públicos inician en quetzales y permiten cambiar a dólares. La
 garantía personalizada incluye su propio selector Q/USD, que convierte el
 importe ingresado y sus límites usando la referencia de demostración existente.
 
+Public 01 utiliza [textos finales para clientes](docs/48_PUBLIC_BOOKING_CUSTOMER_COPY.md).
+Los avisos y controles de simulación ya no aparecen en las rutas públicas;
+los servicios siguen en modo mock hasta integrar Backend/PSP.
+
 ## Backlog y reglas
 
 El backlog canónico es `../../docs/Backlog_Implementacion_PMS_V1.xlsx`. Antes de una tarea, leer `AGENTS.md`, la fila del backlog y los documentos indicados.
