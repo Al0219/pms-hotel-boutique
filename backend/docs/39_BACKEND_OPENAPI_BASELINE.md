@@ -5,6 +5,42 @@
 árbol limpio al iniciar. Mantenimiento autorizado por el usuario; estado EN_QA
 hasta su QA manual PASS. Sin commit/push/merge.
 
+## Evolución BE-005-AUTH-API-01 (2026-10-05)
+
+Inventario vigente de esta compilación: **34 operaciones / 24 paths / 29 schemas**,
+nueve controllers/tags. La evidencia de BE-005-OPENAPI-01 y su tabla de 29
+operaciones que siguen abajo son el baseline histórico; estas cinco filas son
+aditivas. [Contrato/evidencia 40](40_EXPLICIT_AUTH_ENDPOINTS_INCREMENT.md),
+[guía QA 41](41_EXPLICIT_AUTH_ENDPOINTS_QA.md). Estado del incremento: EN_QA.
+
+| Método | Path adicional | Autenticación | Permiso / scope | Request → response | Respuestas |
+| --- | --- | --- | --- | --- | --- |
+| POST | `/api/v1/staff-auth/login` | Sin credencial previa; BFF-only | Sin permiso funcional adicional; sin property scope de entrada | StaffLoginRequest → StaffAuthResponse | 201, 400, 401 |
+| POST | `/api/v1/staff-auth/logout` | Bearer Staff | Sin permiso funcional adicional; sin property scope de entrada | — → — | 204, 401 |
+| GET | `/api/v1/staff-auth/me` | Bearer Staff | Sin permiso funcional adicional; autorización C2 vigente | — → StaffSessionResponse | 200, 401 |
+| POST | `/api/v1/guest-auth/logout` | Bearer Guest | Sin permiso funcional adicional; sin property scope de entrada | — → — | 204, 401 |
+| GET | `/api/v1/guest-auth/me` | Bearer Guest | Sin permiso funcional adicional; sin property scope de entrada | — → GuestSessionResponse | 200, 401 |
+
+Todo Auth conserva x-audience=internal-bff. Cuatro operaciones sin credencial
+previa (login/sessions Staff y Google start/exchange), 30 protegidas; mismos
+cuatro esquemas de seguridad. Solo POST Staff sessions y GET/DELETE session
+Staff/Guest deprecated=true, con reemplazo explícito y sin cambio runtime.
+Refresh/Google no deprecated; summaries en español. Schemas/status/headers de
+aliases son equivalentes a legacy; OperationIds únicos, sin exclusiones nuevas.
+Los nueve tests OpenAPI validan paridad real y metadata de compatibilidad.
+La suite HTTP verifica los nuevos mappings contra PostgreSQL y Google de prueba.
+No se agrega error code/envelope/Set-Cookie ni DTO de perfil.
+Validación Staff login/sessions: MVC genera 400; en Servlet real, /error protegido
+produce 401 sin cuerpo. Metadata de ambos handlers explicita ese comportamiento
+heredado, cubierto por ExplicitAuthServletErrorIntegrationTests. No se amplía
+el acceso a /error ni se cambia la respuesta legacy para acomodar Swagger.
+
+Validación final de AUTH-API-01: focalizados **56 PASS**, incluidos nueve tests
+OpenAPI; verify completo **374 PASS**, cero failures/errors/skipped. JAR HTTP
+real doc/UI/config **200**, paths/components iguales a tests. Artefacto
+regenerable target/openapi-explicit-auth-qa.json; logs locales en /tmp con
+prefijo explicit-auth. QA manual del usuario pendiente según guía 41.
+
 ## Fuentes y perímetro
 
 Se inspeccionaron los nueve `@RestController` de aplicación y sus mappings;
@@ -236,3 +272,16 @@ los ejemplos conceptuales antiguos de C1 ni se agrega un error `code` inexistent
 Las APIs futuras C4/C6/admin/otros módulos no tienen mappings HTTP actuales y
 quedan fuera del inventario. La entrega Google/Resend real y el QA visual humano
 no forman parte de la evidencia automatizada; QA Swagger del usuario pendiente.
+
+## Extensión BE-004-ACCOUNT-SUMMARY-01 (2026-10-06)
+
+GET /api/v1/guest-auth/account/summary: audiencia internal-bff, Guest Bearer,
+sin parámetros de identidad del cliente. 200/401, Cache-Control no-store/private,
+GuestAccountSummaryResponse con perfiles array y estancia nullable. No 404/503
+Backend ni datos comerciales/fiscales/credenciales. Inventario actual: 35
+operaciones/25 paths/32 schemas/10 tags; ninguna exclusión nueva. Los cinco
+aliases auth legacy permanecen deprecated exclusivamente en metadata.
+La propiedad upcomingStay usa anyOf [$ref UpcomingStay, type null] para que
+OpenAPI 3.1 acepte realmente objeto o null; customizer acotado a esta propiedad,
+cubierto por prueba estructural. PreferredLanguage admite string/null sin default.
+[Contrato, aceptación y evidencia QA](42_GUEST_ACCOUNT_SUMMARY_CONTRACT_QA.md).

@@ -1,8 +1,32 @@
+/** Confirmed GET /api/v1/guest-auth/account/summary through the same-origin BFF. */
+export interface AccountSummaryDTO {
+  guestAccountId: string;
+  email: string;
+  active: boolean;
+  profiles: AccountProfileDTO[];
+  linkedReservationsCount: number;
+  upcomingStay: {
+    reservationId: string;
+    stayId: string;
+    confirmationCode: string;
+    arrival: string;
+    departure: string;
+  } | null;
+}
+
+export interface AccountProfileDTO {
+  profileId: string;
+  firstName: string;
+  lastName: string;
+  preferredLanguage: string | null;
+  status: "ACTIVE" | "INACTIVE";
+}
+
 /**
- * PROVISIONAL API CONTRACT for Account Summary.
+ * PROVISIONAL MOCK CONTRACT for Account Summary.
  * Replace or confirm with Backend before this contract is marked CONFIRMED.
  */
-export interface AccountSummaryDTO {
+export interface MockAccountSummaryDTO {
   account_id: string;
   profile_id?: string;
   guest_name: string;

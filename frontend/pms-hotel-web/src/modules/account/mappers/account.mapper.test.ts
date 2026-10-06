@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { mapAccountSummary, mapStayHistoryItem } from "./account.mapper";
+import { mapMockAccountSummary, mapStayHistoryItem } from "./account.mapper";
 import { DomainMappingError } from "@/lib/errors/domain-mapping-error";
 
 describe("account.mapper", () => {
@@ -46,7 +46,7 @@ describe("account.mapper", () => {
       },
     };
 
-    const domain = mapAccountSummary(dto);
+    const domain = mapMockAccountSummary(dto);
     expect(domain.accountId).toBe("ACC-01");
     expect(domain.guestName).toBe("Alan Palacios");
     expect(domain.upcomingStay?.reservationCode).toBe("HB-2026-09117");
@@ -55,7 +55,7 @@ describe("account.mapper", () => {
 
   it("throws DomainMappingError when account_id is missing", () => {
     expect(() =>
-      mapAccountSummary({
+      mapMockAccountSummary({
         account_id: "",
         guest_name: "Alan",
         email: "alan@email.com",

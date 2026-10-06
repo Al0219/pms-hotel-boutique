@@ -87,3 +87,30 @@ explica cómo comprobarlo sin revelar secretos.
 
 Los endpoints están pensados para la red privada BFF→Backend. El contrato no
 expone tokens en una respuesta consumida directamente por JavaScript.
+
+## Addendum BE-005-AUTH-API-01 — me/logout compatibles
+
+Implementación autorizada por el usuario el 2026-10-05; EN_QA hasta QA manual
+PASS. GET `/api/v1/guest-auth/me` reutiliza GET session y devuelve la misma
+GuestSessionResponse (guestAccountId/sessionId/email/context=GUEST), sin tokens,
+GuestProfile ni permisos Staff. POST `/api/v1/guest-auth/logout` reutiliza DELETE
+session y responde 204 sin cuerpo; ambos requieren Bearer Guest vigente.
+GET/DELETE session permanecen compatibles, deprecated exclusivamente en OpenAPI.
+Google start/exchange siguen siendo el único login Guest. Refresh conserva su
+ruta/cookie pms_guest_refresh; ningún cambio en OIDC, JWT, sesiones, cookies BFF
+o auditoría. Sin endpoint Guest login local.
+[Contrato/evidencia](40_EXPLICIT_AUTH_ENDPOINTS_INCREMENT.md) y
+[QA específica](41_EXPLICIT_AUTH_ENDPOINTS_QA.md).
+
+## Addendum BE-004-ACCOUNT-SUMMARY-01 — resumen propio real
+
+Implementación end-to-end autorizada por el usuario el 2026-10-06; entrega
+separada de BE-005-AUTH-API-01 y EN_QA hasta QA manual final. GET
+/api/v1/guest-auth/account/summary obtiene identidad exclusivamente de
+GuestPrincipal vigente. GuestAccount, perfiles asociados explícitamente y
+vínculos OTP persistidos de la reserva son las fuentes autorizadas.
+BFF GET /api/auth/guest/account/summary usa cookie Guest HttpOnly, sin
+accountId del browser ni tokens JS. No muta cuenta/perfil/vínculo ni introduce
+permisos Staff. Ausencia de perfiles/estancia próxima es válida; no infiere
+titularidad por correo/perfil compartido. Rewards/finanzas/promociones/mensajes
+quedan fuera del contrato real. [Contrato y QA 42](42_GUEST_ACCOUNT_SUMMARY_CONTRACT_QA.md).
