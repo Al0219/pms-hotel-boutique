@@ -13,8 +13,8 @@ El backlog conserva `IMP-WEB-0201` y `IMP-WEB-0202` PENDIENTE. El código de 020
 - Login: correo y contraseña, mostrar/ocultar, Google, recuperación informativa y continuación como invitado.
 - Registro: nombre, correo, contraseña y confirmación, indicador de fortaleza, aceptación explícita de términos/privacidad y marketing opcional. Ningún consentimiento viene marcado. La aceptación también se exige para el recorrido social de registro.
 - Validación al salir del campo y enviar; después, errores se actualizan al editar. Primer campo inválido recibe foco. Indicador de fortaleza y mínimo de ocho caracteres son reglas de presentación, no una política de seguridad Backend confirmada.
-- Envío bloqueado durante carga; errores de red/datos recuperables sin sesión falsa. Éxito muestra check y devuelve tras 900 ms a `/mis-reservas` o al retorno autorizado del checkout. Hay enlace manual alternativo.
-- Retornos mediante `guestAccessReturn`: solo `/mis-reservas` y `/reserva/checkout?...`. No se admite una URL externa ni se pone información del huésped en la URL.
+- Envío bloqueado durante carga; errores de red/datos recuperables sin sesión falsa. Solo Crear cuenta muestra [Cuenta vinculada](50_PUBLIC_02_LINKED_ACCOUNT.md), con acciones explícitas para cuenta, reservas y checkout. Iniciar sesión con correo/Google redirige directamente al retorno autorizado o a `/cuenta`, sin confirmación intermedia ni demora artificial.
+- Retornos mediante `guestAccessReturn`: solo `/mis-reservas`, `/cuenta/reservas/vincular` y `/reserva/checkout?...`. No se admite una URL externa ni se pone información del huésped en la URL.
 - Se conserva el carrito y borrador de reserva mediante los providers existentes. La sesión Guest sigue separada de Staff; logout limpia exclusivamente caché Guest.
 
 ## Límite de autenticación y contrato local
@@ -43,7 +43,7 @@ Tras la integración de BD1 en `main` el 2026-10-06, `NEXT_PUBLIC_USE_MOCK_API=f
 2. Enviar vacío y corregir email/contraseña: errores contextualizados y foco; mostrar/ocultar contraseña.
 3. Abrir Crear cuenta: verificar fuerza, coincidencia y términos obligatorios; marketing desmarcado y opcional.
 4. Enviar los campos válidos: carga, check y retorno a Mis reservas. El nuevo registro no contiene reservas ajenas.
-5. Google: estado de sesión local, sin requests a Backend; conserva el guard existente para vincular reservas históricas. Apple no aparece en login ni registro.
+5. Google: estado de sesión local, sin requests a Backend. Vinculación local por sesión Guest, referencia y código según [entrega 51](51_PUBLIC_02_EXISTING_RESERVATION_LINK.md); la política Backend real se conserva. Apple no aparece en login ni registro.
 6. `error@example.com` / `offline@example.com`: error recuperable sin redirección ni sesión; corregir email y reintentar.
 7. Desde datos del huésped, acceder y regresar: mismos parámetros de búsqueda y borrador conservado.
 8. Recuperación y enlaces legales: diálogos con Escape, foco devuelto y sin afirmar envío de correos.

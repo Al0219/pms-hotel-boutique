@@ -29,7 +29,7 @@ export function PublicBookingShell({ children }: { children: ReactNode }) {
     <header className={styles.header}>
       <div className={styles.headerInner}>
         <Link href="/" className={styles.brand} aria-label="Hotel Boutique, inicio">Hotel Boutique</Link>
-        {isAccessPage ? <Link href="/" className={styles.authReturn}>← Volver al inicio</Link> : <>
+        {isAccessPage ? account ? null : <Link href="/" className={styles.authReturn}>← Volver al inicio</Link> : <>
         <nav id="public-navigation" aria-label="Navegación pública" className={`${styles.navigation} ${menuOpen ? styles.navigationOpen : ''}`}
           onClick={() => setMenuOpen(false)} onKeyDown={event => {
             if (event.key === 'Escape') { setMenuOpen(false); menuTrigger.current?.focus(); }

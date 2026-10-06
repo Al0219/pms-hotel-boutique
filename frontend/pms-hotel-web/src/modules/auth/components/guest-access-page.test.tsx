@@ -46,14 +46,14 @@ function fillRegistration() {
 }
 
 describe('Guest identity frontend', () => {
-  it('explains guest bookings, accepts Google and redirects to linked reservations', async () => {
+  it('signs in with Google directly to linked reservations without a registration confirmation', async () => {
     const { user } = setup('/mis-reservas');
     expect(screen.getByText('¿Reservaste como invitado?')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Continuar como invitado' })).toHaveAttribute('href', '/habitaciones');
     await user.click(screen.getByRole('button', { name: 'Continuar con Google' }));
     expect(screen.getByRole('button', { name: 'Conectando…' })).toBeDisabled();
-    expect(await screen.findByRole('link', { name: 'Ir a Mis reservas' })).toHaveAttribute('href', '/mis-reservas');
-    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith('/mis-reservas'), { timeout: 2000 });
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledExactlyOnceWith('/mis-reservas'));
+    expect(screen.queryByRole('heading', { name: 'Cuenta vinculada' })).not.toBeInTheDocument();
   });
 
   it('retains one session across routes and clears Guest data without touching Staff', async () => {
@@ -62,7 +62,7 @@ describe('Guest identity frontend', () => {
     fillEmail(); submit();
     expect(await screen.findByRole('button', { name: 'Procesando…' })).toBeDisabled();
     expect(screen.getByLabelText('Guest session')).toHaveTextContent('signed-out');
-    expect(await screen.findByRole('heading', { name: 'Tu cuenta está lista' })).toBeInTheDocument();
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith('/cuenta'));
     navigate('account');
     expect(await screen.findByRole('heading', { name: 'Mi cuenta' })).toBeInTheDocument();
     expect(screen.getByText(/Acceso por correo/)).toBeInTheDocument();
@@ -87,7 +87,7 @@ describe('Guest identity frontend', () => {
     expect(screen.getByLabelText('Correo electrónico')).toHaveValue('error@example.com');
     fireEvent.change(screen.getByLabelText('Correo electrónico'), { target: { value: 'retry@example.com' } });
     submit();
-    expect(await screen.findByRole('heading', { name: 'Tu cuenta está lista' })).toBeInTheDocument();
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith('/cuenta'));
   });
 
   it('reports offline without false success or redirect', async () => {
@@ -100,7 +100,7 @@ describe('Guest identity frontend', () => {
   it('supports Google through the existing session authority', async () => {
     const { user, navigate } = setup();
     await user.click(screen.getByRole('button', { name: 'Continuar con Google' }));
-    await screen.findByRole('heading', { name: 'Tu cuenta está lista' });
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith('/cuenta'));
     navigate('account');
     expect(await screen.findByText(/Google conectado/)).toBeInTheDocument();
     expect(screen.getAllByText("guest.google@example.com")).toHaveLength(1);
@@ -122,7 +122,7 @@ describe('Guest identity frontend', () => {
       return HttpResponse.json({ account_id: 'guest-demo-01', email: 'demo@example.com', external_identities: [] });
     }));
     const { client } = setup(); fillEmail(); submit(); submit();
-    await screen.findByRole('heading', { name: 'Tu cuenta está lista' });
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith('/cuenta'));
     expect(requests).toEqual([{ method: 'EMAIL', email: 'demo@example.com' }]);
     expect(JSON.stringify(client.getMutationCache().getAll().map(item => item.state.variables))).not.toContain('ExamplePass42!');
     expect(localStorage.length).toBe(0); expect(sessionStorage.length).toBe(0);
@@ -191,8 +191,8 @@ describe('Guest identity frontend', () => {
 
   it('previews registration with a separate profile and no fabricated reservations', async () => {
     const { navigate } = setup(); fillRegistration(); submit();
-    expect(await screen.findByRole('heading', { name: 'Tu cuenta está creada' })).toBeInTheDocument();
-    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith('/mis-reservas'), { timeout: 2000 });
+    expect(await screen.findByRole('heading', { name: 'Cuenta vinculada' })).toBeInTheDocument();
+    expect(navigation.replace).not.toHaveBeenCalled();
     navigate('account');
     expect(await screen.findByText(/Hola, José Pérez/)).toBeInTheDocument();
     expect(screen.getByText(/0 reservas vinculadas/)).toBeInTheDocument();
@@ -206,15 +206,17 @@ describe('Guest identity frontend', () => {
     expect(screen.getByLabelText('Guest session')).toHaveTextContent('signed-out');
     await user.click(screen.getByRole('checkbox', { name: /Acepto los Términos/ }));
     await user.click(screen.getByRole('button', { name: 'Registrarse con Google' }));
-    expect(await screen.findByRole('heading', { name: 'Tu cuenta está creada' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Cuenta vinculada' })).toBeInTheDocument();
+    expect(navigation.replace).not.toHaveBeenCalled();
   });
 
   it('keeps the new profile and empty history when signing in again during the same app session', async () => {
     const { user, navigate } = setup(); fillRegistration(); submit();
-    await screen.findByRole('heading', { name: 'Tu cuenta está creada' });
+    await screen.findByRole('heading', { name: 'Cuenta vinculada' });
     navigate('profile'); await user.click(screen.getByRole('button', { name: 'Cerrar sesión' }));
     navigate('access'); fillEmail('jose@example.com'); submit();
-    await screen.findByRole('heading', { name: 'Tu cuenta está lista' });
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith('/cuenta'));
+    expect(screen.queryByRole('heading', { name: 'Cuenta vinculada' })).not.toBeInTheDocument();
     navigate('account'); expect(await screen.findByText(/Hola, José Pérez/)).toBeInTheDocument();
     expect(screen.getByText(/0 reservas vinculadas/)).toBeInTheDocument();
   });
@@ -224,14 +226,52 @@ describe('Guest identity frontend', () => {
     setup(destination);
     expect(screen.getByRole('link', { name: 'Continuar como invitado' })).toHaveAttribute('href', destination);
     fillEmail(); submit();
-    expect(await screen.findByRole('link', { name: 'Continuar mi reserva' })).toHaveAttribute('href', destination);
-    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith(destination), { timeout: 2000 });
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledExactlyOnceWith(destination));
+    expect(screen.queryByRole('heading', { name: 'Cuenta vinculada' })).not.toBeInTheDocument();
   });
 
   it('never redirects to an untrusted returnTo', async () => {
     setup('https://evil.example/steal'); fillEmail(); submit();
-    await screen.findByRole('heading', { name: 'Tu cuenta está lista' });
-    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith('/mis-reservas'), { timeout: 2000 });
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledExactlyOnceWith('/cuenta'));
+    expect(screen.queryByRole('link', { name: /Volver al Checkout/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Cuenta vinculada' })).not.toBeInTheDocument();
+  });
+
+  it('restores the permitted OAuth checkout return once and clears the stored context', async () => {
+    const destination = '/reserva/checkout?checkIn=2026-10-10&checkOut=2026-10-13&adults=2';
+    sessionStorage.setItem('pms:guest-checkout-return', `${destination}&email=private%40example.test`);
+    const { user } = setup();
+    await user.click(screen.getByRole('button', { name: 'Continuar con Google' }));
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledExactlyOnceWith(destination));
+    expect(sessionStorage.getItem('pms:guest-checkout-return')).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Cuenta vinculada' })).not.toBeInTheDocument();
+  });
+  it('restores the exact link screen after login without treating it as a booking checkout', async () => {
+    sessionStorage.setItem('pms:guest-checkout-return', '/cuenta/reservas/vincular');
+    const { user } = setup();
+    await user.click(screen.getByRole('button', { name: 'Continuar con Google' }));
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledExactlyOnceWith('/cuenta/reservas/vincular'));
+    expect(sessionStorage.getItem('pms:guest-checkout-return')).toBeNull();
+  });
+  it('offers linking after registration without displaying a checkout notice for the stored link destination', async () => {
+    sessionStorage.setItem('pms:guest-checkout-return', '/cuenta/reservas/vincular');
+    const { user } = setup(); fillRegistration(); submit();
+    await screen.findByRole('heading', { name: 'Cuenta vinculada' });
+    expect(screen.queryByRole('complementary', { name: 'Reserva en curso' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Continuar reservando' })).toHaveAttribute('href', '/habitaciones');
+    expect(screen.getByRole('link', { name: 'Vincular reserva existente' })).toHaveAttribute('href', '/cuenta/reservas/vincular');
+    await user.click(screen.getByRole('button', { name: '← Volver a opciones' }));
+    expect(sessionStorage.getItem('pms:guest-checkout-return')).toBeNull();
+  });
+
+  it('keeps failed registration recoverable and does not show its confirmation after switching to login', async () => {
+    setup(); fillRegistration(); fireEvent.change(screen.getByLabelText('Correo electrónico'), { target: { value: 'error@example.com' } }); submit();
+    expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos completar el acceso');
+    expect(screen.queryByRole('heading', { name: 'Cuenta vinculada' })).not.toBeInTheDocument();
+    expect(navigation.replace).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('tab', { name: 'Iniciar sesión' })); fillEmail(); submit();
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledExactlyOnceWith('/cuenta'));
+    expect(screen.queryByRole('heading', { name: 'Cuenta vinculada' })).not.toBeInTheDocument();
   });
 
   it('opens accessible recovery information without pretending to send email', async () => {

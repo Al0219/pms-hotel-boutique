@@ -8,6 +8,6 @@ export function checkoutReturn(value?: string): string | undefined {
 }
 
 export function guestAccessReturn(value?: string): string | undefined {
-  if (value === '/mis-reservas') return value;
+  if (value === '/mis-reservas' || value === '/cuenta/reservas/vincular') return value;
   return checkoutReturn(value);
 }

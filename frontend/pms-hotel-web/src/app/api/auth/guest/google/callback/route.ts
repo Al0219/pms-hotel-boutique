@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     if (!exchange.ok) return redirectToApp("/acceso?error=google");
     const tokens = await exchange.json() as GuestTokens;
     if (!tokens.accessToken || !tokens.refreshToken || !tokens.accessTokenExpiresInSeconds) return redirectToApp("/acceso?error=google");
-    const response = redirectToApp("/cuenta");
+    const response = redirectToApp("/acceso");
     applyGuestCookies(response, tokens);
     return response;
   } catch {

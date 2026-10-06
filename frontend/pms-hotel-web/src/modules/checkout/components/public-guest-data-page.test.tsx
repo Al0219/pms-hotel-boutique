@@ -94,7 +94,9 @@ describe('Guest checkout data', () => {
     view.rerender(<GuestAccessPage returnTo="/reserva/checkout?checkIn=2026-10-10&checkOut=2026-10-13&adults=2&children=0&roomsCount=1" />);
     fireEvent.change(screen.getByLabelText('Correo electrónico'), { target: { value: 'access@example.com' } });
     fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'ExamplePass42!' } });
-    fireEvent.submit(screen.getByLabelText('Correo electrónico').closest('form')!); await screen.findByRole('link', { name: 'Continuar mi reserva' });
+    fireEvent.submit(screen.getByLabelText('Correo electrónico').closest('form')!);
+    await waitFor(() => expect(push).toHaveBeenCalledExactlyOnceWith('/reserva/checkout?checkIn=2026-10-10&checkOut=2026-10-13&adults=2&children=0&roomsCount=1'));
+    expect(screen.queryByRole('heading', { name: 'Cuenta vinculada' })).not.toBeInTheDocument();
     view.rerender(<PublicGuestDataPage initialCriteria={criteria} />); fireEvent.click(await screen.findByRole('button', { name: 'Usar datos de mi cuenta' }));
     expect(screen.getByLabelText('Nombre *')).toHaveValue('Nombre manual'); expect(screen.getByLabelText('Apellidos *')).toHaveValue('Palacios');
     expect(screen.getByLabelText('Correo electrónico *')).toHaveValue('contact@example.com');
