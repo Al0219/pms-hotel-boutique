@@ -8,8 +8,8 @@ export type StayTravelState = "RESERVED" | "IN_HOUSE" | "CHECKED_OUT" | "CANCELL
 /** Una estadía dentro de la Reservation. Multi-room => múltiples estadías con Stay ID propio. */
 export interface ReservationStayDetail {
   id: string;
-  roomId: string;
-  roomLabel: string;
+  roomId: string | null;
+  roomLabel: string | null;
   roomType: string;
   checkIn: Date;
   checkOut: Date;

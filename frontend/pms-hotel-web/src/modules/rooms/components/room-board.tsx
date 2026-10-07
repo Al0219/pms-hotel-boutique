@@ -20,6 +20,8 @@ interface RoomBoardProps {
 export function RoomBoard({ propertyId, endpoint }: Readonly<RoomBoardProps>) {
   const { data: rooms, error, isLoading, refetch } = useRooms(propertyId, endpoint);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('ALL');
 
   if (!propertyId) {
     return <main className={styles.page} role="status"><h1>Habitaciones</h1><p>La sesión debe proporcionar un scope de propiedad autorizado antes de consultar habitaciones.</p></main>;
@@ -45,26 +47,33 @@ export function RoomBoard({ propertyId, endpoint }: Readonly<RoomBoardProps>) {
     return <main className={styles.page}><h1>Habitaciones</h1><p>No hay habitaciones para esta propiedad.</p></main>;
   }
 
-  const selectedRoom = rooms.find((room) => room.id === selectedRoomId) ?? rooms[0];
+  const visible = rooms.filter(room => (status === 'ALL' || room.status === status)
+    && `${room.number} ${room.roomTypeLabel}`.toLocaleLowerCase('es').includes(search.trim().toLocaleLowerCase('es')));
+  const selectedRoom = visible.find(room => room.id === selectedRoomId) ?? visible[0];
 
   return <main className={styles.page}>
     <header className={styles.header}>
       <p className={styles.eyebrow}>Operaciones</p>
       <h1>Habitaciones</h1>
       <p>Tablero de habitaciones de la propiedad {propertyId}: unidades físicas con estado y tipo.</p>
+      <p className={styles.note}>El estado operativo indica si la habitación está operativa, fuera de orden o fuera de servicio. No indica si está ocupada.</p>
     </header>
     <div className={styles.content}>
       <section className={styles.listPanel} aria-labelledby="room-list-title">
         <div className={styles.panelHeader}>
           <div><p className={styles.eyebrow}>Habitaciones</p><h2 id="room-list-title" className={styles.sectionTitle}>Estado de habitación</h2></div>
-          <span className={styles.count}>{rooms.length} registradas</span>
+          <span className={styles.count}>{rooms.length} registradas · {visible.length} visibles</span>
         </div>
+        <div className={styles.filters}><label>Buscar habitación<input type="search" value={search} placeholder="Número o tipo" onChange={event => setSearch(event.target.value)} /></label>
+          <label>Estado operativo<select value={status} onChange={event => setStatus(event.target.value)}><option value="ALL">Todos</option><option value="ACTIVE">Operativa</option><option value="OOO">OOO · Fuera de orden</option><option value="OOS">OOS · Fuera de servicio</option></select></label>
+          <button type="button" onClick={() => { setSearch(''); setStatus('ALL'); }}>Limpiar filtros</button></div>
+        {!visible.length && <p role="status">No hay habitaciones con estos filtros.</p>}
         <ul className={styles.list}>
-          {rooms.map((room) => <li key={room.id}>
+          {visible.map((room) => <li key={room.id}>
             <button
               className={styles.roomButton}
               type="button"
-              aria-pressed={room.id === selectedRoom.id}
+              aria-pressed={room.id === selectedRoom?.id}
               onClick={() => setSelectedRoomId(room.id)}
             >
               <span><strong>{room.number}</strong><small>{room.roomTypeLabel}</small></span>
@@ -75,7 +84,7 @@ export function RoomBoard({ propertyId, endpoint }: Readonly<RoomBoardProps>) {
           </li>)}
         </ul>
       </section>
-      <RoomDetail room={selectedRoom} propertyId={propertyId} endpoint={endpoint} />
+      {selectedRoom && <RoomDetail room={selectedRoom} propertyId={propertyId} endpoint={endpoint} />}
     </div>
   </main>;
 }

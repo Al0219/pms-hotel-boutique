@@ -16,6 +16,7 @@ import type { GuestAccessInput } from '../model/guest-access';
 import { AuthModeTabs } from './auth-mode-tabs';
 import { AuthSocialButtons, type SocialAccessProvider } from './auth-social-buttons';
 import { GuestCredentialsForm } from './guest-credentials-form';
+import { useLocalStaffAccess } from '../hooks/use-local-staff-access';
 import styles from './guest-access-page.module.css';
 
 const accessInformation = {
@@ -65,6 +66,8 @@ function RealGuestAccessPage({ returnTo }: { returnTo?: string }) {
 }
 
 function MockGuestAccessPage({ returnTo, confirmation }: { returnTo?: string; confirmation?: ReactNode }) {
+  const router = useRouter();
+  const localStaff = useLocalStaffAccess();
   const destination = guestAccessReturn(returnTo);
   const reservationsAccess = destination === '/mis-reservas' || destination === '/cuenta/reservas/vincular';
   const [authMode, setAuthMode] = useState<AuthMode>('login');
@@ -76,7 +79,7 @@ function MockGuestAccessPage({ returnTo, confirmation }: { returnTo?: string; co
   const informationTrigger = useRef<HTMLElement | null>(null);
   const requestActive = useRef(false);
   const { account, accessMethod, signIn, isPending, error, resetError } = useGuestSession();
-  const busy = isPending;
+  const busy = isPending || localStaff.busy;
 
   function openInformation(key: keyof typeof accessInformation) {
     informationTrigger.current = document.activeElement as HTMLElement;
@@ -141,10 +144,15 @@ function MockGuestAccessPage({ returnTo, confirmation }: { returnTo?: string; co
           <div className={styles.divider}><span>o continúa con correo</span></div>
           <GuestCredentialsForm key={authMode} mode={authMode} busy={busy} email={email} terms={terms}
             onTermsChange={accepted => { setTerms(accepted); setNotice(undefined); }}
-            onEmailChange={value => { setEmail(value); resetError(); setNotice(undefined); }}
+            onEmailChange={value => { setEmail(value); resetError(); localStaff.resetError(); setNotice(undefined); }}
+            onLocalStaffAccess={localStaff.enabled ? async (email, password) => {
+              const accepted = await localStaff.signIn(email, password);
+              if (accepted) router.replace('/dashboard');
+              return accepted;
+            } : undefined}
             onSubmit={credentialsAccess} onRecovery={() => openInformation('recovery')} onLegal={openInformation} />
-          {isPending && <p className={styles.status} role="status">Verificando acceso…</p>}
-          {(error || notice) && <p id="access-error" className={styles.accessError} role="alert">{notice ?? errorMessage}</p>}
+          {busy && <p className={styles.status} role="status">Verificando acceso…</p>}
+          {(error || notice || localStaff.error) && <p id="access-error" className={styles.accessError} role="alert">{localStaff.error ?? notice ?? errorMessage}</p>}
         </div>
         <div className={styles.guestOption}>
           <Link className={styles.secondary} href={reservationsAccess ? '/habitaciones' : destination ?? '/'}>Continuar como invitado</Link>

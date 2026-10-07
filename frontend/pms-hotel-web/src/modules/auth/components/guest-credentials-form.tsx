@@ -5,13 +5,15 @@ import { passwordStrength, validateGuestCredentials, type AuthMode, type Credent
 import { AuthPasswordField } from './auth-password-field';
 import styles from './guest-access-page.module.css';
 
-export function GuestCredentialsForm({ mode, busy, email, onEmailChange, terms, onTermsChange, onSubmit, onRecovery, onLegal }: {
+export function GuestCredentialsForm({ mode, busy, email, onEmailChange, terms, onTermsChange, onSubmit, onLocalStaffAccess, onRecovery, onLegal }: {
   mode: AuthMode; busy: boolean; email: string; onEmailChange: (email: string) => void;
   terms: boolean; onTermsChange: (accepted: boolean) => void;
   onSubmit: (details: GuestAccessDetails) => Promise<boolean>;
+  /** Only the local Staff fixture may inspect transient credentials; never Guest access. */
+  onLocalStaffAccess?: (email: string, password: string) => Promise<boolean | undefined>;
   onRecovery: () => void; onLegal: (policy: 'terms' | 'privacy') => void;
 }) {
-  // Credentials are transient input state. They never enter a service, session, query cache or storage.
+  // Credentials stay transient. Guest never receives passwords; local Staff MSW never persists them.
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
   const [fullName, setFullName] = useState('');
@@ -38,6 +40,13 @@ export function GuestCredentialsForm({ mode, busy, email, onEmailChange, terms, 
     }
     submitting.current = true;
     try {
+      if (!register && onLocalStaffAccess) {
+        const accepted = await onLocalStaffAccess(email.trim(), password);
+        if (accepted !== undefined) {
+          if (accepted) setPassword('');
+          return;
+        }
+      }
       if (await onSubmit({ fullName: fullName.trim(), email: email.trim(), terms, marketing })) {
         setPassword('');
         setConfirmation('');

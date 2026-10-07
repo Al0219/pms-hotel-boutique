@@ -1,7 +1,9 @@
 "use client";
 
-import { createContext, useContext, type ReactNode } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createContext, useContext, useEffect, type ReactNode } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRoles } from "@/modules/permissions";
 import { useSecurity } from "@/modules/security";
 import { getPublicEnvironment } from "@/lib/env";
@@ -36,6 +38,7 @@ export function StaffSessionProvider({ children }: { children: ReactNode }) {
 }
 
 function StaffBffSession({ children }: { children: ReactNode }) {
+  const client = useQueryClient();
   const session = useQuery({
     queryKey: ["staff-session"],
     queryFn: async ({ signal }) => mapStaffSession(await getActiveStaffSessionDTO(signal)),
@@ -43,8 +46,12 @@ function StaffBffSession({ children }: { children: ReactNode }) {
   });
   const logout = useMutation({
     mutationFn: logoutStaffSession,
-    onSuccess: () => { void session.refetch(); },
+    onSuccess: async () => {
+      await client.cancelQueries({ queryKey: ["staff-session"] });
+      client.setQueryData(["staff-session"], null);
+    },
   });
+  if (logout.isSuccess) return <ReturnToPublicHome />;
   if (session.fetchStatus === "paused") return <p role="status">Sin conexión. Esperando para cargar la sesión Staff.</p>;
   if (session.isPending) return <p role="status">Cargando sesión Staff…</p>;
   if (session.isError || !session.data) return <section>
@@ -75,12 +82,7 @@ function StaffMockSession({ children }: { children: ReactNode }) {
   </section>;
   if (queries.some(query => query.isPending)) return <p role="status">Cargando sesión Staff…</p>;
   const current = security.query.data?.sessions.find(item => item.current);
-  if (current?.status !== "active") return <section>
-    <h1>Sesión Staff cerrada</h1>
-    <p>Tu sesión de demostración ha terminado.</p>
-    <button type="button" disabled={security.mutation.isPending} onClick={() => security.mutation.mutate({ type: "restart" })}>Iniciar demostración Staff</button>
-    {security.mutation.isError && <p role="alert">No se pudo iniciar la demostración. Inténtalo nuevamente.</p>}
-  </section>;
+  if (current?.status !== "active") return <ReturnToPublicHome />;
   const role = roles.query.data?.find(item => item.id === identity.data?.roleId);
   if (!identity.data || !role) return <p role="alert">La sesión no tiene un rol de demostración válido.</p>;
   if (current.id !== identity.data.id) return <p role="alert">La identidad no corresponde a la sesión Staff actual.</p>;
@@ -94,4 +96,10 @@ function StaffMockSession({ children }: { children: ReactNode }) {
       busy: security.mutation.isPending, error: security.mutation.isError,
     }}>{children}</StaffActions.Provider>
   </StaffContext.Provider>;
+}
+
+function ReturnToPublicHome() {
+  const router = useRouter();
+  useEffect(() => { router.replace("/"); }, [router]);
+  return <p role="status">Volviendo al inicio… <Link href="/">Ir al inicio</Link></p>;
 }

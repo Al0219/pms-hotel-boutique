@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { DomainMappingError } from '@/lib/errors';
 
 import { mapReservationCenter } from "../mappers/reservation-list.mapper";
 import { listReservationCenter } from "../service/reservation.service";
@@ -15,7 +16,9 @@ export function useReservationCenter(propertyId: string | undefined, endpoint: s
       }
 
       const response = await listReservationCenter({ endpoint, propertyId, signal });
-      return mapReservationCenter(response);
+      const result = mapReservationCenter(response);
+      if (result.reservations.some(item => item.propertyId !== propertyId)) throw new DomainMappingError('RESERVATION_PROPERTY_MISMATCH');
+      return result;
     },
   });
 }
