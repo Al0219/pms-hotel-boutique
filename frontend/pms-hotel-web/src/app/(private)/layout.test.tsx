@@ -15,10 +15,10 @@ describe("PrivateLayout", () => {
     mount();
     const nav = await screen.findByRole("navigation", { name: "Módulos Staff" });
     expect(within(nav).getByRole("link", { name: "Panel" })).toHaveAttribute("aria-current", "page");
-    expect(within(nav).getByRole("link", { name: "Multi-property" })).toHaveAttribute("href", "/multi-property");
+    expect(within(nav).getByRole("link", { name: "Reservas" })).toHaveAttribute("href", "/reservas");
+    expect(within(nav).getByRole("link", { name: "Calendario" })).toHaveAttribute("href", "/calendario");
     expect(within(nav).getByRole("link", { name: "Habitaciones" })).toHaveAttribute("href", "/staff/habitaciones");
-    expect(within(nav).getByRole("link", { name: "Grupos / Eventos" })).toHaveAttribute("href", "/grupos");
-    expect(within(nav).getByRole("link", { name: "Housekeeping" })).toBeInTheDocument();
+    expect(within(nav).getAllByRole("link")).toHaveLength(4);
     expect(screen.getAllByRole("main")).toHaveLength(1);
     expect(screen.getByText("Contenido Staff")).toBeInTheDocument();
     expect(screen.getByText("Gerencia · Sesión de demostración")).toBeInTheDocument();
@@ -29,5 +29,11 @@ describe("PrivateLayout", () => {
     expect(within(nav).queryByRole("link", { name: "Folios" })).not.toBeInTheDocument();
     expect(within(nav).queryByRole("link", { name: "Pagos" })).not.toBeInTheDocument();
     expect(within(nav).queryByRole("link", { name: "Revenue" })).not.toBeInTheDocument();
+    expect(within(nav).queryByRole("link", { name: "Multi-property" })).not.toBeInTheDocument();
+    expect(within(nav).queryByRole("link", { name: "Roles / Permisos" })).not.toBeInTheDocument();
+    expect(within(nav).queryByRole("link", { name: "Auditoría" })).not.toBeInTheDocument();
+    expect(within(nav).queryByRole("link", { name: "Grupos / Eventos" })).not.toBeInTheDocument();
+    expect(within(nav).queryByRole("link", { name: "Housekeeping" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Mi sesión Staff" })).not.toBeInTheDocument();
   });
 });

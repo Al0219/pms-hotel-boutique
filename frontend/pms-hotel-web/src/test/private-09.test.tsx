@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider, onlineManager } from "@tanstack/react-query";
+import { AppRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse, delay } from "msw";
@@ -10,15 +11,15 @@ import { mockServer } from "@/data/mocks/server";
 import { private09Keys, initialStaffIdentity } from "@/data/mocks/private-09";
 import { private07Keys } from "@/data/mocks/private-07";
 import { SessionsPage } from "@/modules/security";
-const navigation = vi.hoisted(() => ({ push: vi.fn(), pathname: "/multi-property" }));
-vi.mock("next/navigation", () => ({ usePathname: () => navigation.pathname, useRouter: () => ({ push: navigation.push }) }));
+const navigation = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), forward: vi.fn(), refresh: vi.fn(), prefetch: vi.fn(), bfcacheId: 'private-09-test', pathname: "/multi-property" }));
+vi.mock("next/navigation", () => ({ usePathname: () => navigation.pathname, useRouter: () => navigation }));
 const clients: QueryClient[] = [];
 function mount(page: ReactNode = <MultiPropertyDashboard />) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } } });
   clients.push(client);
-  return render(<QueryClientProvider client={client}><PrivateLayout>{page}</PrivateLayout></QueryClientProvider>);
+  return render(<AppRouterContext.Provider value={navigation}><QueryClientProvider client={client}><PrivateLayout>{page}</PrivateLayout></QueryClientProvider></AppRouterContext.Provider>);
 }
-beforeEach(() => { localStorage.clear(); sessionStorage.clear(); vi.stubEnv("NEXT_PUBLIC_USE_MOCK_API", "true"); navigation.push.mockClear(); navigation.pathname = "/multi-property"; });
+beforeEach(() => { localStorage.clear(); sessionStorage.clear(); vi.stubEnv("NEXT_PUBLIC_USE_MOCK_API", "true"); navigation.push.mockClear(); navigation.replace.mockClear(); navigation.pathname = "/multi-property"; });
 afterEach(() => { cleanup(); clients.splice(0).forEach(client => client.clear()); vi.restoreAllMocks(); vi.unstubAllEnvs(); onlineManager.setOnline(true); });
 describe("Private 09 frontend journeys", () => {
   it("switches property, preserves role, scopes queries and persists reload", async () => {
@@ -109,13 +110,18 @@ describe("Private 09 frontend journeys", () => {
   it("closes the same Private 07 session, keeps Guest data and persists logout", async () => {
     const user = userEvent.setup(); localStorage.setItem("guest-example", "preserved"); mount();
     await user.click(await screen.findByRole("button", { name: "Cerrar sesión" }));
-    await screen.findByRole("heading", { name: "Sesión Staff cerrada" });
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/"));
     expect(JSON.parse(localStorage.getItem(private07Keys.security)!).sessions[0].status).toBe("closed");
     expect(localStorage.getItem("guest-example")).toBe("preserved");
     expect(screen.queryByRole("heading", { name: "Dashboard Multi-property" })).not.toBeInTheDocument();
-    cleanup(); mount(); await screen.findByRole("heading", { name: "Sesión Staff cerrada" });
-    await user.click(screen.getByRole("button", { name: "Iniciar demostración Staff" }));
-    await screen.findByRole("region", { name: "Métricas por propiedad" });
+    expect(screen.queryByRole("button", { name: "Iniciar demostración Staff" })).not.toBeInTheDocument();
+    cleanup(); mount();
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledTimes(2));
+    expect(navigation.replace).toHaveBeenLastCalledWith("/");
+    expect(screen.queryByRole("region", { name: "Métricas por propiedad" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Iniciar demostración Staff" })).not.toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem(private07Keys.security)!).sessions[0].status).toBe("closed");
+    expect(localStorage.getItem("guest-example")).toBe("preserved");
   });
   it("keeps content visible when logout fails and allows retry", async () => {
     const user = userEvent.setup(); mount(); await screen.findByRole("region", { name: "Métricas por propiedad" });
@@ -123,8 +129,10 @@ describe("Private 09 frontend journeys", () => {
     await user.click(screen.getByRole("button", { name: "Cerrar sesión" }));
     await screen.findByText("No se pudo cerrar la sesión. Inténtalo nuevamente.");
     expect(screen.getByRole("heading", { name: "Dashboard Multi-property" })).toBeInTheDocument();
+    expect(navigation.replace).not.toHaveBeenCalled();
     storage.mockRestore(); await user.click(screen.getByRole("button", { name: "Cerrar sesión" }));
-    await screen.findByRole("heading", { name: "Sesión Staff cerrada" });
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/"));
+    expect(screen.queryByRole("heading", { name: "Dashboard Multi-property" })).not.toBeInTheDocument();
   });
   it("does not display the previous property while the new query is delayed", async () => {
     const user = userEvent.setup(); mount(); await screen.findByRole("region", { name: "Métricas por propiedad" });
