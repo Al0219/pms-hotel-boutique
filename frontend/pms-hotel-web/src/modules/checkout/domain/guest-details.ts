@@ -31,28 +31,35 @@ export const countries = countryCodes.map(code => ({ code, label: regionNames.of
 
 /** Format-only validation. The backend remains responsible for final acceptance. */
 export function internationalPhone(guest: Pick<GuestDetails, 'phoneCode' | 'phone'>): string | null {
-  const input = guest.phone.trim();
-  if (!/^[+\d\s().-]+$/.test(input)) return null;
-  const compact = input.replace(/[\s().-]/g, '');
-  const number = compact.startsWith('+') ? compact : `${guest.phoneCode}${compact}`;
-  if (compact.startsWith('+') && !compact.startsWith(guest.phoneCode)) return null;
-  return /^\+[1-9]\d{6,14}$/.test(number) && number.length > guest.phoneCode.length + 3 ? number : null;
+  if (!/^\+[1-9]\d{0,2}$/.test(guest.phoneCode) || !/^\d+$/.test(guest.phone)) return null;
+  const validLength = guest.phoneCode === '+502' ? guest.phone.length === 8 : guest.phone.length >= 7 && guest.phone.length <= 15;
+  return validLength ? `${guest.phoneCode}${guest.phone}` : null;
+}
+
+export function normalizeGuest(guest: GuestDetails): GuestDetails {
+  return { ...guest, firstName: guest.firstName.trim(), lastName: guest.lastName.trim(), email: guest.email.trim().toLowerCase(), document: guest.document.trim() };
 }
 
 export function validateGuest(guest: GuestDetails): GuestErrors {
   const errors: GuestErrors = {};
   if (!guest.firstName.trim()) errors.firstName = 'Ingresa tu nombre.';
-  else if (guest.firstName.trim().length > 100) errors.firstName = 'Usa un máximo de 100 caracteres.';
+  else if (!validName(guest.firstName, 50)) errors.firstName = 'Usa entre 2 y 50 caracteres: letras, espacios, apóstrofes o guiones.';
   if (!guest.lastName.trim()) errors.lastName = 'Ingresa tus apellidos.';
-  else if (guest.lastName.trim().length > 150) errors.lastName = 'Usa un máximo de 150 caracteres.';
+  else if (!validName(guest.lastName, 60)) errors.lastName = 'Usa entre 2 y 60 caracteres: letras, espacios, apóstrofes o guiones.';
   if (!guest.email.trim()) errors.email = 'Ingresa tu correo electrónico.';
-  else if (guest.email.trim().length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guest.email.trim())) errors.email = 'Ingresa un correo válido, como ejemplo@correo.com.';
+  else if (guest.email.trim().length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guest.email.trim())) errors.email = 'Ingresa un correo válido, como ejemplo@correo.com.';
   if (!guest.phone.trim()) errors.phone = 'Ingresa tu teléfono.';
-  else if (!/^\+[1-9]\d{0,2}$/.test(guest.phoneCode) || !internationalPhone(guest)) errors.phone = 'Revisa el código de país y el número de teléfono (7–15 dígitos en total).';
+  else if (!internationalPhone(guest)) errors.phone = guest.phoneCode === '+502' ? 'Ingresa exactamente 8 dígitos para Guatemala, sin letras ni espacios.' : 'Revisa el código de país e ingresa entre 7 y 15 dígitos, sin letras ni espacios.';
   if (!countries.some(value => value.code === guest.country)) errors.country = 'Selecciona tu país o región.';
-  if (guest.document.length > 150) errors.document = 'Usa un máximo de 150 caracteres.';
-  if (guest.specialRequests.length > 300) errors.specialRequests = 'Usa un máximo de 300 caracteres.';
+  if (!guest.document.trim()) errors.document = 'Ingresa tu documento de identificación.';
+  else if (!/^[\p{L}\p{N}-]{4,25}$/u.test(guest.document.trim())) errors.document = 'Usa entre 4 y 25 caracteres: letras, números o guiones.';
+  if (guest.specialRequests.length > 250) errors.specialRequests = 'Usa un máximo de 250 caracteres.';
   return errors;
+}
+
+function validName(value: string, maximum: number): boolean {
+  const name = value.trim();
+  return name.length >= 2 && name.length <= maximum && /^[\p{L}\p{M} '\u2019-]+$/u.test(name) && /\p{L}/u.test(name);
 }
 
 /** Copy only contact data from an explicitly linked GuestProfile, never GuestAccount. */

@@ -78,6 +78,8 @@ Object.defineProperty(globalThis, "sessionStorage", {
 beforeAll(() => mockServer.listen({ onUnhandledRequest: "error" }));
 afterEach(() => {
   cleanup();
+  sessionStorage.removeItem('pms:public-cart:v1:mock');
+  sessionStorage.removeItem('pms:public-cart:v1:real');
   mockServer.resetHandlers();
 });
 afterAll(() => mockServer.close());

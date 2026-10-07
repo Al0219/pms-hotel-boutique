@@ -3,6 +3,7 @@ import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { mockServer } from '@/data/mocks/server';
+import { backendAvailability, publicPropertyId } from '@/test/public-availability-fixture';
 import { publicCatalogueFixture } from '@/data/mocks/public-catalogue';
 import { buildPublicAvailabilityMock } from '@/data/mocks/public-availability';
 import { resetPublicCheckoutFixtures } from '@/data/mocks/public-checkout-handlers';
@@ -34,7 +35,7 @@ async function prepared(multiple = false, useDollars = true) {
   const view = mount(); fireEvent.click(await screen.findByRole('button', { name: 'Seleccionar habitación' }));
   if (multiple) { view.rerender(<PublicRoomDetailPage roomTypeId="rt_double_superior" initialCriteria={criteria}/>); fireEvent.click(await screen.findByRole('button', { name: 'Seleccionar habitación' })); }
   view.rerender(<PublicGuestDataPage initialCriteria={criteria}/>); await screen.findByLabelText('Nombre *');
-  for (const [label, value] of [['Nombre *','Carlos'],['Apellidos *','Mendoza'],['Correo electrónico *','guest@example.com'],['Teléfono *','5555 5555']]) fireEvent.change(screen.getByLabelText(label), { target: { value } });
+  for (const [label, value] of [['Nombre *','Carlos'],['Apellidos *','Mendoza'],['Correo electrónico *','guest@example.com'],['Teléfono *','55555555'],['Documento de identificación *','DOC-DEMO']]) fireEvent.change(screen.getByLabelText(label), { target: { value } });
   fireEvent.submit(screen.getByLabelText('Nombre *').closest('form')!); await waitFor(() => expect(push).toHaveBeenCalledWith(expect.stringContaining('/checkout/revision?'))); push.mockClear();
   view.rerender(<PublicCheckoutReviewPage initialCriteria={criteria}/>); fireEvent.click(await screen.findByRole('button', { name: /Continuar al pago/ })); await waitFor(() => expect(push).toHaveBeenCalledWith(expect.stringContaining('/checkout/pago?'))); push.mockClear();
   view.rerender(<PublicPaymentReviewPage initialCriteria={criteria}/>); await screen.findByRole('button', { name: 'Garantizar y confirmar reserva' });
@@ -96,7 +97,7 @@ describe('Public payment and guarantee journey', () => {
     await waitFor(() => expect(push).toHaveBeenCalledTimes(1), { timeout: 3000 }); expect(push).toHaveBeenCalledWith(expect.stringContaining('/reserva/confirmacion?checkIn=2026-10-10'));
     view.rerender(<PublicBookingConfirmationPage initialCriteria={criteria}/>); expect(screen.getByRole('heading', { name: 'HB-2026-8942' })).toBeInTheDocument(); expect(screen.getByText('Abono confirmado')).toBeInTheDocument(); expect(screen.queryByText(/Sin débito real/)).not.toBeInTheDocument();
     view.rerender(<PublicPaymentReviewPage initialCriteria={criteria}/>); expect(await screen.findByText('Tu reserva ya está confirmada')).toBeInTheDocument(); expect(screen.queryByRole('button', { name: 'Garantizar y confirmar reserva' })).not.toBeInTheDocument();
-    expect(localStorage.length).toBe(0); expect(sessionStorage.length).toBe(0);
+    expect(localStorage.length).toBe(0); expect(JSON.stringify(sessionStorage.getItem('pms:public-cart:v1:real') ?? sessionStorage.getItem('pms:public-cart:v1:mock'))).not.toMatch(/guest@example|Carlos|DOC-DEMO/);
   });
   it('recovers from declined cards and provider errors and preserves the same guest data', async () => {
     const view = await prepared();
@@ -125,10 +126,26 @@ describe('Public payment and guarantee journey', () => {
     const view = await prepared(true); expect(screen.getByRole('complementary')).toHaveTextContent('US$ 950.00'); confirm(); await waitFor(() => expect(push).toHaveBeenCalledTimes(1), { timeout: 3000 });
     view.rerender(<PublicBookingConfirmationPage initialCriteria={criteria}/>); expect(screen.getByText(/2 habitaciones/)).toBeInTheDocument(); expect(screen.getByText('Deluxe King')).toBeInTheDocument(); expect(screen.getByText('Doble Superior')).toBeInTheDocument();
   });
-  it('guards direct/reloaded confirmation and never posts with mocks disabled', async () => {
+  it('guards direct/reloaded confirmation and rejects demo quotes without posting when switched to real mode', async () => {
     const view = mount(<PublicBookingConfirmationPage initialCriteria={criteria}/>); expect(screen.getByRole('region', { name: 'No hay una confirmación en esta sesión' })).toBeInTheDocument(); view.unmount();
-    const payment = await prepared(); vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'false'); payment.rerender(<PublicPaymentReviewPage initialCriteria={criteria}/>);
-    expect(await screen.findByRole('button', { name: 'Garantizar y confirmar reserva' })).toBeDisabled(); expect(screen.queryByTitle('Formulario de tarjeta')).not.toBeInTheDocument(); expect(push).not.toHaveBeenCalled();
+    const payment = await prepared();
+    expect(screen.getByRole('button', { name: 'Garantizar y confirmar reserva' })).toBeEnabled();
+    const realSearch = vi.fn();
+    mockServer.use(
+      http.get('*/api/auth/guest/session', () => new HttpResponse(null, { status: 401 })),
+      // Mode-specific session storage invalidates the demo selection before real review.
+      http.get('*/api/v1/public/availability', ({ request }) => { realSearch(new URL(request.url).searchParams.get('propertyId')); return HttpResponse.json({ ...backendAvailability, arrival: criteria.checkIn, departure: criteria.checkOut }); }),
+    );
+    const requests = vi.spyOn(globalThis, 'fetch');
+    vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'false'); vi.stubEnv('NEXT_PUBLIC_PROPERTY_ID', publicPropertyId); payment.rerender(<PublicPaymentReviewPage initialCriteria={criteria}/>);
+    expect(await screen.findByRole('region', { name: 'Revisa tu selección antes de continuar' })).toBeInTheDocument();
+    expect(realSearch).toHaveBeenCalledWith(publicPropertyId);
+    expect(realSearch).not.toHaveBeenCalledWith(publicCatalogueFixture.property_id);
+    expect(screen.queryByRole('button', { name: 'Garantizar y confirmar reserva' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Formulario de tarjeta')).not.toBeInTheDocument();
+    expect(requests.mock.calls.filter(([input, init]) => (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase() === 'POST')).toHaveLength(0);
+    expect(push).not.toHaveBeenCalled();
   });
   it('retains the same key and card after a lost response across the error/payment navigation', async () => {
     const view = await prepared(); fireEvent.click(screen.getByRole('button', { name: /50% de la estadía/ })); fireEvent.change(screen.getByLabelText('Resultado de demostración'), { target: { value: 'demo_mastercard_approved' } });

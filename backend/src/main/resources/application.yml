@@ -32,6 +32,9 @@ springdoc:
     path: /swagger-ui.html
 
 pms:
+  demo:
+    data:
+      enabled: ${PMS_DEMO_DATA_ENABLED:false}
   security:
     jwt-secret: ${PMS_JWT_SECRET:}
     access-token-ttl: ${PMS_ACCESS_TOKEN_TTL:PT15M}

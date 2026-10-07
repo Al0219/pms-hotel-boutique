@@ -21,7 +21,7 @@ function mount(initialCriteria: Partial<BookingSearchCriteria> = criteria, seed 
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } }); clients.push(client);
   function Seed({ children }: { children: ReactNode }) {
     const { setCart } = usePublicBookingSession();
-    useEffect(() => { setCart({ scope: `prop_boutique_01:${buildSearchQueryParams(criteria)}`, propertyId: 'prop_boutique_01', items: seed }); }, [setCart]);
+    useEffect(() => { setCart({ scope: Object.values(initialCriteria).some(value=>value!==undefined) ? `prop_boutique_01:${buildSearchQueryParams(criteria)}` : '', propertyId: 'prop_boutique_01', items: seed }); }, [setCart]);
     return children;
   }
   const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}><PublicBookingProvider><Seed>{children}</Seed></PublicBookingProvider></QueryClientProvider>;
@@ -50,7 +50,7 @@ describe('Public booking selection review', () => {
     for (const amount of ['Q 3,323.99', 'Q 168.11', 'Q 366.79', 'Q 3,858.89']) expect(within(price).getByText(amount)).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Pasos de la reserva' }).querySelector('[aria-current="step"]')).toHaveTextContent('Revisa tu selección');
     expect(within(screen.getByRole('navigation', { name: 'Pasos de la reserva' })).getAllByRole('listitem')).toHaveLength(4);
-    expect(screen.getByText('La disponibilidad se verificará nuevamente antes de confirmar la reserva.')).toBeInTheDocument();
+    expect(screen.queryByText('La disponibilidad se verificará nuevamente antes de confirmar la reserva.')).not.toBeInTheDocument();
     expect(screen.getByRole('article', { name: 'Deluxe King' })).toHaveTextContent('3 noches');
   });
   it('retains multiple selections and applies quantities to fee totals', async () => {
@@ -81,11 +81,12 @@ describe('Public booking selection review', () => {
     expect(screen.getByRole('region', { name: 'Tu selección está vacía' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Continuar con mis datos/ })).not.toBeInTheDocument();
   });
-  it('does not reuse a nonempty draft for different dates or invent one on direct entry', async () => {
+  it('retains the accepted search and selection when navigating to an older/different query', async () => {
     const view = mount(); await screen.findByRole('article', { name: 'Deluxe King' });
     view.rerender(<PublicBookingReviewPage initialCriteria={{ ...criteria, checkOut: '2026-10-14' }} />);
-    expect(await screen.findByRole('region', { name: 'Tu selección está vacía' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Continuar con mis datos/ })).not.toBeInTheDocument();
+    expect(await screen.findByRole('article', { name: 'Deluxe King' })).toHaveTextContent('3 noches');
+    expect(screen.getByRole('button', { name: /Continuar con mis datos/ })).toBeEnabled();
+    expect(screen.getByRole('link', {name:'← Volver a resultados'})).toHaveAttribute('href',expect.stringContaining('checkOut=2026-10-13'));
   });
   it('rejects availability from a property other than the selected property', async () => {
     mockServer.use(http.get('*/api/v1/public/availability', () => HttpResponse.json({ ...publicCatalogueFixture, property_id: 'prop_other', check_in_date: criteria.checkIn, check_out_date: criteria.checkOut })));
@@ -94,7 +95,7 @@ describe('Public booking selection review', () => {
   });
   it('does not query incomplete criteria or manufacture a selection for direct entry', async () => {
     const request = vi.fn(); mockServer.use(http.get('*/api/v1/public/availability', () => { request(); return HttpResponse.json({}); }));
-    mount({}); expect(screen.getByRole('region', { name: 'Completa tu búsqueda' })).toBeInTheDocument();
+    mount({}, []); expect(screen.getByRole('region', { name: 'Completa tu búsqueda' })).toBeInTheDocument();
     await act(async () => {}); expect(request).not.toHaveBeenCalled();
   });
   it('recovers from offline and transport failure without claiming availability is held', async () => {

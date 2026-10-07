@@ -1,12 +1,24 @@
+import { NightlyPriceRange } from './nightly-price-range';
+import type { AvailableRoomType } from '@/modules/availability';
 import type { CatalogueFilters } from "../domain/room-catalogue";
 import { usePublicDisplayCurrency } from '../components/public-booking-provider';
 import { displayMoney } from '../domain/display-currency';
 import styles from "./public-availability-page.module.css";
+import { getPublicEnvironment } from '@/lib/env';
 
-export function CatalogueFilterPanel({ filters, onChange, onClear }: {
-  filters: CatalogueFilters; onChange: (value: CatalogueFilters) => void; onClear: () => void;
+export function CatalogueFilterPanel({ rooms = [], filters, onChange, onClear }: {
+  rooms?: AvailableRoomType[]; filters: CatalogueFilters; onChange: (value: CatalogueFilters) => void; onClear: () => void;
 }) {
   const currency = usePublicDisplayCurrency();
+  if (!getPublicEnvironment().useMockApi) return <aside className={styles.filters} aria-labelledby="filter-title">
+    <div className={styles.filterHeading}><h2 id="filter-title">Filtros</h2><button type="button" onClick={onClear}>Limpiar filtros</button></div>
+    <fieldset><legend>Tipo de habitación</legend>{[...new Set(rooms.map(room => room.code))].sort().map(code =>
+      <label key={code}><input type="checkbox" checked={filters.codes?.includes(code) ?? false} onChange={event => onChange({ ...filters,
+        codes: event.target.checked ? [...(filters.codes ?? []), code] : filters.codes?.filter(value => value !== code),
+      })} />{code}</label>)}</fieldset>
+    <fieldset><legend>Precio por noche</legend><NightlyPriceRange rooms={rooms} filters={filters} onChange={onChange} />
+    </fieldset>
+  </aside>;
   const money = (amount: number) => displayMoney(amount, 'USD', currency);
   return <aside className={styles.filters} aria-labelledby="filter-title">
     <div className={styles.filterHeading}><h2 id="filter-title">Filtrar resultados</h2><button type="button" onClick={onClear}>Limpiar filtros</button></div>

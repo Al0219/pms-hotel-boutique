@@ -1,3 +1,4 @@
+import { PublicGlobalCart } from './public-global-cart';
 import React from "react";
 import { onlineManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
@@ -22,11 +23,11 @@ beforeEach(() => {
 afterEach(() => { cleanup(); clients.splice(0).forEach(client => client.clear()); onlineManager.setOnline(true); vi.useRealTimers(); vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 function mount(initialCriteria: Partial<BookingSearchCriteria> = criteria) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } }); clients.push(client);
-  return render(<QueryClientProvider client={client}><PublicAvailabilityPage initialCriteria={initialCriteria} /></QueryClientProvider>, { wrapper: PublicBookingProvider });
+  return render(<QueryClientProvider client={client}><><PublicGlobalCart /><PublicAvailabilityPage initialCriteria={initialCriteria} /></></QueryClientProvider>, { wrapper: PublicBookingProvider });
 }
 function editSearch() { fireEvent.click(screen.getByRole("button", { name: "Modificar búsqueda" })); }
 async function deluxe() { return screen.findByRole("article", { name: "Deluxe King" }); }
-function cart() { fireEvent.click(screen.getByRole("button", { name: /Mi Selección/ })); return screen.getByRole("dialog", { name: "Mi selección" }); }
+async function cart() { fireEvent.click(screen.getByRole("button", { name: /Carrito/ })); const drawer=screen.getByRole("dialog", { name: "Carrito" }); await waitFor(()=>expect(within(drawer).getByRole("button", {name:"Continuar con el Checkout"})).toBeEnabled()); return drawer; }
 
 describe("Public availability catalogue", () => {
   it("preserves dates, adults, children, rooms and promo from the URL and calculates nights", async () => {
@@ -112,7 +113,7 @@ describe("Public availability catalogue", () => {
   it("adds a room, preserves hidden selections, caps quantity at ATS and removes from drawer", async () => {
     mount(); const card = await deluxe(); fireEvent.click(within(card).getByRole("button", { name: "Agregar al carrito" }));
     expect(within(card).getByRole("button", { name: "Seleccionada" })).toHaveAttribute("aria-pressed", "true");
-    fireEvent.click(screen.getByLabelText("Suite")); const drawer = cart();
+    fireEvent.click(screen.getByLabelText("Suite")); const drawer = await cart();
     expect(within(drawer).getByText("Deluxe King")).toBeInTheDocument();
     expect(within(drawer).getByText(/Q 3,323\.99/, { selector: 'strong' })).toBeInTheDocument();
     const increment = within(drawer).getByRole("button", { name: "Aumentar cantidad de Deluxe King" }); fireEvent.click(increment);
@@ -121,39 +122,40 @@ describe("Public availability catalogue", () => {
     expect(within(drawer).getByText('Q 733.57')).toBeInTheDocument();
     expect(within(drawer).getByText('Q 7,717.77')).toBeInTheDocument();
     fireEvent.click(within(drawer).getByRole("button", { name: "Quitar Deluxe King" }));
-    expect(within(drawer).getByText(/Tu selección está vacía/)).toBeInTheDocument();
+    expect(within(drawer).getByText(/Tu carrito está vacío/)).toBeInTheDocument();
     expect(within(drawer).getByRole('button', { name: 'Continuar con el Checkout' })).toBeDisabled();
     fireEvent.click(within(drawer).getByRole("button", { name: "Seguir explorando" }));
-    expect(screen.getByRole("button", { name: /Mi Selección/ })).toHaveTextContent("(0)");
+    expect(screen.getByRole("button", { name: /Carrito/ })).toHaveTextContent("0");
   });
   it("changes the selected rate without allocating additional physical inventory", async () => {
     mount(); const card = await deluxe(); fireEvent.click(within(card).getByRole("button", { name: "Agregar al carrito" }));
     fireEvent.change(within(card).getByLabelText("Tarifa de Deluxe King"), { target: { value: "rp_non_refundable" } });
-    const drawer = cart(); expect(within(drawer).getByText("Tarifa no reembolsable")).toBeInTheDocument();
+    const drawer = await cart(); expect(within(drawer).getByText("Tarifa no reembolsable")).toBeInTheDocument();
     expect(within(drawer).getByText(/Q 2,980\.13/, { selector: 'strong' })).toBeInTheDocument();
     expect(within(drawer).getByText(/1 habitaciones seleccionadas/)).toBeInTheDocument();
     fireEvent.click(within(drawer).getByRole('button', { name: 'Continuar con el Checkout' }));
     expect(push).toHaveBeenCalledWith('/reserva?checkIn=2026-10-10&checkOut=2026-10-13&adults=2&children=0&roomsCount=1');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
-  it("modifies a search in place, preserves quantity/promo in URL and discards old quotes", async () => {
+  it("modifies a search in place, preserves quantity/promo in URL and refreshes the existing selection", async () => {
     const replace = vi.spyOn(window.history, "replaceState").mockImplementation(() => {});
     mount({ ...criteria, roomsCount: 2, promoCode: "BOUTIQUE" }); const card = await deluxe();
     fireEvent.click(within(card).getByRole("button", { name: "Agregar al carrito" })); editSearch();
-    fireEvent.change(screen.getByLabelText(/^habitaciones/i), { target: { value: "3" } });
+    fireEvent.change(screen.getByLabelText(/^habitaciones/i), { target: { value: "2" } });
     fireEvent.change(screen.getByLabelText(/fecha de salida/i), { target: { value: "2026-10-15" } });
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Buscar Disponibilidad" })); });
-    expect(replace).toHaveBeenCalledWith(null, "", "/habitaciones?checkIn=2026-10-10&checkOut=2026-10-15&adults=2&children=0&roomsCount=3&promoCode=BOUTIQUE");
+    expect(replace).toHaveBeenCalledWith(null, "", "/habitaciones?checkIn=2026-10-10&checkOut=2026-10-15&adults=2&children=0&roomsCount=2&promoCode=BOUTIQUE");
     expect(push).not.toHaveBeenCalled(); await deluxe();
     expect(screen.getByRole("region", { name: "Tu búsqueda" })).toHaveTextContent("5 noches");
-    expect(screen.getByRole("button", { name: /Mi Selección/ })).toHaveTextContent("(0)");
-    expect(screen.getByRole("status")).toHaveTextContent("Selecciona habitaciones");
+    expect(screen.getByRole("button", { name: /Carrito/ })).toHaveTextContent("1");
+    expect(screen.getByRole("status")).toHaveTextContent("Búsqueda actualizada");
   });
-  it("uses a new query and clears selection when incoming criteria change", async () => {
+  it("preserves the canonical selection/criteria when browser history presents another search", async () => {
     const view = mount(); const card = await deluxe(); fireEvent.click(within(card).getByRole("button", { name: "Agregar al carrito" }));
-    view.rerender(<QueryClientProvider client={clients[0]}><PublicAvailabilityPage initialCriteria={{ ...criteria, checkOut: "2026-10-15", roomsCount: 8 }} /></QueryClientProvider>);
-    await waitFor(() => expect(screen.getByRole("region", { name: "Sin habitaciones disponibles" })).toBeInTheDocument());
-    expect(screen.queryByRole("article")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Mi Selección/ })).toHaveTextContent("(0)");
+    view.rerender(<QueryClientProvider client={clients[0]}><PublicGlobalCart /><PublicAvailabilityPage initialCriteria={{ ...criteria, checkOut: "2026-10-15", roomsCount: 8 }} /></QueryClientProvider>);
+    await deluxe();
+    expect(screen.getByRole("region", {name:"Tu búsqueda"})).toHaveTextContent("3 noches");
+    expect(screen.getByRole("button", {name:"Carrito"})).toHaveTextContent("1");
+    expect(within(screen.getByRole("article",{name:"Deluxe King"})).getByRole("button",{name:"Seleccionada"})).toHaveAttribute("aria-pressed","true");
   });
 });
