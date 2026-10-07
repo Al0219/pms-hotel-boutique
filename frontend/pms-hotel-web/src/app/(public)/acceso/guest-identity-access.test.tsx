@@ -10,11 +10,12 @@ const clients: QueryClient[]=[];
 const navigation={replace:vi.fn(),push:vi.fn(),back:vi.fn(),forward:vi.fn(),refresh:vi.fn(),prefetch:vi.fn(),bfcacheId:'unified-access-app'};
 beforeEach(()=>{vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API','false');mockServer.use(
  http.get('*/api/auth/guest/session',()=>new HttpResponse(null,{status:401})),
- http.get('*/api/auth/staff/session',()=>new HttpResponse(null,{status:401})));});
+ http.get('*/api/auth/staff/session',()=>new HttpResponse(null,{status:401})),
+ http.post('*/api/auth/staff/refresh',()=>new HttpResponse(null,{status:401})));});
 afterEach(()=>{cleanup();clients.splice(0).forEach(c=>c.clear());vi.unstubAllEnvs();vi.clearAllMocks();});
 function setup(googleError = false){const client=new QueryClient();clients.push(client);render(<AppRouterContext.Provider value={navigation}><QueryClientProvider client={client}><GuestSessionProvider><GuestIdentityAccess googleError={googleError} /></GuestSessionProvider></QueryClientProvider></AppRouterContext.Provider>);}
 describe('Canonical /acceso composition',()=>{
- it('renders one common form without registration or a simulated identity',async()=>{setup();await screen.findByLabelText('Correo electrónico');expect(screen.getAllByRole('button',{name:'Iniciar sesión'})).toHaveLength(1);expect(screen.queryByText('Crear cuenta')).not.toBeInTheDocument();});
+ it('renders the restored tabs with one real login form active by default',async()=>{setup();await screen.findByLabelText('Correo electrónico');expect(screen.getAllByRole('button',{name:'Iniciar sesión'})).toHaveLength(1);expect(screen.getByRole('tab',{name:'Crear cuenta'})).toHaveAttribute('aria-selected','false');expect(screen.queryByLabelText('Nombre completo')).not.toBeInTheDocument();});
  it('shows a recoverable generic error after a failed Google callback',async()=>{
   setup(true);expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos completar el acceso');
   expect(screen.getByRole('link',{name:'Continuar como invitado'})).toHaveAttribute('href','/');
