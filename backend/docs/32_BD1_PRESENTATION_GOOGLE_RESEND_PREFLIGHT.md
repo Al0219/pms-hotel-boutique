@@ -39,15 +39,15 @@ el flujo Guest.
 
    ```bash
    # Si estás en pms-hotel-boutique/backend/:
-   docker compose -f ../compose.yaml config --quiet
+   docker compose --env-file ../.env -f ../compose.yaml config --quiet
 
    # Si estás en pms-hotel-boutique/:
-   docker compose -f compose.yaml config --quiet
+   docker compose --env-file .env -f compose.yaml config --quiet
    ```
 
    `compose.yaml` está en la raíz del monorepo, no en `backend/`. El comando
-   no imprime la configuración expandida. Arrancar con `docker compose up
-   --build -d` únicamente desde la raíz y en el entorno de pruebas autorizado.
+   no imprime la configuración expandida. Arrancar con `docker compose --env-file .env up
+   -d --build` únicamente desde la raíz y en el entorno de pruebas autorizado.
 3. Comprobar presencia dentro de cada contenedor, sin imprimir valores:
 
    ```bash
@@ -64,8 +64,9 @@ el flujo Guest.
 
    Comparar el callback público literalmente con la URI autorizada en Google.
 4. Abrir el host Web, `GET /api/auth/guest/session` sin cookies debe devolver
-   `401`. La API Backend no se publica directamente al navegador en el
-   despliegue habitual.
+   `401`. El cliente de la aplicación usa Web/BFF; Backend/Swagger se publica
+   solo en localhost para QA local mediante PMS_BACKEND_PORT. El puerto no cambia
+   el destino interno backend:8080. [Guía integrada](../../docs/13_LOCAL_INTEGRATED_STACK.md).
 
 ## Secuencia de aceptación BE-016B (pendiente de ejecución real)
 

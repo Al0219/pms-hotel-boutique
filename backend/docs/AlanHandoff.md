@@ -1,5 +1,483 @@
 # AlanHandoff — Seguimiento Backend
 
+## Cierre de QA manual final — Demo/Web público (2026-10-06)
+
+- **Resultado:** Alan confirmó QA manual PASS en `feature/web-public-availability-real`.
+  Demo Bootstrap Docker, Web Public Availability real y Public booking journey
+  pre-submit quedan **COMPLETADAS**. A1/A2/A3 conservan su cierre COMPLETADO.
+- **Validado:** stack Docker integrado; catálogo real de seis RoomTypes y galerías;
+  carrito global/persistencia y filtros; edición de fechas/huéspedes con
+  revalidación atómica; Header → catálogo Home; Guest Google session/account según
+  el contrato vigente; Guest checkout, Review y llegada a Payment. El bloqueo de
+  confirmación final funciona correctamente. El Account Summary solo permite
+  firstName/lastName cuando existe perfil asociado; no se atribuyen nombres a
+  Google cuando falta GuestProfile.
+- **Pendiente / fuera de scope, a cargo de Juan:** `POST /api/v1/public/bookings`,
+  PaymentGateway simulado Backend, persistencia Reservation/ReservationStay,
+  confirmationCode e idempotencia booking. No se afirma persistencia ni reserva
+  confirmada.
+- **Siguiente:** cierre documental de AlanPlan, AlanHandoff y guías Web/dataset.
+  Sin cambios de código, commit, push ni merge.
+
+## Dataset local demo integrado — EN_QA (2026-10-06)
+
+- **Alcance autorizado:** conservar rama `feature/web-public-availability-real` y
+  todo el trabajo pendiente. Bootstrap local Inventory y Web público hasta Payment;
+  sin lógica de Juan, booking real, Staff/Android, commit/push/merge. A1/A2/A3 siguen
+  COMPLETADAS; Web y este incremento EN_QA hasta QA manual final.
+- **Entrega:** `DemoDataBootstrap` reutiliza ApplicationRunner; transacción y lock,
+  Property demo-only HB-GT-DEMO/GTQ/ACTIVE, 6 tipos y 24 Rooms. Flag false por defecto
+  en aplicación; requiere dev/demo y true, excluye prod/production. Compose local
+  activa demo y suministra UUID a Web automáticamente. Sin migraciones nuevas,
+  precios duplicados, borrados ni entidades futuras sin contrato.
+- **Pruebas Backend:** focalizados 10 PASS; `mvn -B --no-transfer-progress verify`
+  459 PASS, sin failures/errors/skipped, en Java 21/PostgreSQL efímero separado.
+- **Smoke integrado:** PostgreSQL/Backend/Web healthy; dataset 6/24 y BFF con seis
+  ofertas GTQ/ATS=4/totales correctos. Google start 307 hacia accounts.google.com;
+  no se sigue OAuth ni se publica state/codes/tokens/cookies. Recorrido completo
+  callback/exchange/HttpOnly/return pendiente de QA manual de Alan.
+- **Validación Web:** suite 1212 PASS / 233 archivos; typecheck/lint/build real
+  PASS. Firefox contra el stack integrado: siete pantallas hasta Payment en cinco
+  anchos (1440/1024/768/375/320), sin overflow; slider con teclado y selección/total
+  real PASS, confirmación final bloqueada. Compose config y git diff --check PASS.
+- **Guía y siguiente:** [Local Demo Dataset](../../docs/LOCAL_DEMO_DATASET.md),
+  validar manualmente catálogo/carrito/formulario/Payment y Google en este stack.
+  La presentación real no confirma ni cobra una Reservation.
+
+## Reserva pública — A2/A3: cierre formal y QA manual PASS (2026-10-06)
+
+- **Estado:** A2 y A3 COMPLETADAS; QA técnico y QA manual PASS confirmado por Alan,
+  cierre formal autorizado por el usuario. A1 conserva COMPLETADA; incremento
+  público superior PENDIENTE. Rama feature/backend-public-availability, base A3
+  b653804; historial previo conservado.
+- **QA manual PASS (Alan):** entorno aislado y login Staff sintético; Property
+  ACTIVE/GTQ, STD/DLX/SUITE con dos Rooms físicas por tipo. Para dos noches,
+  availableUnits=2 en los tres tipos; nightly/total minor units STD 65000/130000,
+  DLX 85000/170000, SUITE 120000/240000. rooms=1/2 → tres ofertas;
+  rooms=3 → 200 offers=[]. Fecha inválida, rooms=0 y UUID inválido → 400;
+  Property inexistente → 404; público sin token → 200; Staff vecino sin token → 401.
+  OpenAPI path presente, operationId=publicAvailability, security=[] y Swagger UI
+  200 PASS. Cleanup del entorno QA completado.
+- **Evidencia técnica previa conservada:** focalizados PASS (A3 48), mvn -B
+  --no-transfer-progress verify 449 PASS y git diff --check PASS; sin repetir suites.
+  Contrato/procedimiento/evidencia en [43](43_PUBLIC_AVAILABILITY_CONTRACT_QA.md).
+- **Alcance / validación:** cierre documental únicamente en AlanPlan, AlanHandoff
+  y estado/resultado de 43; git diff --check PASS y status/stat/name-only revisados.
+  Código y cambios previos preservados; sin commit/push ni cambios de Auth/Account.
+- **Siguiente:** A2/A3 cerradas; esperar autorización para otra tarea. Sin booking.
+
+## Reserva pública — A3: endpoint HTTP availability (2026-10-06)
+
+- **Estado:** EN_QA; únicamente A3 autorizada. A2 permanece EN_QA hasta QA manual
+  conjunto; A1 COMPLETADA. Owner Alan / BD1; historial Auth/Account/A1/A2 conservado.
+- **Rama/base:** feature/backend-public-availability, HEAD b653804; árbol inicial
+  limpio, sin commit/push/merge.
+- **Entrega:** GET /api/v1/public/availability, cuatro params obligatorios
+  propertyId/arrival/departure/rooms; rooms mapea roomsRequested. DTO HTTP separados
+  de views con mapper explícito, campos aprobados sin datos Staff. Reutiliza ATS
+  y pricing A1/A2. Contrato/QA en [43](43_PUBLIC_AVAILABILITY_CONTRACT_QA.md).
+- **Decisión:** solo Property ACTIVE; INACTIVE e inexistente reciben 404 idéntico.
+  Fachada valida estado antes de pricing/tipos. 400 inválidos; sin capacidad 200 [];
+  errores de configuración demo 500 con code explícito ProblemDetail, sin detalles
+  internos ni respuesta parcial. Moneda incompatible nunca se convierte.
+- **Seguridad / OpenAPI:** única apertura GET exacto de esta ruta; Staff vecinos
+  siguen protegidos. security=[] y x-audience=public; DTOs, params y 200/400/404/500
+  anotados. Baseline runtime previo verificado 35 operaciones/25 paths/32 schemas/
+  10 tags; posterior generado/vivo 36 operaciones/26 paths/34 schemas/11 tags,
+  paridad con mappings y documento vivo paths/components PASS, sin exclusiones.
+- **Pruebas PASS:** mvn -B --no-transfer-progress
+  -Dtest=PublicAvailabilityHttpIntegrationTests,PublicAvailabilityServiceIntegrationTests,OpenApiContractIntegrationTests,SecurityConfigurationIntegrationTests
+  test: 48 PASS (21 HTTP, 14 application, 11 OpenAPI, 2 seguridad). mvn -B
+  --no-transfer-progress verify: 449 PASS, cero failures/errors/skipped, BUILD SUCCESS.
+  Maven 3.9.11/Java 21/PostgreSQL 17.11 efímero pms-public-a3-qa, sin exclusiones.
+  HTTP cubre acceso anónimo, identidad/precios reales, DTO exacto sin Staff,
+  catálogo/ATS vacío, 404 inexistente/inactiva, fechas/UUID/int inválidos y ausentes,
+  alias no aceptado, 500 de tarifa/moneda y protección Staff/otros métodos/paths.
+  OpenAPI detectó inicialmente rooms como string; anotación corregida a int32
+  antes del PASS final. Comparación aditiva detectó colisión del operationId
+  availability; A3 usa publicAvailability para preservar availability Staff.
+  Paths previos y cuatro security schemes conservados exactamente; tests y
+  verify reejecutados tras la corrección. git diff --check PASS (incluidos nuevos sin staging),
+  status/stat/name-only revisados; colección BD1/Auth e historial Handoff conservados.
+- **Smoke runtime PASS:** JAR del verify en contenedor temporal sin bootstrap,
+  misma BD efímera reiniciada (solo Property seed ACTIVE GTQ, cero RoomTypes),
+  127.0.0.1:18087. /v3/api-docs, Swagger UI HTML y swagger-config 200; público sin
+  credencial 200 offers=[], rooms=0 400, Property inexistente 404, Staff vecino 401.
+  No prueba manual vendible ni navegador visual; stack normal intacto. Entorno
+  temporal retirado; override en /tmp, ningún Compose repo modificado. Logs
+  /tmp/pms-public-a3-focused.log, /tmp/pms-public-a3-verify.log y
+  /tmp/pms-public-a3-runtime-smoke.json.
+- **Datos QA:** repo ofrece perfil manual-qa efímero y CRUD/colecciones Staff para
+  catálogo. Propuesta 43 reutiliza esos mecanismos para una Property ACTIVE y
+  STD/DLX/SUITE con dos Rooms cada uno. Sin ejecutar población ni crear seeds.
+- **Límites / siguiente:** QA manual vendible pendiente de Alan; no atribuir PASS
+  al catálogo vacío. Ningún booking/frontend, migración ni Auth/Account alterado.
+  Detenerse al finalizar A3.
+
+## Reserva pública — A2: disponibilidad pública real application (2026-10-06)
+
+- **Estado:** EN_QA inicial/final por instrucción del usuario; solo A2 autorizada,
+  pendiente de nuestra revisión. A1 COMPLETADA en 42a785a; A3 no iniciada, incremento
+  superior PENDIENTE. Owner Alan / BD1; historial previo Auth/Account/A1 conservado.
+- **Rama/base:** feature/backend-public-availability, HEAD 42a785a; árbol inicial
+  limpio. Sin commit/push/merge.
+- **Entrega / contrato:** PublicAvailabilityService.search(PublicAvailabilityQuery)
+  devuelve PublicAvailabilityView con offers reales, ATS y precio GTQ por tipo para
+  todo el rango. Query requiere propertyId/arrival/departure, arrival < departure y
+  roomsRequested > 0. Campos exactos y semántica en AlanPlan; sin HTTP.
+- **Autoridades:** AvailabilityPort/AvailabilityService calculan mínimo vendible
+  por noche con reglas vigentes OOO/stays/overbooking=0; no se reimplementan.
+  Repo público de solo consulta restringe Property/RoomTypes por propertyId sin
+  tocar repositorios/scope Staff. Moneda viene de Property y debe coincidir con
+  DemoRatePolicy.currency(); mismatch explícito, sin conversión.
+- **Pricing:** DemoRatePolicy mantiene un solo mapa, ahora también clasifica
+  DEMO_STANDARD/DEMO_DELUXE/DEMO_SUITE; identidad String en ratePlanId/code.
+  rateFor/totalFor siguen siendo autoridad de importes; ninguna fórmula nueva ni
+  RatePlan persistido. Tarifas aprobadas A1 intactas. Error sin tarifa se propaga.
+- **Lectura / errores:** snapshot readOnly REPEATABLE_READ; no asigna habitaciones
+  ni escribe inventario/reservas. ATS < roomsRequested omite oferta; orden lexical
+  Java por code. PropertyNotFoundException, IllegalArgumentException y error interno
+  DEMO_CURRENCY_MISMATCH, sin traducción HTTP.
+- **Pruebas PASS:** mvn -B --no-transfer-progress
+  -Dtest=DemoRatePolicyTests,PublicAvailabilityServiceTests,PublicAvailabilityServiceIntegrationTests
+  test: 41 PASS (20 policy, 8 unit A2, 13 integration A2). mvn -B
+  --no-transfer-progress verify: 426 PASS, cero failures/errors/skipped, BUILD SUCCESS
+  (1m02s), Maven 3.9.11/Java 21/PostgreSQL 17.11 efímero, sin exclusiones,
+  Compose pms-public-a2-qa retirado al finalizar. Fixtures deterministas rollback,
+  sin seeds ni población del catálogo de aplicación. Casos de composición: datos
+  reales/GTQ, ATS 0/insuficiente/igual/superior, tres tarifas, rango restrictivo,
+  OOO y stays consumidores, validaciones, Property inexistente/ajena, orden estable,
+  sin tarifa, moneda incompatible y catálogo vacío. Test unit verifica delegación
+  de ATS y total, evitando fórmula duplicada. Logs /tmp/pms-public-a2-focused.log
+  y /tmp/pms-public-a2-verify.log. git diff --check PASS (incluye revisión de siete
+  nuevos sin staging); git status/stat/name-only revisados, historial previo intacto.
+- **Límites / siguiente:** revisión A2 del usuario pendiente; A3 decidirá exposición
+  HTTP/errores y preparación QA manual. Elegibilidad pública de Property (estado/
+  publicación) no definida en A2; solo existencia/propertyId. Ningún Controller,
+  SecurityConfiguration/OpenAPI, Auth/Account, migración ni Compose modificado.
+  Detenerse al finalizar A2; no iniciar A3.
+
+## Reserva pública — A1: cierre formal y QA manual PASS (2026-10-06)
+
+- **Estado:** A1 COMPLETADA; QA manual PASS confirmado por Alan y cierre formal
+  autorizado por el usuario. QA técnico previo conservado: 20 focalizados PASS,
+  verify 405 PASS, cero failures/errors/skipped; sin repetir suites.
+- **Tarifas aprobadas GTQ/noche:** STANDARD/CLASSIC/STD/KING/TWIN Q650 (65000);
+  DELUXE/DLX Q850 (85000); SUITE Q1200 (120000).
+- **Alcance:** cierre documental únicamente en AlanPlan/AlanHandoff; código e
+  historial previo conservados. Rama feature/backend-public-availability;
+  sin commit/push. Incremento público superior PENDIENTE; A2/A3 no iniciadas.
+- **Validación:** git diff --check PASS; git status revisado, conservando los tres
+  archivos nuevos de código/tests de la implementación anterior.
+- **Siguiente:** A1 cerrada; esperar autorización para otra tarea, sin avanzar a A2.
+
+## Reserva pública — A1: tarifas demo autoritativas (2026-10-06)
+
+- **Estado:** EN_QA; A1 implementada, QA técnico PASS; confirmación manual del usuario
+  pendiente. Alcance A1 explícitamente autorizado. Incremento público
+  superior PENDIENTE; A2/A3 no iniciadas. Historial Auth/Account conservado.
+- **Rama/base:** feature/backend-public-availability, HEAD cae59de; árbol inicial
+  limpio. Sin commit/push/merge.
+- **Decisión / inspección:** GTQ y tarifas aprobadas por el usuario; RoomType.code
+  es identidad de catálogo por propiedad, independiente de UUID/nombre. Fixtures
+  STD, DLX, SUITE, KING y TWIN; PostgreSQL de aplicación consultado en lectura:
+  cero RoomTypes. Sin seeds/migraciones de tipos ni nuevos registros de catálogo.
+  KING/TWIN base Q650 explícita; tabla completa y códigos QA excluidos en AlanPlan.
+- **Entrega:** DemoRatePolicy en inventory/application, reusable por Availability
+  y Booking futuros; MonetaryAmount/MinorUnits existentes, rango StayDateRange,
+  noches calendario y multiplicación exacta long. Sin precio externo, impuestos,
+  descuentos, temporadas ni promociones. Error DEMO_RATE_NOT_CONFIGURED explícito.
+- **Pruebas / evidencia:** mvn -B --no-transfer-progress -Dtest=DemoRatePolicyTests
+  test: 20 PASS. mvn -B --no-transfer-progress verify: 405 PASS, cero
+  failures/errors/skipped, BUILD SUCCESS (1m11s). Maven 3.9.11/Java 21/PostgreSQL
+  17.11 efímero, Compose pms-public-a1-qa independiente, sin exclusiones.
+  Casos: ocho códigos, totales 65000/255000/240000, GTQ, fechas iguales/invertidas,
+  códigos sin tarifa/nombres engañosos, independencia UUID/propiedad/nombre y
+  rango amplio exacto en long. Bytecode multiplyExact(JJ)J sin float/double;
+  git diff --check PASS y archivos nuevos revisados sin staging. Logs sanitizados:
+  /tmp/pms-public-a1-focused.log y /tmp/pms-public-a1-verify.log.
+- **Límite:** ningún endpoint, SecurityConfiguration ni OpenAPI modificado;
+  sin integración A2/A3 ni cambios en Auth/Account. Catálogo local vacío: A1 no
+  implica disponibilidad pública consumible. code es editable; renombrarlo a un
+  código no configurado falla explícitamente hasta revisar el mapeo.
+- **Siguiente:** revisión/QA A1 del usuario: confirmar tabla de tarifas y ejemplos
+  de totales; no hay QA HTTP aplicable. No marcar COMPLETADA hasta confirmación.
+  Trabajo detenido al finalizar A1; no avanzar a A2.
+
+## BE-005-AUTH-API-01 / BE-004-ACCOUNT-SUMMARY-01 — Cierre QA manual final (2026-10-06)
+
+- **Estado:** ambos incrementos **COMPLETADA**, por confirmación manual final
+  real del usuario y autorización explícita de cierre documental.
+- **BE-005-AUTH-API-01:** Google real → callback → /cuenta reconocida sin reload,
+  Guest session 200, refresh, logout UI y sesión revocada 401 PASS; Staff
+  login/session/refresh/logout PASS. BFF consume login/me/logout/refresh explícitos.
+- **BE-004-ACCOUNT-SUMMARY-01:** GET BFF account summary 200 y dashboard con datos
+  reales PASS; ausencia de perfil/reservas correcta, logout deja summary/session
+  en 401 y QA visual del rediseño PASS.
+- **Evidencia previa conservada:** verify Backend 385 PASS; última suite Web
+  1056 PASS/214 archivos, 73 pruebas Account/Auth relevantes, typecheck/lint/build
+  PASS; OpenAPI y stack integrado validados en las entregas anteriores.
+  No se vuelven a ejecutar suites ni se atribuye al agente el QA manual del usuario.
+- **Alcance de cierre:** únicamente AlanPlan/Handoff, documentos 40/41/42 y
+  documentación Web Account. Contratos, código, auth, cookies y secretos intactos.
+  Las entradas siguientes permanecen sin alteración como historial.
+- **Siguiente:** ambos incrementos cerrados; esperar autorización para otra tarea.
+  Sin commit, push ni merge.
+
+## BE-004-ACCOUNT-SUMMARY-01 — Account Summary Guest real (2026-10-06)
+
+- **Estado:** EN_QA tras DoR READY, implementación y evidencia automatizada.
+  Incremento independiente; AUTH-API-01 permanece EN_QA. Ninguno COMPLETADA
+  sin confirmación manual final del usuario.
+- **Rama/base:** feature/backend-guest-account-summary-01, HEAD 9ade01d.
+  Working tree previo inspeccionado/preservado por snapshot de hashes, sin stash
+  ni commit/push/merge, secretos o cambios a .env.
+- **Contrato:** [42](42_GUEST_ACCOUNT_SUMMARY_CONTRACT_QA.md): GET Guest/BFF
+  summary desde GuestPrincipal exclusivamente; perfiles asociados, vínculos OTP
+  reales y próxima estancia confirmada. DTO/UI adaptados, OpenAPI mismo alcance.
+- **Fuentes:** GuestAccount y relación GuestProfile persistente N; L-02/L-07
+  exigen vínculo específico guest_reservation_links, nunca email/perfil compartido.
+  No contratos Guest comerciales/fiscales/mensajería, quedan fuera del response.
+- **Entrega:** cuenta propia, perfiles N sin seleccionar principal, count de
+  vínculos OTP y primera estancia RESERVED de reserva CONFIRMED desde hoy
+  según timezone property. Snapshot REPEATABLE_READ entre lecturas. No campos
+  comerciales/fiscales/mensajería; UI honesta sin placeholders; mocks preservados.
+  BFF fijo/same-origin, cookie Guest, 401/503, whitelist incluso anidada.
+- **Pruebas:** 31 Backend focalizados, verify final 385 PASS sin exclusiones;
+  120 Web relevantes/20 archivos y suite 1055 PASS/214. Typecheck/lint/build y
+  git diff --check PASS. Firma StaffPrincipal de fixture ajustada a código actual;
+  nullabilidad OpenAPI corregida con customizer acotado y prueba estructural.
+- **OpenAPI/runtime:** 35/25/32/10, diez tests de contrato, mismo paths/components
+  en test/live; summary security/header/200/401 y cinco legacy deprecated PASS.
+  Web/Swagger/doc/config 200, summary sin cookie/JWT 401, backend:8080 accesible.
+  Root stack reconstruido y tres servicios healthy; volumen/.env preservados.
+  PostgreSQL tests efímero retirado, Compose verify intacto. No cambios Auth,
+  JWT/cookies/filtros ni migraciones, comprobados por hashes.
+- **Evidencia:** [42](42_GUEST_ACCOUNT_SUMMARY_CONTRACT_QA.md), C3 y Account Web
+  33 actualizados; QA 41 muestra inventario actual sin atribuir summary a AUTH.
+  Logs /tmp/account-summary-*.log; OpenAPI integrado en target ignorado.
+- **Límite/siguiente:** 200/ownership Backend probados con PostgreSQL, BFF/UI
+  con tests HTTP/MSW; stack vivo validado solo anónimo/infraestructura/contrato.
+  No nuevo consentimiento Google ni sesión fabricada. QA manual Google →
+  summary 200 → dashboard → logout, y regresión Staff/Swagger pendiente;
+  mantener ambos incrementos EN_QA hasta PASS final.
+
+## BE-005-AUTH-API-01 — Hidratación Guest UI/BFF (2026-10-06)
+
+- **Estado:** EN_QA; QA previo del usuario Staff/Google real PASS conservado.
+  El bug funcional final requiere nuevo PASS manual callback → cuenta → logout.
+- **Causa confirmada:** working tree tenía provider en memoria, account=null
+  y simulateGuestAccess, sin GET BFF después del callback. El gate interpretaba
+  null como signed-out. AuthSocialButtons no existe en Web actual; Google real
+  ya tenía enlace BFF en el paso social, ahora inicia desde la opción inicial.
+- **Cambio:** nuevo DTO/modelo/mapper/service de sesión real con
+  guestAccountId/sessionId/email/context=GUEST. Query guest-session al montar,
+  200 hidrata; checking sin flash; solo 401 signed-out; 503/red/contrato inválido
+  error recuperable. No ExternalIdentity inventada ni tokens/state/storage.
+  DELETE BFF en logout; éxito cancela lecturas y limpia Guest, preservando Staff.
+  Fallo conserva estado/retry. Cookies, refresh y Google callback intactos.
+- **Mock:** simulateGuestAccess y modelo/fixtures completos conservados.
+  Correo simulado solo mock; ningún Apple real. Dos consumidores de account
+  toleran identidades desconocidas sin atribuir correo/Google a la sesión real.
+- **Pruebas:** 95 auth/BFF/provider PASS; suite completa 1026 PASS/211 archivos,
+  13 casos nuevos real/SSR/errores/logout/Google/mock y siete del mapper.
+  Typecheck/lint/diff --check PASS; build Web PASS y tres servicios healthy.
+  HTTP Web /cuenta y /acceso 200/checking sin flash SSR; Guest sin cookie 401;
+  Swagger/doc/config 200, cinco explícitos/cinco deprecated y security 34/24.
+  Hashes de preservación PASS. Solo Web reconstruida con --no-deps.
+  Logs /tmp/guest-hydration-*.log, sin secretos en evidencia.
+- **Límite:** resumen /account/summary provisional sin mapping Backend/BFF.
+  El gate permite la cuenta autenticada; la carga de datos de resumen puede
+  fallar, sin significar signed-out. Se documenta sin ampliar el incremento.
+- **Preservación:** Backend/src, lib/bff y .env sin cambios; no verify Backend
+  nuevo (374 PASS previos históricos), no contrato HTTP nuevo/alterado.
+  Documentos 40/41 y AlanPlan actualizados. Sin commit/push/merge.
+- **Siguiente:** QA final humano sobre Web actualizada, sin reload manual
+  después del callback y con logout desde UI; mantener EN_QA hasta confirmación.
+
+## BE-005-AUTH-API-01 — Migración mínima BFF a explícitos (2026-10-05)
+
+- **Estado:** EN_QA; no COMPLETADA. Usuario confirma QA manual previo PASS:
+  Staff BFF login/sesión/refresh/logout; Guest Google real login/session 200/
+  refresh 200/session 200/logout 204/session 401. Conservar esa evidencia; falta
+  confirmación final de la compilación posterior a esta corrección autorizada.
+- **Inspección:** working tree actual contenía cinco llamadas legacy en los dos
+  session/route.ts Web; controllers actuales ya ofrecen login/me/logout/refresh.
+  Rama/base feature/backend-explicit-auth-api-01, HEAD 9ade01d; cambios previos
+  intactos, sin secretos/.env/commit/push/merge ni cambio de otras tareas.
+- **Cambio:** Staff POST session → POST login, GET session → GET me,
+  DELETE session → POST logout; Guest GET session → GET me y DELETE session →
+  POST logout. Browser conserva session/refresh, DTOs/status y cookies/error
+  handling. Refresh y Google start/exchange intactos. Legacy Backend conservado
+  y deprecated solo en metadata OpenAPI; código Backend/helpers sin cambios.
+- **Tests Web:** test nuevo auth-routes.test.ts con 37 casos; Vitest alias
+  server-only solo para tests usando marker server-side de Next existente.
+  Relevantes **62 PASS** (siete archivos), suite completa **1006 PASS** (209
+  archivos), typecheck y lint PASS. Tipos .next obsoletos apuntaban a ruta antigua;
+  next typegen regeneró artefactos y next-env original se preservó; no cambios
+  tsconfig/rutas para evitar el error. `git diff --check` PASS.
+- **OpenAPI:** GET vivo 200, paridad 34/24, explícitos/security presentes y
+  exactamente cinco legacy deprecated. Hashes comprueban Backend/src y lib/bff
+  intactos durante esta corrección. No repetir verify Backend; 374 PASS previos
+  conservados como evidencia histórica, sin atribuir una nueva corrida.
+- **Docs/evidencia:** tabla de mappings y QA final en docs 40/41, AlanPlan;
+  logs locales /tmp/bff-explicit-web-tests.log, bff-explicit-web-suite.log,
+  bff-explicit-typegen.log, bff-explicit-typecheck.log y bff-explicit-lint.log.
+- **Runtime/evidencia adicional:** solo Web reconstruida con --no-deps, healthy;
+  Backend/PostgreSQL no reiniciados. Smoke integrado Staff directo/BFF y
+  refresh/logout/revocación PASS; Web/Swagger/doc/config 200. Google start y
+  callback inválido mantienen comportamiento; Google real ya tuvo PASS manual
+  previo y queda pendiente la confirmación final tras migración. Logs locales
+  /tmp/bff-explicit-web-build.log y bff-explicit-http-smoke.log.
+- **Siguiente:** QA manual final Staff/Guest de targets migrados sobre Web ya
+  reconstruida; mantener EN_QA hasta confirmación. Sin bloqueos de código.
+
+## BE-005-AUTH-API-01 — Stack local integrado canónico (2026-10-05)
+
+- **Estado:** EN_QA; inspección/plan mínimo presentados e implementación posterior
+  autorizada por el usuario. Esperar QA manual final Staff/Google/Swagger.
+  Rama/base feature/backend-explicit-auth-api-01, HEAD 9ade01d; todo el trabajo
+  previo preservado; sin commit/push/merge ni avance de otras tareas.
+- **Entrega:** compose.yaml raíz conserva postgres/backend/web y publica Backend
+  solo en 127.0.0.1:${PMS_BACKEND_PORT:-8081}; BFF mantiene backend:8080 y Backend
+  postgres:5432. PMS_WEB_PUBLIC_URL usa entorno o el puerto Web configurado.
+  .env.example alineado a Web 3001/Swagger 8081, mocks false y bootstrap sintético
+  local opt-in, sin credenciales activas por defecto. .env existente preservado.
+- **Aislamiento:** compose.bd2-test.yaml vuelve a ser exclusivamente postgres/
+  verify originales; manual-qa se conserva aparte en compose.auth-manual-qa.yaml.
+  Puertos 18085/18086 son evidencia aislada. Demo conserva solo su 18080 mediante
+  override de ports, evitando heredar 8081. No cambio de código BFF/auth/JWT/
+  cookies ni contratos HTTP; DEC-B-003 registra publicación local autorizada.
+- **Pruebas:** config raíz/.env válido sin imprimir secretos; comando exacto
+  `docker compose --env-file .env up -d --build` PASS; postgres/backend/web
+  healthy. Web/Swagger/doc/config HTTP 200 en 3001/8081. DNS y HTTP interno desde
+  Web a backend:8080 200; datasource Backend a postgres interno confirmado.
+- **Staff real del entorno:** login/me/logout directo 201/200/204 y me revocado
+  401; BFF POST/GET/refresh/DELETE session PASS, cookies HttpOnly/Lax y JSON sin
+  tokens; Backend del mismo stack rechaza el access revocado. Identidad y volumen
+  existentes preservados; no se imprimen contraseñas ni valores de cookies.
+- **Google preflight:** variables presentes solo en Backend; BFF start 307 hacia
+  Google con redirect_uri al Web 3001, state/nonce/PKCE. Hash de state confirmado
+  en guest_oidc_transactions de este PostgreSQL; callback sintético inválido
+  retorna al origen Web correcto y no crea cookies. Consentimiento/retorno Google
+  válidos no ejecutados; no se presentan como login Guest manual PASS.
+- **Regresión:** verify completo **374 PASS**, BUILD SUCCESS, cero failures/
+  errors/skipped, Java 21/PostgreSQL 17 aislados. OpenAPI generado e integrado
+  con paths/components iguales, 34 operaciones/24 paths. Compose de tests con
+  servicios/cache idénticos a HEAD y cero cuentas local_staff/qa_staff en la BD
+  automatizada; ejemplos sin secretos y bootstrap opt-in. Proyecto verify temporal
+  detenido al terminar, stack raíz conservado healthy. `git diff --check`, sintaxis Compose y enlaces PASS.
+- **Docs/evidencia:** README, docs/13_LOCAL_INTEGRATED_STACK.md, DEC-B-003,
+  preflight 32, QA 41, documento 40/AlanPlan actualizados. Artefacto ignorado
+  target/openapi-integrated-stack.json; logs locales /tmp/pms-integrated-up.log,
+  pms-integrated-smoke.log y pms-integrated-verify.log, sin secretos en evidencia.
+- **Siguiente:** usar stack raíz activo para QA final Staff y Google por Web/BFF;
+  confirmar PASS antes de cerrar. Entornos de pruebas no condicionan el integrado.
+
+## BE-005-AUTH-API-01 — QA manual Staff determinista (2026-10-05)
+
+- **Estado:** EN_QA; mejora del entorno autorizada por el usuario. Esperar nueva
+  confirmación de QA manual PASS; no COMPLETADA. Rama/base sin cambios:
+  feature/backend-explicit-auth-api-01, HEAD 9ade01d; trabajo previo preservado.
+- **Entrega:** compose.bd2-test.yaml agrega profile manual-qa con servicios
+  manual-backend/manual-postgres. Reutiliza Dockerfile y bootstrap Staff existente
+  mediante PMS_BOOTSTRAP_ADMIN_USERNAME/EMAIL/PASSWORD; usuario qa_staff, email
+  qa_staff@example.test y password público sintético/disposable documentado en
+  [guía 41](41_EXPLICIT_AUTH_ENDPOINTS_QA.md), exclusivo de este QA. PostgreSQL
+  manual en tmpfs y BD distinta; Backend solo 127.0.0.1:18086.
+- **Aislamiento:** postgres/verify efectivos idénticos a HEAD; profile default
+  sin servicios manuales y sin variables bootstrap en verify. Sin .env/secretos,
+  defaults de aplicación, lógica alternativa de usuarios ni cambio API/OpenAPI.
+- **Pruebas reales:** BD manual vacía (cero tablas públicas) → exactamente un
+  qa_staff SUPER_ADMIN, una membership y un evento bootstrap. Reinicio Backend
+  conserva ID/hash/fecha; no duplica ni sobrescribe. HTTP login 201 → me/session
+  200 iguales → logout 204 → me/refresh 401; tras reinicio y legacy PASS.
+- **Regresión:** `mvn -B --no-transfer-progress verify` completo **374 PASS**,
+  BUILD SUCCESS, cero failures/errors/skipped; Java 21/PostgreSQL 17. BD verify
+  separada con cero qa_staff tras la suite. Tmpfs real y PostgreSQL sin host port
+  comprobados. Doc/UI/config 200; paths/components 34/24 iguales a tests y sin
+  credenciales QA en OpenAPI. `git diff --check`, Compose y enlaces PASS.
+- **Evidencia:** target/openapi-manual-qa.json; logs locales
+  /tmp/explicit-auth-manual-start.log, explicit-auth-manual-smoke.log y
+  explicit-auth-manual-verify.log. Guía 41 con comando único, credenciales
+  sintéticas, pasos Swagger y reinicio/reset. Documento 40/AlanPlan actualizados.
+- **Runtime/siguiente:** QA manual saludable disponible en localhost:18086;
+  solo la BD automatizada de esta validación se retiró. Servicio previo en 18085
+  y entornos habituales intactos. Ejecutar login/me/logout en Swagger y confirmar
+  PASS; mantener EN_QA, sin commit/push/merge ni avance a otro incremento.
+
+## BE-005-AUTH-API-01 — Entrega EN_QA (2026-10-05)
+
+- **Estado:** EN_QA; implementación/automatizados y smoke HTTP PASS. Pendiente
+  QA manual del usuario; no COMPLETADA. Owner Alan / BD1; reviewers Web/BFF y
+  Android colaborativos, revisión local Codex.
+- **Rama/base:** `feature/backend-explicit-auth-api-01`, HEAD `9ade01d`;
+  registro READY preexistente conservado; sin commit/push/merge, migraciones,
+  dependencias, cambios de Frontend/BFF ni estado de otros incrementos.
+- **Entrega:** cinco aliases Auth delegando en los handlers originales, con
+  mismos DTOs/status/reglas/JWT/cookies/permisos/scope/auditoría. Solo matcher
+  adicional POST Staff login sin Bearer. Cinco legacy deprecated en metadata
+  OpenAPI, sin retirada/redirect; Google sigue siendo el login Guest.
+  Addenda C1/C2/C3, inventario 39, documento 40, colección y guía QA 41.
+- **Pruebas:** focalizados **56 PASS** (nueve HTTP, nueve OpenAPI y regresión);
+  `mvn -B --no-transfer-progress verify` completo **374 PASS**, BUILD SUCCESS,
+  cero failures/errors/skipped. Docker pms_explicit_auth aislado, Java 21 y
+  PostgreSQL 17; primera corrida corrigió solo flush de fixture transaccional.
+- **OpenAPI/HTTP real:** 34 operaciones/24 paths/29 schemas/nueve tags, cinco
+  deprecated y cuatro operaciones sin credencial previa/30 protegidas; paridad
+  exacta sin exclusiones. JAR QA en 127.0.0.1:18085: doc/UI/config 200 y
+  paths/components idénticos a tests. Cuatro combinaciones Staff login/logout
+  nuevo/legacy, igualdad me/session, refresh/revocación y negativos Auth PASS.
+- **Evidencia regenerable:** target/openapi-generated.json,
+  target/openapi-application-mappings.txt, target/openapi-explicit-auth-qa.json;
+  logs locales /tmp/explicit-auth-focused.log, explicit-auth-verify.log y
+  explicit-auth-http-smoke.log. JSON/scripts colección y enlaces PASS; carpetas
+  previas intactas y variables sensibles vacías. Once cuerpos Auth originales
+  idénticos a HEAD; diff revisado y `git diff --check` PASS.
+- **Hallazgo conservado:** validación JSON Staff genera 400 MVC/MockMvc; Servlet
+  redispatcha a /error protegido y devuelve 401 vacío en login y sessions.
+  Metadata/QA y test HTTP real documentan la equivalencia; no cambia /error.
+- **Entorno temporal:** JAR y PostgreSQL del proyecto pms_explicit_auth detenidos
+  al finalizar; guía 41 permite recrear QA. Otros contenedores no intervenidos.
+- **Límites/siguiente:** Guest autenticado cubierto con PostgreSQL y cliente
+  Google de prueba; no Google externo vivo ni QA manual del usuario acreditados.
+  Ejecutar [guía QA específica](41_EXPLICIT_AUTH_ENDPOINTS_QA.md) y confirmar
+  PASS para cierre; mantener EN_QA, sin avanzar ni publicar.
+
+## BE-005-AUTH-API-01 — Inicio de implementación (2026-10-05)
+
+- **Estado:** EN_PROGRESO; implementación exclusiva autorizada por el usuario.
+- **Rama/base:** `feature/backend-explicit-auth-api-01`, HEAD `9ade01d`;
+  rama nueva desde la base local actual, conservando el registro READY previo
+  en AlanPlan/AlanHandoff/documento 40. Sin commit/push/merge.
+- **Alcance:** cinco aliases Auth, metadata OpenAPI, tests HTTP/contrato,
+  colección y guía QA; mismos servicios/DTOs/reglas. Otros incrementos intactos.
+- **Siguiente:** implementar y validar focalizados, verify completo y Swagger;
+  entregar EN_QA hasta QA manual PASS del usuario.
+
+## BE-005-AUTH-API-01 — Definición de rutas Auth explícitas (2026-10-05)
+
+- **Estado:** READY; DoR completo, solo planificación/documentación. Owner
+  Alan / BD1; reviewers Web/BFF y Android colaborativos; revisión local Codex.
+- **Rama/base:** `feature/backend-explicit-auth-endpoints`, HEAD `9ade01d`;
+  árbol limpio al iniciar. Sin implementación, commit/push/merge ni cambios
+  de estado de otros incrementos; historial previo conservado.
+- **Contrato/evaluación:** C1/C2/C3 aprobados y controllers actuales compatibles
+  con extensión aditiva. Cinco rutas nuevas previstas, mismos servicios/DTOs/
+  tokens/auditoría/reglas; Guest mantiene Google start/exchange como login real.
+  Antiguos session/sessions conservados y deprecated solo en OpenAPI, sin
+  retirada/redirect/cambio semántico. No existe contradicción bloqueante.
+- **Registro:** [documento 40](40_EXPLICIT_AUTH_ENDPOINTS_INCREMENT.md) y AlanPlan
+  definen matriz HTTP, aceptación, archivos y tests. Swagger obligatorio en el
+  mismo incremento: 34 operaciones/24 paths previstos, auth/DTOs/errores/
+  summaries/deprecated validados con documento real, sin exclusiones nuevas.
+- **Evidencia/límites:** inspección de fuentes, controllers, servicios, DTOs,
+  filtros y pruebas; registro exclusivamente documental. `git diff --check`
+  PASS. Maven/Swagger HTTP/QA nuevos no ejecutados; evidencia histórica de
+  OPENAPI-01 no acredita este incremento. QA manual PASS obligatorio para cierre.
+- **Siguiente:** implementar exclusivamente BE-005-AUTH-API-01 cuando el usuario
+  lo autorice; no iniciar otra tarea ni publicar.
+
 ## BE-005-OPENAPI-01 — Cierre con QA visual PASS (2026-10-05)
 
 - **Estado:** COMPLETADA; QA visual/manual ejecutado y confirmado PASS por

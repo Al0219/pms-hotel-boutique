@@ -19,6 +19,8 @@ services:
     build:
       context: ./backend
     environment:
+      SPRING_PROFILES_ACTIVE: ${PMS_SPRING_PROFILES_ACTIVE:-demo}
+      PMS_DEMO_DATA_ENABLED: ${PMS_DEMO_DATA_ENABLED:-true}
       PMS_DATABASE_URL: jdbc:postgresql://postgres:5432/pms_hotel
       PMS_DATABASE_USERNAME: pms_app
       PMS_DATABASE_PASSWORD: ${PMS_POSTGRES_PASSWORD:-pms-local-development}
@@ -34,6 +36,8 @@ services:
       RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}
     expose:
       - "8080"
+    ports:
+      - "127.0.0.1:${PMS_BACKEND_PORT:-8081}:8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -48,13 +52,14 @@ services:
     build:
       context: ./frontend/pms-hotel-web
       args:
-        NEXT_PUBLIC_USE_MOCK_API: ${NEXT_PUBLIC_USE_MOCK_API:-true}
+        NEXT_PUBLIC_USE_MOCK_API: ${NEXT_PUBLIC_USE_MOCK_API:-false}
         NEXT_PUBLIC_API_BASE_URL: /api
+        NEXT_PUBLIC_PROPERTY_ID: ${NEXT_PUBLIC_PROPERTY_ID:-3032709f-a48b-300b-b860-1110bc6f1f13}
     environment:
       HOSTNAME: 0.0.0.0
       PORT: "3000"
       PMS_BACKEND_INTERNAL_URL: http://backend:8080
-      PMS_WEB_PUBLIC_URL: ${PMS_WEB_PUBLIC_URL:-http://localhost:3000}
+      PMS_WEB_PUBLIC_URL: ${PMS_WEB_PUBLIC_URL:-http://localhost:${PMS_WEB_PORT:-3000}}
     ports:
       - "${PMS_WEB_PORT:-3000}:3000"
     depends_on:

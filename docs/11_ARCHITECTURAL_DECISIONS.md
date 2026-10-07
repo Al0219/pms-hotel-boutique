@@ -308,6 +308,17 @@ La CI de la pila construye, inicia y espera los tres servicios. Los valores
 predeterminados de PostgreSQL son exclusivamente locales; producción deberá
 injectar secretos y configuración propios.
 
+**Addendum local aprobado por el usuario (2026-10-05):** compose.yaml sigue
+siendo el stack canónico PostgreSQL + Backend + Web. Comando reproducible:
+`docker compose --env-file .env up -d --build`. Backend también se publica al
+host, solo 127.0.0.1, mediante PMS_BACKEND_PORT (default 8081) para Swagger y QA
+local. Esta instrucción actualiza la restricción histórica de publicar únicamente
+Web; PostgreSQL permanece interno, Web BFF conserva http://backend:8080 y los
+contratos C1/C2/C3 no cambian. Puertos/origen Web y Google provienen del entorno.
+Staff local usa bootstrap existente con valores opt-in sintéticos, nunca defaults
+productivos. El Compose de tests queda exclusivamente para verify aislado; QA
+manual histórico se conserva aparte. [Guía](13_LOCAL_INTEGRATED_STACK.md).
+
 ### DEC-B-004 — Contrato C1 de identidad Staff y cuenta Guest
 
 **Fecha:** 2026-09-29

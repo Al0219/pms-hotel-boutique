@@ -1,27 +1,22 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { DomainMappingError } from "@/lib/errors";
-import { mapAvailabilityResponseToDomain, mapSearchParamsToQueryDto } from "../mappers/availability.mapper";
-import { fetchAvailabilityDto } from "../service/availability.service";
+import { getPublicEnvironment } from '@/lib/env';
+import { getPublicAvailability } from '../service/public-availability-query';
 import type { AvailabilitySearchParams } from "../model/availability-option";
 
 export function usePublicAvailability(params: AvailabilitySearchParams | undefined) {
+  const mock = getPublicEnvironment().useMockApi;
+  const propertyId = params?.propertyId ?? (mock ? undefined : process.env.NEXT_PUBLIC_PROPERTY_ID?.trim());
   return useQuery({
-    queryKey: ["public-availability", params],
+    queryKey: ["public-availability", mock, { ...params, propertyId }],
     enabled: Boolean(params),
     retry: false,
     staleTime: 0,
     refetchOnWindowFocus: false,
     queryFn: async ({ signal }) => {
       if (!params) throw new Error("AVAILABILITY_CRITERIA_REQUIRED");
-      const dto = await fetchAvailabilityDto(mapSearchParamsToQueryDto(params), signal);
-      const result = mapAvailabilityResponseToDomain(dto);
-      if (result.checkInDate !== params.checkInDate || result.checkOutDate !== params.checkOutDate ||
-          (params.propertyId && result.propertyId !== params.propertyId)) {
-        throw new DomainMappingError("AVAILABILITY_SEARCH_MISMATCH");
-      }
-      return result;
+      return getPublicAvailability({ ...params, propertyId }, signal);
     },
   });
 }

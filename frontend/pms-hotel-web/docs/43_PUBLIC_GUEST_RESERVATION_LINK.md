@@ -1,5 +1,7 @@
 # Public — Reserva como invitado y Mis reservas
 
+Actualización vigente (2026-10-06): [vista dedicada de vinculación](51_PUBLIC_02_EXISTING_RESERVATION_LINK.md) desde Cuenta vinculada. El recorrido frontend local admite la sesión Guest creada por Google o correo y mantiene referencia + código + coincidencia con el correo registrado. La política Backend real sigue siendo Google + OTP según DEC-B-004; no se conecta ni modifica en esta entrega. Las secciones históricas siguientes describen el recorrido Google inicial.
+
 Actualización de presentación: [textos finales para clientes](48_PUBLIC_BOOKING_CUSTOMER_COPY.md). Referencias/OTP de ejemplo e instrucciones de simulación quedan solo en documentación y fixtures, sin mostrarse en la interfaz. El botón de acceso Google ahora se llama «Acceder con Google».
 
 Actualización posterior: pago/confirmación de demostración se implementan en [la entrega 44](44_PUBLIC_BOOKING_PAYMENT_GUARANTEE.md). Los límites de persistencia, correo real e historial aquí descritos se conservan.

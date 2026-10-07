@@ -2,24 +2,30 @@
 
 import Link from "next/link";
 import { useGuestSession } from "./guest-session-provider";
+import { GuestSessionCheck } from "./guest-session-check";
+import { guestAccessReturn } from "../model/checkout-return";
 import styles from "./guest-access-page.module.css";
+import sessionStyles from "./guest-account-gate.module.css";
 
-export function GuestAccountGate({ children }: Readonly<{ children: React.ReactNode }>) {
-  const { account, signOut } = useGuestSession();
+export function GuestAccountGate({ children, returnTo }: Readonly<{ children: React.ReactNode; returnTo?: string }>) {
+  const { account, signOut, status, isPending, error } = useGuestSession();
+  const destination = guestAccessReturn(returnTo);
+  if (status === "checking" || status === "error") return <GuestSessionCheck />;
   if (!account) {
     return <section className={styles.page}>
       <div className={styles.content}>
         <h1>Accede a tu cuenta</h1>
         <p>Inicia sesión para consultar tu cuenta. Puedes seguir reservando como invitado.</p>
-        <Link className={styles.primary} href="/acceso">Iniciar sesión</Link>
+        <Link className={styles.primary} href={destination ? `/acceso?returnTo=${encodeURIComponent(destination)}` : '/acceso'}>Iniciar sesión</Link>
         <Link className={styles.secondary} href="/">Continuar como invitado</Link>
       </div>
     </section>;
   }
   return <>
-    <div className={styles.sessionBar} aria-label="Sesión de huésped">
+    <div className={sessionStyles.sessionBar} aria-label="Sesión de huésped">
       <span>{account.email ?? "Cuenta de huésped"}</span>
-      <button className={styles.back} type="button" onClick={signOut}>Cerrar sesión</button>
+      <button className={sessionStyles.signOut} type="button" disabled={isPending} onClick={() => void signOut()}>{isPending ? "Cerrando sesión…" : "Cerrar sesión"}</button>
+      {error && <p role="alert">No se pudo cerrar la sesión. Inténtalo nuevamente.</p>}
     </div>
     {children}
   </>;

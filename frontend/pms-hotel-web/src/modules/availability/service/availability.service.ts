@@ -1,4 +1,12 @@
 import { httpRequest } from "@/lib/http";
+import type { PublicAvailabilityQueryDTO, PublicAvailabilityResponseDTO } from '../dtos/public-availability.dto';
+
+export async function fetchBackendAvailabilityDto(query: PublicAvailabilityQueryDTO, signal?: AbortSignal): Promise<PublicAvailabilityResponseDTO> {
+  const search = new URLSearchParams({ propertyId: query.propertyId, arrival: query.arrival, departure: query.departure, rooms: String(query.rooms) });
+  // Always the same-origin Next BFF, regardless of the generic API base URL.
+  const path = new URL(`/api/v1/public/availability?${search}`, window.location.origin).href;
+  return httpRequest<PublicAvailabilityResponseDTO>({ path, method: 'GET', withAuth: false, signal });
+}
 
 import type {
   AvailabilityResponseDto,

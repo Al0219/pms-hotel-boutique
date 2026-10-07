@@ -4,8 +4,9 @@ import { usePublicBookingSession } from '../components/public-booking-provider';
 import { publicCurrencyReference } from '../content/public-currency-reference';
 import styles from './public-currency-selector.module.css';
 
-export function PublicCurrencySelector({ id = 'public-display-currency' }: { id?: string }) {
+export function PublicCurrencySelector({ id = 'public-display-currency', quotedCurrency }: { id?: string; quotedCurrency?: string }) {
   const { currency, setCurrency } = usePublicBookingSession();
+  if (quotedCurrency) return <p className={styles.control}>Precios en {quotedCurrency}{quotedCurrency === 'GTQ' ? ' · Quetzales' : ''}</p>;
   return <div className={styles.control}><label htmlFor={id}>Mostrar precios en</label>
     <select id={id} value={currency} onChange={event => setCurrency(event.target.value === 'GTQ' ? 'GTQ' : 'USD')}>
       <option value="GTQ">GTQ · Quetzales</option><option value="USD">USD · Dólares</option>

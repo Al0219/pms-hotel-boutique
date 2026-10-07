@@ -1,4 +1,4 @@
-.page { max-width: 1200px; margin: 0 auto; padding: 36px 32px 80px; color: #2e3531; }
+.page { max-width: var(--public-container-max); margin: 0 auto; padding: 36px 32px 80px; color: #2e3531; }
 .page h1 { font-family: var(--font-family-display); font-weight: 500; font-size: clamp(32px, 4vw, 46px); margin: 0 0 12px; }
 .page h2 { font-size: 18px; font-weight: 600; margin: 0 0 24px; }
 .topBar { display: flex; align-items: start; justify-content: space-between; gap: 24px; margin-bottom: 36px; }

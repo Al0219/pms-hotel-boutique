@@ -1,4 +1,4 @@
-# Isolated validation: no host ports, no application database or secrets.
+# Isolated automated validation: no host ports, no application database or secrets.
 services:
   postgres:
     image: postgres:17-alpine

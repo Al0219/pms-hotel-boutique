@@ -1,5 +1,26 @@
 # Public 05 — Account, Profile, History, Rewards y Promotions
 
+## Estado vigente — cierre QA manual final (2026-10-06)
+
+**BE-004-ACCOUNT-SUMMARY-01: COMPLETADA.**
+**BE-005-AUTH-API-01: COMPLETADA.**
+
+Confirmación manual final real del usuario, recibida el 2026-10-06.
+Las entradas anteriores se conservan como historial; sus estados EN_QA y
+pendientes quedan superados por este cierre. No se atribuye esta confirmación
+a pruebas automatizadas ni se ejecutan nuevas implementaciones.
+
+- `GET /api/auth/guest/account/summary` 200: **PASS**.
+- Dashboard `/cuenta` renderiza datos reales: **PASS**.
+- Ausencia de perfil/reservas presentada correctamente: **PASS**.
+- Logout deja summary/session en 401: **PASS**.
+- QA visual del rediseño: **PASS**.
+
+Google real → callback → `/cuenta` reconocida sin reload, Guest session/refresh/
+logout/revocación y regresión Staff: **PASS** confirmado por el usuario.
+Este cierre registra únicamente documentación; contratos, Backend, BFF, auth,
+cookies y código de presentación permanecen intactos.
+
 ## Alcance autorizado
 
 Corrección frontend solicitada por el usuario: puntos 15–20, IMP-WEB-0203 a 0208 y consulta de documentos vinculada desde Dashboard (0209). No Backend, JWT, cálculo de puntos, motor comercial, cargos, cancelaciones ni operaciones Staff.
@@ -59,3 +80,79 @@ Las facturas de demostración no tienen PDF emitido: se muestra `Descarga no dis
 - `npm run lint`, `npm run typecheck` y `npm run build`: aprobados.
 - Cobertura nueva: guardar/cancelar/reintentar Perfil, identidad de acceso separada, resumen sincronizado, alcance Guest, reserva con múltiples stays, detalle desconocido, Rewards sin cálculo, elegibilidad de promociones, estados vacíos/offline/error, limpieza de caché al salir y documentos sin descarga ficticia.
 - Las pruebas de interacción se ejecutaron con Testing Library y MSW en jsdom. No sustituyen una revisión visual en navegador/Figma, que queda pendiente junto con las revisiones WEB-3 y WEB-4.
+
+## Integración real BE-004-ACCOUNT-SUMMARY-01 (2026-10-06)
+
+La integración de summary sustituye el endpoint provisional únicamente en modo
+real. Browser GET /api/auth/guest/account/summary sin accountId/Bearer; BFF lee
+la cookie Guest HttpOnly y llama GET /api/v1/guest-auth/account/summary. Backend
+deriva la identidad de GuestPrincipal revalidado, nunca de query/body/UUID libre.
+Service → AccountSummaryDTO confirmado → mapper → RealAccountSummary → hook →
+dashboard. El contrato provisional, mapper y fixtures se nombran explícitamente
+MockAccountSummary y siguen aislados por NEXT_PUBLIC_USE_MOCK_API=true.
+
+Real: correo/active de GuestAccount, array de perfiles con FK explícita (puede
+estar vacío o contener N), idioma nullable sin español implícito, count de
+vínculos OTP propios y primera estancia RESERVED de reserva CONFIRMED vinculada
+desde hoy según timezone de propiedad. Identidad de sesión no crea GuestProfile.
+Una reserva del perfil o con igual email no se considera vinculada por sí sola.
+
+Sin perfil muestra Sin perfil vinculado; múltiples perfiles se muestran sin
+elegir principal. Sin estancia elegible muestra No tienes próximas estancias
+confirmadas. Se representan valores ausentes sin inventar nombre, idiomas,
+room count, Member/Gold, facturas o promociones. Los datos secundarios reales
+no están integrados: tarjetas no interactivas Consulta aún no disponible.
+Edición perfil y listado/vínculo Web quedan fuera; se evita ofrecer enlaces
+desde el dashboard real a esas pantallas todavía provisionales. Mock conserva
+las tarjetas/acciones previas.
+
+401 de summary vuelve a comprobar la sesión Guest para que el gate refleje su
+estado real; 503/red conserva sesión y muestra error/retry de summary. Mapper
+whitelist y chequeo de scope defensivo; BFF filtra campos incluso anidados.
+Ningún token o dato secundario extra se cachea como modelo de cuenta.
+[Contrato/ownership/QA Backend](../../../backend/docs/42_GUEST_ACCOUNT_SUMMARY_CONTRACT_QA.md).
+
+## Refinamiento visual de /cuenta (2026-10-06) — QA visual pendiente
+
+Corrección exclusivamente de presentación autorizada por el usuario sobre el
+working tree existente. Backend, contrato HTTP/DTOs, BFF, auth, cookies, Google,
+refresh/logout, reglas de reservas y selección mock/real permanecen intactos.
+BE-004-ACCOUNT-SUMMARY-01 y BE-005-AUTH-API-01 conservan EN_QA, no COMPLETADA.
+
+- Se elimina el header interno de AccountDashboardPage tanto real como mock.
+  PublicBookingShell conserva la única navegación principal, sin modificaciones.
+- El correo se muestra una sola vez en la barra de sesión, secundaria y discreta.
+  Cabecera Mi cuenta y Cuenta activa · N reservas vinculadas, sin repetir correo.
+- Próxima estancia ocupa el ancho de la composición; Perfil y Reservas siguen
+  debajo en dos columnas desktop y una en tablet/móvil. Estados vacíos originales
+  preservados, sin inventar datos. Títulos Lora/display, información/acciones Inter.
+- Facturas/Rewards/Promociones/Mensajes reales pendientes se agrupan en Más de
+  tu cuenta: filas compactas Próximamente, sin enlaces ni botones funcionales.
+- Superficies y bordes sutiles, radius-md, sin sombras ni translateY al hover;
+  max-width 1120 alineado al sitio público. Solo tokens existentes, sin paleta
+  nueva ni cambios a tokens.css. Acciones locales de 48px, focus visible,
+  columnas minmax(0,1fr), wrapping y ausencia de animación nueva.
+
+Validación: 73 tests Account/Auth UI relevantes PASS; suite Web completa
+1056 PASS/214 archivos; typecheck/lint/build y git diff --check PASS. Tests UI
+actualizados para header único, email único, tres cards protagonistas y lista
+secundaria sin acciones; comportamiento mock y flujo de sesión previo preservados.
+
+Revisión Firefox headless de componentes/CSS reales con fixtures efímeras en
+/tmp, no con cuentas fabricadas en la BD: 1440px dos columnas; 768/375/320px
+una columna, sin overflow horizontal, controles 48px, Inter/Lora cargadas.
+Capturas desktop/mobile/tablet/mobile-narrow y métricas se conservan en
+/tmp/guest-dashboard-visual-preview. El harness temporal se retiró del repo.
+No sustituye el QA humano con la cuenta real del usuario.
+
+Web integrada reconstruida únicamente con --no-deps; Backend y PostgreSQL no
+reiniciados, .env preservado. Hashes verifican Backend completo, BFF, lógica
+auth, DTOs, header público y tokens intactos frente al inicio de esta corrección.
+Logs locales /tmp/guest-dashboard-visual-focused.log, visual-suite.log,
+visual-typecheck.log, visual-lint.log, visual-build.log y
+visual-integrated-build.log (todos con prefijo guest-dashboard-).
+
+QA final: abrir /cuenta en el Web integrado con sesión Guest válida; revisar
+header único, correo único, jerarquía/estados con datos reales, sección secundaria
+compacta, desktop/tablet/móvil, foco de teclado y logout existente. Confirmar
+PASS visual/manual antes de cerrar los incrementos. Sin commit/push/merge.

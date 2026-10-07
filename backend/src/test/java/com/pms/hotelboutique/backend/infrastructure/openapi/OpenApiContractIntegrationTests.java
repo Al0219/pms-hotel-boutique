@@ -59,8 +59,42 @@ class OpenApiContractIntegrationTests {
         assertTrue(expected.containsAll(DOCUMENTED_EXCLUSIONS.keySet()));
         expected.removeAll(DOCUMENTED_EXCLUSIONS.keySet());
         assertEquals(expected, actual);
-        assertEquals(29, actual.size());
+        Set<String> expectedPaths = new HashSet<>();
+        expected.forEach(mapping -> expectedPaths.add(mapping.substring(mapping.indexOf(' ') + 1)));
+        assertEquals(expectedPaths.size(), doc.path("paths").size());
+        Files.writeString(Path.of("target/openapi-inventory-counts.txt"),
+                "operations=" + actual.size() + " paths=" + doc.path("paths").size()
+                + " schemas=" + doc.path("components").path("schemas").size()
+                + " tags=" + doc.path("tags").size());
     }
+    @Test
+    void guestAccountSummaryDocumentsOwnIdentityAndOptionalRealDataOnly() throws Exception {
+        var doc = document();
+        var op = operation(doc, "/api/v1/guest-auth/account/summary", "get");
+        assertEquals("Resumen de mi cuenta", op.path("summary").asText());
+        assertTrue(op.path("parameters").isMissingNode() || op.path("parameters").isEmpty());
+        assertFalse(op.has("requestBody"));
+        assertEquals("internal-bff", op.path("x-audience").asText());
+        assertTrue(op.path("security").get(0).has("guestBearerAuth"));
+        assertSuccessSchema(op, "200", "GuestAccountSummaryResponse");
+        assertTrue(op.path("responses").has("401"));
+        assertFalse(op.path("responses").has("404"));
+        assertTrue(op.path("responses").path("200").path("headers").has("Cache-Control"));
+        var schema = doc.path("components").path("schemas").path("GuestAccountSummaryResponse");
+        var fields = new HashSet<String>();
+        schema.path("properties").properties().forEach(p -> fields.add(p.getKey()));
+        assertEquals(Set.of("guestAccountId", "email", "active", "profiles", "linkedReservationsCount", "upcomingStay"), fields);
+        assertEquals("array", schema.path("properties").path("profiles").path("type").asText());
+        assertTrue(schema.path("properties").has("upcomingStay"));
+        var nullableStay = schema.path("properties").path("upcomingStay");
+        assertFalse(nullableStay.has("$ref"));
+        assertEquals(2, nullableStay.path("anyOf").size());
+        assertEquals("#/components/schemas/UpcomingStay", nullableStay.path("anyOf").get(0).path("$ref").asText());
+        assertEquals("null", nullableStay.path("anyOf").get(1).path("type").asText());
+        var profile = doc.path("components").path("schemas").path("Profile");
+        assertTrue(profile.path("properties").path("preferredLanguage").path("type").toString().contains("null"));
+    }
+
     @Test
     void securitySchemesAndEveryOperationAudienceMatchTheActualTransport() throws Exception {
         var doc = document();
@@ -80,9 +114,10 @@ class OpenApiContractIntegrationTests {
             var op = method.getValue();
             boolean staffAuth = route.startsWith("/api/v1/staff-auth/");
             boolean guestAuth = route.startsWith("/api/v1/guest-auth/");
-            assertEquals(staffAuth || guestAuth ? "internal-bff" : "staff", op.path("x-audience").asText());
+            boolean publicAvailability = route.equals("/api/v1/public/availability") && method.getKey().equals("get");
+            assertEquals(publicAvailability ? "public" : staffAuth || guestAuth ? "internal-bff" : "staff", op.path("x-audience").asText());
             boolean anonymous = route.endsWith("/google/start") || route.endsWith("/google/exchange")
-                    || route.equals("/api/v1/staff-auth/sessions");
+                    || route.equals("/api/v1/staff-auth/sessions") || route.equals("/api/v1/staff-auth/login") || publicAvailability;
             if (anonymous) assertTrue(op.path("security").isMissingNode() || op.path("security").isEmpty());
             else {
                 String scheme = route.endsWith("/refresh") ? (staffAuth ? "staffRefreshCookie" : "guestRefreshCookie")
@@ -92,6 +127,104 @@ class OpenApiContractIntegrationTests {
             }
             assertFalse(route.startsWith("/actuator") || route.equals("/error"));
         }));
+    }
+
+    @Test
+    void publicAvailabilityDocumentsExactAnonymousContractAndSwaggerLoads() throws Exception {
+        var doc = document();
+        var op = operation(doc, "/api/v1/public/availability", "get");
+        assertEquals("publicAvailability", op.path("operationId").asText());
+        assertEquals("availability", operation(doc, "/api/v1/properties/{propertyId}/availability", "get")
+                .path("operationId").asText());
+        assertEquals("public", op.path("x-audience").asText());
+        assertTrue(op.path("security").isArray());
+        assertEquals(0, op.path("security").size());
+        assertFalse(op.has("requestBody"));
+        assertEquals(Set.of("propertyId", "arrival", "departure", "rooms"), parameterNames(op));
+        for (var parameter : op.path("parameters")) {
+            assertEquals("query", parameter.path("in").asText());
+            assertTrue(parameter.path("required").asBoolean());
+        }
+        assertEquals("uuid", parameter(op, "propertyId").path("schema").path("format").asText());
+        for (String date : List.of("arrival", "departure")) {
+            assertEquals("date", parameter(op, date).path("schema").path("format").asText());
+        }
+        assertEquals("integer", parameter(op, "rooms").path("schema").path("type").asText());
+        assertEquals(1, parameter(op, "rooms").path("schema").path("minimum").asInt());
+        assertCodes(op, "200", "400", "404", "500");
+        assertSuccessSchema(op, "200", "PublicAvailabilityResponse");
+        for (String code : List.of("400", "404", "500")) {
+            assertEquals("#/components/schemas/ProblemDetail", op.path("responses").path(code)
+                    .path("content").path("application/problem+json").path("schema").path("$ref").asText());
+        }
+        var schemas = doc.path("components").path("schemas");
+        var expected = Map.of("PublicAvailabilityResponse", Set.of("propertyId", "arrival", "departure", "currency", "offers"),
+                "PublicAvailabilityOfferResponse", Set.of("roomTypeId", "roomTypeCode", "roomTypeName", "ratePlanId",
+                        "ratePlanCode", "availableUnits", "nightlyRateMinor", "totalMinor"));
+        expected.forEach((name, fields) -> {
+            var schema = schemas.path(name);
+            Set<String> actual = new HashSet<>();
+            schema.path("properties").properties().forEach(field -> actual.add(field.getKey()));
+            assertEquals(fields, actual);
+            assertEquals(fields, strings(schema.path("required")));
+        });
+        assertEquals("#/components/schemas/PublicAvailabilityOfferResponse", schemas.path("PublicAvailabilityResponse")
+                .path("properties").path("offers").path("items").path("$ref").asText());
+        assertEquals(Set.of("GTQ"), strings(schemas.path("PublicAvailabilityResponse").path("properties").path("currency").path("enum")));
+        for (String amount : List.of("nightlyRateMinor", "totalMinor")) {
+            var schema = schemas.path("PublicAvailabilityOfferResponse").path("properties").path(amount);
+            assertEquals("integer", schema.path("type").asText());
+            assertEquals("int64", schema.path("format").asText());
+        }
+        mvc.perform(get("/swagger-ui/index.html")).andExpect(status().isOk());
+        mvc.perform(get("/v3/api-docs/swagger-config")).andExpect(status().isOk());
+    }
+
+    @Test
+    void explicitAuthAliasesPreserveContractAndDeprecateOnlyHistoricalOperations() throws Exception {
+        var doc = document();
+        Set<String> deprecated = new TreeSet<>();
+        Set<String> ids = new HashSet<>();
+        doc.path("paths").properties().forEach(path -> path.getValue().properties().forEach(method -> {
+            var op = method.getValue();
+            if (op.path("deprecated").asBoolean()) deprecated.add(method.getKey() + " " + path.getKey());
+            assertFalse(op.path("operationId").asText().isBlank());
+            assertTrue(ids.add(op.path("operationId").asText()), "duplicate operationId");
+        }));
+        assertEquals(Set.of("post /api/v1/staff-auth/sessions", "get /api/v1/staff-auth/session",
+                "delete /api/v1/staff-auth/session", "get /api/v1/guest-auth/session", "delete /api/v1/guest-auth/session"), deprecated);
+        for (String prefix : List.of("/api/v1/staff-auth", "/api/v1/guest-auth")) {
+            for (var alias : List.of(List.of("/session", "get", "/me", "get", "Usuario actual"),
+                    List.of("/session", "delete", "/logout", "post", "Cerrar sesión"))) {
+                assertAlias(doc, prefix, alias);
+            }
+            var me = operation(doc, prefix + "/me", "get");
+            assertCodes(me, "200", "401");
+            assertSuccessSchema(me, "200", prefix.endsWith("staff-auth") ? "StaffSessionResponse" : "GuestSessionResponse");
+            assertCodes(operation(doc, prefix + "/logout", "post"), "204", "401");
+            assertEquals("Renovar sesión", operation(doc, prefix + "/refresh", "post").path("summary").asText());
+            assertFalse(doc.path("paths").path(prefix + "/logout").has("delete"));
+            assertFalse(doc.path("paths").path(prefix + "/session").has("post"));
+        }
+        assertAlias(doc, "/api/v1/staff-auth", List.of("/sessions", "post", "/login", "post", "Iniciar sesión"));
+        assertCodes(operation(doc, "/api/v1/staff-auth/login", "post"), "201", "400", "401");
+        assertSuccessSchema(operation(doc, "/api/v1/staff-auth/login", "post"), "201", "StaffAuthResponse");
+        assertTrue(operation(doc, "/api/v1/guest-auth/google/start", "post").path("summary").asText().startsWith("Iniciar sesión con Google"));
+        assertTrue(operation(doc, "/api/v1/guest-auth/google/exchange", "post").path("summary").asText().startsWith("Iniciar sesión con Google"));
+        assertFalse(doc.path("paths").has("/api/v1/guest-auth/login"));
+    }
+
+    private void assertAlias(JsonNode doc, String prefix, List<String> alias) {
+        var legacy = operation(doc, prefix + alias.get(0), alias.get(1));
+        var current = operation(doc, prefix + alias.get(2), alias.get(3));
+        assertTrue(legacy.path("deprecated").asBoolean());
+        assertFalse(current.path("deprecated").asBoolean());
+        assertTrue(legacy.path("description").asText().contains(alias.get(3).toUpperCase() + " " + prefix + alias.get(2)));
+        assertEquals(alias.get(4), legacy.path("summary").asText());
+        assertEquals(alias.get(4), current.path("summary").asText());
+        for (String field : List.of("responses", "requestBody", "parameters", "security", "x-audience")) {
+            assertEquals(legacy.path(field), current.path(field), prefix + " " + alias.get(2) + " " + field);
+        }
     }
 
     @Test

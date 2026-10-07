@@ -6,6 +6,7 @@ import { mockServer } from '@/data/mocks/server';
 import { resetAccountFixtures } from '@/data/mocks/account-fixtures';
 import { delay, http, HttpResponse } from 'msw';
 import { GuestReservationsPage } from './guest-reservations-page';
+import { ReservationLinkForm } from './reservation-link-form';
 const replace = vi.hoisted(() => vi.fn());
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace }) }));
 const clients: QueryClient[] = [];
@@ -85,9 +86,28 @@ describe('Guest reservation link demonstration', () => {
     expect(screen.queryByText(/vinculada/)).not.toBeInTheDocument(); expect(client.getQueryData(['staff', 'sentinel'])).toEqual({ active: true });
     expect(screen.queryByLabelText('Código de verificación')).not.toBeInTheDocument();
   });
-  it('offers Google for linking from an email demo session without exposing the link form', async () => {
-    mount('demo@example.com'); fireEvent.click(screen.getByRole('button', { name: 'Entrar al demo' }));
-    expect(await screen.findByRole('link', { name: 'Acceder con Google →' })).toHaveAttribute('href', '/acceso?returnTo=%2Fmis-reservas');
+  it('verifies ownership for email sessions instead of linking by reference alone', async () => {
+    mount('other@example.com'); fireEvent.click(screen.getByRole('button', { name: 'Entrar al demo' }));
+    await screen.findByLabelText('Referencia de reserva'); send(); await verify();
+    expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos verificar la reserva');
+    expect(screen.queryByText('Reserva HB-2026-10420 vinculada.')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'HB-2026-10420' })).not.toBeInTheDocument();
+  });
+});
+
+
+describe('Reservation link access for a real Guest session', () => {
+  it('shows an unavailable state without offering an unconnected form in real mode', async () => {
+    vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'false');
+    mockServer.use(http.get('*/api/auth/guest/session', () => HttpResponse.json({
+      guestAccountId: 'real-guest', sessionId: 'real-session', email: 'real@example.test', context: 'GUEST',
+    })));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    clients.push(client);
+    render(<QueryClientProvider client={client}><GuestSessionProvider><ReservationLinkForm /></GuestSessionProvider></QueryClientProvider>);
+    expect(await screen.findByRole('status')).toHaveTextContent('La vinculación no está disponible');
     expect(screen.queryByLabelText('Referencia de reserva')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Solicitar código de verificación' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/código de prueba|demostración/i)).not.toBeInTheDocument();
   });
 });

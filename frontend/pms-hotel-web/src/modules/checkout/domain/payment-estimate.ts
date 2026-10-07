@@ -13,5 +13,5 @@ export function paymentEstimate(items: ReturnType<typeof resolveSelection>, nigh
 }
 
 export function quoteFingerprint(items: ReturnType<typeof resolveSelection>, nights: number) {
-  return JSON.stringify([nights, items.map(item => [item.roomTypeId, item.ratePlanId, item.quantity, item.rate?.currency, item.rate?.totalAmount, item.rate?.priceBreakdown, item.rate?.cancellationPolicy, item.rate?.cancellationTerms]).sort()]);
+  return JSON.stringify([nights, items.map(item => [item.roomTypeId, item.room?.code, item.ratePlanId, item.quantity, item.rate?.currency, item.rate?.nightlyRateMinor, item.rate?.totalMinor, item.rate?.totalAmount, item.rate?.priceBreakdown, item.rate?.cancellationPolicy, item.rate?.cancellationTerms]).sort()]);
 }

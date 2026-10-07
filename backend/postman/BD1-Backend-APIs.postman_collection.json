@@ -15,6 +15,15 @@
     ]
   },
   "variable": [
+    {"key": "publicArrival", "value": "2026-11-01", "type": "string"},
+    {"key": "publicDeparture", "value": "2026-11-03", "type": "string"},
+    {"key": "publicRooms", "value": "1", "type": "string"},
+    {"key": "staffUsername", "value": "", "type": "string"},
+    {"key": "staffPassword", "value": "", "type": "string"},
+    {"key": "staffRefreshToken", "value": "", "type": "string"},
+    {"key": "guestRefreshToken", "value": "", "type": "string"},
+    {"key": "googleCode", "value": "", "type": "string"},
+    {"key": "googleState", "value": "", "type": "string"},
     {
       "key": "baseUrl",
       "value": "http://127.0.0.1:18080",
@@ -62,6 +71,781 @@
     }
   ],
   "item": [
+    {
+      "name": "Staff — Auth explícita y compatibilidad",
+      "description": "BE-005-AUTH-API-01. Completar staffUsername/staffPassword SOLO localmente. Tokens se guardan localmente para la secuencia; borrar credenciales/tokens antes de exportar. Cookie jar vacío para probar refresh ausente.",
+      "item": [
+        {
+          "name": "01 — Iniciar sesión explícita",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/staff-auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"{{staffUsername}}\",\"password\":\"{{staffPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));",
+                  "if (pm.response.code === 201) { const b = pm.response.json(); pm.test('Contrato tokens BFF', () => pm.expect(b).to.have.all.keys('accessToken','refreshToken','accessTokenExpiresInSeconds')); pm.collectionVariables.set('staffAccessToken', b.accessToken); pm.collectionVariables.set('staffRefreshToken', b.refreshToken); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 — Sesión legacy C2",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/staff-auth/session",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));",
+                  "if (pm.response.code === 200) pm.collectionVariables.set('_staffAliasView', JSON.stringify(pm.response.json()));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 — Usuario actual equivalente",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/staff-auth/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));",
+                  "if (pm.response.code === 200) { pm.test('C2 idéntico', () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.collectionVariables.get('_staffAliasView')))); pm.collectionVariables.unset('_staffAliasView'); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 — Renovar sesión (cookie Staff)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/staff-auth/refresh",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "pms_staff_refresh={{staffRefreshToken}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));",
+                  "if (pm.response.code === 200) { const b = pm.response.json(); pm.test('Contrato tokens BFF', () => pm.expect(b).to.have.all.keys('accessToken','refreshToken','accessTokenExpiresInSeconds')); pm.collectionVariables.set('staffAccessToken', b.accessToken); pm.collectionVariables.set('staffRefreshToken', b.refreshToken); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05 — Cerrar sesión explícita",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/staff-auth/logout",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', () => pm.response.to.have.status(204));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));",
+                  "pm.test('Sin cuerpo', () => pm.expect(pm.response.text()).to.be.empty);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06 — Me revocado",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/staff-auth/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "07 — Refresh revocado",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/staff-auth/refresh",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "pms_staff_refresh={{staffRefreshToken}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "08 — Login legacy conservado",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/staff-auth/sessions",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"{{staffUsername}}\",\"password\":\"{{staffPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));",
+                  "if (pm.response.code === 201) { const b = pm.response.json(); pm.test('Contrato tokens BFF', () => pm.expect(b).to.have.all.keys('accessToken','refreshToken','accessTokenExpiresInSeconds')); pm.collectionVariables.set('staffAccessToken', b.accessToken); pm.collectionVariables.set('staffRefreshToken', b.refreshToken); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "09 — Usuario actual desde login legacy",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/staff-auth/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "10 — Cerrar sesión legacy",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/staff-auth/session",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', () => pm.response.to.have.status(204));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));",
+                  "pm.test('Sin cuerpo', () => pm.expect(pm.response.text()).to.be.empty);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11 — Sesión legacy revocada",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/staff-auth/session",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "12 — Entrada inválida: error heredado del servidor",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/staff-auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"\",\"password\":\"\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401 por /error protegido (400 en MockMvc)', () => pm.response.to.have.status(401));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "13 — Me sin Bearer",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/staff-auth/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "14 — Logout sin Bearer",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/staff-auth/logout",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Guest — Google y Auth explícita",
+      "description": "Manual por etapas: Google start, abrir authorizationUrl, obtener code/state de callback válido y completar googleCode/googleState localmente para exchange. Alternativa: tokens de sesión Google BFF. Repetir Google antes del logout legacy. Sin login correo/contraseña. Ver guía QA 41.",
+      "item": [
+        {
+          "name": "01 — Google: iniciar autorización",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/guest-auth/google/start",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));",
+                  "if (pm.response.code === 200) pm.test('URL de autorización', () => pm.expect(pm.response.json().authorizationUrl).to.be.a('string')); "
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 — Google: completar intercambio",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/guest-auth/google/exchange",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"code\":\"{{googleCode}}\",\"state\":\"{{googleState}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));",
+                  "if (pm.response.code === 201) { const b = pm.response.json(); pm.test('Contrato tokens BFF', () => pm.expect(b).to.have.all.keys('accessToken','refreshToken','accessTokenExpiresInSeconds')); pm.collectionVariables.set('guestAccessToken', b.accessToken); pm.collectionVariables.set('guestRefreshToken', b.refreshToken); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 — Sesión Guest legacy",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/guest-auth/session",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{guestAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));",
+                  "if (pm.response.code === 200) pm.collectionVariables.set('_guestAliasView', JSON.stringify(pm.response.json()));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 — Usuario Guest actual equivalente",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/guest-auth/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{guestAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));",
+                  "if (pm.response.code === 200) { pm.test('Sesión Guest idéntica', () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.collectionVariables.get('_guestAliasView')))); pm.collectionVariables.unset('_guestAliasView'); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05 — Renovar sesión (cookie Guest)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/guest-auth/refresh",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "pms_guest_refresh={{guestRefreshToken}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));",
+                  "if (pm.response.code === 200) { const b = pm.response.json(); pm.test('Contrato tokens BFF', () => pm.expect(b).to.have.all.keys('accessToken','refreshToken','accessTokenExpiresInSeconds')); pm.collectionVariables.set('guestAccessToken', b.accessToken); pm.collectionVariables.set('guestRefreshToken', b.refreshToken); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06 — Cerrar sesión Guest explícita",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/guest-auth/logout",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{guestAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', () => pm.response.to.have.status(204));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));",
+                  "pm.test('Sin cuerpo', () => pm.expect(pm.response.text()).to.be.empty);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "07 — Me Guest revocado",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/guest-auth/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{guestAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));",
+                  "pm.collectionVariables.unset('guestAccessToken');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "08 — Refresh Guest revocado",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/guest-auth/refresh",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "pms_guest_refresh={{guestRefreshToken}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));",
+                  "pm.collectionVariables.unset('guestRefreshToken');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "09 — Logout legacy (tras otro login Google)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/guest-auth/session",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{guestAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', () => pm.response.to.have.status(204));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));",
+                  "pm.test('Sin cuerpo', () => pm.expect(pm.response.text()).to.be.empty);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "10 — Sesión Guest legacy revocada",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/guest-auth/session",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{guestAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11 — Me Guest sin Bearer",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/guest-auth/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "12 — Logout Guest sin Bearer",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/guest-auth/logout",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Backend no emite Set-Cookie', () => pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
     {
       "name": "Guest — vínculo de reserva histórica",
       "description": "Ejecutar en orden con JWT Guest vigente. El OTP llega al correo de la reserva; la API no lo devuelve.",
@@ -165,6 +949,33 @@
             "pm.test('No cache privado', () => { const cache = pm.response.headers.get('Cache-Control') || ''; pm.expect(cache).to.include('private'); pm.expect(cache).to.include('no-store'); });",
             "if (pm.response.code === 200) { const body = pm.response.json(); pm.test('Filas ordenadas', () => { const keys = body.rows.map(row => row.propertyId + '/' + row.stayDate); pm.expect(keys).to.eql([...keys].sort()); }); }"
           ]}}]
+        }
+      ]
+    },
+    {
+      "name": "Public Availability — A3",
+      "item": [
+        {
+          "name": "GET disponibilidad pública — sin credenciales",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/v1/public/availability?propertyId={{propertyId}}&arrival={{publicArrival}}&departure={{publicDeparture}}&rooms={{publicRooms}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) { const body = pm.response.json(); pm.test('DTO público GTQ', () => { pm.expect(body).to.have.all.keys('propertyId','arrival','departure','currency','offers'); pm.expect(body.currency).to.eql('GTQ'); pm.expect(body.propertyId).to.eql(pm.variables.get('propertyId')); pm.expect(body.offers).to.be.an('array'); body.offers.forEach(o => { pm.expect(o).to.have.all.keys('roomTypeId','roomTypeCode','roomTypeName','ratePlanId','ratePlanCode','availableUnits','nightlyRateMinor','totalMinor'); pm.expect(o.availableUnits).to.be.at.least(Number(pm.variables.get('publicRooms'))); pm.expect(o.ratePlanId).to.eql(o.ratePlanCode); }); }); }"
+                ]
+              }
+            }
+          ]
         }
       ]
     }

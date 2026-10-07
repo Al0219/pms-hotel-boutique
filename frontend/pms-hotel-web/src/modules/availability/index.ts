@@ -48,6 +48,9 @@ export {
 } from "./service/availability.service";
 
 export { usePublicAvailability } from "./hooks/use-public-availability";
+export { getPublicAvailability } from './service/public-availability-query';
+export type { PublicAvailabilityQueryDTO, PublicAvailabilityOfferDTO, PublicAvailabilityResponseDTO } from './dtos/public-availability.dto';
+export { mapPublicAvailabilityToDomain } from './mappers/public-availability.mapper';
 
 export {
   fetchAvailabilityMatrixDto,

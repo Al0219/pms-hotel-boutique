@@ -1,4 +1,4 @@
-import type { AccountSummaryDTO } from "@/modules/account/dtos/account.dto";
+import type { MockAccountSummaryDTO } from "@/modules/account/dtos/account.dto";
 import type { GuestReservationDTO } from "@/modules/account/dtos/guest-reservation.dto";
 import type { GuestInvoiceDTO } from "@/modules/account/dtos/invoice.dto";
 import type { GuestProfileDTO } from "@/modules/profile/dtos/profile.dto";
@@ -16,10 +16,10 @@ export interface AccountFixture {
   invoices: GuestInvoiceDTO[];
 }
 const accounts = new Map<string, AccountFixture>();
-export const demoAccountIds = ["guest-demo-01", "guest-demo-google", "guest-demo-empty", "guest-demo-data-error", "guest-demo-data-offline", "guest-demo-save-error"];
+export const demoAccountIds = ["guest-demo-01", "guest-demo-google", "guest-demo-register", "guest-demo-empty", "guest-demo-data-error", "guest-demo-data-offline", "guest-demo-save-error"];
 
 export function initializeAccountFixture(accountId: string, email: string): AccountFixture {
-  const empty = accountId === "guest-demo-empty" || accountId === 'guest-demo-google';
+  const empty = ['guest-demo-empty', 'guest-demo-google', 'guest-demo-register'].includes(accountId);
   const profileId = `profile-${accountId}`;
   const profile: GuestProfileDTO = { profile_id: profileId, first_name: "Alan", last_name: "Palacios", email, phone: "+502 5555 5555", country: "Guatemala", preferred_language: "Español",
     preferences: { bed_type: "King", room_vibe: "tranquila", floor_preference: "Piso alto · evitar zonas ruidosas", privacy_level: "SOLO CUENTA", revocable_consent: true } };
@@ -67,7 +67,7 @@ export function peekAccountFixture(id: string) { return accounts.get(id); }
 export function resetAccountFixtures() { accounts.clear(); resetReservationLinkFixtures(); }
 
 /** Summary derives from the same records as the detail screens. No reward/price engine. */
-export function summarizeAccount(data: AccountFixture): AccountSummaryDTO {
+export function summarizeAccount(data: AccountFixture): MockAccountSummaryDTO {
   const current = data.reservations.find(item => item.period === "CURRENT");
   const name = `${data.profile.first_name} ${data.profile.last_name}`;
   const eligible = data.promotions.filter(item => item.is_eligible);

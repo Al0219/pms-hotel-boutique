@@ -33,7 +33,7 @@ services:
       GOOGLE_REDIRECT_URI: ""
       RESEND_API_KEY: ""
       RESEND_FROM_EMAIL: ""
-    ports:
+    ports: !override
       - "127.0.0.1:18080:8080"
 
 volumes:

@@ -252,3 +252,17 @@ C1 autoriza implementar el modelo Staff, credenciales hasheadas, sesión Staff,
 JWT interno, refresh token opaco rotativo, logout y bootstrap de `SUPER_ADMIN`.
 No autoriza OAuth Google, sesión Guest, vinculación de reservas ni property
 scope operativo; esos alcances permanecen en BE-004 y BE-003.
+
+## Addendum BE-005-AUTH-API-01 — rutas explícitas compatibles
+
+Implementación autorizada por el usuario el 2026-10-05; entrega EN_QA hasta QA
+manual PASS. [Incremento y evidencia](40_EXPLICIT_AUTH_ENDPOINTS_INCREMENT.md),
+[QA específica](41_EXPLICIT_AUTH_ENDPOINTS_QA.md).
+
+Staff agrega POST `/api/v1/staff-auth/login` (201, mismo StaffLoginRequest y
+StaffAuthResponse), POST `/api/v1/staff-auth/logout` (Bearer Staff, 204 sin cuerpo)
+y GET `/api/v1/staff-auth/me` (Bearer Staff, sesión C2 actual). Reutilizan los
+handlers existentes; POST sessions y GET/DELETE session permanecen compatibles,
+con `deprecated` exclusivamente en OpenAPI y sin fecha de retirada. Refresh
+permanece en POST refresh con cookie pms_staff_refresh. No cambia identidad,
+JWT, refresh, auditoría, permisos ni semántica de sesión; no modifica el BFF.

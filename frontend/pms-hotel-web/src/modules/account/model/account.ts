@@ -1,3 +1,31 @@
+export interface RealAccountProfile {
+  id: string;
+  firstName: string;
+  lastName: string;
+  preferredLanguage: string | null;
+  status: "ACTIVE" | "INACTIVE";
+}
+
+export interface RealAccountSummary {
+  source: "real";
+  accountId: string;
+  email: string;
+  isActive: boolean;
+  profiles: RealAccountProfile[];
+  /** A single linked profile only; no arbitrary primary profile when there are N. */
+  profileId: string | null;
+  linkedReservationsCount: number;
+  upcomingStay: {
+    reservationId: string;
+    stayId: string;
+    confirmationCode: string;
+    arrival: string;
+    departure: string;
+  } | null;
+}
+
+export type AccountSummary = RealAccountSummary | MockAccountSummary;
+
 export interface UpcomingStaySummary {
   reservationCode: string;
   roomsCount: number;
@@ -36,7 +64,8 @@ export interface PromotionsSummary {
   description: string;
 }
 
-export interface AccountSummary {
+export interface MockAccountSummary {
+  source: "mock";
   accountId: string;
   profileId: string | null;
   guestName: string;

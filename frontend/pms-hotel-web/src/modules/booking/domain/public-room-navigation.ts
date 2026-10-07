@@ -1,4 +1,11 @@
-import type { BookingSearchCriteria } from './booking-search-criteria';
+import { buildSearchQueryParams, validateBookingSearchCriteria, type BookingSearchCriteria } from './booking-search-criteria';
+
+/** Header navigation uses the Home catalogue and only accepted, valid criteria. */
+export function publicHomeCatalogueHref(criteria: Partial<BookingSearchCriteria>): string {
+  return Object.keys(validateBookingSearchCriteria(criteria)).length
+    ? '/#habitaciones'
+    : `/?${buildSearchQueryParams(criteria as BookingSearchCriteria)}#habitaciones`;
+}
 
 /** Keep supplied criteria, including invalid ones, editable instead of replacing them. */
 export function publicResultsHref(criteria: Partial<BookingSearchCriteria>): string {
