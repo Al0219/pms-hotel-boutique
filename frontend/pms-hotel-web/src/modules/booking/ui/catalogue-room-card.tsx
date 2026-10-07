@@ -25,7 +25,7 @@ export function CatalogueRoomCard({ room, rate, nights, selected, currency, deta
   return <article className={styles.card} aria-label={room.name}>
     <CatalogueRoomImage room={room} />
     <div className={styles.cardBody}><h3>{room.name}</h3>
-      <p className={styles.features}>{room.maxOccupancy} huéspedes{room.bedDescription && ` · ${room.bedDescription}`}{room.areaSquareMeters && ` · ${room.areaSquareMeters} m²`}</p>
+      <p className={styles.features}>{room.maxOccupancy === null ? 'Capacidad por confirmar' : `${room.maxOccupancy} huéspedes`}{room.bedDescription && ` · ${room.bedDescription}`}{room.areaSquareMeters && ` · ${room.areaSquareMeters} m²`}</p>
       <div className={styles.amenities}>{room.amenities?.map(amenity => <span key={amenity}>{amenity}</span>)}{rate.mealsIncluded && <span>{rate.mealsIncluded}</span>}</div>
       <p className={styles.small}>{room.availableRoomsCount} {room.availableRoomsCount === 1 ? 'habitación disponible' : 'habitaciones disponibles'} para estas fechas</p>
       {room.ratePlans.length > 1 && <label className={styles.rateLabel}>Tarifa de {room.name}<select value={rate.ratePlanId} onChange={event => onRateChange(event.target.value)}>

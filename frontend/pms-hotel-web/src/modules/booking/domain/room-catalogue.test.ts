@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { mapAvailabilityResponseToDomain } from "@/modules/availability";
 import { publicCatalogueFixture } from "@/data/mocks/public-catalogue";
-import { catalogueOptions, clearCatalogueFilters, resolveSelection, selectionTotals } from "./room-catalogue";
+import { catalogueOptions, changeSelectionQuantity, clearCatalogueFilters, roomSelection, resolveSelection, selectionTotals } from "./room-catalogue";
 
 const rooms = mapAvailabilityResponseToDomain(publicCatalogueFixture).roomTypes;
 describe("Room catalogue rules", () => {
@@ -43,4 +43,28 @@ describe("Room catalogue rules", () => {
     const selection = [usd, eur].map(room => ({ roomTypeId: room.roomTypeId, ratePlanId: room.ratePlans[0].ratePlanId, quantity: 1 }));
     expect(selectionTotals(resolveSelection(selection, [usd, eur]))).toEqual([{ currency: "USD", amount: .1 }, { currency: "EUR", amount: .2 }]);
   });
+});
+
+describe('Real catalogue presentation and quantities', () => {
+  it('filters exact codes and minor prices, sorts and preserves source', () => {
+    const real = rooms.slice(0, 3).map((room, index) => ({ ...room, code: ['STD', 'DLX', 'SUITE'][index], ratePlans: [{ ...room.ratePlans[0], nightlyRateMinor: [65000, 85000, 120000][index], baseNightlyRate: [650, 850, 1200][index], currency: 'GTQ' }] }));
+    const snapshot = structuredClone(real);
+    expect(catalogueOptions(real, {}, { ...clearCatalogueFilters(), codes: ['STD'], maxNightlyMinor: 65000 }, 'price-asc').map(value => value.room.code)).toEqual(['STD']);
+    expect(catalogueOptions(real, {}, { ...clearCatalogueFilters(), maxNightlyMinor: 64999 }, 'name')).toEqual([]);
+    expect(catalogueOptions(real, {}, clearCatalogueFilters(), 'price-desc').map(value => value.room.code)).toEqual(['SUITE', 'DLX', 'STD']);
+    expect(catalogueOptions(real, {}, clearCatalogueFilters(), 'name').map(value => value.room.name)).toEqual(['Deluxe King', 'Doble Superior', 'Suite Terraza']);
+    expect(real).toEqual(snapshot);
+  });
+});
+
+
+it('keeps quantities within ATS, removes zero and retains authoritative IDs and quote', () => {
+  const room = { ...rooms[0], roomTypeId: '6d681515-3e7f-4bfe-89ab-05e002d9d23b', availableRoomsCount: 2, code: 'DLX' };
+  const rate = { ...room.ratePlans[0], ratePlanId: 'DEMO_DELUXE', ratePlanCode: 'DEMO_DELUXE', currency: 'GTQ', nightlyRateMinor: 85000, totalMinor: 170000 };
+  const selection = [roomSelection(room, rate)];
+  const twice = changeSelectionQuantity(selection, [room], room.roomTypeId, 2);
+  expect(twice).toEqual([{ roomTypeId: room.roomTypeId, roomTypeCode: 'DLX', roomTypeName: room.name, availableUnits: 2, ratePlanId: 'DEMO_DELUXE', ratePlanCode: 'DEMO_DELUXE', quantity: 2, currency: 'GTQ', nightlyRateMinor: 85000, totalMinor: 170000 }]);
+  for (const value of [-1, 3, 1.5, NaN]) expect(changeSelectionQuantity(twice, [room], room.roomTypeId, value)).toBe(twice);
+  expect(changeSelectionQuantity(twice, [room], room.roomTypeId, 1)[0].quantity).toBe(1);
+  expect(changeSelectionQuantity(selection, [room], room.roomTypeId, 0)).toEqual([]);
 });

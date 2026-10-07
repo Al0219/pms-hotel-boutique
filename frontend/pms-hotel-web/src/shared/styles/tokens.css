@@ -1,4 +1,6 @@
 :root {
+  --public-container-max: 1440px;
+  --public-container-gutter: clamp(16px, 2.2vw, 32px);
   --pms-color-sage-700: #586456;
   --pms-color-sage-600: #6B7868;
   --pms-color-sage-500: #7C8B78;

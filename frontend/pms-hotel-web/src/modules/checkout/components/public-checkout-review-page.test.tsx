@@ -26,7 +26,7 @@ async function prepared(multiple = false, requests = '') {
   const view = mount(); fireEvent.click(await screen.findByRole('button', { name: 'Seleccionar habitación' }));
   if (multiple) { view.rerender(<PublicRoomDetailPage roomTypeId="rt_double_superior" initialCriteria={criteria}/>); fireEvent.click(await screen.findByRole('button', { name: 'Seleccionar habitación' })); }
   view.rerender(<PublicGuestDataPage initialCriteria={criteria}/>); await screen.findByLabelText('Nombre *');
-  for (const [label, value] of [['Nombre *','Carlos'],['Apellidos *','Mendoza'],['Correo electrónico *','guest@example.com'],['Teléfono *','5555 5555'],['Solicitudes especiales',requests]]) fireEvent.change(screen.getByLabelText(label), { target: { value } });
+  for (const [label, value] of [['Nombre *','Carlos'],['Apellidos *','Mendoza'],['Correo electrónico *','guest@example.com'],['Teléfono *','55555555'],['Documento de identificación *','DOC-DEMO'],['Solicitudes especiales',requests]]) fireEvent.change(screen.getByLabelText(label), { target: { value } });
   fireEvent.submit(screen.getByLabelText('Nombre *').closest('form')!); await waitFor(() => expect(push).toHaveBeenCalledWith(expect.stringContaining('/checkout/revision?'))); push.mockClear();
   view.rerender(<PublicCheckoutReviewPage initialCriteria={criteria}/>); await screen.findByRole('button', { name: /Continuar al pago/ }); return view;
 }
@@ -41,7 +41,7 @@ describe('Final checkout review', () => {
     expect(screen.getByText(/3 noches · 2 huéspedes · 1 habitación/)).toBeInTheDocument();
     const total = screen.getByRole('complementary'); for (const amount of ['Q 3,323.99','Q 168.11','Q 366.79','Q 3,858.89']) expect(total).toHaveTextContent(amount);
     fireEvent.click(screen.getByRole('button', { name: /Continuar al pago/ })); expect(push).toHaveBeenCalledWith('/reserva/checkout/pago?checkIn=2026-10-10&checkOut=2026-10-13&adults=2&children=0&roomsCount=1');
-    expect(writes).not.toHaveBeenCalled(); expect(localStorage.length).toBe(0); expect(sessionStorage.length).toBe(0);
+    expect(writes).not.toHaveBeenCalled(); expect(localStorage.length).toBe(0); expect(JSON.stringify(sessionStorage.getItem('pms:public-cart:v1:real') ?? sessionStorage.getItem('pms:public-cart:v1:mock'))).not.toMatch(/guest@example|Carlos|DOC-DEMO/);
   });
   it('keeps search and input values through editing and prevents bypassing review', async () => {
     const view = await prepared();

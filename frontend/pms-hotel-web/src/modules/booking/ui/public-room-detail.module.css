@@ -1,4 +1,4 @@
-.page { max-width: 1240px; padding: 32px 40px 100px; margin: auto; color: #2e3531; }
+.page { max-width: var(--public-container-max); padding: 32px 40px 100px; margin: auto; color: #2e3531; }
 .topBar { display: flex; align-items: start; justify-content: space-between; gap: 24px; margin-bottom: 38px; }
 .back { color: #5a6b5d; font-size: 13px; text-decoration: none; padding-block: 12px; white-space: nowrap; }
 .back:hover { text-decoration: underline; }
@@ -12,7 +12,7 @@
 .activeSlide { opacity: 1; }
 .slide img { object-fit: cover; }
 .photoFallback { height: 100%; display: grid; place-items: center; font-family: var(--font-family-display); color: #5a6b5d; font-size: 22px; background: #dbe2d5; }
-.photoArrow { position: absolute; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; border-radius: 50%; border: 0; background: #fffffff0; color: #38473b; font-size: 21px; cursor: pointer; opacity: .8; transition: opacity .3s, background .3s; box-shadow: 0 2px 12px #2e35311a; }
+.photoArrow { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; border: 0; background: #fffffff0; color: #38473b; font-size: 21px; cursor: pointer; opacity: .8; transition: opacity .3s, background .3s; box-shadow: 0 2px 12px #2e35311a; }
 .heroPhoto:hover .photoArrow, .heroPhoto:focus-within .photoArrow { opacity: 1; }
 .previous { left: 18px; } .next { right: 18px; }
 .photoCounter { position: absolute; bottom: 18px; right: 18px; font-size: 11px; color: white; background: #2e35318c; padding: 6px 12px; border-radius: 20px; }

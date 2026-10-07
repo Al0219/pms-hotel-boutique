@@ -7,6 +7,7 @@ export { MyReservationsPage } from "./components/my-reservations-page";
 export { PublicSearchForm } from './ui/public-search-form';
 export { PublicBookingHome } from './ui/public-booking-home';
 export { PublicBookingShell } from './ui/public-booking-shell';
+export { PublicGlobalCart } from './ui/public-global-cart';
 export { PublicAvailabilityPage } from './ui/public-availability-page';
 export { PublicBookingProvider } from './components/public-booking-provider';
 export { PublicRoomDetailPage } from './ui/public-room-detail-page';
@@ -36,3 +37,5 @@ export type {
   BookingSearchCriteria,
   BookingSearchValidationErrors,
 } from './domain/booking-search-criteria';
+
+export { usePublicSearchCriteria } from './components/public-booking-provider';
