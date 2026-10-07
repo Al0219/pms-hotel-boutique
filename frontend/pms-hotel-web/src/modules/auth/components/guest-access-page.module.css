@@ -99,6 +99,7 @@
 .socialOptions { display: grid; gap: 10px; }
 .authCard .google { border-color: #d9dfd8; border-radius: 12px; min-height: 48px; font-size: 13px; gap: 12px; margin: 0; }
 .authCard .google svg { flex-shrink: 0; }
+.authCard .google[aria-disabled="true"] { cursor: wait; opacity: .65; }
 .authCard .welcome { font-size: 13px; line-height: 1.7; margin-bottom: 22px; }
 .divider { display: flex; align-items: center; gap: 14px; color: #657068; font-size: 11px; margin-block: 24px; }
 .divider::before, .divider::after { content: ''; height: 1px; flex: 1; background: #e4e8e3; }

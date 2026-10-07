@@ -1,5 +1,12 @@
 # 13 — Auth and Sessions
 
+Actualización de presentación autorizada por José (2026-10-07), acordada con BD1:
+se recuperan las pestañas de login/registro y el diseño Public 02 en `/acceso`.
+Login real, Google BFF, sesiones, cookies, permisos y retornos permanecen intactos.
+BD1 implementará el registro de clientes; su formulario aún no tiene transporte ni
+crea identidades ficticias. Recuperación y registro pendientes se comunican al usuario.
+[Alcance y punto de integración](49_PUBLIC_02_IDENTITY_ACCESS.md).
+
 Decisión aprobada AUTH-UNIFIED-01 (2026-10-06): `/acceso` es la única pantalla de
 login, con correo electrónico y contraseña universal, Google exclusivamente Guest
  y continuar como invitado. No selector de tipo de cuenta antes de validar password.
