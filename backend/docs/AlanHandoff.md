@@ -1,5 +1,82 @@
 # AlanHandoff — Seguimiento Backend
 
+## Juan / J6 — A4 confirmado con Alan; preparación de commit (2026-10-07)
+
+- **Decisión explícita:** usuario mantiene A4 con Alan. J6 se entrega con
+  integración pendiente; no modificar SecurityConfiguration, configuración
+  OpenAPI global ni OpenApiContractIntegrationTests. QA manual sigue pendiente;
+  J3/J1/J2/J5/J4/J6 conservan EN_QA, sin declarar COMPLETADA.
+- **Rama / alcance:** feature/backend-public-booking-core, base `738d428`.
+  Preparar commit independiente `feat(public-booking): expose public booking endpoint`
+  con solo los ocho archivos autorizados J6: controller/advice, metadata de
+  Request/View, tests HTTP/OpenAPI y entradas propias de plan/handoff. Preservar
+  los cuatro documentos untracked ajenos y el historial de Alan.
+- **Evidencia vigente:** código sin cambios desde QA: focalizados61 PASS,
+  verify766 con765 PASS/1 failure global de audiencia/0 errors/skipped;
+  package separado PASS y JAR generado; Java21.0.9/Maven3.9.11/PostgreSQL17.11.
+  diff --check/alcance revisados. No reejecutar suite por esta decisión documental.
+- **Entrega a A4:** abrir solo matcher POST booking y cerrar audiencia/paridad
+  global. Al habilitarlo, actualizar la prueba J6 que documenta el401 actual y
+  habilitar filtros en PublicBookingHttpIntegrationTests para acreditar HTTP
+  anónimo con seguridad real. Revalidar verify, Swagger, vecinos Staff protegidos
+  y QA integral/manual. PR138 ya MERGED; no crear otro PR sin nueva instrucción.
+- **Siguiente:** reportar hash del commit parcial y resultado integral FAIL;
+  pedir autorización de push exclusivamente a la rama actual y detenerse.
+
+## Juan / J6 — endpoint HTTP: entrega parcial EN_QA (2026-10-07)
+
+- **Estado / rama:** EN_QA, Juan / BD3; feature/backend-public-booking-core,
+  base `738d428`; código J6 implementado, integración A4 y QA manual pendientes.
+  Sin commit/push. Cuatro untracked ajenos preservados; historial previo intacto.
+- **Entregado:** POST exclusivo, header obligatorio, HTTP201 para creación/replay,
+  DTOs existentes sin campos nuevos, solo SIMULATED_CARD; advice exclusivo con
+  códigos 400/404/409/422/500 aprobados y mensajes sanitizados. Delegación J4 y
+  snapshot persistida; metadata Swagger local, sin configuración global ajena.
+- **Pruebas propias:** mvn -B --no-transfer-progress
+  -Dtest=PublicBookingHttpIntegrationTests,PublicBookingOpenApiIntegrationTests test:
+  61 PASS, 0 failures/errors/skipped (56 HTTP/PG y 5 OpenAPI/seguridad). HTTP/PG
+  usa addFilters=false exclusivamente en su contexto: no acredita POST anónimo
+  productivo. Prueba separada con filtros confirma el 401 actual y vecinos protegidos.
+- **Verify integral:** mvn -B --no-transfer-progress verify: 766 tests,
+  765 PASS, 1 failure, 0 errors/skipped, BUILD FAILURE. Única falla:
+  OpenApiContractIntegrationTests.securitySchemesAndEveryOperationAudienceMatchTheActualTransport,
+  línea118: expected staff / actual public para booking. Paridad paths/mappings
+  y pruebas restantes PASS. No editar ni excluir prueba global asignada a A4.
+- **Compilación / evidencia:** mvn -B --no-transfer-progress -DskipTests package
+  PASS, JAR generado; solo comprobación separada de compilación/empaquetado,
+  verify sigue FAIL. Java21.0.9/Maven3.9.11/PostgreSQL17.11, Compose J6 aislado sin
+  puertos. Logs focalizados/verify/package, surefire-reports J6 y OpenAPI generado
+  conservados en target ignorado. diff --check y alcance PASS.
+- **Validaciones:** IDs/fechas reales, un padre y cantidad exacta de stays con
+  roomId NULL, SIMULATED/APPROVED/reference sintética y snapshot PostgreSQL;
+  requests/keys y campos de tarjeta rechazados, precio/stock/pago/404/config,
+  replay/payload alterado, no duplicados, rollback tras flush y concurrencia HTTP
+  PASS. Primera pasada falló solo una aserción propia de schema: corregida para
+  admitir exclusiveMinimum=0 (quantity > 0 en OAS3.1), sin cambiar validación J3.
+- **Bloqueo / decisión:** DOCX A4 reserva matcher anónimo y paridad global a Alan.
+  J6 local declara public; matcher vigente devuelve401 y assertion global asume
+  staff. Usuario debe decidir A4 por Alan o excepción mínima explícita para
+  SecurityConfiguration y prueba global. Detener integración; no atribuir QA manual
+  PASS ni cerrar DoD/COMPLETADA. PR138 MERGED; ningún PR adicional creado.
+
+## Juan / J6 — endpoint HTTP: inicio (2026-10-07)
+
+- **Estado / rama:** EN_PROGRESO, Juan / BD3; feature/backend-public-booking-core,
+  base `738d428`; sin cambios rastreados iniciales, cuatro untracked ajenos intactos.
+- **Autorización / contrato:** usuario autorizó J6 y aprobó explícitamente 201
+  para creación/replay y 500 para BOOKING_FAILED. DOCX mantiene los demás DTOs y
+  códigos. J3/J1/J2/J5/J4 siguen EN_QA; no atribuir QA manual PASS.
+- **Alcance:** POST booking, header obligatorio, DTOs existentes/SIMULATED_CARD,
+  delegación PublicBookingService, advice sanitizado exclusivo y Swagger local;
+  pruebas propias HTTP/PostgreSQL/OpenAPI. Sin contratos nuevos, migraciones,
+  dependencias, cambios legacy ni Security/OpenAPI global de Alan.
+- **Dependencia / límite:** DOCX A4 asigna a Alan matcher público y paridad global.
+  POST actualmente requiere autenticación; assertion global OpenAPI solo reconoce
+  availability pública. No ocultar ese gap ni presentar tests sin filtros como
+  acceso anónimo productivo. PR #138 MERGED (`6223196` en main remoto); no PR nuevo.
+- **Siguiente:** validar J6 con Java21/PostgreSQL17 y reportar evidencia/limitaciones;
+  resolver A4 con su owner si impide verify o QA HTTP integral. Sin push automático.
+
 ## AUTH-UNIFIED-01 — Cierre COMPLETADA (2026-10-06)
 
 - **Estado final:** EN_QA → COMPLETADA. Alan confirmó QA manual PASS en

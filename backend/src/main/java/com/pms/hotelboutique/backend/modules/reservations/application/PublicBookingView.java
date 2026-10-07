@@ -2,6 +2,7 @@ package com.pms.hotelboutique.backend.modules.reservations.application;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
@@ -9,8 +10,10 @@ import java.util.UUID;
 
 /** The approved response snapshot, with no Guest, scope or card metadata. */
 @JsonInclude(JsonInclude.Include.ALWAYS)
-public record PublicBookingView(UUID reservationId, String confirmationCode, String status,
-        String currency, long totalMinor, PaymentView payment, List<StayView> stays) {
+@Schema(name = "PublicBookingResponse", requiredProperties = {"reservationId", "confirmationCode", "status", "currency", "totalMinor", "payment", "stays"})
+public record PublicBookingView(UUID reservationId, String confirmationCode,
+        @Schema(allowableValues = "CONFIRMED") String status,
+        @Schema(allowableValues = "GTQ") String currency, long totalMinor, PaymentView payment, List<StayView> stays) {
     public PublicBookingView {
         Objects.requireNonNull(reservationId, "reservation identity is required");
         if (confirmationCode == null || confirmationCode.isBlank()
@@ -23,7 +26,9 @@ public record PublicBookingView(UUID reservationId, String confirmationCode, Str
     }
 
     @JsonInclude(JsonInclude.Include.ALWAYS)
-    public record PaymentView(String provider, String status, String reference) {
+    @Schema(name = "PublicBookingPaymentResponse", requiredProperties = {"provider", "status", "reference"})
+    public record PaymentView(@Schema(allowableValues = "SIMULATED") String provider,
+            @Schema(allowableValues = "APPROVED") String status, String reference) {
         public PaymentView {
             if (!"SIMULATED".equals(provider) || !"APPROVED".equals(status)
                     || reference == null || reference.isBlank()) {
@@ -33,7 +38,9 @@ public record PublicBookingView(UUID reservationId, String confirmationCode, Str
     }
 
     @JsonInclude(JsonInclude.Include.ALWAYS)
-    public record StayView(UUID reservationStayId, UUID roomTypeId, UUID roomId,
+    @Schema(name = "PublicBookingStayResponse", requiredProperties = {"reservationStayId", "roomTypeId", "roomId", "arrival", "departure"})
+    public record StayView(UUID reservationStayId, UUID roomTypeId,
+            @Schema(types = {"string", "null"}, format = "uuid", description = "Always null in this phase; no physical room assigned") UUID roomId,
             @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "uuuu-MM-dd") LocalDate arrival,
             @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "uuuu-MM-dd") LocalDate departure) {
         public StayView {

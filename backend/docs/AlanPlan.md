@@ -6,6 +6,61 @@ Este archivo conserva el trabajo de Alan (BD1) y el seguimiento de BD2. Sustituy
 del XLSX para tareas Backend. Los mocks y DTOs de Web o Android no son contratos
 Backend confirmados.
 
+## Reserva pública — Juan / J6: endpoint HTTP de booking
+
+- **Estado:** READY → EN_PROGRESO → EN_QA; integración A4 y QA manual pendientes.
+  Juan / BD3, rama
+  `feature/backend-public-booking-core`, base `738d428`. Usuario autorizó iniciar
+  J6 y aprobó HTTP 201 tanto en creación como replay, y BOOKING_FAILED → 500
+  (sin 503 en esta fase), el 2026-10-07. J3/J1/J2/J5/J4 siguen EN_QA sin QA manual PASS.
+- **Contrato / alcance:** DOCX, secciones DTO/error/J6; POST exclusivo
+  `/api/v1/public/bookings`, Idempotency-Key obligatorio, SIMULATED_CARD y DTOs
+  existentes. Delegar en PublicBookingService; INVALID_REQUEST/INVALID_DATE_RANGE
+  400, PROPERTY_NOT_FOUND 404, NO_AVAILABILITY/PRICE_CHANGED/IDEMPOTENCY_KEY_REUSED
+  409, PAYMENT_DECLINED 422 y BOOKING_FAILED 500. Errores sin datos del request.
+- **Archivos / límites:** controller/advice propios, metadata local de schemas y
+  pruebas HTTP/PostgreSQL/OpenAPI J6; estas entradas propias, historial preservado.
+  Sin migración, dependencia, cambio J1/J4/legacy o configuración global ajena.
+  Cuatro documentos untracked ajenos intactos. PR #138 ya MERGED; main remoto
+  `6223196`, origin/main local `d71c5a9`; no fetch/merge ni PR adicional.
+- **Dependencia A4:** DOCX asigna a Alan abrir el matcher anónimo de booking y
+  cerrar paridad global. Security actual mantiene POST autenticado; prueba global
+  OpenAPI solo clasifica availability como pública. No editar esos archivos.
+  Tests del controlador sin filtros se identificarán como tales; no equivalen a
+  HTTP público operativo. Registrar cualquier fallo de verify sin ocultarlo.
+- **DoD / siguiente:** requests/keys inválidos, IDs y snapshot persistidos,
+  precio/pago/stock/replay/conflicto, no duplicados, rollback/concurrencia PG,
+  Swagger local y rutas protegidas; verify Java21/PostgreSQL17, diff/alcance.
+  Cierre integral depende de A4; EN_QA hasta confirmación manual PASS. Entrega
+  parcial en commit exclusivo J6 con el fallo global declarado; push solo con
+  autorización posterior. No presentar el commit como cierre del DoD integral.
+- **Entrega / evidencia:** controller POST y advice exclusivo, DTOs existentes
+  con cambios únicamente de metadata Swagger. Focalizados J6: 61 PASS (56 HTTP/PG
+  con filtros desactivados solo en ese contexto y 5 OpenAPI/seguridad real).
+  Incluyen campos desconocidos/tarjeta, fechas/keys/tipos numéricos inválidos,
+  404/409/422/500, replay original aun con Property/catálogo alterados, snapshot
+  PostgreSQL, no duplicados, rollback tardío y dos requests HTTP concurrentes.
+- **Suite integral:** `mvn -B --no-transfer-progress verify`: 766 ejecutadas,
+  765 PASS, 1 failure, 0 errors/skipped; BUILD FAILURE. Único fallo en
+  OpenApiContractIntegrationTests.java:118, audiencia esperada staff frente a
+  public de booking. No excluir/alterar la prueba ajena. Regresiones J1/J2/J3/J4/J5,
+  pricing/inventario/rollback/concurrencia y restantes pruebas PASS.
+- **Compilación / entorno:** `mvn -B --no-transfer-progress -DskipTests package`
+  PASS y JAR generado; comprobación separada, no sustituye verify fallido.
+  Maven3.9.11/Java21.0.9/PostgreSQL17.11, Compose aislado pms-public-j6-qa sin puertos.
+  Logs `target/public-booking-j6-focused-final.log`, `public-booking-j6-verify.log`
+  y `public-booking-j6-package.log`; reportes y OpenAPI generado J6 en target.
+  Diff --check/alcance PASS; contenido previo de Alan intacto. Primera ejecución
+  corrigió solo una aserción nueva: quantity > 0 usa exclusiveMinimum=0 en OAS3.1.
+- **Bloqueo / siguiente:** matcher de POST sigue autenticado (401 anónimo) y
+  paridad global pendiente de A4. Usuario confirmó explícitamente mantener A4
+  con Alan (2026-10-07); no hay autorización para editar Security/configuración
+  OpenAPI global/prueba global. Preparar commit independiente
+  `feat(public-booking): expose public booking endpoint` con entrega parcial EN_QA
+  y verificar su alcance; detenerse para autorización de push. Alan debe completar
+  A4 y revalidar HTTP anónimo/paridad/verify; después QA manual PASS por el usuario.
+  No declarar DoD integral PASS ni COMPLETADA.
+
 ## AUTH-UNIFIED-01 — Login universal y puerto canónico
 
 - **Estado:** COMPLETADA; implementación y QA técnico PASS. Alan confirmó QA
