@@ -31,6 +31,77 @@ se documenta su ejecución manual en la guía QA de la tarea.
 | Sesiones | Guest y Staff son contextos separados. |
 | Scope | `ALL_PROPERTIES` es el conjunto autorizado de la sesión. |
 
+## Reserva pública — Juan / J5: mapeo a GuestProfile y ReservationStay
+
+- **Estado:** READY → EN_PROGRESO → EN_QA. Owner Juan / BD3; rama
+  `feature/backend-public-booking-core`, base `ab411f4` publicada y sincronizada.
+  Usuario autorizó J5 y aprobó las tres precisiones contractuales (2026-10-07).
+  J3/J1/J2 tienen validación técnica PASS y siguen EN_QA sin atribuir QA manual.
+- **DoR / dependencias:** contrato DOCX aprobado, sección J5 y DTO público;
+  GuestProfile/ReservationBookingService/InventoryAdmissionPort existentes.
+  Continuación en la rama de Juan requerida por usuario/DOCX. Árbol inicial sin
+  cambios rastreados; cuatro documentos untracked ajenos preservados.
+- **Decisiones aprobadas:** reutilizar solo exactamente un GuestProfile ACTIVE,
+  de la misma Property, guest_account_id NULL y firstName/lastName/email idénticos.
+  Buscar sin trim, case-fold ni normalización Unicode. Cero o varias coincidencias
+  crean un perfil nuevo; no modificar, reactivar ni vincular perfiles existentes.
+  Perfiles sin Property, de otra Property, INACTIVE o vinculados a GuestAccount
+  quedan excluidos. sourceChannel WEB_DIRECTA; sourceReference NULL y notes NULL.
+- **Normalización existente resuelta:** mapper/request/hash conservan campos
+  originales. Usuario aprobó mantener trim legacy únicamente al persistir mediante
+  GuestProfileService/GuestProfile actuales. No modificar esos servicios/entidades
+  ni J3; valores distintos siguen produciendo hashes distintos.
+- **Diseño / alcance:** PublicBookingMappingService read-only prepara un único
+  CreateBookingCommand. Lookup JDBC de UUIDs con Property explícita, COLLATE C para
+  identidad exacta y LIMIT 2 para distinguir candidato único/ambiguo. Consultar
+  RoomTypes reales de la Property sin usar/modificar repositorios Staff de Alan.
+  Perfil nuevo inline: solo Property, firstName, lastName y email; account, teléfono,
+  documento y preferencias NULL. Expansión de cada quantity a ese número exacto de
+  stays, roomId NULL y occupants vacío, sin perfiles adultos/niños inventados.
+  Preservar entradas duplicadas/orden; lista de stays inmutable. Overflow del tamaño
+  int de List se rechaza antes de expandir; sin límites de negocio nuevos.
+- **Persistencia / integración:** mapper no escribe. El servicio booking existente
+  crea un responsable y una Reservation con todos los stays en su transacción de
+  admisión. J4 debe validar/pricing/admitir demanda antes de expandir y orquestar
+  pago/confirmación; J5 no implementa esas fases ni fija RatePlan en el modelo.
+  Reutilizar perfil no concede titularidad ni acceso Guest; vínculo OTP sigue igual.
+- **Archivos previstos:** interface/impl del mapper y repositorio público read-only,
+  dos tests unit/PG; únicamente estas entradas propias en AlanPlan/AlanHandoff.
+  Sin migraciones, dependencias, seguridad, OpenAPI ni cambios de Alan.
+- **Aceptación / DoD:** quantity 1/>1, perfil nuevo/existente/excluido/ambiguo,
+  varias categorías y entradas, IDs reales y una única Reservation, roomId NULL,
+  cero ocupantes ficticios, contactos existentes intactos, lookup exacto y trim
+  legacy aprobado sin alterar hash. Ausencia de writes del mapper, rollback real y
+  falta de inventario sin filas parciales. Focalizados + regresión, verify completo
+  Java 21/PostgreSQL 17 y diff --check/alcance PASS; commit exclusivo J5 y push solo
+  con autorización posterior. EN_QA hasta QA manual PASS; no iniciar J4.
+- **Evidencia técnica final:** focalizados 123 PASS: 35 J5 (14 unit y 21 PG) y
+  88 regresión GuestProfile/booking/inventario/hash. mvn -B --no-transfer-progress
+  verify 641 PASS, cero failures/errors/skipped, BUILD SUCCESS y JAR generado.
+  Maven 3.9.11/Java 21.0.9/PostgreSQL 17.11; Compose aislado pms-public-j5-qa,
+  snapshot exacto de Backend con cache existente y reportes/artefactos en target
+  ignorado. Logs public-booking-j5-focused-final.log y public-booking-j5-verify-final.log.
+  Fallo inicial del test nuevo de rollback corregido con flush JPA únicamente en
+  su fixture antes de leer con JDBC; producción y código legacy intactos. Sin
+  errores pendientes; avisos SpringDoc/agente JVM preexistentes no críticos.
+- **Evidencia PG:** 1/3 unidades, varias categorías/entradas, UUIDs distintos de
+  stays y un solo padre, roomId NULL y cero reservation_guests ficticios PASS.
+  Responsable nuevo único o candidato reutilizado sin cambios en su fila; perfiles
+  excluidos/ambiguos intactos. C/Unicode/espacios conservados para búsqueda/hash,
+  trim de escritura legacy aprobado. Preparar comandos no cambia nueve tablas;
+  rollback exterior revierte perfil/reserva/stays/audit y ATS, falta de inventario
+  no deja escrituras parciales. Sin pago, receipt o confirmación añadidos en J5.
+- **QA manual pendiente:** con fixtures J5 y antes de su limpieza, Juan/usuario
+  debe inspeccionar resultado y PostgreSQL: quantity 1/3, combinación de RoomTypes,
+  un reservation_id compartido, room_id NULL, responsable único/existente y cero
+  ocupantes ficticios. Revisar candidato ambiguo/excluido sin mutación y rollback
+  sin filas parciales; comprobar canal WEB_DIRECTA/refs NULL y hash raw preservado
+  pese al trim legacy aprobado. No hay endpoint público todavía; no atribuir QA
+  manual PASS a los tests automatizados.
+- **Siguiente:** commit independiente `feat(public-booking): map guests and stays to reservation model`
+  y reporte; esperar autorización de push y confirmación QA manual PASS. Mantener
+  J3/J1/J2/J5 EN_QA; J4 no iniciada.
+
 ## Reserva pública — Juan / J2: pasarela de pago simulada
 
 - **Estado:** READY → EN_PROGRESO → EN_QA. Owner Juan / BD3; rama

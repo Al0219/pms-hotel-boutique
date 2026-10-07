@@ -1,5 +1,64 @@
 # AlanHandoff — Seguimiento Backend
 
+## Juan / J5 — mapeo público: entrega técnica EN_QA (2026-10-07)
+
+- **Estado / owner:** EN_QA, Juan / BD3; validación técnica PASS, QA manual
+  pendiente. Tres precisiones J5 aprobadas explícitamente por el usuario.
+- **Rama / base / commit:** feature/backend-public-booking-core / ab411f4;
+  commit exclusivo `feat(public-booking): map guests and stays to reservation model`.
+  Push pendiente de autorización posterior; J3/J1/J2 publicadas y siguen EN_QA.
+- **Entregado:** mapper interface/impl read-only y repositorio público de lookup
+  scoped, exacto por COLLATE C y LIMIT 2. Un solo CreateBookingCommand con responsable
+  nuevo inline o candidato único ACTIVE/misma Property/sin cuenta/nombres y correo
+  idénticos; quantity expandida sin agregar ocupantes, roomId NULL. Canal WEB_DIRECTA,
+  sourceReference/notes NULL. Request/hash raw intactos y trim legacy de escritura
+  conservado por aprobación; sin actualizar ni vincular perfiles existentes.
+- **Validación final:** mvn -B --no-transfer-progress
+  -Dtest=PublicBookingMappingServiceTests,PublicBookingMappingIntegrationTests,ReservationBookingServiceIntegrationTests,InventoryBookingIntegrationTests,GuestProfileServiceIntegrationTests,GuestProfileTests,PublicBookingValidationServiceTests test:
+  123 PASS (35 J5 + 88 regresión). mvn -B --no-transfer-progress verify:
+  641 PASS, cero failures/errors/skipped, BUILD SUCCESS y JAR generado. Java
+  21.0.9/Maven 3.9.11/PostgreSQL 17.11, Compose aislado pms-public-j5-qa y snapshot
+  exacto de fuentes/POM/docs; cache existente, reportes/artefactos en target ignorado.
+  Logs public-booking-j5-focused-final.log y public-booking-j5-verify-final.log.
+- **Corrección propia:** primer test de rollback consultaba JDBC antes del flush
+  de inserciones JPA pendientes. Se agregó flush solo en esa fixture; no se cambió
+  producción/servicios legacy. Reejecución completa PASS; sin errores pendientes.
+  Avisos SpringDoc/agente de tests preexistentes, sin warnings críticos nuevos.
+- **Evidencia / alcance:** quantity 1/3 y múltiples categorías/entradas bajo un
+  solo padre; perfiles nuevos/reutilizados/excluidos/ambiguos y filas existentes
+  intactas; case/Unicode/espacios y hash sin normalizar. Cero writes al preparar,
+  rollback de perfil/reserva/stays/audit y rechazo de inventario sin filas parciales.
+  Tres fuentes nuevas, dos tests J5 y entradas propias en estos dos docs. Sin
+  migraciones, pricing/pago/confirmación/HTTP ni cambios de Alan; cuatro untracked
+  ajenos conservados. Booking real probado mediante servicios ya existentes.
+- **Siguiente:** checklist QA manual en AlanPlan; conservar EN_QA hasta confirmación
+  PASS del usuario. Reportar commit, pedir autorización de push y detenerse;
+  no iniciar J4 ni crear PR/merge.
+
+## Juan / J5 — mapeo público: inicio (2026-10-07)
+
+- **Estado / owner:** READY → EN_PROGRESO, Juan / BD3. Usuario autorizó J5 y
+  aprobó reutilización exacta y acotada, canal WEB_DIRECTA/refs NULL, y trim legacy
+  solo al persistir conservando request/hash J3 exactos.
+- **Rama / base:** feature/backend-public-booking-core / ab411f4; J2 publicada
+  tras autorización, sincronizada. J3/J1/J2 aún EN_QA sin confirmación manual.
+  Sin cambios rastreados iniciales; cuatro documentos untracked ajenos conservados.
+- **Contrato:** candidato único ACTIVE, misma Property y sin GuestAccount,
+  nombres/correo exactos; cero o varias coincidencias crean uno nuevo. Excluir
+  cuentas vinculadas, INACTIVE, otra Property o Property NULL. Nunca actualizar
+  perfiles existentes ni deducir acceso Guest por coincidencia de contacto.
+- **Alcance / archivos:** mapper interface/impl y repositorio query-only propio de
+  Reservations, dos tests unit/PG y estas entradas. Un CreateBookingCommand con
+  responsable inline o existente, quantity expandida, roomId NULL y occupants
+  vacío. Lookup de RoomTypes reales scoped y Guest exacto con COLLATE C/LIMIT 2.
+- **Límites / DoD:** mapper read-only, creación dentro de booking/admisión existente;
+  sin pricing/pago/confirmación/HTTP, migraciones ni cambios legacy/Alan. Verificar
+  cantidades, categorías, un solo padre, perfil nuevo/existente/exclusiones,
+  coincidencias ambiguas, case/Unicode/espacios, hash preservado y rollback;
+  focalizados, verify Java 21/PostgreSQL 17, diff --check y scope PASS. Entregar
+  EN_QA, commit exclusivo J5 y detenerse para autorización de push y QA manual.
+  No iniciar J4.
+
 ## Juan / J2 — pasarela simulada: entrega técnica EN_QA (2026-10-07)
 
 - **Estado / owner:** EN_QA, Juan / BD3; validación técnica PASS, QA manual
