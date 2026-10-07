@@ -58,6 +58,8 @@ public class OpenApiConfiguration {
             String packageName = handler.getBeanType().getPackageName();
             if (packageName.contains(".modules.securityauth.") || packageName.contains(".modules.guestauth.")) {
                 operation.addExtension("x-audience", "internal-bff");
+                String method = handler.getMethod().getName();
+                if (method.equals("login") || method.equals("loginExplicit") || method.equals("start") || method.equals("exchange")) operation.setSecurity(List.of());
             } else if (handler.getBeanType().equals(PublicAvailabilityController.class)) {
                 operation.addExtension("x-audience", "public");
                 operation.setSecurity(List.of());

@@ -1,5 +1,181 @@
 # AlanHandoff — Seguimiento Backend
 
+## AUTH-UNIFIED-01 — Cierre COMPLETADA (2026-10-06)
+
+- **Estado final:** EN_QA → COMPLETADA. Alan confirmó QA manual PASS en
+  http://localhost:3001 y aprobó explícitamente el incremento.
+- **Aceptación manual:** Staff demo, qa_staff SUPER_ADMIN y Guest demo PASS;
+  dashboard Staff, aislamiento Guest/Staff y F5/restauración PASS; logout desde
+  dashboard/calendario→`/` y Atrás sin recuperar sesión Staff PASS; email formato/
+  maxLength50, password maxLength50, Google Guest completo, continuar como invitado
+  y puerto canónico localhost:3001 PASS.
+- **DoD técnico registrado:** Backend verify478 PASS; Web1323/242 archivos PASS;
+  logout focalizados23 PASS; typecheck/lint/build sin mocks/diff-check PASS.
+  OpenAPI paridad PASS, 38ops/28paths/37schemas/11tags. Compose y Firefox PASS;
+  Web127.0.0.1:3001 único puerto publicado, Backend/PostgreSQL internos.
+- **Rama/alcance:** feature/auth-unified-login-port-standardization, base main
+  2e387a3 PR #133; cierre solo documental. Funcionalidad y cambios previos
+  preservados; sin commit/push/merge. Registro/recuperación/cambio password/MFA
+  siguen fuera del incremento. Detalle: [guía44](44_UNIFIED_LOGIN_CONTRACT_QA.md).
+- **Siguiente:** esperar autorización explícita para una nueva tarea o publicación.
+  Sin bloqueos pendientes para cerrar AUTH-UNIFIED-01.
+
+Las entradas anteriores de AUTH-UNIFIED-01 conservadas a continuación son historial
+de entrega. Sus estados EN_QA y QA manual pendiente describen ese momento y quedan
+sustituidos por este cierre COMPLETADA, incluido el PASS de Google Guest completo.
+
+## AUTH-UNIFIED-01 — Logout Staff a Home (2026-10-06), EN_QA
+
+- Causa: mutation confirmaba logout y publicaba null, pero no navegaba; guard
+  privado mostraba sesión requerida en la ruta actual. Ahora espera BFF, limpia
+  sesión/cancela caches Staff relevantes y router.replace("/"). Estado de salida
+  evita guard durante transición; failure conserva sesión/ruta. Sin cambiar guard
+  ni Backend/BFF/contratos, sin refresh innecesario, Guest independiente intacto.
+- Archivos: staff-session-provider.tsx, nuevo staff-logout-navigation.test.tsx,
+  fixtures RouterContext de staff-session-provider.test.tsx y dashboard/auth-regression
+  actualizados; WebAuth/guía44/AlanPlan/Handoff. Seis regresiones nuevas; focalizados23
+  PASS; npm test1323/242 PASS, typecheck/lint/diff-check PASS.
+- Docker reconstruido3 healthy, solo Web3001. Firefox real desde calendario y
+  dashboard: URL exacta http://localhost:3001/, sin guard en Home, history.length
+  estable (replace), Atrás a ruta privada guard/Staff401, Guest coexistente200
+  preservado. Acceso directo calendario sin auth continúa guard sin redirigir.
+- Evidencia sanitizada /tmp/pms-logout-{focused,web-suite,typecheck,lint,compose,browser}.log
+  y browser-results.json. Stack disponible; EN_QA hasta Alan manual PASS.
+  Misma rama, cambios previos/.env preservados, sin commit/push/merge.
+
+## AUTH-UNIFIED-01 — Límites finales 50/50 (2026-10-06), EN_QA
+
+- Decisión final de Alan sustituye email320/password256 por máximo50 en login
+  Staff/Guest/fachada: email required/formato/trim/lowercase; password required/
+  NotBlank, intacta, sin complejidad nueva. HTML50, validación Browser/BFF compartida,
+  DTOs50 y boundary directo de servicios. Patrón email común evita divergencia
+  detectada con @Email por defecto (dominio con guion bajo); sin rejected credentials.
+- Persistencia intacta: email varchar320, password_hash varchar255, hashes60;
+  BCryptPasswordEncoder(12) sin cambios, sin nueva migración ni tocar aplicadas.
+  DTO/password writeOnly y toString redactado; registro/recuperación siguen excluidos.
+- Pruebas: Web focalizados207 PASS; Backend login/OpenAPI25 PASS y auth/auditoría57
+  PASS en pasada previa. Verify final478 PASS, cero failures/errors/skipped;
+  npm test final1317/241 archivos PASS; typecheck/lint/build sin mocks PASS.
+  Un timeout de carrito durante builds concurrentes: rerun aislado15 PASS y suite
+  final completa PASS; sin ampliar timeouts ni modificar pruebas ajenas.
+- Docker final up --build/ps PASS, 3 healthy, solo Web127.0.0.1:3001. Firefox real
+  confirma max50 y bloqueo del carácter51 con teclas; formato/50 exacto, BFF51→400;
+  Staff demo, Guest demo y qa_staff login/destino/F5/logout PASS. Restores Staff
+  con refresh válido acotados; Guest/Staff401 cruzados aislados. Invitado conserva
+  carrito real sin crear sesión. qa_staff sigue ACTIVE/SUPER_ADMIN, hash60 intacto.
+- OpenAPI runtime/generado paths/components idénticos: 38ops/28paths/37schemas/11tags;
+  los tres inputs max50/formatemail/password/writeOnly PASS. Backend directo51 y
+  formato inválido→400; 50 normalizado desconocido→401, pasa validación. Google
+  Guest start307/state/nonce/PKCE/callback3001 sin Staff cookies; regresiones OIDC
+  automatizadas PASS, callback con cuenta Google real pendiente de manual Alan.
+- Documentación/7 colecciones Postman alineadas. Evidencia sanitizada en
+  /tmp/pms-limits-{focused-web,final-focused-backend,backend-verify,web-suite,
+  typecheck,lint,build,compose,browser,cart-rerun}.log y openapi-live.json.
+  Rama actual preservada, .env intacto, sin commit/push/merge. EN_QA hasta Alan PASS.
+
+## Cuenta qa_staff integrada — autorización de Alan (2026-10-06)
+
+- Creada en BD del Compose raíz: qa_staff@example.test, ACTIVE/SUPER_ADMIN;
+  membership organización demo + property HB-GT-DEMO activas. No modifica la
+  cuenta del QA aislado ni .env ni bootstrap/migraciones/código del proyecto.
+- BCryptPasswordEncoder(12) existente, alta transaccional y evento append-only
+  STAFF_BOOTSTRAP_CREATED, SYSTEM/ORGANIZATION, local_qa_provisioning.
+- Verificación http://localhost:3001: login201 STAFF, session200 SUPER_ADMIN,
+  STAFF_MANAGE y membership demo confirmadas; logout de sesión de prueba204.
+  Credencial QA sintética y persistencia local documentadas en guía44.
+- AUTH-UNIFIED-01 permanece EN_QA; sin commit/push/merge.
+
+## AUTH-UNIFIED-01 — Corrección QA Web Staff (2026-10-06), EN_QA
+
+- **Hallazgo reproducido en Firefox:** login201; session Staff200 con permiso
+  SERVICE_REQUEST_INTAKE; Guest401; UI «Sesión Staff requerida». El mapper Web
+  rechazaba ese permiso existente en 003/006 y el guard etiquetaba cualquier error
+  como ausencia de sesión. Guest401 es correcto sin cookie Guest; no compartían
+  query key ni estado. No cambios adicionales de código Backend ni migraciones.
+- **Corrección:** mapper contractual; query Staff compartida entre acceso/guard,
+  separada de Guest; null solo tras 401 definitivo, mapping inválido error de carga,
+  cache válido conservado en refetch/transporte; logout cancela lecturas y limpia
+  solo cache Staff. Restauración existente un refresh/retry reutilizada desde ambas
+  entradas, con rotación concurrente única y cancelación. BFF Staff no-store,
+  Backend5xx→503, sin convertirlo en401 ni emitir logout global desde BFF401.
+- **F5:** reproducción inicial con access válido devolvió200 y aun así guard falló
+  por mapper. No se confirmó el motivo del primer401 del caso manual original.
+  En Firefox se retiró solo access (refresh conservado): F5→session401→refresh200
+  una vez→session200→dashboard visible, sin focus. Sin refresh, bloquea y termina.
+- **Validación:** 24 regresiones nuevas; auth/providers/dashboard focalizados170
+  PASS; npm test1280/239 archivos PASS; typecheck/lint/build sin mocks PASS.
+  Compose config/up --build PASS; 3 servicios healthy, solo Web127.0.0.1:3001.
+  Firefox real PASS login/dashboard, Guest401 aislado, F5 válido, focus,
+  restauración acotada y logout/F5 bloqueado. git diff --check PASS.
+- **Límites:** UI/Backend/OpenAPI email max50 y password max50 confirmados;
+  password sin normalización ni complejidad de login. El dashboard monta identidad
+  y scope, pero las métricas siguen usando el contrato fixture Private09 y muestran
+  error de datos en modo real; no es fallo de sesión y queda fuera de esta corrección.
+  Google completo y cierre manual de Alan pendientes; estado permanece EN_QA.
+- **Evidencia sanitizada:** /tmp/pms-staff-{auth-focused,web-tests,typecheck,lint,
+  build,compose-up,browser-before,browser-after}.log; secuencias HTTP en
+  /tmp/pms-staff-browser-{before,after}.json, captura dashboard-fixed.png.
+  Sin commit/push/merge; cambios previos y .env preservados.
+
+## AUTH-UNIFIED-01 — Entrega EN_QA (2026-10-06)
+
+- **Estado:** EN_QA; implementación y QA técnico PASS, QA manual Alan pendiente.
+  Rama feature/auth-unified-login-port-standardization desde main 2e387a3 PR #133,
+  actualizado/limpio antes de iniciar; sin commit/push/merge.
+- **Modelo/contrato:** [44](44_UNIFIED_LOGIN_CONTRACT_QA.md). StaffUser conserva
+  username/workEmail/passwordHash, roles/permisos/memberships/scope y sesiones;
+  GuestAccount/GuestIdentity Google independientes. No identidad central por roles.
+  Email trim/lowercase/max50 + password universal; GuestPasswordCredential 1:1
+  hash BCrypt(12), mismas sesiones/refresh Guest. Google-only sin password falla
+  genéricamente. Fachada valida ambos passwords antes de revelar contexto; ambos
+  válidos exigen selección/revalidación, sin crear sesión durante discovery.
+- **Web/BFF:** /acceso único con Header/Footer público, correo/password, Google
+  Guest y continuar como invitado sin crear sesión/limpiar carrito. Cookies
+  pms_staff_* / pms_guest_* existentes, HttpOnly/Secure/SameSite preservados;
+  sin tokens raw en JS. Login pms_session sintético y formularios de registro
+  sin consumidores retirados. Errores de entrada Backend sanitizados sin rejected
+  values; toString de requests redactado. Origen BFF público correcto en Docker y
+  retorno checkout único durante hidratación Guest comprobados por regresiones.
+- **Persistencia/demo:** nuevo changeset 003-auth-unified-password-009 (Credential
+  Guest e índice Guest normalizado); índice Staff normalizado 003/005 reutilizado.
+  Ningún changeset anterior editado. Clean/upgrade/checksums/reaplicación/colisiones
+  PASS en esquemas efímeros. Bootstrap dev/demo + flag, excluye prod/production;
+  Staff RECEPCION demo con Property scope y Guest con credential, hashes/IDs
+  preservados al reiniciar. Credenciales sintéticas en dataset local.
+- **Automatizado:** mvn -B --no-transfer-progress verify Java21/PostgreSQL17 aislado:
+  475 PASS, cero failures/errors/skipped. Web 1256 PASS/237 archivos; focalizados
+  de UI/BFF/retorno 47 PASS; typecheck/lint/build NEXT_PUBLIC_USE_MOCK_API=false PASS.
+  OpenAPI 12 tests PASS y vivo/generado paths/components idénticos: 38 operaciones,
+  28 paths, 37 schemas, 11 tags. Postman JSON/payload email PASS. diff --check PASS.
+- **Runtime:** Compose raíz config/up --build/ps PASS, postgres/backend/web healthy;
+  Web 127.0.0.1:3001→3000 único host port; Backend 8080/tcp y PostgreSQL 5432/tcp
+  internos. Debug 8081 solo override explícito. Dev ocupado falla EADDRINUSE 3001;
+  sin puerto alternativo; probe Docker ocupado también falla, sin reasignación. BFF email/password Guest/Staff 201, me 200, refresh 200,
+  logout 204→401; logout Guest preserva Staff. /acceso/Header/Footer, /cuenta,
+  /dashboard y journey anónimo HTTP 200. Negativos genéricos/no enumeration PASS.
+  Google start/OIDC 307 con callback3001 y parámetros esperados sin exponerlos.
+  Ningún PMS en host3000. Stacks ajenos/QA histórico y .env preservados.
+- **Evidencia local sanitizada:** /tmp/pms-auth-{verify,web-tests,final-focused-web,
+  typecheck,lint,build,compose-up,smoke,dev-conflict}.log; generated/mappings/counts
+  en backend/target y /tmp/pms-auth-runtime-openapi.json. PostgreSQL verify efímero
+  retirado al finalizar; stack integrado queda disponible para Alan.
+- **Límites/siguiente:** QA técnico HTTP no es QA visual ni Google callback real.
+  Alan ejecuta guía 44 y confirma manual PASS antes de COMPLETADA. Registro,
+  forgot/reset/change password/MFA excluidos; no avanzar a otra tarea.
+
+## AUTH-UNIFIED-01 — Inicio (2026-10-06)
+
+- **Estado:** EN_PROGRESO; DoR READY, autorización explícita del usuario.
+- **Base/rama:** main actualizado `2e387a3` PR #133 y limpio; rama solicitada
+  `feature/auth-unified-login-port-standardization`. Sin commit/push/merge.
+- **Decisiones/contrato:** [44](44_UNIFIED_LOGIN_CONTRACT_QA.md), Guest/Staff separados,
+  email/password universal, Google solo Guest, invitado público, Web fijo 3001.
+- **Inspección:** StaffUser username/workEmail/passwordHash + RBAC/membership;
+  GuestAccount/GuestIdentity Google sin password, sesiones y refresh independientes;
+  BCrypt(12). No identidad común por roles.
+- **Siguiente:** implementación y QA automatizado/runtime; mantener EN_QA hasta Alan.
+
+
 ## Juan / J4 — servicio público: entrega técnica EN_QA (2026-10-07)
 
 - **Estado / owner:** EN_QA, Juan / BD3; validación técnica final PASS, QA manual
@@ -1162,45 +1338,6 @@
 - **Siguiente paso:** implementar únicamente AUTH-01 tras autorización; mantener
   EN_QA hasta QA manual ejecutado y confirmado PASS por el usuario. El resto de
   BE-008B sigue pendiente de sus incrementos; sin commit/push en este registro.
-
-
-## BD3-AUDIT-FIX-01 — Cierre técnico local
-
-- **Estado:** EN_QA — aceptación automatizada y verify PASS; falta QA manual del owner para completar.
-- **Rama/base:** `feature/bd3-audit-fixes`, base `335e5cf`; commits locales: `fix(bd3): persist blocked night audit attempts` y `fix(bd3): enforce SQL property scope for reservation details`.
-- **Entrega:** Night Audit registra el run `BLOCKED` y su audit event con commit independiente pese al rollback de cierre. Reservation se busca vía `findByIdInScope` y las estancias añaden el conjunto de `propertyId` autorizadas al SQL.
-- **Pruebas:** NightAudit 4/4 y ReservationQuery 3/3 PASS; verify completo `docker compose -p pms-bd3-audit3 -f backend/compose.bd2-test.yaml run --rm verify ./mvnw -B --no-transfer-progress verify` — BUILD SUCCESS, 331 tests, 0 failures/errors/skipped, Java 21/PostgreSQL 17, JAR generado. `git diff --check` PASS.
-- **Push:** publicado en `origin/feature/bd3-foundation`; fast-forward `335e5cf..ab08b2b`, referencia remota verificada en `ab08b2b35fd5c5293ff7d818157bf52aff4eb395`.
-- **Limitaciones:** no se modificaron rutas/contratos, BD1/BD2 ni reglas de producto. Los hallazgos excluidos y dependencias permanecen en AlanPlan.
-- **Siguiente paso:** publicar los dos commits a la rama autorizada y pedir confirmación de QA manual al owner.
-
-## BD3-AUDIT-FIX-01 — Actualización fase 1 (Night Audit)
-
-- **Estado:** fase 1 implementada y prueba focalizada PASS; tarea global EN_PROGRESO.
-- **Cambios:** `NightAuditBlockedRunRecorder` persiste `BLOCKED` y `NIGHT_AUDIT_BLOCKED` en `REQUIRES_NEW`; `closeDay` crea run durable solo cuando hay blockers conocidos, evitando rollback del intento registrado. El test deja el escenario comprometido y consulta desde transacciones posteriores al rechazo.
-- **Verificación:** `docker compose -p pms-bd3-audit2 -f backend/compose.bd2-test.yaml run --rm verify ./mvnw -B --no-transfer-progress -Dtest=NightAuditServiceIntegrationTests test` — BUILD SUCCESS, 4 tests, 0 failures/errors/skipped, PostgreSQL 17/JDK 21. `git diff --check` PASS.
-- **Siguiente paso:** commit de fase 1; completar consulta SQL scoped de Reservation/Stays, ejecutar su test y el verify completo antes de publicar.
-
-## BD3-AUDIT-FIX-01 — Durabilidad Night Audit y property scope
-
-- **Estado:** EN_PROGRESO; revisión de hallazgos de auditoría iniciada.
-- **Base/rama:** `335e5cf` (`feature/bd3-ar-receivables`); tarea `feature/bd3-audit-fixes`.
-- **DoR/alcance:** dos defectos BD3 reproducibles sin cambiar contratos: el flujo de cierre revierte BLOCKED y audit al lanzar excepción; Reservation/Stay detail debe aplicar scope autorizado antes/dentro de SQL. Se excluirán hallazgos dependientes de contratos, permisos, decisiones producto o ownership BD1/BD2.
-- **Plan:** fix de Night Audit con prueba que consulte tras finalizar su transacción; fix de Reservation/Stay scope con prueba de propiedades no autorizadas. Una fase/commit por defecto.
-- **Verificación:** pendiente.
-- **Publicación:** el usuario autorizó commits y pushes únicamente a `origin/feature/bd3-foundation`; no se empujará la rama de trabajo.
-- **Siguiente paso:** inspeccionar fixtures/transacciones/repositorios; implementar y validar cada fase por separado.
-
-## F14.2 — Preparación de Cuentas por cobrar / Direct Bill
-
-- **Base:** `origin/main` `02bd91b`.
-- **Rama de trabajo:** `feature/bd3-ar-receivables`.
-- **Estado:** PENDIENTE — propuesta documental creada; implementación no iniciada.
-- **Ownership:** Juan / BD3 según `19_BD2_FINANCE_LIFECYCLE_PHASE0.md`.
-- **Inspección:** Company tiene scope por propiedad; `Folio.Type.COMPANY` existe, pero no hay vínculo Company–Folio ni modelo AR. FolioMovement ya es append-only y su escritura financiera corresponde a BD2.
-- **Bloqueos:** FP-D04 y BD2-FP-003 pendientes; reglas de crédito/aprobación, aging/fuente de saldo y decisión de permiso requieren confirmación.
-- **Verificación:** propuesta cotejada contra código y contratos; suite Backend intentada con Docker Compose, pero el daemon Docker no está disponible (`docker_engine` ausente). Sin cambios de código ni migraciones.
-- **Siguiente paso:** resolver las decisiones listadas en `36_BD3_AR_DIRECT_BILL_CONTRACT_PROPOSAL.md`; después completar DoR antes de implementar.
 
 ## BE-010B-ONBOOKS-01 — Actualización de seguimiento (2026-10-05)
 

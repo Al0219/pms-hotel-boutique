@@ -15,15 +15,51 @@
     ]
   },
   "variable": [
-    {"key": "publicArrival", "value": "2026-11-01", "type": "string"},
-    {"key": "publicDeparture", "value": "2026-11-03", "type": "string"},
-    {"key": "publicRooms", "value": "1", "type": "string"},
-    {"key": "staffUsername", "value": "", "type": "string"},
-    {"key": "staffPassword", "value": "", "type": "string"},
-    {"key": "staffRefreshToken", "value": "", "type": "string"},
-    {"key": "guestRefreshToken", "value": "", "type": "string"},
-    {"key": "googleCode", "value": "", "type": "string"},
-    {"key": "googleState", "value": "", "type": "string"},
+    {
+      "key": "publicArrival",
+      "value": "2026-11-01",
+      "type": "string"
+    },
+    {
+      "key": "publicDeparture",
+      "value": "2026-11-03",
+      "type": "string"
+    },
+    {
+      "key": "publicRooms",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "staffEmail",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "staffPassword",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "staffRefreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "guestRefreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "googleCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "googleState",
+      "value": "",
+      "type": "string"
+    },
     {
       "key": "baseUrl",
       "value": "http://127.0.0.1:18080",
@@ -68,12 +104,37 @@
       "key": "otp",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "guestEmail",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "guestPassword",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "authEmail",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "authPassword",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "authContext",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
     {
       "name": "Staff — Auth explícita y compatibilidad",
-      "description": "BE-005-AUTH-API-01. Completar staffUsername/staffPassword SOLO localmente. Tokens se guardan localmente para la secuencia; borrar credenciales/tokens antes de exportar. Cookie jar vacío para probar refresh ausente.",
+      "description": "BE-005-AUTH-API-01. Completar staffEmail/staffPassword SOLO localmente. Tokens se guardan localmente para la secuencia; borrar credenciales/tokens antes de exportar. Cookie jar vacío para probar refresh ausente.",
       "item": [
         {
           "name": "01 — Iniciar sesión explícita",
@@ -91,13 +152,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\"username\":\"{{staffUsername}}\",\"password\":\"{{staffPassword}}\"}",
+              "raw": "{\"email\":\"{{staffEmail}}\",\"password\":\"{{staffPassword}}\"}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "Login: email required, formato email, maxLength=50 tras trim/lowercase; password required/NotBlank, maxLength=50, intacta sin trim ni complejidad nueva. 51 caracteres o entrada inválida: HTTP400. Password writeOnly; no exportar credenciales/tokens reales."
           },
           "event": [
             {
@@ -305,13 +367,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\"username\":\"{{staffUsername}}\",\"password\":\"{{staffPassword}}\"}",
+              "raw": "{\"email\":\"{{staffEmail}}\",\"password\":\"{{staffPassword}}\"}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "Login: email required, formato email, maxLength=50 tras trim/lowercase; password required/NotBlank, maxLength=50, intacta sin trim ni complejidad nueva. 51 caracteres o entrada inválida: HTTP400. Password writeOnly; no exportar credenciales/tokens reales."
           },
           "event": [
             {
@@ -431,13 +494,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\"username\":\"\",\"password\":\"\"}",
+              "raw": "{\"email\":\"\",\"password\":\"\"}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "Login: email required, formato email, maxLength=50 tras trim/lowercase; password required/NotBlank, maxLength=50, intacta sin trim ni complejidad nueva. 51 caracteres o entrada inválida: HTTP400. Password writeOnly; no exportar credenciales/tokens reales."
           },
           "event": [
             {
@@ -928,27 +992,61 @@
           "name": "GET On-books diario — property",
           "request": {
             "method": "GET",
-            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{staffAccessToken}}", "type": "string"}]},
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "url": "{{baseUrl}}/api/v1/reports/on-books/daily?from={{from}}&to={{to}}&propertyId={{propertyId}}"
           },
-          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
-            "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-            "pm.test('No cache privado', () => { const cache = pm.response.headers.get('Cache-Control') || ''; pm.expect(cache).to.include('private'); pm.expect(cache).to.include('no-store'); });",
-            "if (pm.response.code === 200) { const body = pm.response.json(); pm.test('DTO On-books', () => { pm.expect(body.calculatedAt).to.be.a('string'); pm.expect(body.rows).to.be.an('array'); body.rows.forEach(row => { pm.expect(row.propertyId).to.eql(pm.collectionVariables.get('propertyId')); pm.expect(row).to.have.all.keys('propertyId','timezone','currency','stayDate','physicalRooms','outOfOrderRooms','availableRooms','onBooksRooms','onBooksPercent','unavailableReason'); }); }); }"
-          ]}}]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('No cache privado', () => { const cache = pm.response.headers.get('Cache-Control') || ''; pm.expect(cache).to.include('private'); pm.expect(cache).to.include('no-store'); });",
+                  "if (pm.response.code === 200) { const body = pm.response.json(); pm.test('DTO On-books', () => { pm.expect(body.calculatedAt).to.be.a('string'); pm.expect(body.rows).to.be.an('array'); body.rows.forEach(row => { pm.expect(row.propertyId).to.eql(pm.collectionVariables.get('propertyId')); pm.expect(row).to.have.all.keys('propertyId','timezone','currency','stayDate','physicalRooms','outOfOrderRooms','availableRooms','onBooksRooms','onBooksPercent','unavailableReason'); }); }); }"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "GET On-books diario — ALL_PROPERTIES",
           "request": {
             "method": "GET",
-            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{staffAccessToken}}", "type": "string"}]},
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "url": "{{baseUrl}}/api/v1/reports/on-books/daily?from={{from}}&to={{to}}&scope=ALL_PROPERTIES"
           },
-          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
-            "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-            "pm.test('No cache privado', () => { const cache = pm.response.headers.get('Cache-Control') || ''; pm.expect(cache).to.include('private'); pm.expect(cache).to.include('no-store'); });",
-            "if (pm.response.code === 200) { const body = pm.response.json(); pm.test('Filas ordenadas', () => { const keys = body.rows.map(row => row.propertyId + '/' + row.stayDate); pm.expect(keys).to.eql([...keys].sort()); }); }"
-          ]}}]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('No cache privado', () => { const cache = pm.response.headers.get('Cache-Control') || ''; pm.expect(cache).to.include('private'); pm.expect(cache).to.include('no-store'); });",
+                  "if (pm.response.code === 200) { const body = pm.response.json(); pm.test('Filas ordenadas', () => { const keys = body.rows.map(row => row.propertyId + '/' + row.stayDate); pm.expect(keys).to.eql([...keys].sort()); }); }"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -972,6 +1070,197 @@
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
                   "if (pm.response.code === 200) { const body = pm.response.json(); pm.test('DTO público GTQ', () => { pm.expect(body).to.have.all.keys('propertyId','arrival','departure','currency','offers'); pm.expect(body.currency).to.eql('GTQ'); pm.expect(body.propertyId).to.eql(pm.variables.get('propertyId')); pm.expect(body.offers).to.be.an('array'); body.offers.forEach(o => { pm.expect(o).to.have.all.keys('roomTypeId','roomTypeCode','roomTypeName','ratePlanId','ratePlanCode','availableUnits','nightlyRateMinor','totalMinor'); pm.expect(o.availableUnits).to.be.at.least(Number(pm.variables.get('publicRooms'))); pm.expect(o.ratePlanId).to.eql(o.ratePlanCode); }); }); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "AUTH-UNIFIED-01 — Correo/password y contextos (BFF-only)",
+      "description": "Valores vacíos; completar solo localmente. Selector 200 sin tokens/sesión; elegir authContext STAFF/GUEST revalida contraseña. Nunca exportar credenciales/tokens reales.",
+      "item": [
+        {
+          "name": "Guest password session",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{guestEmail}}\", \"password\": \"{{guestPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/guest-auth/sessions",
+            "description": "Login: email required, formato email, maxLength=50 tras trim/lowercase; password required/NotBlank, maxLength=50, intacta sin trim ni complejidad nueva. 51 caracteres o entrada inválida: HTTP400. Password writeOnly; no exportar credenciales/tokens reales."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP expected', () => pm.expect([201]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resolver contextos",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{authEmail}}\", \"password\": \"{{authPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/auth/sessions",
+            "description": "Login: email required, formato email, maxLength=50 tras trim/lowercase; password required/NotBlank, maxLength=50, intacta sin trim ni complejidad nueva. 51 caracteres o entrada inválida: HTTP400. Password writeOnly; no exportar credenciales/tokens reales."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP expected', () => pm.expect([200, 201]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Elegir contexto validado",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{authEmail}}\", \"password\": \"{{authPassword}}\", \"context\": \"{{authContext}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/auth/sessions",
+            "description": "Login: email required, formato email, maxLength=50 tras trim/lowercase; password required/NotBlank, maxLength=50, intacta sin trim ni complejidad nueva. 51 caracteres o entrada inválida: HTTP400. Password writeOnly; no exportar credenciales/tokens reales."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP expected', () => pm.expect([201]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Guest malformed email",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"invalid\", \"password\": \"invalid\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/guest-auth/sessions",
+            "description": "Login: email required, formato email, maxLength=50 tras trim/lowercase; password required/NotBlank, maxLength=50, intacta sin trim ni complejidad nueva. 51 caracteres o entrada inválida: HTTP400. Password writeOnly; no exportar credenciales/tokens reales."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP expected', () => pm.expect([400]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unknown credentials",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"absent-fixture@example.test\", \"password\": \"invalid\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/auth/sessions",
+            "description": "Login: email required, formato email, maxLength=50 tras trim/lowercase; password required/NotBlank, maxLength=50, intacta sin trim ni complejidad nueva. 51 caracteres o entrada inválida: HTTP400. Password writeOnly; no exportar credenciales/tokens reales."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP expected', () => pm.expect([401]).to.include(pm.response.code));"
                 ]
               }
             }

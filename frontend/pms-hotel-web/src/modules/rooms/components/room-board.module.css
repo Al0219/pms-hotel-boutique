@@ -49,3 +49,5 @@
 .periodGrid { display: grid; gap: var(--space-3); grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: var(--space-3); }
 .periodGrid .reasonField { margin-top: 0; }
 @media (max-width: 720px) { .page { padding: var(--space-6) var(--space-4); } .content, .detailGrid { grid-template-columns: 1fr; } .summaryGrid { grid-template-columns: 1fr; } }
+.filters { display: grid; gap: 12px; margin-bottom: 20px; font-size: 12px; }
+.filters label { display: grid; gap: 6px; }.filters :is(input,select,button) { border: 1px solid #dce3d9; padding: 10px; min-height: 44px; border-radius: 10px; background: white; color: #2a362b; font: inherit; width: 100%; }.filters button { cursor: pointer; }

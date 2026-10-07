@@ -1,5 +1,14 @@
 # Public 02 — Acceso y registro Guest
 
+**Actualización aprobada AUTH-UNIFIED-01 (2026-10-06):**
+[Contrato vigente](../../../backend/docs/44_UNIFIED_LOGIN_CONTRACT_QA.md): login tradicional universal correo electrónico + contraseña;
+Guest/Staff separados, Google solo Guest e invitado público. Guest password solo
+para cuentas con credential existente; sin registro/recuperación/cambio/MFA.
+`/acceso` tiene un formulario único en http://localhost:3001. Las decisiones y
+pruebas de simulación/registro anteriores se conservan como contexto histórico;
+no representan el login vigente. UI/BFF nunca exponen JWT al JavaScript.
+
+
 ## Alcance autorizado
 
 Refactorización frontend solicitada por José para WEB-2 / `IMP-WEB-0202`, ruta `/acceso`, en `feature/web2-public-identity-account`. Fuente visual: especificación del usuario; no se inventan Node IDs ni se declara comparación pixel-perfect con Figma sin una referencia visual.
@@ -59,7 +68,7 @@ La revisión WEB-1 y comparación con Figma siguen siendo requisitos de cierre f
 - `NEXT_PUBLIC_USE_MOCK_API=true npm run build`: PASS, 70 rutas. Las modificaciones generadas de `next-env.d.ts` se retiran del diff.
 - `npm run test -- --pool=threads --maxWorkers=1 --reporter=dot`: PASS, 213 archivos / 1,009 pruebas; ninguna exclusión ni prueba deshabilitada.
 - Pruebas finales del componente de acceso: PASS, 20 casos, incluida la validación de nombre/apellido y el acceso posterior al registro. La ejecución con un solo worker evita la saturación local; no cambia los tests ni el workflow.
-- Chrome en `localhost:3000`: PASS para login, registro, Google/Apple locales, recuperación de error y retorno seguro al checkout; sin excepciones ni errores de consola. Sin requests al BFF de autenticación/Backend ni envío de contraseñas.
+- Chrome en el entorno de desarrollo histórico anterior al puerto canónico 3001: PASS para login, registro, Google/Apple locales, recuperación de error y retorno seguro al checkout; sin excepciones ni errores de consola. Sin requests al BFF de autenticación/Backend ni envío de contraseñas.
 - Responsive: PASS a 320, 390, 540, 768, 1024 y 1440 px, incluido correo largo en el estado de éxito móvil.
 - `git diff --check` y revisión del diff staged: PASS. Sin logs, parches, archivos de entorno ni capturas en el commit.
 
@@ -69,7 +78,7 @@ La revisión WEB-1 y comparación con Figma siguen siendo requisitos de cierre f
 - La prueba de Apple se reemplaza por la comprobación de su ausencia en ambas pestañas y la presencia de Google.
 - `npm run test -- src/modules/auth/components/guest-access-page.test.tsx src/modules/auth/service/guest-access.service.test.ts src/modules/account --pool=threads --maxWorkers=1 --reporter=dot`: PASS, 8 archivos / 53 pruebas. La primera ejecución concurrente con build/lint agotó el límite de 5 segundos de una prueba de vinculación; la repetición sin otras validaciones en paralelo pasó, sin alterar límites ni assertions.
 - `npm run lint`, `npm run build`, `npm run typecheck` (tras build) y `git diff --check`: PASS. Se descarta el cambio generado de `next-env.d.ts`.
-- Chrome sobre el servidor de desarrollo en `localhost:3000`: PASS para ausencia de Apple en login/registro, Google, formularios, errores recuperables y retorno al checkout. Responsive sin overflow a 320–1440 px; sin errores de consola, requests de autenticación al Backend ni transporte de contraseñas. Servidor iniciado con `NEXT_PUBLIC_USE_MOCK_API=true`; no se valida autenticación real.
+- Chrome sobre el servidor de desarrollo en el entorno de desarrollo histórico anterior al puerto canónico 3001: PASS para ausencia de Apple en login/registro, Google, formularios, errores recuperables y retorno al checkout. Responsive sin overflow a 320–1440 px; sin errores de consola, requests de autenticación al Backend ni transporte de contraseñas. Servidor iniciado con `NEXT_PUBLIC_USE_MOCK_API=true`; no se valida autenticación real.
 
 ## Resolución preparada frente a `origin/main` — 2026-10-06
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { DomainMappingError } from '@/lib/errors';
 
 import { mapReservationDetail } from "../mappers/reservation-detail.mapper";
 import { getReservationDetail } from "../service/reservation.service";
@@ -19,7 +20,9 @@ export function useReservationDetail(
       }
 
       const response = await getReservationDetail({ endpoint, propertyId, reservationId, signal });
-      return mapReservationDetail(response);
+      const result = mapReservationDetail(response);
+      if (result.propertyId !== propertyId || result.id !== reservationId) throw new DomainMappingError('RESERVATION_SCOPE_MISMATCH');
+      return result;
     },
   });
 }
