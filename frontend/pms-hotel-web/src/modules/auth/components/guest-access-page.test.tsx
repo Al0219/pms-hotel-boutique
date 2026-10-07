@@ -77,6 +77,21 @@ describe('Canonical universal login', () => {
     expect(screen.queryByLabelText('Contraseña')).not.toBeInTheDocument();
     expect(sessionStorage.length).toBe(0);expect(localStorage.length).toBe(0);
   });
+  it.each(['true','false'])('authenticates qa_staff through BFF only with data mocks=%s',async mock=>{
+    vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API',mock);
+    const calls=vi.fn();const payloads:unknown[]=[];
+    mockServer.use(http.post('*/api/auth/login',async({request})=>{
+      calls();payloads.push(await request.json());return HttpResponse.json({authenticated:true,context:'STAFF'},{status:201});
+    }));
+    await setup('/reserva/checkout');
+    fireEvent.change(screen.getByLabelText('Correo electrónico'),{target:{value:'qa_staff@example.test'}});
+    fireEvent.change(screen.getByLabelText('Contraseña'),{target:{value:password}});
+    fireEvent.submit(screen.getByLabelText('Correo electrónico').closest('form')!);
+    await waitFor(()=>expect(navigation.replace).toHaveBeenCalledExactlyOnceWith('/dashboard'));
+    expect(calls).toHaveBeenCalledTimes(1);
+    expect(payloads).toEqual([{email:'qa_staff@example.test',password}]);
+    expect(localStorage.length).toBe(0);expect(sessionStorage.length).toBe(0);
+  });
   it('sends a password with spaces unchanged and applies no complexity rules at login', async () => {
     const received: unknown[] = [];
     mockServer.use(http.post('*/api/auth/login', async ({request}) => {

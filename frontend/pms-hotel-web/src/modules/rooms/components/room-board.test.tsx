@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { HttpNetworkError } from "@/lib/http/errors";
@@ -16,6 +16,24 @@ vi.mock("../hooks/use-rooms", () => ({ useRooms: useRoomsMock }));
 vi.mock("../hooks/use-room-status-change", () => ({ useChangeRoomStatus: useChangeStatusMock }));
 
 describe("RoomBoard", () => {
+  it('filters physical rooms by operational status without presenting it as occupancy', () => {
+    useRoomsMock.mockReturnValue({ data: [
+      { id: 'RM-101', propertyId: 'GT-HB-01', number: '101', floor: '1', status: 'ACTIVE', roomTypeLabel: 'Deluxe King' },
+      { id: 'RM-102', propertyId: 'GT-HB-01', number: '102', floor: null, status: 'OOO', roomTypeLabel: 'Standard' },
+    ], error: null, isLoading: false, refetch: vi.fn() });
+    useChangeStatusMock.mockReturnValue({ mutate: vi.fn(), reset: vi.fn(), isPending: false, isSuccess: false, isError: false });
+    render(<RoomBoard propertyId="GT-HB-01" endpoint="http://pms.test/rooms" />);
+    fireEvent.change(screen.getByLabelText('Estado operativo'), { target: { value: 'OOO' } });
+    expect(screen.getByText('2 registradas · 1 visibles')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '102' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '101' })).not.toBeInTheDocument();
+    expect(screen.getByText(/Ocupación: no disponible/)).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: '999' } });
+    expect(screen.getByRole('status')).toHaveTextContent('No hay habitaciones con estos filtros');
+    expect(screen.queryByRole('heading', { name: '102' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Limpiar filtros' }));
+    expect(screen.getByText('2 registradas · 2 visibles')).toBeInTheDocument();
+  });
   it("presents room numbers with status badges and room type labels", () => {
     useRoomsMock.mockReturnValue({
       data: [

@@ -18,7 +18,7 @@ const staffDTO = {
 };
 const guestDTO = { guestAccountId: "guest-demo", sessionId: "guest-session", email: "guest@example.test", context: "GUEST" };
 const staffURL = "*/api/auth/staff/session", guestURL = "*/api/auth/guest/session", refreshURL = "*/api/auth/staff/refresh";
-const heading = "Dashboard Multi-property";
+const heading = "Panel de recepción";
 const staffSessionKey = ["auth", "staff", "session"] as const;
 const clients: QueryClient[] = [];
 function deferred() {

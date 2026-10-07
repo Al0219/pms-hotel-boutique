@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from 'next/link';
 
 import { HttpNetworkError } from "@/lib/http/errors";
 import { RoomMove, StayExtension } from "@/modules/stays";
@@ -90,20 +91,19 @@ const ACTIVE_TRAVEL_STATES: ReadonlySet<StayTravelState> = new Set(["RESERVED", 
 
 function StayBlock({
   stay,
-  singleRoom,
   onRoomMove,
   onExtend,
 }: Readonly<{ stay: ReservationStayDetail; singleRoom: boolean; onRoomMove?: () => void; onExtend?: () => void }>) {
-  const moveable = onRoomMove !== undefined && ACTIVE_TRAVEL_STATES.has(stay.travelState);
+  const moveable = stay.roomId !== null && onRoomMove !== undefined && ACTIVE_TRAVEL_STATES.has(stay.travelState);
   const extensible = onExtend !== undefined && ACTIVE_TRAVEL_STATES.has(stay.travelState);
 
   return (
     <div className={styles.stayItem}>
-      <p className={styles.stayRoom}>{stay.roomLabel} · {stay.roomType}</p>
+      <p className={styles.stayRoom}>{stay.roomLabel ?? 'Sin asignar'} · {stay.roomType}</p>
       <p className={styles.stayMeta}>
         {formatShortDate(stay.checkIn)} → {formatShortDate(stay.checkOut)} · {pluralize(stay.nights, "noche", "noches")}
       </p>
-      {!singleRoom ? <p className={styles.stayMeta}>{TRAVEL_STATE_LABELS[stay.travelState]}</p> : null}
+      <p className={styles.stayMeta}>Estado de la estadía: <span>{TRAVEL_STATE_LABELS[stay.travelState]}</span></p>
       {moveable ? (
         <button className={styles.stayAction} type="button" onClick={onRoomMove}>
           Cambiar habitación
@@ -176,6 +176,7 @@ export function ReservationDetail({ propertyId, endpoint, reservationId }: Reado
 
   return (
     <div className={styles.page}>
+      <Link className={styles.stayAction} href="/reservas">← Volver a reservas</Link>
       <header className={styles.header}>
         <div className={styles.titleBlock}>
           <h1>{title}</h1>

@@ -60,7 +60,7 @@ describe("explicit Staff logout navigation", () => {
     const {client,user,replace,push,refresh} = mount(path);
     await screen.findByRole("heading",{name:path});
     await waitFor(() => expect(screen.getByLabelText("Guest")).toHaveTextContent("signed-in|guest"));
-    for (const key of ["private-09","reservations","rooms"]) client.setQueryData([key,"staff-fixture"],{staffData:true});
+    for (const key of ["private-09","reservations","rooms","staff-room-catalog"]) client.setQueryData([key,"staff-fixture"],{staffData:true});
     client.setQueryData(["guest","profile"],{guestData:true});
     client.setQueryData(["public-availability"],{publicData:true});
     await user.click(screen.getByRole("button",{name:"Cerrar sesión"}));
@@ -69,7 +69,7 @@ describe("explicit Staff logout navigation", () => {
     expect(replace).toHaveBeenCalledExactlyOnceWith("/");
     expect(push).not.toHaveBeenCalled(); expect(refresh).not.toHaveBeenCalled();
     expect(client.getQueryData(staffSessionKey)).toBeNull();
-    for (const key of ["private-09","reservations","rooms"]) expect(client.getQueriesData({queryKey:[key]})).toEqual([]);
+    for (const key of ["private-09","reservations","rooms","staff-room-catalog"]) expect(client.getQueriesData({queryKey:[key]})).toEqual([]);
     expect(client.getQueryData(["guest-session"])).toMatchObject({context:"GUEST"});
     expect(client.getQueryData(["guest","profile"])).toEqual({guestData:true});
     expect(client.getQueryData(["public-availability"])).toEqual({publicData:true});

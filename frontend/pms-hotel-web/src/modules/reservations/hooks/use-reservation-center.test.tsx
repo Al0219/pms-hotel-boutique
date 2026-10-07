@@ -59,6 +59,14 @@ function centerDto() {
 }
 
 describe("useReservationCenter", () => {
+  it('rejects reservation summaries from another property', async () => {
+    const dto = centerDto(); dto.reservations[0].property_id = 'GT-HB-03';
+    listReservationCenterMock.mockResolvedValueOnce(dto);
+    const { result } = renderHook(() => useReservationCenter('GT-HB-01', 'http://pms.test/contract/reservations'), { wrapper: createWrapper() });
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error?.message).toBe('RESERVATION_PROPERTY_MISMATCH');
+    expect(result.current.data).toBeUndefined();
+  });
   beforeEach(() => {
     listReservationCenterMock.mockReset();
   });
