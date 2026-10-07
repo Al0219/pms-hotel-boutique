@@ -31,6 +31,76 @@ se documenta su ejecución manual en la guía QA de la tarea.
 | Sesiones | Guest y Staff son contextos separados. |
 | Scope | `ALL_PROPERTIES` es el conjunto autorizado de la sesión. |
 
+## Reserva pública — Juan / J4: servicio de booking público
+
+- **Estado:** READY → EN_PROGRESO → EN_QA. Owner Juan / BD3; rama
+  `feature/backend-public-booking-core`, base `10c0d82` publicada y sincronizada.
+  Usuario autorizó J4 y aprobó explícitamente ACTIVE para reservas nuevas; Property
+  inexistente/INACTIVE devuelve PROPERTY_NOT_FOUND (2026-10-07). Replay mantiene
+  la respuesta J1 original, sin revalidar elegibilidad/pricing/inventario actuales.
+  J3/J1/J2/J5 disponibles con QA técnico PASS; conservan EN_QA sin QA manual atribuido.
+- **DoR / contrato:** DOCX aprobado, sección J4 y response; precisiones J1/J2/J3/J5
+  aprobadas, A1/A2/A3 COMPLETADAS y presentes. Reutilizar DemoRatePolicy y catálogo
+  público read-only de Alan, InventoryAdmissionPort obligatorio y servicios legacy
+  de mapping/booking/confirmación. Árbol inicial sin cambios rastreados; cuatro
+  documentos untracked ajenos preservados. Misma rama Juan por usuario/DOCX.
+- **Orden / transacción:** fachada valida/hash J3, execute J1 serializa key en su
+  transacción writable READ_COMMITTED y solo ejecuta callback nuevo. Dentro: Property
+  ACTIVE/GTQ y RoomTypes scoped, total oficial por habitación × quantity sumado con
+  long exacto; comparar clientTotalMinor y validar ratePlanId demo exacto. PRICE_CHANGED
+  antes de admisión/pago. Admitir demanda completa, refrescar tipos bajo sus locks y
+  repetir comparación oficial antes del pago local; luego mapping J5, createBooking
+  legacy y confirm. La admisión legacy interna reutiliza los mismos locks/transacción.
+  Recibo COMPLETED después del callback/flush J1, sin REQUIRES_NEW/async/conexión propia.
+- **Pago / errores:** solo PaymentGatewayPort simulado J2, sin efectos externos;
+  APPROVED único éxito. DECLINED → PAYMENT_DECLINED; ERROR, configuración de tarifa/
+  moneda o fallo técnico → BOOKING_FAILED. Inventario agotado → NO_AVAILABILITY.
+  Clave con otro hash mantiene IDEMPOTENCY_KEY_REUSED; payload/RoomType/ratePlan inválido
+  usa INVALID_REQUEST existente. Traducción HTTP en J6; sin códigos nuevos fuera del DOCX.
+  No límites monetarios nuevos, float/double, duplicación de tarifas ni fake runtime.
+- **Respuesta / atomicidad:** PublicBookingView solo campos aprobados y stays reales,
+  CONFIRMED/GTQ/SIMULATED/APPROVED, roomId NULL; sin Guest/scope/tarjeta. JSON estable
+  con fechas ISO/null explícito y roundtrip dentro del callback antes de completar.
+  Replay lee snapshot J1, sin catálogo, admission, gateway, mapping ni escrituras.
+  Verificar cantidad/tipos/fechas/un único padre del resultado legacy antes de confirmar.
+  Fallo incluso al commit revierte recibo/perfil/reserva/stays/audit y deja key libre.
+- **Archivos previstos:** Service interface/impl, View y Exception nuevos; tests
+  unit/PG de J4 y solo entradas propias en estos dos docs. Sin migraciones, endpoint,
+  Security/OpenAPI, fakes productivos ni cambios de Alan/legacy/otras fases.
+- **Aceptación / DoD:** happy path confirmado, total igual a ofertas Availability ×
+  quantity, PRICE_CHANGED antes de pago, invalidación bajo locks, no disponibilidad/
+  DECLINED/ERROR sin filas parciales, replay/conflicto sin nuevo pago/reserva/stays;
+  PostgreSQL real, rollback exterior/tardío/commit y concurrencia de key/stock. Focalizados
+  y verify completo Java 21/PostgreSQL 17, diff --check y scope PASS; commit exclusivo J4,
+  push posterior solo autorizado. EN_QA hasta QA manual PASS; no iniciar J6.
+- **Evidencia técnica final:** focalizados 136 PASS, 45 nuevos J4 (19 unit y 26 PG)
+  y 91 regresión pricing/availability/receipt/mapping/gateway. mvn -B
+  --no-transfer-progress verify 686 PASS, cero failures/errors/skipped,
+  BUILD SUCCESS y JAR generado. Maven 3.9.11/Java 21.0.9/PostgreSQL 17.11;
+  Compose aislado pms-public-j4-qa, snapshot exacto de Backend con cache existente;
+  reportes/artefactos en target ignorado. Logs public-booking-j4-focused-final.log
+  y public-booking-j4-verify-final.log. Avisos SpringDoc/agente JVM preexistentes,
+  no críticos. Cuatro errores iniciales al reemplazar stubs con callback en tests
+  unitarios corregidos usando doReturn/doThrow; ninguna corrección de producción.
+- **Evidencia PG:** resultado CONFIRMED y snapshot exacta sin Guest/scope/tarjeta,
+  total Availability por categoría × quantity = Booking; tres categorías con dos
+  unidades/dos noches total 1080000 minor, un padre/seis stays y pago una vez.
+  PRICE_CHANGED/stock/invalid/config/DECLINED/ERROR sin filas parciales; cantidades
+  grandes rechazadas por stock antes de expandir/pagar. Replay reordenado o tras
+  cancelación/Property INACTIVE/moneda/catálogo cambiado mantiene original. Cinco
+  carreras con dos conexiones: key misma/diferente hash, rollback/key liberada y
+  claves distintas compitiendo por stock; locks observados, un booking comprometido.
+  Fallo después de confirm/flush, serialización, commit diferido y rollback exterior
+  revierten perfil/reserva/stays/audit/receipt. Pago local en misma conexión/tx PASS.
+- **QA manual pendiente:** Juan/usuario debe revisar con fixtures J4 la snapshot
+  y filas PostgreSQL de success/replay/conflicto/PRICE_CHANGED/NO_AVAILABILITY/
+  DECLINED/ERROR, una reserva y cantidad exacta de stays, rollback y concurrencia;
+  comparar con offers Availability y verificar no segundo pago/reserva en replay.
+  Servicio interno aún sin endpoint J6; no atribuir QA manual PASS a la suite.
+- **Siguiente:** commit exclusivo `feat(public-booking): orchestrate public booking service`
+  y reporte de fase; detenerse para autorización de push y QA manual PASS.
+  J3/J1/J2/J5/J4 conservan EN_QA; J6 no iniciada.
+
 ## Reserva pública — Juan / J5: mapeo a GuestProfile y ReservationStay
 
 - **Estado:** READY → EN_PROGRESO → EN_QA. Owner Juan / BD3; rama

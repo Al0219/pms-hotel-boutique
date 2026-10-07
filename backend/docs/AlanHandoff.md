@@ -1,5 +1,64 @@
 # AlanHandoff — Seguimiento Backend
 
+## Juan / J4 — servicio público: entrega técnica EN_QA (2026-10-07)
+
+- **Estado / owner:** EN_QA, Juan / BD3; validación técnica final PASS, QA manual
+  pendiente. Usuario aprobó ACTIVE para reservas nuevas; replay original J1.
+- **Rama / base / commit:** feature/backend-public-booking-core / 10c0d82;
+  commit exclusivo `feat(public-booking): orchestrate public booking service`.
+  Push pendiente de autorización posterior; J3/J1/J2/J5 publicadas y aún EN_QA.
+- **Entregado:** Service interface/impl, response View de campos exactos y Exception
+  de códigos aprobados; integración J3/J1/DemoRatePolicy/InventoryAdmissionPort/J2/J5/
+  booking/confirmación existentes. Precio/plan reales antes de pago, refresh de tipos
+  bajo locks y nueva comparación; callback exclusivamente local y misma READ_COMMITTED
+  de J1. Snapshot validada/roundtrip antes de completar; replay sin reevaluar ni escribir.
+- **Validación final:** mvn -B --no-transfer-progress
+  -Dtest=PublicBookingServiceTests,PublicBookingServiceIntegrationTests,PublicBookingReceiptIntegrationTests,PublicBookingMappingIntegrationTests,PublicBookingMappingServiceTests,SimulatedPaymentGatewayAdapterTests,DemoRatePolicyTests,PublicAvailabilityServiceTests test:
+  136 PASS (45 J4 + 91 regresión). mvn -B --no-transfer-progress verify:
+  686 PASS, cero failures/errors/skipped, BUILD SUCCESS y JAR generado.
+  Java 21.0.9/Maven 3.9.11/PostgreSQL 17.11; Compose aislado pms-public-j4-qa,
+  snapshot exacto de fuentes/POM/docs y cache existente, reportes/artefactos en target
+  ignorado. Logs public-booking-j4-focused-final.log y public-booking-j4-verify-final.log.
+- **Corrección propia:** cuatro stubs unitarios ejecutaban el callback anterior
+  con args null al reemplazarse; corregidos con doReturn/doThrow, sin cambios de
+  producción. Reejecución completa PASS, sin errores pendientes ni warnings críticos
+  nuevos; avisos SpringDoc/agente de tests ya presentes en fases anteriores.
+- **Evidencia:** total Availability × quantities igual a Booking (1080000 para
+  tres categorías × dos unidades × dos noches), un padre/seis stays y pago una vez.
+  Gates precio/stock/invalid/config/rechazo/error, snapshots sin Guest/tarjeta,
+  replay/conflicto y replay tras cambio de estado/catálogo PASS. Rollback tardío con
+  flush, serialización, commit diferido y exterior sin filas parciales. Cinco carreras
+  PG con key/stock y locks observados; un solo booking comprometido. Pago simulado
+  mantiene conexión/tx; no efecto externo real, SDK o fakes productivos.
+- **Alcance / siguiente:** cuatro fuentes nuevas, dos tests J4 y entradas propias
+  en estos dos docs; sin migración, endpoint, Security/OpenAPI ni cambios de Alan/
+  legacy. Cuatro untracked ajenos preservados. Mantener EN_QA hasta QA manual PASS;
+  reportar commit y detenerse para autorización de push. No iniciar J6 ni PR/merge.
+
+## Juan / J4 — servicio público: inicio (2026-10-07)
+
+- **Estado / owner:** READY → EN_PROGRESO, Juan / BD3. Usuario autorizó J4 y
+  aprobó ACTIVE para nuevas reservas; inexistente/INACTIVE → PROPERTY_NOT_FOUND.
+  Replay original J1 sin reevaluar elegibilidad/pricing/stock actuales.
+- **Rama / base:** feature/backend-public-booking-core / 10c0d82, J5 publicada
+  y sincronizada. J3/J1/J2/J5 aún EN_QA sin confirmación manual. Árbol inicial sin
+  cambios rastreados; cuatro documentos untracked ajenos intactos.
+- **Diseño / alcance:** cuatro fuentes propias de Service/Impl/View/Exception y
+  tests J4 unit/PG; solo estas entradas. J3 valida/hash; J1 posee READ_COMMITTED,
+  lock global y snapshot. Callback nuevo usa catálogo público/DemoRatePolicy Alan,
+  valida precio y ratePlan, admite demanda, refresca precio bajo locks antes de
+  pago simulado y persiste/confirm mediante J5/servicios existentes. Recibo al éxito.
+- **Límites / decisiones:** callback solo local; sin gateway real, IO externo,
+  REQUIRES_NEW/async/conexión independiente. APPROVED, DECLINED → PAYMENT_DECLINED,
+  ERROR/fallo técnico → BOOKING_FAILED; stock → NO_AVAILABILITY, precio → PRICE_CHANGED
+  antes de pago. IDs/tipos/cantidades/fechas/un solo padre exactos; JSON del contrato
+  sin Guest/scope/tarjeta. Snapshot original en replay. Sin Security/OpenAPI/endpoint,
+  migración, pricing alternativo ni cambios a interfaces/implementaciones de Alan.
+- **DoD / siguiente:** tests éxito/precio/stock/pago/replay/conflicto, snapshots,
+  rollback tardío/exterior/commit y concurrencia con PG real; focalizados + verify
+  Java 21/PostgreSQL 17, diff --check/scope PASS. Entregar EN_QA y commit exclusivo
+  J4; detenerse para autorización de push y QA manual. No iniciar J6.
+
 ## Juan / J5 — mapeo público: entrega técnica EN_QA (2026-10-07)
 
 - **Estado / owner:** EN_QA, Juan / BD3; validación técnica PASS, QA manual
