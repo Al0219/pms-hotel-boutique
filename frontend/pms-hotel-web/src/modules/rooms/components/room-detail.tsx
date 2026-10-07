@@ -23,8 +23,9 @@ export function RoomDetail({ room, propertyId, endpoint }: Readonly<RoomDetailPr
     <p className={styles.eyebrow}>Habitación</p>
     <h2 id="room-detail-title">{room.number}</h2>
     <div className={styles.summaryGrid}>
-      <Reference label="Habitación" value={room.id} />
-      <Reference label="Property ID" value={room.propertyId} />
+      <Reference label="Número / código" value={room.number} />
+      <Reference label="Piso" value={room.floor} />
+      <Reference label="Propiedad" value={room.propertyId} />
     </div>
     <div className={styles.detailGrid}>
       <section className={styles.detailCard} aria-labelledby="room-status-title">
@@ -33,6 +34,7 @@ export function RoomDetail({ room, propertyId, endpoint }: Readonly<RoomDetailPr
         <p className={styles.note}>
           OOO (Fuera de orden) y OOS (Fuera de servicio) no eliminan la habitación del sistema.
         </p>
+        <p className={styles.note}>Ocupación: no disponible en esta consulta. Una habitación operativa puede estar libre u ocupada.</p>
       </section>
       <section className={styles.detailCard} aria-labelledby="room-type-title">
         <h3 id="room-type-title">Tipo de habitación</h3>

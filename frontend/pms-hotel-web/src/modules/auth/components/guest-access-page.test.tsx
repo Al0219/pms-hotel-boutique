@@ -9,28 +9,39 @@ import { AccountDashboardPage } from '@/modules/account';
 import { GuestAccessPage } from './guest-access-page';
 import { GuestSessionProvider, useGuestSession } from './guest-session-provider';
 import { GuestAccountGate } from './guest-account-gate';
+import { private09Keys } from '@/data/mocks/private-09';
+import { private07Keys, initialSecurity } from '@/data/mocks/private-07';
+import { StaffSessionProvider, useStaffSession } from './staff-session-provider';
 
 const navigation = { replace: vi.fn(), push: vi.fn(), back: vi.fn(), forward: vi.fn(), refresh: vi.fn(), prefetch: vi.fn(), bfcacheId: 'guest-access-test' };
 const endpoint = 'http://pms.test/__mock/guest-access';
 const clients: QueryClient[] = [];
-afterEach(() => { cleanup(); clients.splice(0).forEach(client => client.clear()); vi.unstubAllEnvs(); vi.clearAllMocks(); });
+afterEach(() => {
+  cleanup(); clients.splice(0).forEach(client => client.clear());
+  localStorage.removeItem(private09Keys.identity); localStorage.removeItem(private07Keys.security);
+  vi.unstubAllEnvs(); vi.clearAllMocks();
+});
 
 function SessionObserver() {
   const { status } = useGuestSession();
   return <output aria-label="Guest session">{status}</output>;
 }
+function StaffObserver() {
+  const session = useStaffSession();
+  return <output aria-label="Staff local session">{session.userName} · {session.roleId}</output>;
+}
 function setup(returnTo?: string, mockMode = true) {
   vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', String(mockMode));
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   clients.push(client);
-  function Harness({ page }: { page: 'access' | 'account' | 'profile' }) {
+  function Harness({ page }: { page: 'access' | 'account' | 'profile' | 'staff' }) {
     return <AppRouterContext.Provider value={navigation}><QueryClientProvider client={client}><GuestSessionProvider>
       <SessionObserver />
-      {page === 'access' ? <GuestAccessPage returnTo={returnTo} /> : <GuestAccountGate>{page === 'account' ? <AccountDashboardPage /> : <p>Perfil del huésped</p>}</GuestAccountGate>}
+      {page === 'access' ? <GuestAccessPage returnTo={returnTo} /> : page === 'staff' ? <StaffSessionProvider><StaffObserver /></StaffSessionProvider> : <GuestAccountGate>{page === 'account' ? <AccountDashboardPage /> : <p>Perfil del huésped</p>}</GuestAccountGate>}
     </GuestSessionProvider></QueryClientProvider></AppRouterContext.Provider>;
   }
   const view = render(<Harness page="access" />);
-  return { client, user: userEvent.setup(), navigate: (page: 'access' | 'account' | 'profile') => view.rerender(<Harness page={page} />) };
+  return { client, user: userEvent.setup(), navigate: (page: 'access' | 'account' | 'profile' | 'staff') => view.rerender(<Harness page={page} />) };
 }
 function fillEmail(email = 'demo@example.com') {
   fireEvent.change(screen.getByLabelText('Correo electrónico'), { target: { value: email } });
@@ -46,6 +57,34 @@ function fillRegistration() {
 }
 
 describe('Guest identity frontend', () => {
+  it('opens the approved local Staff session without signing in a Guest or saving its password', async () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    const closed = initialSecurity(); closed.sessions[0].status = 'closed';
+    localStorage.setItem(private07Keys.security, JSON.stringify(closed));
+    const { client, navigate } = setup('/reserva/checkout');
+    fillEmail('qa_staff@example.test');
+    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: '12345678' } });
+    submit(); submit();
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledExactlyOnceWith('/dashboard'));
+    expect(screen.getByLabelText('Guest session')).toHaveTextContent('signed-out');
+    expect(screen.getByLabelText('Contraseña')).toHaveValue('');
+    expect(localStorage.getItem(private09Keys.identity)).toContain('superadmin');
+    expect(localStorage.getItem(private09Keys.identity)).not.toContain('12345678');
+    expect(localStorage.getItem(private07Keys.security)).not.toContain('12345678');
+    expect(JSON.stringify(client.getMutationCache().getAll().map(item => item.state.variables))).not.toContain('12345678');
+    navigate('staff');
+    expect(await screen.findByLabelText('Staff local session')).toHaveTextContent('qa_staff · superadmin');
+    expect(screen.getByLabelText('Guest session')).toHaveTextContent('signed-out');
+  }, 10000);
+
+  it('rejects incorrect local Staff credentials without falling back to Guest access', async () => {
+    vi.stubEnv('NODE_ENV', 'development'); setup();
+    fillEmail('qa_staff@example.test'); submit();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Correo o contraseña incorrectos');
+    expect(navigation.replace).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Guest session')).toHaveTextContent('signed-out');
+    expect(localStorage.getItem(private09Keys.identity)).toBeNull();
+  });
   it('signs in with Google directly to linked reservations without a registration confirmation', async () => {
     const { user } = setup('/mis-reservas');
     expect(screen.getByText('¿Reservaste como invitado?')).toBeInTheDocument();
