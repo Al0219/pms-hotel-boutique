@@ -31,7 +31,7 @@ class SecurityConfigurationIntegrationTests {
     @Test
     void explicitLoginNeedsCredentialsAndMeLogoutRequireTheirOwnBearer() throws Exception {
         mockMvc.perform(post("/api/v1/staff-auth/login").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"username\":\"\",\"password\":\"\"}")).andExpect(status().isBadRequest());
+                .content("{\"email\":\"\",\"password\":\"\"}")).andExpect(status().isBadRequest());
         for (String prefix : java.util.List.of("/api/v1/staff-auth", "/api/v1/guest-auth")) {
             mockMvc.perform(get(prefix + "/me")).andExpect(status().isUnauthorized());
             mockMvc.perform(post(prefix + "/logout")).andExpect(status().isUnauthorized());
