@@ -23,8 +23,8 @@ final class PublicBookingReceiptSnapshotValidator {
             JsonNode payment = root.get("payment");
             fields(payment, Set.of("provider", "status", "reference"));
             require("SIMULATED".equals(text(payment, "provider")));
-            // Preserve the approved response alternatives; J2 selects the one runtime success state.
-            require(Set.of("CAPTURED", "APPROVED").contains(text(payment, "status")));
+            // J2 approval selects APPROVED as the sole public booking success state.
+            require(PaymentResult.Status.APPROVED.name().equals(text(payment, "status")));
             require(text(payment, "reference").equals(result.paymentReference()));
             JsonNode stays = root.get("stays");
             require(stays.isArray() && !stays.isEmpty());

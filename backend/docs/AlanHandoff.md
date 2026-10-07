@@ -1,5 +1,59 @@
 # AlanHandoff — Seguimiento Backend
 
+## Juan / J2 — pasarela simulada: entrega técnica EN_QA (2026-10-07)
+
+- **Estado / owner:** EN_QA, Juan / BD3; validación técnica PASS, QA manual
+  pendiente. APPROVED como único éxito aprobado explícitamente por el usuario.
+- **Rama / base / commit:** feature/backend-public-booking-core / 5f3c1f6;
+  commit exclusivo `feat(public-booking): add simulated payment gateway`.
+  Push pendiente de autorización posterior; J3/J1 publicadas y aún EN_QA.
+- **Entregado:** PaymentGatewayPort y records request/result; adapter local
+  Spring único, siempre APPROVED en runtime. Request solo amountMinor long/GTQ;
+  provider SIMULATED fijo y referencias SIM-UUID; DECLINED/ERROR sin referencia
+  seleccionables únicamente por constructor package-local de fixture. Validator
+  de snapshot J1 acepta solo APPROVED tras decisión J2; migraciones intactas.
+- **Límites:** sin IO, SDK, secretos, metadata sensible, persistencia propia,
+  conexión/transacción independiente ni async. Sin pricing, mapper, orquestación
+  pública, endpoint o cambios de Alan. Futura pasarela real requiere otro contrato.
+- **Validación:** mvn -B --no-transfer-progress
+  -Dtest=PaymentContractTests,SimulatedPaymentGatewayAdapterTests,SimulatedPaymentGatewayIntegrationTests,PublicBookingReceiptRequestTests,PublicBookingReceiptIntegrationTests,PublicBookingReceiptSchemaUpgradeTests,ReservationsSchemaUpgradeTests test:
+  71 PASS (35 J2 + 36 regresión). mvn -B --no-transfer-progress verify:
+  606 PASS, cero failures/errors/skipped, BUILD SUCCESS y JAR generado.
+  Maven 3.9.11/Java 21.0.9/PostgreSQL 17.11; Compose aislado pms-public-j2-qa,
+  snapshot exacto de Backend, cache existente y reportes/artefactos en target.
+  Logs public-booking-j2-focused.log y public-booking-j2-verify.log ignorados.
+  Avisos SpringDoc/agente de tests preexistentes en J1, sin warnings críticos nuevos.
+- **Evidencia / alcance:** éxito/rechazo/error, referencias concurrentes, forma
+  del request sin metadata, wiring real y siete tablas intactas tras simulaciones;
+  callback de InventoryAdmissionPort sin cambios, rollback y rechazo de demanda
+  antes del pago PASS. Cuatro fuentes nuevas, ajuste de éxito snapshot, tres
+  tests J2 y entradas propias en estos dos docs. Documentos ajenos preservados.
+- **Siguiente:** QA manual reproducible descrita en AlanPlan; conservar EN_QA
+  hasta confirmación PASS del usuario. Reportar commit, pedir autorización de
+  push y detenerse. No iniciar J5 ni crear PR/merge.
+
+## Juan / J2 — pasarela simulada: inicio (2026-10-07)
+
+- **Estado / owner:** READY → EN_PROGRESO, Juan / BD3. Usuario autorizó J2 y
+  resolvió CAPTURED/APPROVED seleccionando explícitamente APPROVED como único éxito.
+- **Rama / base:** feature/backend-public-booking-core / 5f3c1f6; J1 publicada
+  tras autorización y sincronizada. J3/J1 conservan EN_QA sin confirmación manual.
+  Árbol inicial sin cambios rastreados; cuatro documentos untracked ajenos intactos.
+- **Contrato / decisiones:** PaymentRequest solo importe long exacto y GTQ;
+  provider SIMULATED, éxito APPROVED y referencia sintética SIM-UUID. Runtime
+  Spring siempre éxito; DECLINED/ERROR solo por fixture package-local de tests,
+  sin HTTP/configuración. Sin metadata sensible ni políticas de precio nuevas.
+- **Alcance:** PaymentGatewayPort, PaymentRequest/Result y adapter Reservations;
+  ajustar únicamente la aceptación del éxito en snapshot J1 tras la decisión J2;
+  pruebas contrato/unit/PostgreSQL y estas entradas propias. Sin migraciones,
+  pricing, booking público, mapping, endpoint ni modificaciones de Alan.
+- **Límite / DoD:** adapter exclusivamente local, sin IO ni persistencia, apto
+  para callback InventoryAdmissionPort sin modificarlo. Verificar pruebas de
+  éxito/rechazo/error, referencias, wiring, cero escrituras, rollback y callback;
+  focalizados y verify completo Java 21/PostgreSQL 17, diff --check/alcance PASS.
+  Entregar EN_QA y commit independiente J2; detenerse para autorización de push
+  y QA manual del usuario. J5 no iniciada.
+
 ## Juan / J1 — recibo persistente: entrega técnica EN_QA (2026-10-06)
 
 - **Estado / owner:** EN_QA, Juan / BD3; validación técnica final PASS, QA manual

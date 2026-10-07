@@ -31,6 +31,64 @@ se documenta su ejecución manual en la guía QA de la tarea.
 | Sesiones | Guest y Staff son contextos separados. |
 | Scope | `ALL_PROPERTIES` es el conjunto autorizado de la sesión. |
 
+## Reserva pública — Juan / J2: pasarela de pago simulada
+
+- **Estado:** READY → EN_PROGRESO → EN_QA. Owner Juan / BD3; rama
+  `feature/backend-public-booking-core`, base `5f3c1f6` publicada y sincronizada.
+  Usuario autorizó J2 y aprobó expresamente APPROVED como único éxito (2026-10-07).
+  J3/J1 tienen validación técnica PASS y siguen EN_QA; no atribuir QA manual PASS.
+- **DoR / dependencias:** contrato DOCX aprobado, sección J2 y response público;
+  J3/J1 disponibles, arquitectura Reservations e InventoryAdmissionPort existentes.
+  Continuación en la rama de Juan indicada por el DOCX y por el usuario. Cuatro
+  documentos untracked ajenos preservados; sin cambios rastreados al inicio.
+- **Decisión aprobada:** provider SIMULATED; único éxito APPROVED; DECLINED/ERROR
+  únicamente en fixtures de pruebas. Runtime demo siempre APPROVED. Selección por
+  constructor package-local, sin campos HTTP, toggles de configuración ni perfiles.
+- **Diseño / alcance:** PaymentGatewayPort.pay(PaymentRequest), request inmutable
+  con solo amountMinor long exacto y currency GTQ sin normalización. El caller
+  suministra el total oficial; el puerto no recalcula ni añade políticas monetarias.
+  PaymentResult con APPROVED/DECLINED/ERROR, provider SIMULATED fijo y referencia
+  SIM-<UUID canónico lowercase> nueva por llamada exitosa; fallos sin referencia.
+  Adaptador local sin IO, persistencia, SDK, secretos, datos de tarjeta/Guest,
+  transacciones propias, conexiones ni async. J1/J4 gestionan replay; el adaptador
+  no introduce otra idempotencia. Una futura pasarela real exige contrato separado.
+- **Integración mínima de contrato:** validator de snapshot J1 pasa de las dos
+  alternativas pendientes a aceptar únicamente APPROVED, conforme a esta decisión;
+  sin cambiar recibos persistidos ni migraciones aplicadas. No alterar pricing,
+  InventoryAdmissionPort, Staff, Security, OpenAPI, DTO público ni otras fases.
+- **Archivos previstos:** cuatro fuentes de puerto/request/result/adapter, ajuste
+  de estado en PublicBookingReceiptSnapshotValidator, tres tests J2 de contrato,
+  adaptador e integración PostgreSQL; solo entradas propias en estos seguimientos.
+- **Aceptación / DoD:** APPROVED/DECLINED/ERROR, referencia sintética, request sin
+  metadata sensible, runtime Spring único y sin selector externo; cero escrituras
+  del adaptador, callback real de admisión con fixture local exacta y rollback.
+  Focalizados J2 + regresión J1, mvn verify completo Java 21/PostgreSQL 17,
+  diff --check y revisión de alcance PASS; commit exclusivo J2, push posterior
+  solo autorizado por usuario. EN_QA hasta QA manual PASS; no iniciar J5.
+- **Evidencia técnica final:** focalizados 71 PASS: 35 nuevos J2 (17 contrato,
+  9 adapter, 9 integración PostgreSQL) y 36 regresión J1/upgrade. mvn -B
+  --no-transfer-progress verify 606 PASS, cero failures/errors/skipped,
+  BUILD SUCCESS y JAR generado. Maven 3.9.11/Java 21.0.9/PostgreSQL 17.11;
+  Compose aislado pms-public-j2-qa, snapshot temporal exacto de Backend con cache
+  existente, reportes/artefactos devueltos a backend/target ignorado. Logs:
+  public-booking-j2-focused.log y public-booking-j2-verify.log. Sin SDK/dependencias
+  nuevas; avisos SpringDoc/agente JVM ya presentes en verify J1, no críticos.
+- **Evidencia de integración:** único bean Spring de PaymentGatewayPort produce
+  APPROVED. Todos los escenarios dejan siete tablas de negocio intactas; el
+  adapter no cambia conexión ni transacción del caller. Callback de inventario
+  persistiendo demanda exacta PASS; rollback exterior y aborto por DECLINED/ERROR
+  restauran escrituras/ATS, y demanda insuficiente no invoca pago. Estas reservas
+  son fixtures de prueba; no implementan J4/J5 ni cambian el puerto de Alan.
+- **QA manual pendiente:** Juan/usuario debe inspeccionar en IDE el resultado de
+  new SimulatedPaymentGatewayAdapter().pay(new PaymentRequest(65000L, "GTQ")):
+  provider SIMULATED, APPROVED y referencia SIM-UUID nueva por llamada; revisar
+  fixtures DECLINED/ERROR sin referencia y ausencia de writes tras rollback en
+  los escenarios de integración. Confirmar que el request no recibe datos Guest/
+  tarjeta ni existe selector de fallos en HTTP/configuración. Sin endpoint en J2.
+- **Siguiente:** commit exclusivo `feat(public-booking): add simulated payment gateway`
+  y reporte de fase; detenerse para autorización de push y QA manual PASS.
+  J3/J1/J2 permanecen EN_QA; J5 no iniciada.
+
 ## Reserva pública — Juan / J1: recibo idempotente persistente
 
 - **Estado:** READY → EN_PROGRESO → EN_QA. Owner Juan / BD3; rama
