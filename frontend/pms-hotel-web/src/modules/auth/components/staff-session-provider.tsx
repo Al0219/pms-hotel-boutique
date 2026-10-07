@@ -1,12 +1,16 @@
 "use client";
 
-import { createContext, useContext, type ReactNode } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createContext, useContext, useState, type ReactNode } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRoles } from "@/modules/permissions";
 import { useSecurity } from "@/modules/security";
 import { getPublicEnvironment } from "@/lib/env";
-import { mapStaffIdentity, mapStaffSession } from "../mappers/staff-session.mapper";
-import { getActiveStaffSessionDTO, getStaffIdentityDTO, logoutStaffSession } from "../service/staff-session.service";
+import { mapStaffIdentity } from "../mappers/staff-session.mapper";
+import { getStaffIdentityDTO, logoutStaffSession } from "../service/staff-session.service";
+import { staffSessionKey, staffSessionQuery } from "../hooks/staff-session-query";
+import { DomainMappingError } from "@/lib/errors/domain-mapping-error";
 import type { StaffSession } from "../model/staff-session";
 
 const StaffContext = createContext<StaffSession | null>(null);
@@ -36,20 +40,37 @@ export function StaffSessionProvider({ children }: { children: ReactNode }) {
 }
 
 function StaffBffSession({ children }: { children: ReactNode }) {
-  const session = useQuery({
-    queryKey: ["staff-session"],
-    queryFn: async ({ signal }) => mapStaffSession(await getActiveStaffSessionDTO(signal)),
-    retry: false,
-  });
+  const client = useQueryClient();
+  const router = useRouter();
+  const [leaving, setLeaving] = useState(false);
+  const session = useQuery(staffSessionQuery);
   const logout = useMutation({
     mutationFn: logoutStaffSession,
-    onSuccess: () => { void session.refetch(); },
+    onSuccess: async () => {
+      setLeaving(true);
+      await client.cancelQueries({ queryKey: staffSessionKey });
+      client.setQueryData(staffSessionKey, null);
+      // Dashboard/calendar caches are Staff-owned; Guest/public queries stay intact.
+      for (const key of ["private-09", "reservations", "rooms"]) {
+        await client.cancelQueries({ queryKey: [key] });
+        client.removeQueries({ queryKey: [key] });
+      }
+      router.replace("/");
+    },
   });
-  if (session.fetchStatus === "paused") return <p role="status">Sin conexión. Esperando para cargar la sesión Staff.</p>;
+  if (leaving) return <p role="status">Sesión cerrada. Volviendo al inicio…</p>;
+  if (!session.data && session.fetchStatus === "paused") return <p role="status">Sin conexión. Esperando para cargar la sesión Staff.</p>;
   if (session.isPending) return <p role="status">Cargando sesión Staff…</p>;
-  if (session.isError || !session.data) return <section>
+  // Retain the last valid identity during background/network revalidation.
+  // Invalid authorization DTOs fail closed, with a load error rather than a false 401.
+  if (session.isError && (!session.data || session.error instanceof DomainMappingError)) return <section>
+    <p role="alert">No se pudo cargar la sesión Staff.</p>
+    <button type="button" onClick={() => void session.refetch()}>Reintentar sesión</button>
+  </section>;
+  if (!session.data) return <section>
     <h1>Sesión Staff requerida</h1>
-    <p>Inicia sesión desde el acceso Staff autorizado por el hotel.</p>
+    <p>Inicia sesión con tu correo electrónico y contraseña.</p>
+    <Link href="/acceso">Iniciar sesión</Link>
     <button type="button" onClick={() => void session.refetch()}>Reintentar sesión</button>
   </section>;
   return <StaffContext.Provider value={session.data}>

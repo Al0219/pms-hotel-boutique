@@ -1,3 +1,4 @@
+import { AppRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
@@ -7,6 +8,8 @@ import { mockServer } from "@/data/mocks/server";
 
 import { StaffSessionProvider, useStaffSession } from "./staff-session-provider";
 
+const navigation = { replace:vi.fn(), push:vi.fn(), refresh:vi.fn(), back:vi.fn(), forward:vi.fn(), prefetch:vi.fn(), bfcacheId:"staff-provider" };
+
 function Probe() {
   const session = useStaffSession();
   return <p>{`${session.userName}|${session.roleId}|${session.memberships[0]?.propertyCode}`}</p>;
@@ -14,7 +17,7 @@ function Probe() {
 
 function mount() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
-  return render(<QueryClientProvider client={client}><StaffSessionProvider><Probe /></StaffSessionProvider></QueryClientProvider>);
+  return render(<AppRouterContext.Provider value={navigation}><QueryClientProvider client={client}><StaffSessionProvider><Probe /></StaffSessionProvider></QueryClientProvider></AppRouterContext.Provider>);
 }
 
 beforeEach(() => { vi.stubEnv("NEXT_PUBLIC_USE_MOCK_API", "false"); });
