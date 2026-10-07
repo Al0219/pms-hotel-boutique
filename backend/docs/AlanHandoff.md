@@ -1,5 +1,49 @@
 # AlanHandoff — Seguimiento Backend
 
+## Cierre de QA manual final — Demo/Web público (2026-10-06)
+
+- **Resultado:** Alan confirmó QA manual PASS en `feature/web-public-availability-real`.
+  Demo Bootstrap Docker, Web Public Availability real y Public booking journey
+  pre-submit quedan **COMPLETADAS**. A1/A2/A3 conservan su cierre COMPLETADO.
+- **Validado:** stack Docker integrado; catálogo real de seis RoomTypes y galerías;
+  carrito global/persistencia y filtros; edición de fechas/huéspedes con
+  revalidación atómica; Header → catálogo Home; Guest Google session/account según
+  el contrato vigente; Guest checkout, Review y llegada a Payment. El bloqueo de
+  confirmación final funciona correctamente. El Account Summary solo permite
+  firstName/lastName cuando existe perfil asociado; no se atribuyen nombres a
+  Google cuando falta GuestProfile.
+- **Pendiente / fuera de scope, a cargo de Juan:** `POST /api/v1/public/bookings`,
+  PaymentGateway simulado Backend, persistencia Reservation/ReservationStay,
+  confirmationCode e idempotencia booking. No se afirma persistencia ni reserva
+  confirmada.
+- **Siguiente:** cierre documental de AlanPlan, AlanHandoff y guías Web/dataset.
+  Sin cambios de código, commit, push ni merge.
+
+## Dataset local demo integrado — EN_QA (2026-10-06)
+
+- **Alcance autorizado:** conservar rama `feature/web-public-availability-real` y
+  todo el trabajo pendiente. Bootstrap local Inventory y Web público hasta Payment;
+  sin lógica de Juan, booking real, Staff/Android, commit/push/merge. A1/A2/A3 siguen
+  COMPLETADAS; Web y este incremento EN_QA hasta QA manual final.
+- **Entrega:** `DemoDataBootstrap` reutiliza ApplicationRunner; transacción y lock,
+  Property demo-only HB-GT-DEMO/GTQ/ACTIVE, 6 tipos y 24 Rooms. Flag false por defecto
+  en aplicación; requiere dev/demo y true, excluye prod/production. Compose local
+  activa demo y suministra UUID a Web automáticamente. Sin migraciones nuevas,
+  precios duplicados, borrados ni entidades futuras sin contrato.
+- **Pruebas Backend:** focalizados 10 PASS; `mvn -B --no-transfer-progress verify`
+  459 PASS, sin failures/errors/skipped, en Java 21/PostgreSQL efímero separado.
+- **Smoke integrado:** PostgreSQL/Backend/Web healthy; dataset 6/24 y BFF con seis
+  ofertas GTQ/ATS=4/totales correctos. Google start 307 hacia accounts.google.com;
+  no se sigue OAuth ni se publica state/codes/tokens/cookies. Recorrido completo
+  callback/exchange/HttpOnly/return pendiente de QA manual de Alan.
+- **Validación Web:** suite 1212 PASS / 233 archivos; typecheck/lint/build real
+  PASS. Firefox contra el stack integrado: siete pantallas hasta Payment en cinco
+  anchos (1440/1024/768/375/320), sin overflow; slider con teclado y selección/total
+  real PASS, confirmación final bloqueada. Compose config y git diff --check PASS.
+- **Guía y siguiente:** [Local Demo Dataset](../../docs/LOCAL_DEMO_DATASET.md),
+  validar manualmente catálogo/carrito/formulario/Payment y Google en este stack.
+  La presentación real no confirma ni cobra una Reservation.
+
 ## Reserva pública — A2/A3: cierre formal y QA manual PASS (2026-10-06)
 
 - **Estado:** A2 y A3 COMPLETADAS; QA técnico y QA manual PASS confirmado por Alan,

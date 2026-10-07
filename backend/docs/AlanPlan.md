@@ -31,11 +31,54 @@ se documenta su ejecución manual en la guía QA de la tarea.
 | Sesiones | Guest y Staff son contextos separados. |
 | Scope | `ALL_PROPERTIES` es el conjunto autorizado de la sesión. |
 
+## Cierre QA manual integrado — 2026-10-06
+
+QA manual final PASS confirmado por Alan en `feature/web-public-availability-real`:
+
+| Incremento | Estado final |
+| --- | --- |
+| Demo Bootstrap Docker | COMPLETADA — QA manual PASS |
+| Web Public Availability real | COMPLETADA — QA manual PASS |
+| Public booking journey pre-submit | COMPLETADA — QA manual PASS |
+
+Se validaron el stack Docker integrado, catálogo real de seis RoomTypes, galerías,
+carrito/persistencia, filtros, edición y revalidación atómica, navegación Header →
+catálogo Home, Guest Google session/account según contrato, checkout Guest, Review
+y llegada a Payment. El submit final se bloquea correctamente.
+
+**Pendiente / fuera de scope, a cargo de Juan:** `POST /api/v1/public/bookings`,
+PaymentGateway simulado Backend, persistencia Reservation/ReservationStay,
+confirmationCode e idempotencia de booking. El PASS pre-submit no declara esos
+componentes implementados ni una reserva confirmada.
+
+## Dataset local demo — bootstrap integrado
+
+- **Estado:** COMPLETADA; implementación, QA técnico y QA manual PASS confirmado
+  por Alan el 2026-10-06.
+- **Autorización:** incremento local/dev/demo aprobado por el usuario el 2026-10-06,
+  en la rama existente `feature/web-public-availability-real`; conservar cambios
+  pendientes y no crear rama, commit, push ni merge. Esta instrucción específica
+  prevalece para el incremento sobre la regla general de rama nueva.
+- **Dependencias:** A1/A2/A3 COMPLETADAS; modelos Property/RoomType/Room y esquema
+  Liquibase existentes. Reutilizar `ApplicationRunner`; bootstrap separado de las
+  migraciones productivas y `DemoRatePolicy` como única autoridad de precios.
+- **Aceptación:** Property HB-GT-DEMO ACTIVE/GTQ/America/Guatemala, seis tipos
+  STD/CLASSIC/TWIN/KING/DLX/SUITE y cuatro Rooms por tipo (24), UUID demo-only
+  suministrado automáticamente a Web. Inserciones idempotentes, reparación parcial,
+  conservación de datos existentes, flag deshabilitado por defecto en la aplicación
+  y exclusión explícita de perfiles prod/production. Tests con fixtures propios.
+- **Alcance:** entorno integrado local y presentación Web pre-submit hasta Payment.
+  Booking real, persistencia Reservation/Stay y PaymentGateway siguen fuera de
+  alcance y pendientes de Juan. Sin cambios Staff/Android ni Auth/Account.
+  A1/A2/A3 y Web Public Availability permanecen COMPLETADAS.
+- **Guía:** [Local Demo Dataset](../../docs/LOCAL_DEMO_DATASET.md).
+
 ## Reserva pública — A1: tarifas demo autoritativas
 
 - **Estado:** COMPLETADA; QA técnico PASS y QA manual PASS confirmado por Alan;
   cierre formal autorizado por el usuario el 2026-10-06.
-  Incremento público superior PENDIENTE; A2/A3 COMPLETADAS. No existe un plan
+  A2/A3 y el journey Web pre-submit están COMPLETADOS; booking real sigue pendiente
+  de Juan. No existe un plan
   público previo en este archivo; esta entrada registra solo el alcance aprobado A1.
 - **Owner / seguimiento:** Alan / BD1; consumidores futuros Availability y Booking.
   Sin dependencia HTTP, Auth, OpenAPI ni módulo tarifario definitivo para A1.
@@ -89,7 +132,7 @@ se documenta su ejecución manual en la guía QA de la tarea.
 
 - **Estado inicial/final:** EN_QA → COMPLETADA; QA técnico PASS y QA manual PASS
   conjunto A2/A3 confirmado por Alan; cierre formal autorizado el 2026-10-06.
-  A1 COMPLETADA en 42a785a; A3 COMPLETADA, incremento público superior PENDIENTE.
+  A1 COMPLETADA en 42a785a; A3 COMPLETADA y cierre manual conjunto registrado.
   Owner Alan / BD1. Rama feature/backend-public-availability, base 42a785a,
   árbol inicial limpio.
 - **DoR / contrato aprobado:** PublicAvailabilityQuery(propertyId UUID, arrival
@@ -202,8 +245,8 @@ se documenta su ejecución manual en la guía QA de la tarea.
   404; Staff vecino sin token 401. OpenAPI path, operationId=publicAvailability,
   security=[] y Swagger UI 200 PASS. Cleanup completado; procedimiento/evidencia
   en [43](43_PUBLIC_AVAILABILITY_CONTRACT_QA.md). QA manual atribuido a Alan.
-- **Siguiente:** A2/A3 cerradas; esperar autorización para otra tarea.
-  No iniciar booking; incremento público superior PENDIENTE.
+- **Siguiente:** A2/A3 cerradas; el endpoint POST de booking, persistencia,
+  PaymentGateway, confirmationCode e idempotencia siguen pendientes de Juan.
 
 ## Registro Liquibase por módulo
 
