@@ -1,0 +1,26 @@
+# Pre-J1 entry point for upgrade tests; all production changesets remain untouched.
+databaseChangeLog:
+  - include:
+      file: db/changelog/002ServiceManagement/db.changelog.yaml
+  - include:
+      file: db/changelog/003ServiceSecurityAuth/db.changelog.yaml
+  - include:
+      file: db/changelog/002ServiceManagement/002-core-inventory.yaml
+  - include:
+      file: db/changelog/004ServiceReservations/001-guest-profile.yaml
+  - include:
+      file: db/changelog/004ServiceReservations/002-reservation.yaml
+  - include:
+      file: db/changelog/004ServiceReservations/003-reservation-stay.yaml
+  - include:
+      file: db/changelog/004ServiceReservations/004-folio.yaml
+  - include:
+      file: db/changelog/004ServiceReservations/005-audit-trail.yaml
+  - include:
+      file: db/changelog/004ServiceReservations/006-local-operation-receipts.yaml
+  - include:
+      file: db/changelog/004ServiceReservations/007-reservation-link-otp.yaml
+  - include:
+      file: db/changelog/005ServiceOperations/db.changelog.yaml
+  - include:
+      file: db/changelog/006ServiceCommercial/db.changelog.yaml

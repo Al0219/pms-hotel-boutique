@@ -1,5 +1,60 @@
 # AlanHandoff — Seguimiento Backend
 
+## Juan / J1 — recibo persistente: entrega técnica EN_QA (2026-10-06)
+
+- **Estado / owner:** EN_QA, Juan / BD3; validación técnica final PASS, QA manual
+  pendiente. Contrato DOCX y precisiones de recibos aprobados en esta sesión.
+- **Rama / base / commit:** feature/backend-public-booking-core / 7bb6277;
+  entrega en commit exclusivo `feat(public-booking): add persistent idempotency receipt`.
+  Push pendiente de autorización posterior; J3 ya publicada, sin atribuir QA manual.
+- **Entregado:** recibo COMPLETED inmutable con PK global opaca/collation C, hash
+  J3 y respuesta JSONB sin Guest/tarjetas; FK a Reservation y referencias vinculadas
+  a la snapshot. Service/port, repositorio JDBC y changeset nuevo 008, con inclusión
+  append-only en el changelog modular. No cambia ningún changeset histórico.
+- **Transacción / límites:** READ_COMMITTED writable, advisory lock por clave hasta
+  commit/rollback exterior. Replay devuelve el registro original sin callback ni
+  consulta del lifecycle mutable; hash distinto produce IDEMPOTENCY_KEY_REUSED.
+  Fallo de callback, insert, commit o rollback exterior revierte booking/recibo y
+  libera clave, incluso para otro payload. Flush JPA antes de JDBC/FK; primer
+  recibo exige padre persistido CONFIRMED/GTQ y mismo confirmationCode. Callback
+  servidor exclusivamente local, sin efectos externos, REQUIRES_NEW ni async.
+- **Validación final:** mvn -B --no-transfer-progress
+  -Dtest=PublicBookingReceiptRequestTests,PublicBookingReceiptIntegrationTests,PublicBookingReceiptSchemaUpgradeTests,ReservationsSchemaUpgradeTests test:
+  36 PASS. mvn -B --no-transfer-progress verify: 571 PASS, cero failures/errors/
+  skipped, BUILD SUCCESS y JAR generado. Java 21.0.9/Maven 3.9.11/PostgreSQL 17.11;
+  Compose efímero pms-public-j1-qa con copia exacta de fuentes/POM/docs y cache
+  Maven ya disponible; artefactos/reportes devueltos a backend/target, ignorados.
+- **Evidencia PG:** dos conexiones esperan advisory lock observado, callback una
+  sola vez tras commit; tras rollback se ejecuta nuevamente. Replay/conflicto,
+  FK/PK/append-only, límites Unicode, snapshots sin campos ajenos, fallo al commit,
+  recovery y coherencia del padre PASS. Upgrade pre-J1 conserva los 23 checksums
+  anteriores y la reserva existente, agrega solo changeset 24 y reaplica sin cambios.
+- **Alcance:** ocho fuentes J1, una migración nueva y su inclusión, tres tests J1,
+  un changelog de test pre-J1 y entradas propias en seguimiento. Cuatro documentos
+  untracked originales conservados. Sin pricing, gateway, HTTP ni cambios de Alan.
+- **Siguiente:** QA manual descrita en AlanPlan; mantener EN_QA hasta confirmación
+  PASS del usuario. Reportar commit y detenerse para autorización de push; sin J2.
+
+## Juan / J1 — recibo persistente: inicio (2026-10-06)
+
+- **Estado / autorización:** READY → EN_PROGRESO, Juan / BD3. Usuario autorizó
+  continuar desde J3 y aprobó las cinco precisiones de J1 en esta sesión.
+- **Rama / base / dependencias:** feature/backend-public-booking-core / 7bb6277;
+  J3 publicada y sincronizada, 77 focalizados/536 verify PASS; sigue EN_QA sin
+  confirmación manual. Árbol inicial sin cambios rastreados; cuatro untracked ajenos.
+- **Decisiones:** unicidad global; solo COMPLETED al éxito, inmutable sin purga/TTL.
+  Callback y recibo en una transacción READ_COMMITTED local; errores o rollback
+  exterior dejan la clave libre, incluso para otro payload. Advisory lock hasta
+  commit/rollback; luego replay/conflicto o nuevo intento. Snapshot de respuesta
+  JSONB sin Guest/tarjetas, preservada ante cambios posteriores de la reserva.
+- **Diseño / archivos:** fuentes de recibo/puerto/repositorio en Reservations,
+  changeset nuevo 008 y append de include, pruebas unit/PG/upgrade; seguimiento
+  propio de Juan. Flush JPA antes del INSERT JDBC por FK de Reservation. No editar
+  changesets aplicados ni contratos/implementaciones de Alan. Sin J2/J4/J5/J6.
+- **DoD / siguiente:** focalizados, verify completo Java 21/PostgreSQL 17, revisión
+  de migración/checksums/alcance y diff --check; registrar EN_QA y commit exclusivo
+  de J1, detenerse para autorización de push. QA manual aún debe confirmarse.
+
 ## Juan / J3 — validación y hash: entrega técnica EN_QA (2026-10-06)
 
 - **Estado / owner:** EN_QA, Juan / BD3; implementación y validación técnica PASS,

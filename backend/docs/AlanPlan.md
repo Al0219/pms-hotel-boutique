@@ -31,6 +31,60 @@ se documenta su ejecución manual en la guía QA de la tarea.
 | Sesiones | Guest y Staff son contextos separados. |
 | Scope | `ALL_PROPERTIES` es el conjunto autorizado de la sesión. |
 
+## Reserva pública — Juan / J1: recibo idempotente persistente
+
+- **Estado:** READY → EN_PROGRESO → EN_QA. Owner Juan / BD3; rama
+  `feature/backend-public-booking-core`, base `7bb6277` publicada. El usuario
+  autorizó continuar a J1 y aprobó expresamente sus precisiones en esta sesión.
+  J3 disponible con validación técnica PASS; conserva EN_QA, sin atribuir QA manual.
+- **DoR / contrato:** J1/J4 y response del DOCX aprobado; clave global UNIQUE,
+  hash de J3 sin payload Guest, mismo hash devuelve original y otro hash produce
+  IDEMPOTENCY_KEY_REUSED. Solo persistir COMPLETED tras callback exitoso, en la
+  misma transacción writable READ_COMMITTED del booking. Callback exclusivamente
+  local; sin efectos externos, REQUIRES_NEW, async ni conexión independiente.
+- **Decisiones aprobadas:** recibos completados inmutables, sin TTL/purga automática.
+  Fallo/rollback exterior revierte todas las escrituras y el recibo; la clave queda
+  disponible incluso para payload distinto. Mientras hay operación en curso, un
+  advisory lock transaccional PostgreSQL serializa la misma clave hasta commit/
+  rollback; luego replay/conflicto o nuevo intento. Colisiones del hash del lock
+  solo añaden espera; lookup y PK usan la clave completa, sin normalización.
+- **Persistencia / snapshot:** changeset nuevo 004-reservations-008 en
+  004ServiceReservations; PK idempotency_key con collation C, request_hash, status,
+  reservation_id FK, confirmation_code, payment_reference, created_at/updated_at
+  iguales y snapshot JSONB aprobada. Whitelist de campos de PublicBookingResponse
+  sin Guest/tarjetas; referencias de snapshot vinculadas al recibo. Replay devuelve
+  esa snapshot sin consultar el estado mutable de Reservation. Trigger append-only;
+  sin tocar changesets históricos. Flush JPA antes de JDBC/FK, en la misma transacción.
+  Antes del primer recibo, comprobar que el padre persistido esté CONFIRMED/GTQ y
+  tenga el código real de la snapshot. Esta comprobación no se repite al hacer replay.
+- **Archivos previstos:** ocho fuentes nuevas de Receipt Request/Result/Model,
+  SnapshotValidator, Service/Impl, Repository y ConflictException; nueva migración
+  y su inclusión; pruebas request/integración/schema-upgrade con fixture pre-J1;
+  solo entradas Juan en AlanPlan/AlanHandoff. Sin pricing, gateway ni endpoint.
+- **Aceptación / DoD:** replay/conflicto, duplicados y dos conexiones/JVM-compatible
+  serializadas hasta commit, recuperación después de rollback, rollback interno/
+  exterior/commit, ausencia de escrituras parciales, FK/PK/append-only y snapshots
+  sin datos fuera del contrato; migración vacío/upgrade/reapply con checksums
+  históricos conservados. Focalizados + verify completo Java 21/PostgreSQL 17 y
+  diff --check PASS; EN_QA hasta QA manual del usuario. Commit J1 independiente;
+  push exige autorización posterior al reporte. No iniciar J2.
+- **Evidencia técnica final:** focalizados J1 + regresión de upgrade 36 PASS
+  (15 request, 19 integración PostgreSQL, 1 upgrade pre-J1 y 1 upgrade general).
+  mvn -B --no-transfer-progress verify 571 PASS, cero failures/errors/skipped,
+  BUILD SUCCESS y JAR generado. Maven 3.9.11/Java 21.0.9/PostgreSQL 17.11 en Compose
+  pms-public-j1-qa, snapshot temporal exacto del Backend y cache Maven existente.
+  23 changesets previos conservan checksums/datos, upgrade a 24 y reaplicación no-op;
+  locks observados en pg_stat_activity con dos conexiones, rollback de callback/
+  transacción exterior/commit y recuperación sin duplicados. Diff/alcance revisados.
+  Logs locales ignorados: backend/target/public-booking-j1-focused-final.log y
+  backend/target/public-booking-j1-verify-final.log.
+- **QA manual pendiente:** Juan/usuario debe confirmar recibo persistido, replay
+  sin nuevo callback, conflicto por hash, snapshot original tras cambio de reserva,
+  bloqueo concurrente hasta commit/rollback y ausencia de filas parciales al fallar.
+  El puerto es interno; endpoint y gateway todavía no forman parte de esta fase.
+- **Siguiente:** commit independiente J1 y reporte; esperar autorización de push
+  y confirmación QA manual PASS. No iniciar J2 en este incremento.
+
 ## Reserva pública — Juan / J3: validación y hash
 
 - **Estado:** READY → EN_PROGRESO → EN_QA. Owner Juan / BD3; rama
