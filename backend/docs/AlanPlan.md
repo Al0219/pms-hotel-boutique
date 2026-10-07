@@ -31,6 +31,63 @@ se documenta su ejecución manual en la guía QA de la tarea.
 | Sesiones | Guest y Staff son contextos separados. |
 | Scope | `ALL_PROPERTIES` es el conjunto autorizado de la sesión. |
 
+## Reserva pública — Juan / J3: validación y hash
+
+- **Estado:** READY → EN_PROGRESO → EN_QA. Owner Juan / BD3; rama
+  `feature/backend-public-booking-core`, base `8a6228d`. Solo J3 autorizada ahora.
+- **DoR / aprobación:** el usuario confirmó explícitamente en esta sesión el
+  contrato de booking del documento `docs/Plan_Tareas_Backend_Reserva_Publica_Alan_Juan.docx`
+  y las precisiones siguientes. A1/A2/A3 COMPLETADAS; Property y Reservations
+  existentes. Backend AGENTS autoriza el registro operativo común de Juan.
+- **Decisiones J3 aprobadas:** Idempotency-Key opaca de 8–128 caracteres Unicode
+  válidos, no vacía, sin controles; no trim ni normalización. Orden canónico de
+  stays por UUID canónico roomTypeId, ratePlanId lexical Java y quantity numérica;
+  cambiar solo el orden conserva el hash. Conservar entradas duplicadas sin sumar.
+  Nombres/correo conservan exactamente su valor: espacios, caso y composición
+  Unicode distintos cambian el hash, si el valor supera la validación.
+- **Hash:** SHA-256 hexadecimal lowercase con versión PUBLIC_BOOKING_REQUEST_V1;
+  campos UTF-8 con prefijos de longitud de bytes int32 big-endian. Orden: versión,
+  propertyId, arrival, departure, currency, clientTotalMinor, cantidad de entradas
+  stays, roomTypeId/ratePlanId/quantity de cada entrada ordenada, firstName,
+  lastName, email. Excluir Idempotency-Key y paymentMode, validado exclusivamente
+  SIMULATED_CARD. No persistir payload ni crear reservas/recibos/pagos en J3.
+- **Validación / alcance:** campos requeridos del DTO, fechas ISO estrictas y
+  arrival < departure, GTQ exacto, stays no vacío, quantity > 0 y Property real.
+  Nombres máximo 80/email máximo 320 y Email reutilizan límites del
+  CreateGuestProfileCommand existente; sin normalizar. ratePlanId String sigue
+  la identidad demo aprobada de A2/A3. clientTotalMinor requerido, reservado para
+  comparar precio en J4, sin cálculo ni nuevos límites monetarios en J3.
+  Deserialización numérica local al DTO: Integer/Long exactos, sin truncar ni
+  redondear; rechazar fracciones, strings numéricos y overflow. Representaciones
+  numéricas enteras equivalentes (1 y 1.0) conservan el mismo valor/hash.
+  Errores application INVALID_REQUEST/INVALID_DATE_RANGE/PROPERTY_NOT_FOUND;
+  traducción HTTP en J6. Validez real de RoomTypes/pricing/admisión en J4.
+- **Archivos previstos:** PublicBookingRequest, PublicBookingValidationService/
+  Impl/Exception, PublicBookingIntegerDeserializers y PublicBookingPropertyRepository
+  en Reservations; pruebas unit
+  y PostgreSQL J3; solo esta entrada y su handoff en seguimiento compartido.
+- **Aceptación / DoD:** diez escenarios mínimos solicitados, hash determinista y
+  campos relevantes, fechas imposibles/iguales/invertidas, cero quantity, moneda,
+  clave ausente/inválida, orden de stays y datos Guest; focalizados y verify
+  completo Java 21/PostgreSQL 17 PASS, diff --check y revisión de alcance PASS.
+  Permanecer EN_QA hasta QA manual PASS de Juan/usuario. Commit independiente J3;
+  push requiere nueva autorización explícita después del reporte de fase.
+- **Evidencia técnica final:** focalizados J3 77 PASS (62 unit, 15 PostgreSQL/JSON);
+  mvn -B --no-transfer-progress verify 536 PASS, cero failures/errors/skipped,
+  BUILD SUCCESS y JAR generado. Maven 3.9.11/Java 21.0.9/PostgreSQL 17.11,
+  Compose aislado pms-public-j3-qa y snapshot temporal exacto del Backend en
+  contenedor para reducir I/O Windows. git diff --check y revisión de alcance PASS.
+  Logs locales ignorados: backend/target/public-booking-j3-focused-final.log y
+  backend/target/public-booking-j3-verify.log.
+- **QA manual pendiente:** Juan/usuario debe revisar/invocar validateAndHash con
+  sus payloads: request idéntico/reordenado conserva hash, nombre/correo/cantidad/
+  tarifa/total modificados cambian hash, entradas inválidas dan el código esperado.
+  Vector sintético del test identicalPayloadHasStableVersionOneHash:
+  4eec960c40c78cd430b6454dc015c1f837b0e883ffde5181ec68e11620fe878c.
+  No atribuir QA manual PASS al resultado automatizado; aún sin endpoint J6.
+- **Siguiente:** commit independiente J3 y reporte; esperar autorización de push
+  y QA manual PASS. No iniciar J1 en este incremento.
+
 ## Cierre QA manual integrado — 2026-10-06
 
 QA manual final PASS confirmado por Alan en `feature/web-public-availability-real`:

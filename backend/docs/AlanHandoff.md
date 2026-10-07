@@ -1,5 +1,63 @@
 # AlanHandoff — Seguimiento Backend
 
+## Juan / J3 — validación y hash: entrega técnica EN_QA (2026-10-06)
+
+- **Estado / owner:** EN_QA, Juan / BD3; implementación y validación técnica PASS,
+  QA manual del usuario pendiente. Contrato DOCX y precisiones aprobados en esta sesión.
+- **Rama / base / commit:** feature/backend-public-booking-core / 8a6228d;
+  entrega en commit exclusivo `feat(public-booking): implement J3 validation and request hashing`.
+  Push de este incremento pendiente de autorización posterior; sin PR/merge.
+- **Entregado:** DTO inmutable, validación de clave/Property real/fechas/GTQ/stays/
+  quantities/Guest/modo simulado y hash SHA-256 V1 con formato explícito en AlanPlan.
+  Stays ordenados sin fusionar duplicados, nombres/correo exactos; consulta de
+  existencia Property de solo lectura. Errores application con códigos del contrato.
+- **Precisión numérica:** se detectó truncamiento de JSON fraccionario por el mapper
+  predeterminado; deserializadores locales a los dos campos Integer/Long del DTO
+  rechazan fracciones, strings y overflow. No cambia el mapper global. Valores
+  enteros equivalentes como 1/1.0 conservan valor y hash, sin float/double ni redondeo.
+  También se corrigió una referencia de tabla en el test nuevo de conteos SQL.
+- **Validación final:** mvn -B --no-transfer-progress
+  -Dtest=PublicBookingValidationServiceTests,PublicBookingValidationIntegrationTests test:
+  77 PASS (62 unit + 15 integración). mvn -B --no-transfer-progress verify:
+  536 PASS, cero failures/errors/skipped, BUILD SUCCESS y JAR generado.
+  Maven 3.9.11/Java 21.0.9/PostgreSQL 17.11, Compose efímero pms-public-j3-qa;
+  fuentes/POM/docs copiados exactamente a /tmp del contenedor, artefactos/reportes
+  devueltos a backend/target. Logs focused-final/verify allí, ignorados por Git.
+- **SQL / alcance:** pruebas confirman Property exacta, ausencia de nuevas reservas,
+  stays, perfiles, eventos de auditoría y recibos tras validar/hashear. JSON real:
+  fechas imposibles, fracciones, modo no permitido y campos desconocidos rechazados.
+  Se conservan los cuatro documentos untracked previos y el historial de Alan.
+  Cambios solo en seis fuentes J3, dos tests J3 y estas entradas de seguimiento;
+  sin migraciones, endpoint, seguridad, pricing, receipt, gateway ni otras fases.
+- **QA manual / siguiente:** checklist y vector reproducible en AlanPlan; usuario
+  debe confirmar QA manual PASS antes de marcar COMPLETADA. Solicitar autorización
+  para push del commit de J3 y detenerse; no iniciar J1.
+
+## Juan / J3 — validación y hash: inicio (2026-10-06)
+
+- **Estado / autorización:** READY → EN_PROGRESO; usuario aprueba explícitamente
+  el contrato DOCX y las precisiones de J3 en esta sesión. Solo J3 en este incremento.
+- **Rama / base:** feature/backend-public-booking-core / 8a6228d. Rama vacía de
+  nuevos cambios ya publicada por autorización previa; publicación de J3 pendiente.
+  Árbol inicial sin cambios rastreados; cuatro documentos untracked conservados.
+- **Owner / dependencias:** Juan / BD3; A1/A2/A3 COMPLETADAS, modelos reales y
+  PostgreSQL/Liquibase existentes. Registro autorizado por Backend AGENTS y
+  seguimiento común de Juan/BD3; conservar todas las entradas de Alan.
+- **Contrato / decisiones:** DTO y J3 del Plan_Tareas_Backend_Reserva_Publica_Alan_Juan;
+  clave opaca 8–128 caracteres Unicode sin controles ni normalización. Hash SHA-256
+  V1 con campos UTF-8 y longitudes explícitas. Ordenar stays por roomTypeId,
+  ratePlanId y quantity sin fusionar duplicados; nombres/correo exactos. Incluir
+  Property, fechas, GTQ, clientTotalMinor, stays y Guest; excluir clave y modo
+  constante SIMULATED_CARD. Reglas completas y DoR/DoD en entrada J3 de AlanPlan.
+- **Alcance / archivos:** DTO application inmutable, Service interface/implementation,
+  excepción con código y repositorio Property de solo existencia; pruebas J3.
+  Sin endpoint, seguridad, pricing, migración, recibo ni gateway.
+- **Validación prevista:** focalizados J3 y mvn -B --no-transfer-progress verify
+  con Compose existente Java 21/PostgreSQL 17 aislado; diff --check y revisión de
+  archivos. Host Maven usa Java 17; no modificar configuración global.
+- **Siguiente:** implementar/validar J3 y registrar evidencia EN_QA; commit de esta
+  fase autorizado por instrucción original, sin push hasta autorización posterior.
+
 ## Cierre de QA manual final — Demo/Web público (2026-10-06)
 
 - **Resultado:** Alan confirmó QA manual PASS en `feature/web-public-availability-real`.
