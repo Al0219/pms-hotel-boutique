@@ -27,7 +27,7 @@ No se persiste referencia, OTP ni datos de la reserva en storage/URL. GuestAccou
 
 ## Prueba local
 
-Servidor `http://localhost:3000/acceso` con mocks habilitados:
+Servidor `http://localhost:3001/acceso` con mocks habilitados:
 
 1. Crear cuenta con Google, o por correo usando el fixture `guest.google@example.com`, nombre/apellido y contraseña de formato válido. Correo es simulación frontend, no verifica una credencial real.
 2. En Cuenta vinculada, pulsar Vincular reserva existente.

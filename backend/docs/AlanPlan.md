@@ -6,6 +6,54 @@ Este archivo conserva el trabajo de Alan (BD1) y el seguimiento de BD2. Sustituy
 del XLSX para tareas Backend. Los mocks y DTOs de Web o Android no son contratos
 Backend confirmados.
 
+## AUTH-UNIFIED-01 — Login universal y puerto canónico
+
+- **Estado:** COMPLETADA; implementación y QA técnico PASS. Alan confirmó QA
+  manual PASS y aprobó el incremento el 2026-10-06 en http://localhost:3001.
+- **Autorización/DoR:** decisiones explícitas aprobadas por Alan (2026-10-06);
+  Staff/Guest Auth, Account Summary y demo integrado COMPLETADOS.
+- **Owner:** Alan / BD1; consumidores Web/Android como seguimiento.
+- **Contrato/aceptación/archivos/guía QA:** [44](44_UNIFIED_LOGIN_CONTRACT_QA.md).
+- **Base/rama:** main `2e387a3` PR #133, limpio antes de iniciar; rama
+  `feature/auth-unified-login-port-standardization`. Sin commit/push/merge.
+- **Entrega:** Staff email/password, Guest credential BCrypt(12) separado,
+  fachada con selección posterior a password válido en ambos contextos;
+  BFF/cookies separadas, /acceso único, demo idempotente dev/demo y puerto 3001 fijo.
+  Reutiliza índice Staff 003/005 y sesiones JWT/refresh existentes. Nuevo changeset
+  003/009 Guest; originales aplicados inmutables, OpenAPI/Postman actualizados.
+- **Contrato final:** email required/formato/max50 tras trim/lowercase y password
+  required/NotBlank/max50, intacta y sin complejidad nueva. HTML, Browser/BFF, DTOs,
+  boundary de servicios, OpenAPI y Postman alineados; columnas/hash/BCrypt12 intactos.
+- **Evidencia:** Backend verify Java21/PostgreSQL17: 478 PASS (12 OpenAPI y upgrade
+  con checksums/colisiones); Web 1323 PASS/242 archivos, auth focalizados 207 PASS,
+  typecheck/lint/build sin mocks PASS. Compose config/up/ps PASS, tres healthy,
+  solo Web 127.0.0.1:3001→3000; dev conflicto EADDRINUSE 3001 y Docker port already allocated, sin fallback.
+  Smoke BFF Guest/Staff/me/refresh/logout/aislamiento/errores/Google start PASS.
+  OpenAPI vivo idéntico en paths/components: 38 ops/28 paths/37 schemas/11 tags.
+  Límites finales: focalizados Backend25 PASS; Firefox real max50/caracter51,
+  Staff/Guest/qa_staff, destinos/F5/restore/logout y guest cart/invitado PASS;
+  Backend51/formato inválido400 y metadata50/50 confirmados. Una pasada con timeout
+  de carrito bajo carga tuvo rerun aislado y suite final PASS sin ampliar timeouts.
+- **Corrección QA Web:** mapper rechazaba SERVICE_REQUEST_INTAKE de Recepción con
+  Staff HTTP200; guard confundía mapping/transporte con sesión ausente. Guest401
+  esperado, sin cache/estado compartido. Consulta Staff única y restore acotado;
+  24 regresiones nuevas. Firefox real/Docker: login/dashboard, Guest401 aislado,
+  F5/focus, access ausente + refresh válido (401→refresh200→retry200), logout PASS.
+  Sin cambios adicionales en código/contratos/migraciones Backend por esta corrección.
+- **Aceptación manual:** Staff demo, qa_staff SUPER_ADMIN, Guest demo, dashboard,
+  aislamiento, F5/restauración, logout dashboard/calendario→Home y Atrás protegido
+  PASS; email formato/max50, password max50, Google Guest completo, invitado y
+  puerto canónico 3001 PASS. Cierre registrado en guía 44 y AlanHandoff.
+- **Siguiente:** esperar autorización para una nueva tarea o publicación.
+  Registro/recuperación/cambio password/MFA fuera de este incremento;
+  ninguna sesión Guest/Staff fusionada. Sin commit/push/merge.
+
+- **Último ajuste UX:** logout Staff confirmado limpia sesión/caches y replace("/")
+  desde cualquier ruta privada; fallo no limpia/navega. Seis regresiones nuevas,
+  focalizados23 PASS; Firefox calendario/dashboard→Home exacto, Atrás bloqueado,
+  Guest coexistente preservado y acceso directo sin auth protegido.
+  Logout y Atrás confirmados PASS por Alan; COMPLETADA.
+
 ## Estado de tareas
 
 ```text
@@ -1974,6 +2022,11 @@ contrato/decisión y reviewers; alcance entregado; comandos, entorno y resultado
 evidencia HTTP/SQL/externa y límites; impedimentos/decisiones pendientes; siguiente
 paso concreto. Mantener historial append-only y anteponer la actualización nueva.
 No llevar tareas Backend al XLSX. No actualizar memorias externas como parte del plan.
+
+**Estado final del incremento vigente:** AUTH-UNIFIED-01 COMPLETADA; Alan confirmó
+QA manual PASS, incluido Google Guest completo, el 2026-10-06 en localhost:3001.
+Esperar autorización para nueva tarea o publicación; sin commit/push/merge.
+Registro previo de próximos pasos:
 
 **Próximo paso concreto:** BE-004-ACCOUNT-SUMMARY-01 y BE-005-AUTH-API-01
 COMPLETADAS con QA manual final real PASS confirmado por el usuario (2026-10-06);

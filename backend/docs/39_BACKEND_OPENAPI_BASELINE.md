@@ -5,6 +5,20 @@
 árbol limpio al iniciar. Mantenimiento autorizado por el usuario; estado EN_QA
 hasta su QA manual PASS. Sin commit/push/merge.
 
+## Evolución AUTH-UNIFIED-01 (2026-10-06)
+
+[Contrato vigente](44_UNIFIED_LOGIN_CONTRACT_QA.md): StaffLoginRequest pasa a
+email/password en sessions y login; password writeOnly, email normalizado/max 50.
+GuestLoginRequest nuevo para POST /api/v1/guest-auth/sessions y
+UnifiedLoginRequest para POST /api/v1/auth/sessions; x-audience=internal-bff,
+security=[] sin credencial previa. Guest 201/400/401; unificado 200 selector
+sin tokens/sesión, 201 contexto autenticado/tokens solo BFF, 400/401 genéricos.
+operationIds guestPasswordLogin y unifiedPasswordLogin. No entidades/hash en API.
+Inventario generado real: 38 operaciones / 28 paths / 37 schemas / 11 tags.
+Paridad sin exclusiones y metadata de todas las contraseñas validadas por tests.
+Postman BD1 incluye Guest password, resolución y selección; colecciones Staff
+consumen email/password y variables staffEmail sin secretos. Historial previo abajo.
+
 ## Evolución A3 — Disponibilidad pública (2026-10-06)
 
 Rama `feature/backend-public-availability`, base `b653804`; A3 EN_QA, A2 EN_QA,
@@ -148,7 +162,7 @@ Las respuestas listadas son contractuales, no un catálogo de fallos inesperados
 
 ## Parámetros, límites, nulabilidad y transporte
 
-- **Staff Auth:** username no vacío, máximo 80; password no vacío, máximo 256,
+- **Staff Auth vigente:** email validado y normalizado, máximo 50; password no vacío, máximo 50,
   writeOnly/password y sin ejemplos. Login/refresh devuelven solo al BFF
   accessToken, refreshToken y accessTokenExpiresInSeconds. GET session devuelve
   identidad, permissions y memberships C2 recalculados; sin tokens. Logout 204
