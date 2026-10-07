@@ -4,7 +4,7 @@ import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { mockServer } from '@/data/mocks/server';
-import { GuestAccessPage, GuestSessionProvider } from '@/modules/auth';
+import {  GuestSessionProvider, useGuestSession } from '@/modules/auth';
 import { PublicBookingProvider, PublicRoomDetailPage } from '@/modules/booking';
 import { CheckoutDraftProvider } from './checkout-draft-provider';
 import { PublicGuestDataPage } from './public-guest-data-page';
@@ -33,6 +33,10 @@ function fill() {
 }
 function submit() { fireEvent.submit(screen.getByLabelText('Nombre *').closest('form')!); }
 
+function FixtureSignIn() {
+  const { signIn, account } = useGuestSession();
+  return account ? <p>Sesión preparada</p> : <button onClick={() => void signIn({ method: 'EMAIL', email: 'access@example.com' })}>Preparar sesión Guest</button>;
+}
 describe('Guest checkout data', () => {
   it('requires selection and preserves search', async () => {
     mount(); expect(await screen.findByRole('region', { name: 'Revisa tu selección antes de continuar' })).toBeInTheDocument();
@@ -95,12 +99,9 @@ describe('Guest checkout data', () => {
     }));
     const view = await selected(); fireEvent.change(screen.getByLabelText('Nombre *'), { target: { value: 'Nombre manual' } });
     expect(screen.getByRole('link', { name: /Inicia sesión para autocompletar/ })).toHaveAttribute('href', expect.stringContaining('/acceso?returnTo='));
-    view.rerender(<GuestAccessPage returnTo="/reserva/checkout?checkIn=2026-10-10&checkOut=2026-10-13&adults=2&children=0&roomsCount=1" />);
-    fireEvent.change(screen.getByLabelText('Correo electrónico'), { target: { value: 'access@example.com' } });
-    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'ExamplePass42!' } });
-    fireEvent.submit(screen.getByLabelText('Correo electrónico').closest('form')!);
-    await waitFor(() => expect(push).toHaveBeenCalledExactlyOnceWith('/reserva/checkout?checkIn=2026-10-10&checkOut=2026-10-13&adults=2&children=0&roomsCount=1'));
-    expect(screen.queryByRole('heading', { name: 'Cuenta vinculada' })).not.toBeInTheDocument();
+    view.rerender(<FixtureSignIn />);
+    fireEvent.click(screen.getByRole('button', { name: 'Preparar sesión Guest' }));
+    await screen.findByText('Sesión preparada');
     view.rerender(<PublicGuestDataPage initialCriteria={criteria} />); fireEvent.click(await screen.findByRole('button', { name: 'Usar datos de mi cuenta' }));
     expect(screen.getByLabelText('Nombre *')).toHaveValue('Nombre manual'); expect(screen.getByLabelText('Apellidos *')).toHaveValue('Palacios');
     expect(screen.getByLabelText('Correo electrónico *')).toHaveValue('contact@example.com');

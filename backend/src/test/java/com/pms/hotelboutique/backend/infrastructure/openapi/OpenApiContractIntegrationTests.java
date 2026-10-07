@@ -112,12 +112,12 @@ class OpenApiContractIntegrationTests {
         doc.path("paths").properties().forEach(path -> path.getValue().properties().forEach(method -> {
             String route = path.getKey();
             var op = method.getValue();
-            boolean staffAuth = route.startsWith("/api/v1/staff-auth/");
+            boolean staffAuth = (route.startsWith("/api/v1/staff-auth/") || route.startsWith("/api/v1/auth/"));
             boolean guestAuth = route.startsWith("/api/v1/guest-auth/");
             boolean publicAvailability = route.equals("/api/v1/public/availability") && method.getKey().equals("get");
             assertEquals(publicAvailability ? "public" : staffAuth || guestAuth ? "internal-bff" : "staff", op.path("x-audience").asText());
             boolean anonymous = route.endsWith("/google/start") || route.endsWith("/google/exchange")
-                    || route.equals("/api/v1/staff-auth/sessions") || route.equals("/api/v1/staff-auth/login") || publicAvailability;
+                    || route.equals("/api/v1/auth/sessions") || route.equals("/api/v1/guest-auth/sessions") || route.equals("/api/v1/staff-auth/sessions") || route.equals("/api/v1/staff-auth/login") || publicAvailability;
             if (anonymous) assertTrue(op.path("security").isMissingNode() || op.path("security").isEmpty());
             else {
                 String scheme = route.endsWith("/refresh") ? (staffAuth ? "staffRefreshCookie" : "guestRefreshCookie")
@@ -310,16 +310,42 @@ class OpenApiContractIntegrationTests {
     }
 
     @Test
+    void universalLoginDocumentsEmailPasswordsAndAnonymousBffTransport() throws Exception {
+        var doc = document();
+        for (String name : List.of("StaffLoginRequest", "GuestLoginRequest", "UnifiedLoginRequest")) {
+            var schema = doc.path("components").path("schemas").path(name);
+            assertEquals(Set.of("email", "password"), strings(schema.path("required")));
+            assertFalse(schema.path("properties").has("username"));
+            assertEquals("email", schema.path("properties").path("email").path("format").asText());
+            assertEquals(50, schema.path("properties").path("email").path("maxLength").asInt());
+            assertTrue(schema.path("properties").path("password").path("writeOnly").asBoolean());
+            assertEquals(50, schema.path("properties").path("password").path("maxLength").asInt());
+            assertEquals("password", schema.path("properties").path("password").path("format").asText());
+            assertEquals(1, schema.path("properties").path("password").path("minLength").asInt());
+        }
+        for (String route : List.of("/api/v1/auth/sessions", "/api/v1/guest-auth/sessions", "/api/v1/staff-auth/sessions")) {
+            var op = operation(doc, route, "post");
+            assertEquals("internal-bff", op.path("x-audience").asText());
+            assertTrue(op.path("security").isArray());
+            assertEquals(0, op.path("security").size());
+            for (String status : List.of("201", "400", "401")) assertTrue(op.path("responses").has(status));
+        }
+        assertEquals("guestPasswordLogin", operation(doc,"/api/v1/guest-auth/sessions","post").path("operationId").asText());
+        assertEquals("unifiedPasswordLogin", operation(doc,"/api/v1/auth/sessions","post").path("operationId").asText());
+        assertTrue(operation(doc,"/api/v1/auth/sessions","post").path("responses").has("200"));
+    }
+
+    @Test
     void dtoValidationNullabilityAndPrivacyAreFaithfulToWireContracts() throws Exception {
         var doc = document();
         var schemas = doc.path("components").path("schemas");
         assertFalse(schemas.has("StaffPrincipal") || schemas.has("GuestPrincipal") || schemas.has("StaffUser"));
         var login = schemas.path("StaffLoginRequest");
-        assertEquals(Set.of("username", "password"), strings(login.path("required")));
+        assertEquals(Set.of("email", "password"), strings(login.path("required")));
         var password = login.path("properties").path("password");
         assertTrue(password.path("writeOnly").asBoolean());
         assertEquals("password", password.path("format").asText());
-        assertEquals(256, password.path("maxLength").asInt());
+        assertEquals(50, password.path("maxLength").asInt());
         assertEquals(1, password.path("minLength").asInt());
         for (String name : List.of("StaffAuthResponse", "GuestAuthResponse")) {
             var tokens = schemas.path(name);
@@ -400,7 +426,7 @@ class OpenApiContractIntegrationTests {
     @Test
     void schemaAnnotationsDoNotAlterHttpAuthenticationOrValidation() throws Exception {
         mvc.perform(post("/api/v1/staff-auth/sessions").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"username\":\"\",\"password\":\"\"}")).andExpect(status().isBadRequest());
+                .content("{\"email\":\"\",\"password\":\"\"}")).andExpect(status().isBadRequest());
         mvc.perform(post("/api/v1/staff-auth/refresh")).andExpect(status().isUnauthorized());
         mvc.perform(post("/api/v1/guest-auth/refresh")).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/v1/staff-auth/session")).andExpect(status().isUnauthorized());

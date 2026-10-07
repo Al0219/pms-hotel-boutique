@@ -1,5 +1,14 @@
 # C3 — Guest Auth con Google OIDC y BFF
 
+**Actualización aprobada AUTH-UNIFIED-01 (2026-10-06):**
+[Contrato vigente](44_UNIFIED_LOGIN_CONTRACT_QA.md): login tradicional universal correo electrónico + contraseña;
+Guest/Staff separados, Google solo Guest e invitado público. Guest password solo
+para cuentas con credential existente; sin registro/recuperación/cambio/MFA.
+`/acceso` tiene un formulario único en http://localhost:3001. Las decisiones y
+pruebas de simulación/registro anteriores se conservan como contexto histórico;
+no representan el login vigente. UI/BFF nunca exponen JWT al JavaScript.
+
+
 **Estado:** APPROVED
 **Fecha:** 2026-09-29
 
@@ -39,8 +48,8 @@ PMS_RESERVATION_LINK_OTP_HMAC_KEY
 
 Desarrollo configura `GOOGLE_REDIRECT_URI` y `PMS_WEB_PUBLIC_URL` con el
 mismo host y puerto local; por defecto usan
-`http://localhost:3000/api/auth/guest/google/callback` y
-`http://localhost:3000`. Producción usa
+`http://localhost:3001/api/auth/guest/google/callback` y
+`http://localhost:3001`. Producción usa
 `https://{GUEST_WEB_HOST}/api/auth/guest/google/callback`; el host real queda
 pendiente de despliegue. Secretos nunca se versionan ni se devuelven en API.
 
@@ -114,3 +123,16 @@ accountId del browser ni tokens JS. No muta cuenta/perfil/vínculo ni introduce
 permisos Staff. Ausencia de perfiles/estancia próxima es válida; no infiere
 titularidad por correo/perfil compartido. Rewards/finanzas/promociones/mensajes
 quedan fuera del contrato real. [Contrato y QA 42](42_GUEST_ACCOUNT_SUMMARY_CONTRACT_QA.md).
+
+## Límite final del login password — AUTH-UNIFIED-01
+
+Staff, Guest y fachada usan email required/NotBlank, formato email, máximo 50
+tras trim/lowercase; password required/NotBlank, máximo 50, intacta (sin trim,
+lowercase ni complejidad nueva). HTML/validación Web, BFF, DTOs, servicios y
+OpenAPI alineados; format email/password y password writeOnly. El máximo de login
+no reduce GuestAccount.email varchar(320) ni credential.password_hash varchar(255).
+BCrypt(12) sin cambios. Google Guest/OIDC permanece independiente de este límite
+para las credenciales del login tradicional. AUTH-UNIFIED-01 COMPLETADA tras QA
+manual PASS de Alan (2026-10-06) en http://localhost:3001, incluido Guest demo,
+límites50, aislamiento, Google Guest completo y continuar como invitado.
+Cierre y alcance: [guía44](44_UNIFIED_LOGIN_CONTRACT_QA.md).

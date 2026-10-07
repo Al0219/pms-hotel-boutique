@@ -5,7 +5,7 @@ import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { mockServer } from "@/data/mocks/server";
-import { initialSecurity, private07Keys } from "@/data/mocks/private-07";
+import { staffSessionKey } from "../hooks/staff-session-query";
 
 import { StaffLogout, StaffSessionProvider, useStaffSession } from "./staff-session-provider";
 
@@ -24,10 +24,11 @@ function mount() {
 }
 
 beforeEach(() => { vi.stubEnv("NEXT_PUBLIC_USE_MOCK_API", "false"); navigation.replace.mockClear(); });
-afterEach(() => { cleanup(); clients.splice(0).forEach(client => client.clear()); localStorage.removeItem(private07Keys.security); vi.unstubAllEnvs(); });
+afterEach(() => { cleanup(); clients.splice(0).forEach(client => client.clear()); vi.unstubAllEnvs(); });
 
 describe("StaffSessionProvider with C2 BFF", () => {
-  it("uses the BFF response instead of the Private-09 fixture", async () => {
+  it.each([false, true])("uses the BFF response instead of a local identity (mock data=%s)", async useMock => {
+    vi.stubEnv("NEXT_PUBLIC_USE_MOCK_API", String(useMock));
     mockServer.use(http.get("*/api/auth/staff/session", () => HttpResponse.json({
       staffUserId: "staff-1", sessionId: "session-1", username: "gerencia.real", roleCode: "GERENCIA",
       permissions: ["MULTI_PROPERTY_READ"],
@@ -93,7 +94,7 @@ describe("Staff logout navigation", () => {
     await waitFor(() => expect(finish).toBeDefined());
     finish();
     await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/"));
-    expect(client.getQueryData(["staff-session"])).toBeNull();
+    expect(client.getQueryData(staffSessionKey)).toBeNull();
     expect(client.getQueryData(["guest-session"])).toEqual({ account: "guest-independent" });
     expect(screen.queryByText("gerencia.real|GERENCIA|HB-GT-001")).not.toBeInTheDocument();
   });
@@ -101,13 +102,9 @@ describe("Staff logout navigation", () => {
   it.each([false, true])("keeps the panel on logout failure and redirects after retry (mock=%s)", async useMock => {
     vi.stubEnv("NEXT_PUBLIC_USE_MOCK_API", String(useMock));
     let attempts = 0;
-    const closed = initialSecurity();
-    closed.sessions[0].status = "closed";
     mockServer.use(
       http.get("*/api/auth/staff/session", () => HttpResponse.json(sessionDTO)),
-      useMock
-        ? http.post("*/__mock/private-07/security", () => ++attempts === 1 ? new HttpResponse(null, { status: 503 }) : HttpResponse.json(closed))
-        : http.delete("*/api/auth/staff/session", () => ++attempts === 1 ? new HttpResponse(null, { status: 503 }) : new HttpResponse(null, { status: 204 })),
+      http.delete("*/api/auth/staff/session", () => ++attempts === 1 ? new HttpResponse(null, { status: 503 }) : new HttpResponse(null, { status: 204 })),
     );
     mount();
     fireEvent.click(await screen.findByRole("button", { name: "Cerrar sesión" }));
@@ -119,23 +116,15 @@ describe("Staff logout navigation", () => {
     expect(attempts).toBe(2);
   });
 
-  it("closes the local session before returning home and does not offer a private restart", async () => {
+  it("does not mount or restart private content with no BFF session even when data mocks are enabled", async () => {
     vi.stubEnv("NEXT_PUBLIC_USE_MOCK_API", "true");
-    const { client } = mount();
-    fireEvent.click(await screen.findByRole("button", { name: "Cerrar sesión" }));
-    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/"));
-    expect(JSON.parse(localStorage.getItem(private07Keys.security)!).sessions[0].status).toBe("closed");
-    expect(screen.queryByRole("button", { name: "Iniciar demostración Staff" })).not.toBeInTheDocument();
-    client.clear();
-  });
-
-  it("redirects an already closed local session without displaying private content", async () => {
-    vi.stubEnv("NEXT_PUBLIC_USE_MOCK_API", "true");
-    const closed = initialSecurity();
-    closed.sessions[0].status = "closed";
-    localStorage.setItem(private07Keys.security, JSON.stringify(closed));
+    mockServer.use(
+      http.get("*/api/auth/staff/session", () => new HttpResponse(null, { status: 401 })),
+      http.post("*/api/auth/staff/refresh", () => new HttpResponse(null, { status: 401 })),
+    );
     mount();
-    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/"));
+    await screen.findByRole("heading", { name: "Sesión Staff requerida" });
+    expect(navigation.replace).not.toHaveBeenCalled();
     expect(screen.queryByRole("button", { name: "Cerrar sesión" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Iniciar demostración Staff" })).not.toBeInTheDocument();
   });

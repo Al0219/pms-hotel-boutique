@@ -1,6 +1,7 @@
 package com.pms.hotelboutique.backend.modules.guestauth.application;
 
 import com.pms.hotelboutique.backend.modules.guestauth.domain.*;
+import com.pms.hotelboutique.backend.infrastructure.security.PasswordLoginValidator;
 import com.pms.hotelboutique.backend.modules.guestauth.infrastructure.oidc.*;
 import com.pms.hotelboutique.backend.modules.guestauth.infrastructure.persistence.*;
 import com.pms.hotelboutique.backend.modules.guestauth.infrastructure.security.GuestJwtService;
@@ -8,8 +9,24 @@ import java.nio.charset.StandardCharsets; import java.security.*; import java.ti
 import org.springframework.beans.factory.annotation.Value; import org.springframework.stereotype.Service; import org.springframework.transaction.annotation.Transactional; import org.springframework.web.util.UriComponentsBuilder;
 
 @Service @Transactional public class GuestAuthServiceImpl implements GuestAuthService {
+ private final PasswordLoginValidator loginInputs;
+ private final GuestPasswordCredentialRepository credentials;
+ private final org.springframework.security.crypto.password.PasswordEncoder encoder;
+ private final String dummyHash;
  private final GuestAccountRepository accounts; private final GuestIdentityRepository identities; private final GuestAuthSessionRepository sessions; private final GuestRefreshTokenRepository refreshTokens; private final GuestOidcTransactionRepository transactions; private final GoogleOidcClient google; private final GuestJwtService jwt; private final Duration refreshTtl; private final String clientId; private final String redirectUri; private final SecureRandom random=new SecureRandom();
- public GuestAuthServiceImpl(GuestAccountRepository accounts,GuestIdentityRepository identities,GuestAuthSessionRepository sessions,GuestRefreshTokenRepository refreshTokens,GuestOidcTransactionRepository transactions,GoogleOidcClient google,GuestJwtService jwt,@Value("${pms.security.refresh-token-ttl:P7D}") Duration refreshTtl,@Value("${pms.google.client-id:}") String clientId,@Value("${pms.google.redirect-uri:}") String redirectUri){this.accounts=accounts;this.identities=identities;this.sessions=sessions;this.refreshTokens=refreshTokens;this.transactions=transactions;this.google=google;this.jwt=jwt;this.refreshTtl=refreshTtl;this.clientId=clientId;this.redirectUri=redirectUri;}
+ public GuestAuthServiceImpl(GuestPasswordCredentialRepository credentials,org.springframework.security.crypto.password.PasswordEncoder encoder,GuestAccountRepository accounts,GuestIdentityRepository identities,GuestAuthSessionRepository sessions,GuestRefreshTokenRepository refreshTokens,GuestOidcTransactionRepository transactions,GoogleOidcClient google,GuestJwtService jwt,@Value("${pms.security.refresh-token-ttl:P7D}") Duration refreshTtl,@Value("${pms.google.client-id:}") String clientId,@Value("${pms.google.redirect-uri:}") String redirectUri,PasswordLoginValidator loginInputs){this.loginInputs=loginInputs;this.credentials=credentials;this.encoder=encoder;this.dummyHash=encoder.encode(UUID.randomUUID().toString());this.accounts=accounts;this.identities=identities;this.sessions=sessions;this.refreshTokens=refreshTokens;this.transactions=transactions;this.google=google;this.jwt=jwt;this.refreshTtl=refreshTtl;this.clientId=clientId;this.redirectUri=redirectUri;}
+ @Override @Transactional(readOnly=true) public boolean acceptsCredentials(String email,String password) {
+   GuestAccount account=accounts.findByNormalizedEmail(loginInputs.normalizedEmail(email,password)).orElse(null);
+   GuestPasswordCredential credential=account==null?null:credentials.findById(account.getId()).orElse(null);
+   boolean matched=encoder.matches(password,credential==null?dummyHash:credential.getPasswordHash());
+   return matched && credential!=null && account.isActive();
+ }
+ @Override public GuestTokenPair login(String email,String password) {
+   if(!acceptsCredentials(email,password)) throw new GuestAuthenticationException();
+   GuestAccount account=accounts.findByNormalizedEmail(email.trim().toLowerCase(Locale.ROOT)).orElseThrow(GuestAuthenticationException::new);
+   Instant now=Instant.now(); account.recordLogin(now);
+   return tokens(sessions.save(new GuestAuthSession(UUID.randomUUID(),account,now.plus(refreshTtl),now)),UUID.randomUUID(),now);
+ }
  @Override public String startGoogleAuthorization(){ if(blank(clientId)||blank(redirectUri)) throw new IllegalStateException("Google OIDC deployment configuration is required"); Instant now=Instant.now(); String state=randomUrlValue(),nonce=randomUrlValue(),verifier=randomUrlValue(); transactions.save(new GuestOidcTransaction(UUID.randomUUID(),hash(state),nonce,verifier,now.plus(Duration.ofMinutes(10)),now)); String challenge=base64Url(sha256Bytes(verifier)); return UriComponentsBuilder.fromUriString("https://accounts.google.com/o/oauth2/v2/auth").queryParam("client_id",clientId).queryParam("redirect_uri",redirectUri).queryParam("response_type","code").queryParam("scope","openid email").queryParam("state",state).queryParam("nonce",nonce).queryParam("code_challenge",challenge).queryParam("code_challenge_method","S256").build().encode().toUriString(); }
  @Override public GuestTokenPair exchangeGoogleAuthorization(String code,String state){ if(blank(code)||blank(state))throw new GuestAuthenticationException(); Instant now=Instant.now(); GuestOidcTransaction tx=transactions.findByStateHash(hash(state)).orElseThrow(GuestAuthenticationException::new); if(!tx.isUsable(now))throw new GuestAuthenticationException(); VerifiedGoogleIdentity googleIdentity=google.exchange(code,tx.getPkceVerifier(),tx.getNonce()); tx.use(now); GuestAccount account=identities.findByProviderAndProviderSubject("GOOGLE",googleIdentity.subject()).map(GuestIdentity::getGuestAccount).orElseGet(()->createAccount(googleIdentity,now)); if(!account.isActive())throw new GuestAuthenticationException(); account.recordLogin(now); GuestAuthSession session=sessions.save(new GuestAuthSession(UUID.randomUUID(),account,now.plus(refreshTtl),now)); return tokens(session,UUID.randomUUID(),now); }
  @Override public GuestTokenPair refresh(String raw){if(blank(raw))throw new GuestAuthenticationException(); Instant now=Instant.now(); GuestRefreshToken current=refreshTokens.findByTokenHash(hash(raw)).orElseThrow(GuestAuthenticationException::new); GuestAuthSession session=current.getSession(); if(!current.isActive(now)||!session.isActive(now)||!session.getGuestAccount().isActive()){revoke(session,now);throw new GuestAuthenticationException();} current.revoke(now);return tokens(session,current.getFamilyId(),now);}

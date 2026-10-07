@@ -1,5 +1,7 @@
 package com.pms.hotelboutique.backend.modules.guestauth.application;
 public interface GuestAuthService {
+ boolean acceptsCredentials(String email,String password);
+ GuestTokenPair login(String email,String password);
  String startGoogleAuthorization();
  GuestTokenPair exchangeGoogleAuthorization(String code,String state);
  GuestTokenPair refresh(String rawRefreshToken);
