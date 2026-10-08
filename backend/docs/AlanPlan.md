@@ -208,7 +208,63 @@ se documenta su ejecución manual en la guía QA de la tarea.
 | Sesiones | Guest y Staff son contextos separados. |
 | Scope | `ALL_PROPERTIES` es el conjunto autorizado de la sesión. |
 
-## Reserva pública — A4: Security pre-J6 (entrega parcial)
+## Reserva pública — A4 post-J6: cierre (2026-10-08)
+
+- **Estado vigente:** COMPLETADA; cierre técnico PASS y QA manual post-J6 PASS
+  confirmado explícitamente por Alan el 2026-10-08. Aceptación y DoD A4 PASS;
+  la confirmación corresponde a A4, independiente del cierre propio de J6.
+- **QA manual final / evidencia:** stack local actual, fixture HB-GT-DEMO:
+  availability real → creación201; replay201 con respuesta idéntica y conteos
+  sin cambios; PostgreSQL confirma1 Reservation CONFIRMED +2 stays RESERVED
+  sin habitación +1 recibo. Reserva `495bbced-44b2-4de5-8873-2da31e79f5a9`,
+  código `TCUBZR9SBM`, total260000 minor GTQ. Staff anónimo401 y Swagger live
+  PASS: audiencia pública availability/bookings y respuestas201/400/404/409/
+  422/500 comprobadas. Alan aportó resultados de terminal y confirmó
+  «QA manual A4 post-J6: PASS». Sin tokens/cookies/secretos registrados.
+- **Owner/rama/base:** Alan / BD1; `qa/a4-public-booking-post-j6`, árbol inicial
+  limpio, HEAD/main/origin/main `aafdb7b` (PR140 integrado). A1-A3 y núcleo
+  J1-J5 disponibles; J6 COMPLETADA según su aceptación propia.
+- **Alcance autorizado:** validar únicamente availability pública real → booking,
+  anonimato exacto por método/path, vecinos/Staff protegidos, errores aprobados,
+  OpenAPI/Swagger live/generated y persistencia/replay. Sin defecto encontrado;
+  sin cambios de código, tests, producto, migraciones, dependencias ni Web.
+- **Pruebas ejecutadas:** nueve clases focalizadas de availability, J6/core,
+  recibos, Security y OpenAPI: `mvn -o -B --no-transfer-progress -Dtest=... test`
+  184 PASS. `mvn -o -B --no-transfer-progress verify` completo:832 PASS,
+  cero failures/errors/skipped, BUILD SUCCESS y JAR generado. Maven3.9.11,
+  Java21.0.9/PostgreSQL17.11 en Compose desechable sin puertos del host.
+  Avisos SpringDoc y agente JVM preexistentes; sin fallos pendientes.
+- **HTTP/SQL real:** JAR recién validado, catálogo demo existente aislado:
+  GET availability anónimo200 con6 ofertas → POST booking201 (STD×2/DLX×1,
+  dos noches,430000 minor GTQ). PostgreSQL confirma1 Reservation CONFIRMED,
+  3 stays RESERVED con UUIDs/fechas/tipos reales y roomId NULL,1 GuestProfile,
+  1 receipt y4 eventos de auditoría. Replay201 devuelve snapshot/referencia
+  simulada idénticos; todos los conteos permanecen iguales. ATS posterior
+  STD2/DLX3, sin consumo adicional en replay; no crea GuestAccount/Folio.
+- **Seguridad/errores:** smoke automatizado45 checks PASS sin JWT/cookies;
+  GET bookings y POST availability, PUT/PATCH/DELETE/HEAD/OPTIONS de ambos,
+  vecinos/trailing slash/Staff y /error directo probados401. Respuestas
+  públicas sin Set-Cookie. HTTP real400 INVALID_REQUEST/INVALID_DATE_RANGE,
+  404 PROPERTY_NOT_FOUND,409 PRICE_CHANGED/NO_AVAILABILITY/IDEMPOTENCY_KEY_REUSED
+  y500 BOOKING_FAILED, sin escrituras parciales.422 PAYMENT_DECLINED y ERROR
+  de gateway500 cubiertos por fixtures de integración existentes; sin selector
+  de fallos en runtime. No se altera la superficie Auth/BFF aprobada.
+- **OpenAPI:** live y generado coinciden en paths, schemas, security schemes
+  y tags; mappings reales sin exclusiones coinciden:42 operaciones/32 paths/
+  47 schemas/13 tags. Solo GET availability y POST bookings tienen audiencia
+  de negocio public, sin requisito de auth; booking documenta201/400/404/409/
+  422/500 y clave obligatoria. Swagger HTML/config200.
+- **Evidencia:** `target/a4-postj6-focused.log`, `a4-postj6-focused-reports/`,
+  `a4-postj6-verify.log`, `surefire-reports/`, `openapi-generated.json`,
+  `openapi-application-mappings.txt`, `a4-postj6-openapi-live.json` y
+  `a4-postj6-runtime-smoke.json/log` ignorados. Smoke sobre BD tmpfs aislada;
+  entornos QA retirados, stack/base del hotel conservados. No equivale a QA
+  manual ni visual de Alan. `git diff --check` PASS; solo estos dos docs modificados.
+- **Siguiente:** A4 cerrada; actualización exclusivamente documental, sin
+  repetir suites ni smoke. Sin cambios de código ni commit/push/merge;
+  no avanzar a otra tarea sin autorización.
+
+## Reserva pública — A4: Security pre-J6 (historial de entrega parcial)
 
 - **Estado:** parcial; tramo pre-J6 QA manual PASS, cierre post-J6 PENDIENTE.
 - **Owner/rama/base:** Alan / BD1; `feature/a4-public-booking-security-pre-j6`,
