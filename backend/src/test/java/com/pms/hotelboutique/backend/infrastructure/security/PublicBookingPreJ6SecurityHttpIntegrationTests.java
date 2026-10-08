@@ -7,18 +7,22 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import tools.jackson.databind.ObjectMapper;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class PublicBookingPreJ6SecurityHttpIntegrationTests {
     @LocalServerPort int port;
+    @Autowired ObjectMapper json;
 
     @Test
-    void anonymousPostRetainsMvc404OnRealServletErrorDispatchWithoutAJ6Controller() throws Exception {
+    void anonymousPostReturnsTheJ6InvalidRequestOnTheRealServer() throws Exception {
         var response = send("POST", "/api/v1/public/bookings");
-        assertEquals(404, response.statusCode());
+        assertEquals(400, response.statusCode());
+        assertEquals("INVALID_REQUEST", json.readTree(response.body()).path("code").asText());
         assertTrue(response.headers().firstValue("Set-Cookie").isEmpty());
     }
 
@@ -31,11 +35,11 @@ class PublicBookingPreJ6SecurityHttpIntegrationTests {
         assertEquals(401, send("POST", "/api/v1/properties").statusCode());
     }
 
-    private HttpResponse<Void> send(String method, String path) throws Exception {
+    private HttpResponse<String> send(String method, String path) throws Exception {
         var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path))
                 .timeout(Duration.ofSeconds(10)).header("Content-Type", "application/json")
                 .method(method, method.equals("POST") ? HttpRequest.BodyPublishers.ofString("{}") : HttpRequest.BodyPublishers.noBody())
                 .build();
-        return HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.discarding());
+        return HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
     }
 }

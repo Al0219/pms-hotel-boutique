@@ -8,6 +8,50 @@ Backend confirmados.
 
 ## Reserva pública — Juan / J6: endpoint HTTP de booking
 
+- **Estado vigente:** EN_QA; QA técnico posterior a A4 PASS y QA manual
+  pendiente. Rama `feature/backend-public-booking-core`, integración local
+  `860d3bd` de main `308174d`; PR140 existente como borrador. Sin push nuevo.
+- **Autorización vigente:** usuario solicitó integrar main y continuar J6;
+  aprobó preservar ambos historiales de AlanHandoff y adaptar exclusivamente
+  SecurityConfigurationIntegrationTests, PublicBookingPreJ6SecurityHttpIntegrationTests
+  y OpenApiContractIntegrationTests al contrato J6. A4 permanece a cargo de Alan;
+  SecurityConfiguration y configuración OpenAPI global se conservan como en main.
+- **Alcance del cierre técnico:** los probes anteriores a J6 comprueban ahora
+  INVALID_REQUEST400 sin JWT; la prueba global reconoce únicamente POST booking
+  y GET availability como operaciones públicas de negocio. Pruebas propias J6
+  con filtros reales, servidor HTTP aleatorio, PostgreSQL, snapshot/replay y
+  Swagger; conservar regresiones de otros métodos, rutas vecinas y Staff.
+  Contrato HTTP201 creación/replay y BOOKING_FAILED500 sin cambios.
+- **Corrección propia J6:** al habilitar filtros reales, un header con control
+  produce RequestRejectedException durante binding MVC. Advice exclusivo lo
+  traduce a INVALID_REQUEST400, sin datos del header; ya no BOOKING_FAILED500.
+  No reconfigurar firewall ni modificar reglas/globales de Alan.
+- **Validación final:** focalizados148 PASS (62 propios J6 y 86 regresión de
+  core/seguridad/OpenAPI). `mvn -B --no-transfer-progress verify`: 794 PASS,
+  cero failures/errors/skipped, BUILD SUCCESS y JAR generado. Maven3.9.11,
+  Java21.0.9/PostgreSQL17.11; entorno pms-public-j6-qa aislado sin puertos del host.
+  Primer focalizado detectó solo el header controlado500; corregido en advice y
+  reejecutado sin debilitar assertions. Sin fallos pendientes ni warnings críticos;
+  avisos preexistentes SpringDoc/agente JVM conservados sin modificar dependencias.
+- **Evidencia HTTP/PG:** MockMvc con filtros y servidor HTTP real sin JWT201,
+  snapshot PostgreSQL idéntica en replay201 sin nuevos pagos/reservas/stays,
+  Swagger real/public, qty/fechas/UUIDs reales y roomId NULL. Errores aprobados,
+  precio/pago/stock, rollback tardío/commit/exterior y concurrencia del core PASS.
+  Paridad global PASS: 39 operaciones/29 paths/43 schemas/12 tags; vecinos Staff,
+  otros métodos/paths y /error directo siguen protegidos. Configuración global
+  preservada exactamente respecto de main.
+- **Artefactos:** target/public-booking-j6-a4-focused-final.log,
+  public-booking-j6-a4-verify.log, surefire-reports/OpenAPI/JAR J6-A4 ignorados.
+  Diff-check/alcance y conservación de documentos ajenos PASS.
+- **QA manual / siguiente:** usuario debe validar availability→booking con IDs
+  y total reales, verificar una Reservation/N stays/receipt en PostgreSQL y
+  replay/conflicto/precio/stock/protección Staff/Swagger. DECLINED/ERROR solo en
+  fixtures de tests del gateway simulado, sin toggles HTTP. Mantener EN_QA hasta
+  confirmación manual PASS. Commit propio `fix(public-booking): validate HTTP booking with A4`,
+  reporte y detenerse para autorización de push exclusivamente a la rama actual.
+
+### Primera entrega J6 — historial (2026-10-07)
+
 - **Estado:** READY → EN_PROGRESO → EN_QA; integración A4 y QA manual pendientes.
   Juan / BD3, rama
   `feature/backend-public-booking-core`, base `738d428`. Usuario autorizó iniciar

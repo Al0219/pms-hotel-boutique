@@ -12,9 +12,10 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** J6 local contract and unchanged production security. Global anonymous parity belongs to Alan's A4. */
+/** J6 public contract through the actual A4 security chain and global OpenAPI document. */
 @SpringBootTest
 @AutoConfigureMockMvc
 class PublicBookingOpenApiIntegrationTests {
@@ -111,9 +112,9 @@ class PublicBookingOpenApiIntegrationTests {
     }
 
     @Test
-    void anonymousBookingRemainsBlockedUntilAlanA4AndNoOtherPublicRouteWasOpened() throws Exception {
+    void anonymousBookingReachesTheControllerAndNoOtherPublicRouteWasOpened() throws Exception {
         mvc.perform(post(PATH).contentType("application/json").content("{}"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
         mvc.perform(get(PATH)).andExpect(status().isUnauthorized());
         mvc.perform(put(PATH)).andExpect(status().isUnauthorized());
         mvc.perform(delete(PATH)).andExpect(status().isUnauthorized());

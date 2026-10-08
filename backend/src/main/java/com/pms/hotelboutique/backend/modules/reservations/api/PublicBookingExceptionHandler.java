@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.web.firewall.RequestRejectedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -38,6 +39,11 @@ public class PublicBookingExceptionHandler extends ResponseEntityExceptionHandle
             case BOOKING_FAILED -> HttpStatus.INTERNAL_SERVER_ERROR;
         };
         return problem(status, exception.code().name());
+    }
+
+    @ExceptionHandler(RequestRejectedException.class)
+    ProblemDetail rejectedBookingRequest(RequestRejectedException exception) {
+        return problem(HttpStatus.BAD_REQUEST, "INVALID_REQUEST");
     }
 
     @ExceptionHandler(RuntimeException.class)

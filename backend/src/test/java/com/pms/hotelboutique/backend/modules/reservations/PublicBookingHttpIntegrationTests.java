@@ -3,6 +3,11 @@ package com.pms.hotelboutique.backend.modules.reservations;
 import com.pms.hotelboutique.backend.modules.reservations.application.*;
 import com.pms.hotelboutique.backend.modules.reservations.infrastructure.persistence.PublicBookingReceiptRepository;
 import jakarta.persistence.EntityManager;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -19,6 +24,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -37,9 +43,9 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/** J6 MVC + real PostgreSQL services. Filters are disabled here only: anonymous access needs Alan's A4. */
-@SpringBootTest
-@AutoConfigureMockMvc(addFilters = false)
+/** J6 MVC and real HTTP/PostgreSQL services with the production A4 security filters enabled. */
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureMockMvc
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class PublicBookingHttpIntegrationTests {
@@ -57,6 +63,7 @@ class PublicBookingHttpIntegrationTests {
     }
 
     @Autowired MockMvc mvc;
+    @LocalServerPort int port;
     @Autowired ObjectMapper json;
     @Autowired JdbcTemplate jdbc;
     @Autowired EntityManager entities;
@@ -121,6 +128,32 @@ class PublicBookingHttpIntegrationTests {
         assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM reservation_guests g JOIN reservation_stays s ON s.id=g.reservation_stay_id WHERE s.property_id=?", Integer.class, property));
         assertEquals(0, response.getResponse().getCookies().length);
         verify(payments, times(1)).pay(new PaymentRequest(260000L, "GTQ"));
+    }
+
+    @Test
+    void realHttpServerPersistsAnonymousBookingReplaysItAndServesTheMatchingSwagger() throws Exception {
+        String key = key();
+        var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + PATH))
+                .timeout(Duration.ofSeconds(20)).header("Content-Type", "application/json")
+                .header("Idempotency-Key", key).POST(HttpRequest.BodyPublishers.ofString(json.writeValueAsString(request(1)))).build();
+        var client = HttpClient.newHttpClient();
+        var original = client.send(request, HttpResponse.BodyHandlers.ofString());
+        assertEquals(201, original.statusCode());
+        assertTrue(original.headers().firstValue("Set-Cookie").isEmpty());
+        var originalBody = json.readTree(original.body());
+        var before = counts();
+        var replay = client.send(request, HttpResponse.BodyHandlers.ofString());
+        assertEquals(201, replay.statusCode());
+        assertEquals(originalBody, json.readTree(replay.body()));
+        assertEquals(before, counts());
+        assertEquals(1, propertyCount("reservations"));
+        assertEquals(1, propertyCount("reservation_stays"));
+        assertEquals(originalBody, json.readTree(receipts.find(key).orElseThrow().responseSnapshot()));
+        verify(payments, times(1)).pay(new PaymentRequest(130000L, "GTQ"));
+        var swagger = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/v3/api-docs"))
+                .timeout(Duration.ofSeconds(20)).GET().build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, swagger.statusCode());
+        assertEquals("public", json.readTree(swagger.body()).path("paths").path(PATH).path("post").path("x-audience").asText());
     }
 
     @Test

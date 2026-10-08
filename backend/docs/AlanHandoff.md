@@ -1,5 +1,41 @@
 # AlanHandoff — Seguimiento Backend
 
+## Juan / J6 — integración A4 y validación técnica (2026-10-07)
+
+- **Estado / rama:** EN_QA, validación técnica PASS y QA manual pendiente;
+  feature/backend-public-booking-core. Main `308174d` integrado localmente en `860d3bd`,
+  padres e6a2340/308174d; PR140 existente. Sin push nuevo.
+- **Conflicto / autorización:** usuario aprobó conservar íntegros los bloques
+  de Alan y Juan y adaptar tres pruebas: SecurityConfigurationIntegrationTests,
+  PublicBookingPreJ6SecurityHttpIntegrationTests y OpenApiContractIntegrationTests.
+  Handoff resuelto por concatenación; ambas versiones verificadas contra sus
+  padres, sin pérdida de contenido. Cuatro documentos untracked ajenos intactos.
+- **Alcance vigente:** matcher de Alan importado intacto, sin editar configuración
+  Security/OpenAPI global ni cerrar su tarea A4. Probes pre-J6 actualizados al
+  INVALID_REQUEST HTTP400 real; clasificación global de POST booking público. Filtros
+  reales habilitados en J6 y prueba HTTP real de creación/replay/PG/Swagger.
+  Sin cambios de contratos, servicios, migraciones, dependencias o código Web.
+- **Corrección J6:** filtros reales expusieron RequestRejectedException al leer
+  un header con control; advice propio ahora devuelve INVALID_REQUEST400 sin
+  datos de entrada. No modificar el firewall, servicio/core ni reglas de Alan.
+- **Evidencia final:** focalizados148 PASS; mvn -B --no-transfer-progress verify:
+  794 PASS, 0 failures/errors/skipped, BUILD SUCCESS y JAR generado. Java21.0.9,
+  Maven3.9.11/PostgreSQL17.11, Compose aislado sin puertos del host. Logs
+  target/public-booking-j6-a4-focused-final.log y public-booking-j6-a4-verify.log;
+  surefire-reports/JAR/OpenAPI J6-A4 en target ignorado. Diff-check/scope PASS.
+- **Validación integral:** HTTP real anónimo201 + snapshot PG/replay201 iguales,
+  pago/reserva/stays una sola vez, MockMvc con filtros en todos los casos;
+  fechas/IDs/cantidades/roomId NULL, precio/stock/DECLINED/ERROR y rollback/
+  concurrencia del core PASS. OpenAPI global y vivo: 39ops/29paths/43schemas/12tags;
+  Staff/otros métodos/paths y /error directo protegidos. Configuraciones globales
+  idénticas a main. Único fallo inicial de header500 corregido sin debilitar tests;
+  avisos SpringDoc/agente JVM preexistentes, sin warnings críticos nuevos.
+- **Manual / siguiente:** usuario debe revisar availability→booking y filas PG
+  de Reservation/N stays/receipt, replay/conflicto/precio/stock/Swagger y vecinos
+  Staff. Rechazo/error del gateway solo en fixtures, sin parámetros públicos.
+  Entregar commit `fix(public-booking): validate HTTP booking with A4` y reporte;
+  esperar autorización de push y QA manual PASS. J6/A4 no marcadas COMPLETADAS.
+
 ## Reserva pública — A4: Security pre-J6 (entrega parcial)
 
 - **Estado:** parcial; tramo pre-J6 QA manual PASS, cierre post-J6 PENDIENTE.
