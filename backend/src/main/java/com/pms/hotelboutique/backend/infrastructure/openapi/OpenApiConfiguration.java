@@ -54,6 +54,25 @@ public class OpenApiConfiguration {
     }
 
     @Bean
+    OpenApiCustomizer staffReservationNullability() {
+        return api -> {
+            var schemas = api.getComponents().getSchemas();
+            for (String name : List.of("StaffReservation", "StaffStay", "StaffRoomType", "StaffRoom", "ResponsibleGuestView")) {
+                var schema = schemas.get(name);
+                if (schema != null) schema.setRequired(new java.util.ArrayList<>(schema.getProperties().keySet()));
+            }
+            for (var field : java.util.Map.of("StaffReservation", "responsibleGuest", "StaffStay", "room").entrySet()) {
+                var schema = schemas.get(field.getKey());
+                if (schema == null) continue;
+                Schema<?> previous = (Schema<?>) schema.getProperties().get(field.getValue());
+                String reference = field.getValue().equals("room") ? "StaffRoom" : "ResponsibleGuestView";
+                schema.getProperties().put(field.getValue(), new Schema<>().description(previous.getDescription()).anyOf(List.of(
+                        new Schema<>().$ref("#/components/schemas/" + reference), new Schema<>().types(Set.of("null")))));
+            }
+        };
+    }
+
+    @Bean
     OperationCustomizer applicationAudience() {
         return (operation, handler) -> {
             String packageName = handler.getBeanType().getPackageName();
@@ -64,7 +83,7 @@ public class OpenApiConfiguration {
             } else if (handler.getBeanType().equals(PublicAvailabilityController.class)) {
                 operation.addExtension("x-audience", "public");
                 operation.setSecurity(List.of());
-            } else if (packageName.contains(".modules.inventory.")) {
+            } else if (packageName.contains(".modules.inventory.") || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.reservations.api.StaffReservationController.class)) {
                 operation.addExtension("x-audience", "staff");
             }
             return operation;

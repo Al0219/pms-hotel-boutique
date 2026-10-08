@@ -1,4 +1,6 @@
 "use client";
+import { mapStaffReservationDetail } from "../mappers/staff-reservation.mapper";
+import { getStaffReservation, staffReservationsEndpoint } from "../service/staff-reservation-read.service";
 
 import { useQuery } from "@tanstack/react-query";
 import { DomainMappingError } from '@/lib/errors';
@@ -19,9 +21,10 @@ export function useReservationDetail(
         throw new Error("RESERVATION_QUERY_CONFIGURATION_REQUIRED");
       }
 
-      const response = await getReservationDetail({ endpoint, propertyId, reservationId, signal });
-      const result = mapReservationDetail(response);
-      if (result.propertyId !== propertyId || result.id !== reservationId) throw new DomainMappingError('RESERVATION_SCOPE_MISMATCH');
+      const result = endpoint === staffReservationsEndpoint
+        ? mapStaffReservationDetail(await getStaffReservation(propertyId, reservationId, signal))
+        : mapReservationDetail(await getReservationDetail({ endpoint, propertyId, reservationId, signal }));
+      if (result.propertyId !== propertyId || result.id.toLowerCase() !== reservationId.toLowerCase()) throw new DomainMappingError('RESERVATION_SCOPE_MISMATCH');
       return result;
     },
   });

@@ -1,4 +1,5 @@
-import { HttpStatusError, httpRequest } from "@/lib/http";
+import { refreshStaffBffSession, staffBffRead } from "@/lib/http/staff-bff";
+import { httpRequest } from "@/lib/http";
 import type { StaffIdentityDTO, StaffSessionDTO } from "../dtos/staff-session.dto";
 
 function bffUrl(path: string): string {
@@ -13,25 +14,10 @@ export function getStaffSessionDTO(signal?: AbortSignal): Promise<StaffSessionDT
   return httpRequest({ path: bffUrl("/api/auth/staff/session"), signal, withAuth: false });
 }
 
-export function refreshStaffSession(): Promise<{ refreshed: boolean }> {
-  return httpRequest({ path: bffUrl("/api/auth/staff/refresh"), method: "POST", withAuth: false });
-}
+export const refreshStaffSession = refreshStaffBffSession;
 
-// One cookie rotation shared by concurrent Staff restorations; never shared with Guest.
-let refreshInFlight: Promise<{ refreshed: boolean }> | undefined;
-function restoreStaffSession() {
-  refreshInFlight ??= refreshStaffSession().finally(() => { refreshInFlight = undefined; });
-  return refreshInFlight;
-}
-
-export async function getActiveStaffSessionDTO(signal?: AbortSignal): Promise<StaffSessionDTO> {
-  try { return await getStaffSessionDTO(signal); }
-  catch (error) {
-    if (signal?.aborted || !(error instanceof HttpStatusError) || error.status !== 401) throw error;
-    await restoreStaffSession();
-    // Deliberately outside the catch: a second 401 terminates restoration.
-    return getStaffSessionDTO(signal);
-  }
+export function getActiveStaffSessionDTO(signal?: AbortSignal): Promise<StaffSessionDTO> {
+  return staffBffRead('/api/auth/staff/session', signal);
 }
 
 export function logoutStaffSession(): Promise<void> {

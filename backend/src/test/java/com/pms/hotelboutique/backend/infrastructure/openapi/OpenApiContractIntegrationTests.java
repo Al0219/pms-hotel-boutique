@@ -451,6 +451,34 @@ class OpenApiContractIntegrationTests {
         mvc.perform(get("/api/v1/reports/on-books/daily")).andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void staffReservationsDocumentReadOnlyScopeAndNullableRealData() throws Exception {
+        var doc = document();
+        for (String route : List.of("/api/v1/reservations", "/api/v1/reservations/{reservationId}")) {
+            var op = operation(doc, route, "get");
+            assertEquals("staff", op.path("x-audience").asText());
+            assertTrue(op.path("security").get(0).has("bearerAuth"));
+            assertTrue(op.path("description").asText().contains("RESERVATION_MANAGE"));
+            assertTrue(parameter(op, "propertyId").path("required").asBoolean());
+            assertEquals("uuid", parameter(op, "propertyId").path("schema").path("format").asText());
+            for (String code : List.of("200", "400", "401", "403")) assertTrue(op.path("responses").has(code));
+            assertTrue(op.path("responses").path("200").path("headers").has("Cache-Control"));
+            assertFalse(doc.path("paths").path(route).has("post"));
+        }
+        assertSuccessSchema(operation(doc, "/api/v1/reservations/{reservationId}", "get"), "200", "StaffReservation");
+        assertTrue(operation(doc, "/api/v1/reservations/{reservationId}", "get").path("responses").has("404"));
+        var schemas = doc.path("components").path("schemas");
+        assertEquals(Set.of("reservationId", "propertyId", "confirmationCode", "status", "source", "sourceReference", "currency", "createdAt", "responsibleGuest", "stays"), strings(schemas.path("StaffReservation").path("required")));
+        for (var entry : Map.of("StaffReservation", "responsibleGuest", "StaffStay", "room").entrySet()) {
+            var nullable = schemas.path(entry.getKey()).path("properties").path(entry.getValue());
+            assertEquals(2, nullable.path("anyOf").size());
+            assertEquals("null", nullable.path("anyOf").get(1).path("type").asText());
+        }
+        assertEquals(Set.of("string", "null"), strings(schemas.path("StaffReservation").path("properties").path("source").path("type")));
+        assertEquals("date", schemas.path("StaffStay").path("properties").path("arrival").path("format").asText());
+        assertEquals(Set.of("profileId", "firstName", "lastName"), strings(schemas.path("ResponsibleGuestView").path("required")));
+    }
+
     private JsonNode document() throws Exception {
         return json.readTree(mvc.perform(get("/v3/api-docs")).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
     }

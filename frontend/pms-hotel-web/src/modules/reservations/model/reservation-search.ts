@@ -10,7 +10,7 @@ export function filterStaffReservations(items: ReadonlyArray<ReservationListItem
   if (filters.arrivalFrom && filters.arrivalTo && filters.arrivalFrom > filters.arrivalTo) return [];
   const query = normalized(filters.query);
   return items.filter(item => (filters.status === 'ALL' || item.status === filters.status)
-    && (!filters.arrivalFrom || localDay(item.stayStart) >= filters.arrivalFrom)
-    && (!filters.arrivalTo || localDay(item.stayStart) <= filters.arrivalTo)
-    && normalized([item.id, item.guestName, item.sourceLabel, item.roomLabel ?? ''].join(' ')).includes(query));
+    && (!filters.arrivalFrom || (item.stayStart !== null && localDay(item.stayStart) >= filters.arrivalFrom))
+    && (!filters.arrivalTo || (item.stayStart !== null && localDay(item.stayStart) <= filters.arrivalTo))
+    && normalized([item.id, item.confirmationCode ?? "", item.guestName, item.sourceLabel, item.roomLabel ?? '', ...(item.stayRooms?.map(s => s.roomType) ?? [])].join(' ')).includes(query));
 }

@@ -16,15 +16,12 @@ function StaffPropertyWorkspace({ children }: { children: (propertyId: string, s
   return children(scope.propertyIds[0], session.id);
 }
 
-/** The existing provisional reservation adapter remains injectable by app composition. */
+/** Staff reads always use the authenticated same-origin BFF, independent of data mocks. */
 export function StaffReservationsWorkspace({ reservationId, endpoint }: { reservationId?: string; endpoint?: string }) {
-  const session = useStaffSession();
-  const canCreate = session.permissions.includes('RESERVATION_MANAGE') || session.roleId === 'SUPER_ADMIN';
-  const mock = getPublicEnvironment().useMockApi;
-  const resource = mock ? 'http://pms.test/contract/reservations' : endpoint;
+  const resource = endpoint ?? '/api/staff/reservations';
   return <StaffPropertyWorkspace>{(propertyId, sessionId) => reservationId
-    ? <ReservationDetail key={`${sessionId}:${propertyId}:${reservationId}`} reservationId={reservationId} propertyId={propertyId} endpoint={resource} sessionId={sessionId} canManage={canCreate} />
-    : <ReservationCenter key={`${sessionId}:${propertyId}`} propertyId={propertyId} endpoint={resource} canCreate={canCreate} />}</StaffPropertyWorkspace>;
+    ? <ReservationDetail key={`${sessionId}:${propertyId}:${reservationId}`} reservationId={reservationId} propertyId={propertyId} endpoint={resource} sessionId={sessionId} canManage={false} />
+    : <ReservationCenter key={`${sessionId}:${propertyId}`} propertyId={propertyId} endpoint={resource} canCreate={false} />}</StaffPropertyWorkspace>;
 }
 
 export function StaffNewReservationWorkspace() {

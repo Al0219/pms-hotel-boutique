@@ -328,3 +328,17 @@ La propiedad upcomingStay usa anyOf [$ref UpcomingStay, type null] para que
 OpenAPI 3.1 acepte realmente objeto o null; customizer acotado a esta propiedad,
 cubierto por prueba estructural. PreferredLanguage admite string/null sin default.
 [Contrato, aceptación y evidencia QA](42_GUEST_ACCOUNT_SUMMARY_CONTRACT_QA.md).
+
+## Evolución STAFF-RESERVATIONS-READ-01 (2026-10-08)
+
+Dos GET Staff adicionales: `/api/v1/reservations` y
+`/api/v1/reservations/{reservationId}`, ambos con propertyId explícito,
+RESERVATION_MANAGE y Bearer Staff. Perfil responsable mínimo, N stays y Room
+nullable, sin datos financieros/ocupación inventados.
+[Contrato/QA49](49_STAFF_RESERVATIONS_READ_CONTRACT.md).
+
+Documento generado en este incremento: **44 operaciones / 34 paths / 52 schemas /
+13 tags**, sin exclusiones. OpenApiContractIntegrationTests valida paridad exacta
+con RequestMappingHandlerMapping, auth/audience, parámetros, headers, respuestas,
+campos requeridos y nullability real de responsibleGuest/room. Baselines anteriores
+se mantienen como historia; evidencia final en AlanHandoff.

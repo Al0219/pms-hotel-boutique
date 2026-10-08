@@ -45,6 +45,12 @@ public class ReservationQueryServiceImpl implements ReservationQueryService {
     }
 
     @Override
+    public ResponsibleGuestView getResponsibleGuest(AuthorizedPropertyScope scope, UUID reservationId) {
+        var guest = scopedReservation(scope, reservationId).getBookingGuest();
+        return guest == null ? null : new ResponsibleGuestView(guest.getId(), guest.getFirstName(), guest.getLastName());
+    }
+
+    @Override
     public List<ReservationStayView> listStays(AuthorizedPropertyScope scope, UUID reservationId) {
         Reservation reservation = scopedReservation(scope, reservationId);
         return stays.findByReservation_IdAndPropertyIdIn(reservation.getId(), authorizedIds(scope)).stream()
