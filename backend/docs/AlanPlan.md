@@ -79,6 +79,40 @@ se documenta su ejecución manual en la guía QA de la tarea.
 | Sesiones | Guest y Staff son contextos separados. |
 | Scope | `ALL_PROPERTIES` es el conjunto autorizado de la sesión. |
 
+## Reserva pública — A4: Security pre-J6 (entrega parcial)
+
+- **Estado:** parcial; tramo pre-J6 QA manual PASS, cierre post-J6 PENDIENTE.
+- **Owner/rama/base:** Alan / BD1; `feature/a4-public-booking-security-pre-j6`,
+  desde `6223196`. Cambios previos Guest/Auth/SMTP/Web conservados sin incorporarlos
+  al alcance A4. Pendiente integración a main.
+- **Autorización/DoR:** Alan autoriza exclusivamente permitir POST
+  `/api/v1/public/bookings` sin JWT Staff/Guest y regresiones Security. Contrato
+  original: A4 y J6 de `Plan_Tareas_Backend_Reserva_Publica_Alan_Juan.docx`,
+  recuperado de Downloads; A1-A3 entregadas y J1-J5 integradas por PR138.
+- **Alcance:** matcher exacto por método+path en SecurityConfiguration y tests de
+  autorización reales. Otros métodos, rutas vecinas y rutas Staff siguen protegidos.
+  POST anónimo alcanza MVC404 mientras no exista controller; no declara booking real.
+  ERROR dispatch admite solo URI original de booking y método original POST usando
+  atributos del servlet; /error directo, errores Staff y otros métodos siguen401.
+  El servidor cambia el método de redispatch a GET; no se confía en headers/params.
+- **Exclusiones aprobadas:** no controller J6, DTO/errores HTTP de booking, Web,
+  migraciones, Postman ni cierre/paridad OpenAPI global. No endpoint nuevo real
+  que documentar; cierre OpenAPI queda explícitamente pendiente de J6.
+- **Aceptación/validación:** POST único pasa Security sin Authorization; GET/PUT/
+  PATCH/DELETE/HEAD/OPTIONS y paths vecinos401; rutas Staff401. Focalizados Security,
+  A3 e inventario y verify completo Java21/PostgreSQL17 aislado, diff-check.
+- **Evidencia final:** focalizados54 PASS (incluye MockMvc y servidor HTTP real);
+  `./mvnw -B --no-transfer-progress verify` Java21/PostgreSQL17 aislado:770 PASS,
+  cero failures/errors/skipped. Diff-check PASS. Solo Backend reconstruido,
+  stack healthy, Web y volumen del hotel conservados. Smoke sin JWT: POST
+  booking404 (MVC, sin J6), GET booking/Staff/otros paths y POST /error directo401.
+  Ningún endpoint ni paridad booking agregados a OpenAPI; suite existente pasa.
+- **Nota para J6/post-cierre:** tests pre-J6 verifican404 porque falta controller;
+  adaptar esas expectativas al contrato real cuando Juan incorpore J6. Este404
+  no es una respuesta contractual de booking. No marcar A4 COMPLETADA.
+- **Siguiente:** Juan implementa J6; Alan completa A4 post-J6 (OpenAPI global,
+  seguridad HTTP del controller real y QA availability→booking). No marcar COMPLETADA.
+
 ## Reserva pública — Juan / J4: servicio de booking público
 
 - **Estado:** READY → EN_PROGRESO → EN_QA. Owner Juan / BD3; rama
