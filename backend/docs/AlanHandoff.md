@@ -37,14 +37,14 @@
   esperado403 en listado/detalle, sigue **NO EJECUTABLE** manualmente por falta de
   fixture activa con login real sin ese permiso. Sin PASS/FAIL manual atribuido.
 - **Estado vigente:** COMPLETADA tras QA manual aplicable mocks=false PASS
-  confirmado por Alan; cierre registrado abajo. Sin commit/push/merge.
+  confirmado por Alan; cierre vigente arriba. Sin commit/push/merge.
 
 ## 2026-10-08 — STAFF-RESERVATIONS-READ-01: corrección de intercepción MSW
 
-Registro de corrección EN_QA histórico; estado vigente COMPLETADA en el cierre de abajo.
+Registro de corrección EN_QA histórico; estado vigente COMPLETADA según el cierre vigente arriba.
 
 - **Estado:** EN_QA; Alan reportó lectura correcta con mocks=false y una
-  incidencia con mocks=true. La decisión de cierre de abajo la clasifica como
+  incidencia con mocks=true. La decisión de cierre QA documentada arriba la clasifica como
   incidencia técnica, no como FAIL del QA manual obligatorio.
   Autoriza exclusivamente corregir el boundary de GET listado/detalle reales.
 - **Rama/base:** `feature/staff-reservations-postgres`, `bbfd1e7`; cambios previos
@@ -71,7 +71,7 @@ Registro de corrección EN_QA histórico; estado vigente COMPLETADA en el cierre
 
 ## 2026-10-08 — STAFF-RESERVATIONS-READ-01: Staff /reservas real
 
-Registro de entrega EN_QA histórico; estado vigente COMPLETADA en el cierre de abajo.
+Registro de entrega EN_QA histórico; estado vigente COMPLETADA según el cierre vigente arriba.
 
 - **Estado:** EN_QA; autorizado por Alan para listado/detalle PostgreSQL,
   preservando UI José. Owner integración Alan; reviewers Juan/José colaborativos.
@@ -111,7 +111,7 @@ Registro de entrega EN_QA histórico; estado vigente COMPLETADA en el cierre de 
   no paginado con consultas por reserva documentadas. CI remoto no ejecutado.
 - **Siguiente:** QA manual 49 de Staff real, DB, N stays/room nullable/property/
   refresh/Guest aislado, únicamente con NEXT_PUBLIC_USE_MOCK_API=false según la
-  decisión de cierre de abajo. Mantener EN_QA hasta Alan PASS;
+  decisión de cierre QA documentada arriba. Mantener EN_QA hasta Alan PASS;
   sin commit/push/merge ni avance a otra tarea.
 
 
