@@ -45,8 +45,11 @@ describe('Staff property composition', () => {
     render(<StaffRoomsWorkspace />); fireEvent.click(screen.getByRole('button', { name: 'Administrar inventario' }));
     expect(mocks.catalog).toHaveBeenCalledWith(expect.objectContaining({ canManage: false }));
   });
-  it('does not inject provisional mock endpoints in backend mode', () => {
-    vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'false'); render(<StaffReservationsWorkspace />);
-    expect(mocks.center).toHaveBeenCalledWith(expect.objectContaining({ endpoint: undefined }));
+  it.each(['false', 'true'])('uses the real Staff BFF for list and detail with mocks=%s', mocksEnabled => {
+    vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', mocksEnabled);
+    const view = render(<StaffReservationsWorkspace />);
+    expect(mocks.center).toHaveBeenCalledWith(expect.objectContaining({ endpoint: '/api/staff/reservations', canCreate: false }));
+    view.rerender(<StaffReservationsWorkspace reservationId="real-reservation" />);
+    expect(mocks.detail).toHaveBeenCalledWith(expect.objectContaining({ endpoint: '/api/staff/reservations', canManage: false, reservationId: 'real-reservation' }));
   });
 });

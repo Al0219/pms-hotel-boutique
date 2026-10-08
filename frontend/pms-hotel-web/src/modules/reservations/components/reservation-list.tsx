@@ -40,16 +40,19 @@ const STATUS_BADGE: Record<ReservationStatus, string> = {
   CANCELLED: styles.statusCancelled,
 };
 
-function formatMoney(amount: number, currency: string): string {
+function formatMoney(amount: number | null, currency: string): string {
+  if (amount === null) return "—";
   const symbol = currency.toUpperCase() === "GTQ" ? "Q" : currency;
   return `${symbol}${amount.toLocaleString("en-US")}`;
 }
 
-function formatShortDate(date: Date): string {
+function formatShortDate(date: Date | null): string {
+  if (date === null) return "—";
   return date.toLocaleDateString("es-GT", { day: "numeric", month: "short" }).replace(".", "");
 }
 
-function pluralize(count: number, singular: string, plural: string): string {
+function pluralize(count: number | null, singular: string, plural: string): string {
+  if (count === null) return "—";
   return `${count} ${count === 1 ? singular : plural}`;
 }
 
@@ -58,12 +61,13 @@ function financeLine(item: ReservationListItem): string {
   const total = `Total ${formatMoney(finance.totalAmount, item.currency)}`;
 
   switch (finance.financeState) {
+    case null: return "No disponible";
     case "ESTIMATED":
       return `Tarifa estimada ${formatMoney(finance.totalAmount, item.currency)}`;
     case "PAID":
       return `${total} · Pagado`;
     case "BALANCE": {
-      const pending = finance.paidAmount === null ? 0 : Math.max(finance.totalAmount - finance.paidAmount, 0);
+      const pending = finance.paidAmount === null ? 0 : Math.max((finance.totalAmount ?? 0) - finance.paidAmount, 0);
       return `${total} · Pendiente ${formatMoney(pending, item.currency)}`;
     }
     case "DEPOSIT":
@@ -71,6 +75,11 @@ function financeLine(item: ReservationListItem): string {
     case "NO_CAPTURE":
       return `${total} · Sin captura`;
   }
+}
+
+function roomSummary(item: ReservationListItem): string {
+  if (item.stayRooms) return item.stayRooms.map(s => `${s.roomType} · ${s.room ?? 'Sin asignar'}`).join(', ');
+  return item.roomLabel ?? (item.status === 'WAITLIST' ? '' : 'Sin asignar');
 }
 
 function buildPageNumbers(current: number, total: number): Array<number | "ellipsis"> {
@@ -197,9 +206,9 @@ export function ReservationList({ reservations, onConvert }: Readonly<Reservatio
                 render: (item) => (
                   <>
                     <Link className={`${styles.reference} ${styles.referenceLink}`} href={`/reservas/${encodeURIComponent(item.id)}`}>
-                      {item.id}
+                      {item.confirmationCode ?? item.id}
                     </Link>
-                    <span className={styles.guestName}>{item.guestName}</span>
+                    <span className={styles.guestName}>{item.guestName ?? "Responsable no registrado"}</span>
                   </>
                 ),
               },
@@ -208,13 +217,13 @@ export function ReservationList({ reservations, onConvert }: Readonly<Reservatio
                 header: "Estadía / Canal",
                 render: (item) => (
                   <>
-                    <p className={styles.cellLine}>{item.sourceLabel}{item.roomLabel ? ` · ${item.roomLabel}` : item.status === 'WAITLIST' ? '' : ' · Sin asignar'}</p>
+                    <p className={styles.cellLine}>{item.sourceLabel ?? "Origen no registrado"}{roomSummary(item) ? ` · ${roomSummary(item)}` : ''}</p>
                     {item.sourceReference ? <p className={styles.cellMuted}>{item.sourceReference}</p> : null}
                     <p className={styles.cellMuted}>
                       {formatShortDate(item.stayStart)} → {formatShortDate(item.stayEnd)} · {pluralize(item.nights, "noche", "noches")}
                     </p>
                     <p className={styles.cellMuted}>
-                      {pluralize(item.adults, "adulto", "adultos")} · {item.roomCount === null ? "solicitud" : pluralize(item.roomCount, "habitación", "habitaciones")}
+                      {item.adults === null ? "" : `${pluralize(item.adults, "adulto", "adultos")} · `} {item.roomCount === null ? "solicitud" : pluralize(item.roomCount, "habitación", "habitaciones")}
                     </p>
                   </>
                 ),
@@ -225,7 +234,7 @@ export function ReservationList({ reservations, onConvert }: Readonly<Reservatio
                 render: (item) => (
                   <>
                     <p className={styles.finance}>{financeLine(item)}</p>
-                    <p className={styles.cellMuted}>{item.alertText ?? "Sin alertas"}</p>
+                    <p className={styles.cellMuted}>{item.readOnly ? "" : item.alertText ?? "Sin alertas"}</p>
                   </>
                 ),
               },

@@ -2593,3 +2593,76 @@ pendientes. Commit/push/merge requieren autorización explícita.
 En la validación original, el host tenía Java Runtime 25 sin `javac`. La validación reproducible de
 BE-001 se ejecuta con `maven:3.9.11-eclipse-temurin-21` y PostgreSQL 17 en
 Docker; el workflow Backend CI usa Temurin 21.
+
+
+### STAFF-RESERVATIONS-READ-01 — Integración Staff /reservas PostgreSQL
+
+- **Estado:** COMPLETADA (READY → EN_PROGRESO → EN_QA → COMPLETADA);
+  QA manual aplicable PASS confirmado por Alan, 2026-10-08.
+- **Owner/reviewers:** Alan integración; Juan BD3 y José UI Web, colaborativos.
+- **Rama/base:** `feature/staff-reservations-postgres` desde `bbfd1e7`; árbol limpio
+  al inicio. Sin commit/push/merge autorizados.
+- **Dependencias/DoR:** ReservationQueryService y scope SQL BD3, C2 aprobado,
+  Staff Auth/BFF/refresh reales y UI José existentes; solicitud autoriza lectura
+  y HTTP/OpenAPI faltante. Se conserva RESERVATION_MANAGE, PROPERTY explícito,
+  responsible GuestProfile separado de ocupantes; sin facultades financieras.
+- **Contrato/archivos:** [49](49_STAFF_RESERVATIONS_READ_CONTRACT.md), adapter Staff
+  sobre queries, dos GET/chain Staff/OpenAPI, BFF allowlist, DTO/mapper/service/hooks
+  y adaptación nullable de componentes existentes. Sin migrations/dependencias.
+- **Aceptación:** PASS; PostgreSQL real en listado y detalle, N stays/room nullable,
+  header histórico válido, aislamiento Guest/Staff/property y permisos actuales,
+  refresh acotado, ningún dato financiero/ocupación/política inventado.
+- **DoD:** PASS; focalizados y full verify Backend, Web tests/typecheck/lint/build
+  con mocks false, generated OpenAPI/mappings y diff PASS previos; QA manual
+  aplicable de Alan PASS con NEXT_PUBLIC_USE_MOCK_API=false. Caso sin permiso
+  NO EJECUTABLE manualmente por falta de fixture, con cobertura técnica existente;
+  ninguna regla vigente exige su ejecución manual para este cierre.
+- **Evidencia:** Backend focalizados 24 PASS y full verify 840 PASS, sin fallos/errores/skips;
+  Java21/PostgreSQL17 aislado. Web focalizados 232 PASS; full suite 1579/270 PASS
+  con `--maxWorkers=2`, typecheck/lint/build mock=false PASS y diff PASS. OpenAPI
+  generado 44 operaciones/34 paths/52 schemas/13 tags, sin exclusiones.
+- **Siguiente:** incremento cerrado conforme a [49](49_STAFF_RESERVATIONS_READ_CONTRACT.md);
+  no avanzar a otra tarea ni realizar commit/push/merge sin autorización.
+
+
+#### STAFF-RESERVATIONS-READ-01 — Corrección técnica de intercepción MSW
+
+- **Estado al entregar la corrección:** EN_QA; Alan reportó lectura correcta con mocks=false y una
+  incidencia con mocks=true. Según la decisión de cierre de abajo, esta última
+  es una incidencia técnica, no un FAIL del QA manual obligatorio.
+- **Autorización/alcance:** Alan solicita únicamente excluir GET list/detail BFF
+  de intercepción MSW. Contrato 49 y Backend/UI sin cambios en esta corrección.
+- **Entrega:** worker wrapper antes del script MSW generado + registro enable;
+  tests worker/service/workspace con ambos flags y regresión de mocks existentes.
+- **Evidencia:** focalizados 41/full 1596 PASS, typecheck/lint/builds ambos flags y
+  diff PASS; smoke Firefox ambos flags contra PostgreSQL PASS. Detalle en Handoff.
+- **Seguimiento:** QA manual aplicable mocks=false confirmado PASS y cierre
+  COMPLETADA registrado abajo; evidencia técnica de esta corrección conservada.
+
+#### STAFF-RESERVATIONS-READ-01 — Decisión de cierre QA, 2026-10-08
+
+- **Decisión aprobada:** el gate manual/E2E se ejecuta únicamente con
+  `NEXT_PUBLIC_USE_MOCK_API=false`. Mocks=true no es gate manual ni modo de
+  integración real de esta tarea; no declarar FAIL manual por su comportamiento.
+- **Cobertura técnica:** se conservan los tests de boundaries con ambos flags,
+  exclusión MSW y regresión de otros mocks; no cambia producto ni Backend.
+- **Limitación manual:** Staff autenticado sin RESERVATION_MANAGE sigue
+  **NO EJECUTABLE** por falta de fixture; esperado403, sin atribuir PASS manual.
+- **Estado vigente:** COMPLETADA tras QA manual aplicable mocks=false PASS
+  confirmado por Alan; cierre registrado abajo. Sin commit/push/merge.
+
+#### STAFF-RESERVATIONS-READ-01 — Cierre con QA manual aplicable PASS, 2026-10-08
+
+- **Estado/aceptación/DoD:** EN_QA → COMPLETADA; aceptación y DoD PASS. Alan
+  confirmó los nueve casos manuales de [49](49_STAFF_RESERVATIONS_READ_CONTRACT.md)
+  con NEXT_PUBLIC_USE_MOCK_API=false: lectura PostgreSQL/listado, detalle/stays,
+  property403, propertyId400, inexistente404, anónimo401, Guest401, refresh y
+  ausencia de datos/finanzas inventados. Mocks=true fuera del gate manual.
+- **Limitación conservada:** Staff autenticado sin RESERVATION_MANAGE:
+  NO EJECUTABLE manualmente por falta de fixture; esperado403, cobertura técnica
+  existente PASS, sin PASS manual atribuido ni fixtures/permisos modificados.
+  El DoD vigente permite cerrar con esta limitación explícita.
+- **Validación:** evidencia técnica previa Backend/Web/OpenAPI conservada;
+  cierre exclusivamente documental, git diff --check PASS. Sin suites nuevas.
+- **Siguiente:** incremento cerrado; cualquier trabajo adicional o publicación
+  requiere autorización independiente. Sin commit/push/merge.

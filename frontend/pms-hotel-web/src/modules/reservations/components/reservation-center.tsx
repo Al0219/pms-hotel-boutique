@@ -102,11 +102,11 @@ export function ReservationCenter({ propertyId, endpoint, canCreate = false }: R
           <Link className={styles.secondaryAction} href="/calendario">Ver calendario</Link>
           <Link className={styles.secondaryAction} href="/lista-espera">Ver lista de espera</Link>
           {canCreate ? <Link className={styles.primaryAction} href="/reservas/nueva">+ Nueva reserva</Link>
-            : <button className={styles.primaryAction} type="button" disabled title="Tu sesión no tiene permiso para gestionar reservas.">+ Nueva reserva</button>}
+            : <button className={styles.primaryAction} type="button" disabled title={center.readOnly ? "Creación de reservas aún no disponible." : "Tu sesión no tiene permiso para gestionar reservas."}>+ Nueva reserva</button>}
         </div>
       </header>
 
-      <div className={styles.kpis} aria-label="Resumen del día">
+      {center.summary && <div className={styles.kpis} aria-label="Resumen del día">
         <KpiCard label="Llegadas hoy" value={center.summary.arrivalsToday} />
         <KpiCard
           label="Salidas hoy"
@@ -119,9 +119,9 @@ export function ReservationCenter({ propertyId, endpoint, canCreate = false }: R
           value={center.summary.confirmedNextDays}
           detail={`próximos 7 días · ${center.summary.decisionsRequired} requieren decisión`}
         />
-      </div>
+      </div>}
 
-      <AlertsPanel alerts={center.alerts} />
+      {!center.readOnly && <AlertsPanel alerts={center.alerts} />}
       {convertingWaitlistId && propertyId && endpoint ? (
         <WaitlistConversionPanel
           propertyId={propertyId}
