@@ -15,8 +15,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.http.MediaType;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -37,13 +39,13 @@ class SecurityConfigurationIntegrationTests {
     }
 
     @Test
-    void anonymousBookingPostReachesMvcWithoutInventingAJ6Controller() throws Exception {
+    void anonymousBookingPostReachesTheJ6ControllerAndRequiresItsIdempotencyHeader() throws Exception {
         var result = mockMvc.perform(post("/api/v1/public/bookings")
                 .contentType(MediaType.APPLICATION_JSON).content("{}"))
-            .andExpect(status().isNotFound()).andReturn();
-        // Pre-J6: MVC has no resource/controller. A 401 here would mean Security
-        // still blocks anonymous booking; this is not a booking contract test.
-        assertInstanceOf(NoResourceFoundException.class, result.getResolvedException());
+            .andExpect(status().isBadRequest())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.code").value("INVALID_REQUEST")).andReturn();
+        assertInstanceOf(MissingRequestHeaderException.class, result.getResolvedException());
     }
 
     @Test
