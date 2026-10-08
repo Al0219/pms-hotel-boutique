@@ -1,5 +1,62 @@
 # AlanHandoff — Seguimiento Backend
 
+## Alan / A4 post-J6 — cierre con QA manual PASS (2026-10-08)
+
+- **Estado / aceptación:** COMPLETADA. Alan confirmó explícitamente
+  «QA manual A4 post-J6: PASS» tras ejecutar el recorrido en el stack local
+  actual. Aceptación y DoD A4 PASS; cierre propio de J6 conservado.
+- **Rama/base:** `qa/a4-public-booking-post-j6`, base main `aafdb7b`.
+  Cambios documentales previos conservados; sin código/tests/migraciones.
+- **Evidencia manual:** availability real de HB-GT-DEMO → creación201;
+  replay201 con respuesta idéntica y conteos sin cambios. PostgreSQL:
+  1 Reservation CONFIRMED +2 stays RESERVED sin habitación +1 recibo.
+  Reserva `495bbced-44b2-4de5-8873-2da31e79f5a9`, código `TCUBZR9SBM`,
+  total260000 minor GTQ. Staff anónimo401; Swagger live PASS para audiencia
+  pública availability/bookings y respuestas201/400/404/409/422/500.
+  Resultados de terminal aportados por Alan; sin secretos/tokens/cookies.
+- **QA técnico previo:**184 focalizados,832 verify y45 checks de smoke PASS;
+  evidencia y límites íntegros en la entrada anterior. No se repitieron suites
+  ni smoke durante este cierre documental. `git diff --check` PASS.
+- **Entrega / siguiente:** solo AlanPlan/AlanHandoff actualizados; nueva entrada
+  antepuesta, historial append-only conservado. A4 cerrada; sin commit/push/
+  merge ni avance a otra tarea sin autorización.
+
+## Alan / A4 post-J6 — cierre técnico sobre main (2026-10-08)
+
+- **Estado:** EN_QA; QA técnico PASS, confirmación manual post-J6 de Alan
+  pendiente. J6 conserva su cierre propio; no se atribuye su PASS manual a A4.
+- **Rama/base:** `qa/a4-public-booking-post-j6`, HEAD/main/origin/main `aafdb7b`,
+  PR140 integrado; árbol inicial limpio. Validación exclusivamente A4, sin
+  defecto encontrado ni cambios de producto/código/tests/migraciones/Web.
+- **Pruebas reales:** Compose aislado, Maven3.9.11/Java21.0.9/PostgreSQL17.11,
+  sin puertos del host. `mvn -o -B --no-transfer-progress -Dtest=... test`:
+  184 PASS (nueve clases availability/J6/core/receipt/Security/OpenAPI).
+  `mvn -o -B --no-transfer-progress verify`:832 PASS, cero failures/errors/
+  skipped, BUILD SUCCESS/JAR. Avisos SpringDoc/agente JVM preexistentes.
+- **Smoke HTTP/PG:**45 checks automatizados PASS con el JAR validado. GET
+  availability anónimo200/6 ofertas; POST201 con2 STD y1 DLX/dos noches,
+  430000 minor GTQ. Una Reservation CONFIRMED y3 stays RESERVED reales,
+  roomId NULL,1 perfil/1 recibo/4 eventos audit. Replay201: snapshot, IDs y
+  referencia de pago simulado idénticos; cero duplicación en todos los conteos.
+  ATS STD4→2/DLX4→3, sin segundo consumo; GuestAccount/Folio sin altas.
+- **Seguridad/errores:** solo GET availability y POST bookings anónimos en
+  este flujo, sin Set-Cookie; otros métodos, vecinos, trailing slash, Staff
+  y /error directo probados401.400/404/409/500 y códigos aprobados comprobados
+  por HTTP real sin escrituras parciales.422 PAYMENT_DECLINED y ERROR500 de
+  gateway comprobados en fixtures de integración; sin toggles HTTP/producto.
+- **Swagger/paridad:** HTML/config200; OpenAPI live/generated y mappings
+  coinciden:42ops/32paths/47schemas/13tags, sin exclusiones; únicas operaciones
+  de negocio x-audience=public: GET availability/POST bookings, sin auth.
+  Contrato booking201/400/404/409/422/500 y header obligatorio comprobados.
+- **Evidencia ignorada:** `target/a4-postj6-focused.log`, focused-reports,
+  `a4-postj6-verify.log`, surefire-reports, OpenAPI generado/mappings,
+  `a4-postj6-openapi-live.json`, `a4-postj6-runtime-smoke.json/log`.
+  BD desechable tmpfs y entornos QA retirados; stack del hotel y sus datos
+  conservados. `git diff --check` PASS; solo AlanPlan/AlanHandoff modificados.
+  Smoke técnico no equivale a aceptación manual ni comprobación visual de Alan.
+- **Siguiente:** QA manual post-J6 y PASS explícito de Alan; mantener EN_QA.
+  Sin commit/push/merge ni avance a otra tarea. Historial previo conservado.
+
 ## Juan / J6 — integración main PR143 y resolución autorizada (2026-10-08)
 
 - **Estado / base:** integración local QA técnica PASS; J6 conserva COMPLETADA
