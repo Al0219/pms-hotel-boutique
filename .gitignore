@@ -14,6 +14,9 @@
 **/local.properties
 **/*.iml
 
+# Java / Spring Boot
+**/target/
+
 # Environments
 **/.env
 **/.env.local
