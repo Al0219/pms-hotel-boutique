@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { loginWithCredentials } from './unified-login.service';
 afterEach(() => vi.restoreAllMocks());
 describe('browser login service boundary', () => {
+  it('rejects multibyte overflow with generic credentials before fetching',()=>{const fetch=vi.spyOn(globalThis,'fetch');expect(()=>loginWithCredentials('valid@example.test','界'.repeat(25))).toThrow('Invalid credentials');expect(fetch).not.toHaveBeenCalled();});
   it.each([
     ['a'.repeat(38)+'@example.test','x'], ['bad-email','x'], ['','x'],
     ['valid@example.test','x'.repeat(51)], ['valid@example.test',''],

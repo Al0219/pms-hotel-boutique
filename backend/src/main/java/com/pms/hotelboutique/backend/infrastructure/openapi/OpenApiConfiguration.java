@@ -34,6 +34,7 @@ public class OpenApiConfiguration {
             .schemaRequirement("staffRefreshCookie", new SecurityScheme()
                 .type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.COOKIE).name("pms_staff_refresh")
                 .description("Refresh opaco Staff reenviado por BFF; no JSON. El BFF reemplaza sus cookies HttpOnly."))
+            .schemaRequirement("guestRegistrationBinding",new SecurityScheme().type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name("X-Guest-Registration-Binding").description("BFF-only continuation; independent of JWT/refresh. Never exposed to Browser."))
             .schemaRequirement("guestRefreshCookie", new SecurityScheme()
                 .type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.COOKIE).name("pms_guest_refresh")
                 .description("Refresh opaco Guest reenviado por BFF; independiente de Staff."));

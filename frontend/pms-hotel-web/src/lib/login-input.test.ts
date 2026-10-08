@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { passwordLoginInput } from './login-input';
+import { passwordLoginInput, passwordExceedsByteLimit } from './login-input';
 const email50 = 'a'.repeat(37) + '@example.test';
 describe('traditional login input contract', () => {
   it('accepts exactly 50 after email trim/lowercase and preserves the password', () => {
@@ -17,4 +17,15 @@ describe('traditional login input contract', () => {
   it.each(['x'.repeat(51), '', '   '])('rejects invalid password case %#', password => {
     expect(passwordLoginInput('valid@example.test', password)).toBeNull();
   });
+  it('uses actual UTF-8 bytes independently of the unchanged character limit',()=>{
+    expect(passwordLoginInput('valid@example.test','界'.repeat(24))).not.toBeNull();
+    expect(passwordExceedsByteLimit('界'.repeat(24))).toBe(false);
+    expect(passwordLoginInput('valid@example.test','界'.repeat(25))).toBeNull();
+    expect(passwordLoginInput('valid@example.test','é'.repeat(36))).not.toBeNull();
+    expect(passwordLoginInput('valid@example.test','é'.repeat(37))).toBeNull();
+    expect(passwordLoginInput('valid@example.test','😀'.repeat(18))).not.toBeNull();
+    expect(passwordLoginInput('valid@example.test','😀'.repeat(19))).toBeNull();
+    expect(passwordLoginInput('valid@example.test','e\u0301'.repeat(24))?.password).toBe('e\u0301'.repeat(24));
+  });
+
 });

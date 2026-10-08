@@ -1,5 +1,27 @@
 # Public 02 — Acceso y registro Guest
 
+## Ajuste QA posterior — respuesta neutral y CTA PMS
+
+Guest existente no recibe correo informativo ni OTP; registration/resend mantienen202 genérico sujeto al mismo binding/cooldown/cuotas. Web no conoce existencia/método/status. Después de202: “Revisa tu correo”, código si puede continuarse y orientación a iniciar sesión si ya tiene cuenta. CTA “Ir a iniciar sesión” cambia de tab, conserva email solo en memoria si disponible y elimina password/OTP sin request Backend.
+
+`Button`/`buttonClassName` compartidos para primary, outline, ghost y links Google/invitado; tokens de color/radius/font/spacing del PMS, targets48px (acciones auxiliares44px), loading/disabled/focus visibles. CSS de acceso conserva layout y elimina overrides independientes de CTA, spinner propio y estilos sin consumidores de strength/consents. Google mantiene icono de marca. No cambia Staff Auth ni las reglas password8..50/max72bytes de registro y login vigente.
+
+## AUTH-GUEST-REG-HISTORY-01 — decisión vigente (2026-10-07), EN_QA
+
+**Regla anterior (superseded para coincidencias verificadas):** confirmationCode + OTP obligatorio para todo historical link.
+**Regla nueva aprobada por Alan:** verified Guest email auto-links compatible reservations; reservation-specific OTP remains manual fallback. La coincidencia utiliza únicamente Reservation.bookingGuest → GuestProfile.email con trim/lowercase; sin filtro de fecha, estado o property ACTIVE. Nunca acompañantes ni IDs elegidos por cliente. Links propios se conservan; conflictos ajenos se omiten/auditan, sin transferencia/UPDATE/DELETE. Las consultas Guest siguen autorizadas exclusivamente por links persistidos.
+
+Registro real exclusivamente Guest: email requerido/formato/max50 normalizado, password8..50 sin trim/normalización/composición, confirmación exacta solo Web. Sin nombre, marketing ni aceptación persistida de términos. Login conserva sus límites previos y no recibe mínimo8. Cuenta password/Google/DISABLED existente no se sobrescribe ni fusiona. `/acceso` único; Google nuevo usa el mismo auto-link tras OIDC verificado, sin OTP extra.
+
+Pending registration separado, hash BCrypt(12), binding HttpOnly BFF y OTP8 con HMAC por propósito/generación. TTL OTP10min, contexto30min, cinco intentos compartidos contra reinicios, resend60s, 3 envíos/email/hora y 10/email/día. 202 genérico no acredita existencia ni envío. Verify atómico crea cuenta/credential/proof/links/sesión y consume pending; sin OTP/password/tokens en claro persistidos. Prueba de email separada respalda N links; evidencia OTP manual histórica y append-only preservados.
+
+Backend: POST `/api/v1/guest-auth/registrations`, `/verify`, `/resend`; verify201 tokens exclusivamente al BFF, errores400/403/422/429/503 genéricos. Header secreto `X-Guest-Registration-Binding` server-to-server. Browser: `/api/auth/guest/registrations` y mismas acciones; tokens únicamente cookies Guest. F5 recupera contexto HttpOnly; Backend siempre revalida. Account Summary refleja count y próxima estadía tras commit; no implementa historial completo.
+
+Guest auth real con ambos flags de datos mock. Logout Guest confirmado → `/acceso`; fallo conserva sesión. Bootstrap401 → un refresh Guest deduplicado → un retry; segundo401 signed-out; red/5xx/mapping error recuperable. Staff implementación/destino `/` preservados, caches separados.
+
+**QA pendiente:** confirmación manual de Alan, entrega real Resend y configuración HMAC del entorno. Decisión posterior aprobada por Alan: registration8..50 caracteres y máximo72 bytes UTF-8 reales; login conserva máximo50 sin mínimo8 y rechaza >72 bytes con credenciales genéricas antes de BCrypt. Sin trim/lowercase/Unicode normalization/truncamiento. BCrypt(12) intacto; límite resuelto, sin cambios a sesiones Staff. OpenAPI/Postman, tests y resultados finales se registran en AlanHandoff. Ninguna entrada histórica inferior declara vigente una regla sustituida aquí.
+
+
 **Restauración visual autorizada por José (2026-10-07), coordinada con BD1:**
 Se recupera la presentación diseñada para `/acceso`: pestañas Iniciar sesión/Crear
 cuenta, Google con su icono, campos de registro, fuerza de contraseña, términos y
@@ -115,3 +137,25 @@ Validación temporal frente a `ea3ac86`, sin modificar la rama publicada. Se com
 - `npm run test -- src/modules/auth src/modules/account src/app/api/auth --pool=threads --maxWorkers=1 --reporter=dot`: PASS, 19 archivos / 166 pruebas, incluidos sesión real y BFF.
 - `npm run lint`, `NEXT_PUBLIC_USE_MOCK_API=true npm run build`, `npm run typecheck` tras build: PASS.
 - Sin marcadores de conflicto; diff contra `origin/main` limitado a los ocho archivos de la eliminación de Apple. No se modifican contratos ni código Backend.
+
+
+## Ajuste QA — estado inicial de registro (AUTH-GUEST-REG-HISTORY-01, EN_QA)
+
+- Login y registro conservan estados independientes. Cambio manual Login →
+  Crear cuenta: campos vacíos, untouched, sin errores previos. Cambio manual
+  inverso descarta el formulario de registro; no transfiere su email.
+- Un submit válido limpia submitted/touched al vaciar las contraseñas, incluso
+  si el request falla con429. El mensaje429 solo corresponde al request actual;
+  entrar de nuevo mediante tabs no lo conserva. Los límites Backend no cambian.
+- Volver desde OTP conserva solo el email en memoria y limpia contraseñas,
+  OTP, validación, errores y cooldown UI; no crea otro registro. Ir a iniciar
+  sesión transfiere únicamente el email en memoria y no hace request.
+- El requestId inicial recibido por restore se descarta en cambios manuales de
+  pestaña. F5 conserva el comportamiento vigente del contexto HttpOnly mientras
+  exista: abandonar la vista no borra esa cookie ni el registro Backend.
+- autocomplete: email / current-password en login; email / new-password en
+  registro y confirmación; one-time-code en OTP. El navegador puede completar
+  correo según su perfil; la aplicación no copia campos Login → Registro.
+- Reset QA local propuesto en
+  `backend/docs/qa/AUTH-GUEST-REG-HISTORY-01_LOCAL_RESET.sql`: SELECTs primero,
+  selección por email + UUID revisados, ROLLBACK por defecto; no ejecutado.

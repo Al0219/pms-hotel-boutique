@@ -1,3 +1,5 @@
+import {activateGuestFixture} from '@/test/guest-session-fixture';
+import {useQueryClient} from '@tanstack/react-query';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime';
@@ -34,8 +36,8 @@ function fill() {
 function submit() { fireEvent.submit(screen.getByLabelText('Nombre *').closest('form')!); }
 
 function FixtureSignIn() {
-  const { signIn, account } = useGuestSession();
-  return account ? <p>Sesión preparada</p> : <button onClick={() => void signIn({ method: 'EMAIL', email: 'access@example.com' })}>Preparar sesión Guest</button>;
+  const { account } = useGuestSession();const client=useQueryClient();
+  return account ? <p>Sesión preparada</p> : <button onClick={() => void activateGuestFixture({ method: 'EMAIL', email: 'access@example.com' },client)}>Preparar sesión Guest</button>;
 }
 describe('Guest checkout data', () => {
   it('requires selection and preserves search', async () => {
@@ -57,7 +59,7 @@ describe('Guest checkout data', () => {
     expect(screen.getByLabelText('Solicitudes especiales')).toHaveAttribute('maxlength', '250');
   });
   it('retains data to step 3 and back without financial writes or browser storage', async () => {
-    const mutations = vi.fn(); mockServer.use(http.post('*', () => { mutations(); return HttpResponse.json({}); }));
+    const mutations = vi.fn(); mockServer.use(http.post('*', ({request}) => { if(new URL(request.url).pathname==='/api/auth/guest/refresh')return new HttpResponse(null,{status:401});mutations();return HttpResponse.json({}); }));
     const view = await selected(); fill(); expect(screen.getByRole('complementary')).toHaveTextContent('Q 3,858.89');
     submit(); submit(); expect(screen.getByRole('button', { name: /Procesando/ })).toBeDisabled();
     await waitFor(() => expect(push).toHaveBeenCalledTimes(1));

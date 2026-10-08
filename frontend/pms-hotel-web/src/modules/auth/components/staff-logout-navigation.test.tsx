@@ -101,21 +101,22 @@ describe("explicit Staff logout navigation", () => {
     expect(client.getQueryData(["reservations","staff-fixture"])).toEqual({privateData:true});
     expect(replace).not.toHaveBeenCalled();
   });
-  it("direct unauthenticated calendar access still shows the guard without redirecting", async () => {
+  it.each(["/dashboard","/reservas","/calendario","/staff/habitaciones"])("direct unauthenticated %s access replaces the private route with home", async path => {
     authenticated=false;
-    const {replace}=mount("/calendario");
-    await screen.findByRole("heading",{name:"Sesión Staff requerida"});
-    expect(screen.getByLabelText("Pathname")).toHaveTextContent("/calendario");
+    const {replace}=mount(path);
+    await screen.findByRole("heading",{name:"Inicio público"});
+    expect(screen.getByLabelText("Pathname")).toHaveTextContent(/^\/$/);
     expect(screen.queryByText("staff.demo")).not.toBeInTheDocument();
-    expect(replace).not.toHaveBeenCalled();
+    expect(replace).toHaveBeenCalledExactlyOnceWith("/");
   });
   it("returning to a Staff route after logout cannot recover private content", async () => {
-    const {user,client}=mount("/dashboard");
+    const {user,client,replace}=mount("/dashboard");
     await screen.findByRole("heading",{name:"/dashboard"});
     await user.click(screen.getByRole("button",{name:"Cerrar sesión"}));
     await screen.findByRole("heading",{name:"Inicio público"});
     await user.click(screen.getByRole("button",{name:"Volver a ruta Staff"}));
-    await screen.findByRole("heading",{name:"Sesión Staff requerida"});
+    await waitFor(()=>expect(replace).toHaveBeenCalledTimes(2));
+    expect(screen.getByRole("heading",{name:"Inicio público"})).toBeInTheDocument();
     expect(screen.queryByText("staff.demo")).not.toBeInTheDocument();
     expect(client.getQueryData(staffSessionKey)).toBeNull();
   });

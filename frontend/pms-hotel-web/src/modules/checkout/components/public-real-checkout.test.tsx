@@ -44,7 +44,7 @@ async function approve() {
 }
 describe('Real checkout presentation up to Payment', () => {
   it.each([[1, false, 'Q 1,700.00'], [2, false, 'Q 3,400.00'], [2, true, 'Q 4,700.00']])('accepts GTQ quantity %i with multiple=%s and preserves state on every back link', async (quantity, multiple, total) => {
-    const writes = vi.fn(); mockServer.use(http.post('*', () => { writes(); return HttpResponse.json({}); }));
+    const writes = vi.fn(); mockServer.use(http.post('*', ({request}) => { if(new URL(request.url).pathname==='/api/auth/guest/refresh')return new HttpResponse(null,{status:401});writes();return HttpResponse.json({}); }));
     const view = await prepare(quantity, multiple); fill();
     const back = screen.getByRole('link', { name: /Volver al carrito/ }); expect(back).toHaveAttribute('href', expect.stringContaining('/reserva?'));
     view.rerender(<PublicBookingReviewPage initialCriteria={criteria} />);

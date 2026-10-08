@@ -111,7 +111,7 @@ describe("Private 09 frontend journeys", () => {
     mount(); await screen.findByText("No se pudieron cargar los datos de este contexto.");
     expect(screen.queryByText("UNAUTHORIZED")).not.toBeInTheDocument();
   });
-  it("closes the BFF session, keeps Guest data and restores the unauthorized guard on reload", async () => {
+  it("closes the BFF session, keeps Guest data and redirects unauthenticated reload home", async () => {
     const user = userEvent.setup(); localStorage.setItem("guest-example", "preserved"); mount();
     await user.click(await screen.findByRole("button", { name: "Cerrar sesión" }));
     await waitFor(() => expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/"));
@@ -120,8 +120,9 @@ describe("Private 09 frontend journeys", () => {
     expect(screen.queryByRole("heading", { name: "Dashboard Multi-property" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Iniciar demostración Staff" })).not.toBeInTheDocument();
     cleanup(); mount();
-    await screen.findByRole("heading", {name:"Sesión Staff requerida"});
-    expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/");
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledTimes(2));
+    expect(navigation.replace).toHaveBeenLastCalledWith("/");
+    expect(screen.queryByText("Sesión Staff requerida")).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Métricas por propiedad" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Iniciar demostración Staff" })).not.toBeInTheDocument();
     expect(authenticated).toBe(false);

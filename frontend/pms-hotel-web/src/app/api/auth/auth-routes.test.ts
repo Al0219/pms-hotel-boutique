@@ -159,8 +159,9 @@ describe("Browser session routes target explicit Backend authentication", () => 
       if (outcome === "rejected") fetchBackend.mockResolvedValue(new Response(null, { status: 401 }));
       const cookie = outcome === "missing" ? undefined : outcome === "foreign" ? `pms_${context === "staff" ? "guest" : "staff"}_access=foreign` : `pms_${context}_access=synthetic-access`;
       const response = await (context === "staff" ? staff : guest).DELETE(request(`${context}/session`, "DELETE", cookie));
-      expect(response.status).toBe(204);
-      assertClearedCookies(response, context);
+      if(context==='guest' && outcome==='unavailable'){
+        expect(response.status).toBe(503);expect(response.cookies.getAll()).toEqual([]);
+      }else{expect(response.status).toBe(204);assertClearedCookies(response,context);}
       if (outcome === "missing" || outcome === "foreign") expect(fetchBackend).not.toHaveBeenCalled();
     });
 

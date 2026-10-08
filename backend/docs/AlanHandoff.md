@@ -1,5 +1,352 @@
 # AlanHandoff — Seguimiento Backend
 
+## AUTH-GUEST-REG-HISTORY-01 — Registro Guest verificado e historial
+
+- **Estado:** COMPLETADA; implementación y QA automatizado PASS. Alan confirmó QA manual final PASS y autorizó el cierre del incremento.
+- **QA manual final:** PASS confirmado por Alan: 1 reserva histórica con el mismo email verificado se vincula; N reservas compatibles con ese email se vinculan todas; email distinto → 0 links; un link de otra GuestAccount no se transfiere; Account Summary lee exclusivamente los `guest_reservation_links` persistidos.
+- **Owner/rama/base:** Alan / BD1; `feature/guest-registration-verified-history`, base `6223196`; árbol inicial limpio. Sin commit/push/merge.
+- **DoR/decisiones:** registro exclusivamente Guest email/password8..50 y máximo72 bytes UTF-8 reales, confirmación solo Web; sin nombre/marketing/consentimientos. Cuenta solo tras OTP8/10min/5 intentos; resend60s, 3/email/hora y 10/email/día. Login sin mínimo nuevo. Cookies/contextos separados.
+- **Nueva regla aprobada:** email verificado auto-vincula todas las Reservation compatibles por bookingGuest.email trim/lowercase; sin filtro de fechas/estado/property ACTIVE. Sin transferencias; OTP manual complementario. Google nuevo reutiliza el puerto.
+- **Alcance:** pending registration, evidencia verificada, provenance append-only, tres endpoints/BFF, UI OTP y F5, restore/logout Guest y mocks de datos sin autoridad auth; OpenAPI/Postman/docs/tests/migración.
+- **Validación/DoD:** suites Backend/Web, clean/upgrade/checksums, contratos/generated/live, Compose y smoke sanitizado; evidencia automatizada previa conservada y cierre autorizado por QA manual final PASS de Alan.
+- **Siguiente:** incremento cerrado tras QA manual PASS; cualquier publicación o trabajo adicional requiere autorización independiente. Resend alternativo conserva su limitación externa resend.dev; reglas Guest/Staff y límites intactos. Sin commit/push/merge.
+
+
+### Cierre — QA manual final de Alan
+
+**COMPLETADA** por confirmación explícita de Alan. PASS de auto-link para 1/N
+reservas compatibles por el mismo email verificado; email distinto sin links;
+ownership ajeno sin transferencia; Account Summary solo desde links persistidos.
+
+Se conserva íntegra la evidencia previa de SMTP/OTP y aislamiento Staff/Guest.
+Las menciones EN_QA y pendientes manuales de los registros históricos siguientes
+corresponden a esos pases previos y quedan supersedidas por este cierre. No se
+repitieron suites ni smoke en este pase documental. A4 mantiene su estado parcial.
+
+### Ajuste QA posterior — SMTP Gmail detrás de EmailSender
+
+**EN_QA**, misma rama `feature/guest-registration-verified-history`; sin
+commit/push/merge. Nuevo SmtpEmailSender/SmtpEmailConfiguration y starter-mail
+administrado por Spring Boot; selección PMS_EMAIL_PROVIDER=smtp/resend, default
+resend. Transporte Resend intacto salvo condición de selección exclusiva.
+Registro/OTP manual usan el mismo boundary sin cambios de servicios/contratos,
+anti-enumeration, cuotas o migraciones. No endpoints nuevos/modificados.
+
+SMTP valida al arrancar host/port/username/app-password/from no vacíos y puerto
+válido. STARTTLS enable+required, AUTH, identidad TLS, UTF8, timeouts5/10/10s;
+sin debug ni errores con causas/datos sensibles. Health del hotel no conecta
+SMTP periódicamente; la entrega conserva el manejo de fallo actual del caller.
+Compose transmite las variables; demo fuerza Resend/SMTP vacío. `.env` intacto;
+`.env.example` y C3 documentan configuración sin credenciales.
+
+- `./mvnw -B --no-transfer-progress verify` en Java21/PostgreSQL17 aislados:
+  **743 PASS**, cero failures/errors/skipped; incluye **12 tests SMTP** con
+  transporte mock y configuración sintética, sin correo real. Contratos/migraciones
+  e integración Guest existentes pasan. Web no modificado; no suite Web repetida.
+- Maven local limitado por escritura sandbox en `.m2`; validación trasladada a
+  Docker con cache generado existente. Ownership de `backend/target` restaurado
+  a1000:1000 tras finalizar; PostgreSQL efímero de pruebas retirado.
+- Compose integrado config/up build/ps y demo config PASS; tres servicios healthy,
+  volumen del hotel preservado. Runtime: PMS_EMAIL_PROVIDER=smtp, cinco variables
+  SMTP configuradas, host/puerto coincide Gmail587; valores sensibles no expuestos.
+- Smoke HTTP público/health sin envio y diff-check PASS. Gmail real no contactado
+  para delivery; recepción/OTP quedan pendientes de QA manual de Alan. El bloqueo
+  resend.dev anterior permanece histórico/aplicable únicamente al provider Resend.
+
+### Ajuste QA posterior — copy neutral y salida privada Staff
+
+**EN_QA**, sin commit/push/merge. Se elimina el párrafo introductorio Guest de
+Crear cuenta y el copy202 queda condicional, sin afirmar envío realizado.
+Existentes→202 genérico→0 Resend permanece intacto y no se reinvestiga.
+Backend/OTP/Resend sin cambios; limitación resend.dev es bloqueo externo de QA.
+
+Guard compartido: 401 definitivo tras refresh/retry→transición→`router.replace("/")`
+y limpieza exclusiva de caches Staff. Revalidación BFF al recuperar foco de ventana,
+además de visibilidad vigente; cookies compartidas, sin auth por ventana/polling.
+Espera revalidación de cached null antes de decidir, evitando expulsar un login
+nuevo por estado anterior. 5xx/network/DTO siguen recuperables; Guest aislado.
+La decisión sustituye el guard estático anterior, conservado abajo como historial.
+
+Validación final: `NEXT_PUBLIC_USE_MOCK_API=false npm run check` PASS
+(lint/typecheck/1412 tests en250 archivos/build); Compose config/up build/ps PASS,
+postgres/backend/web healthy, volumen intacto; git diff-check PASS. Backend verify
+no repetido: no cambios de código Backend en este pase.
+
+Smoke Firefox real con perfil temporal: copy retirado; login Staff→dashboard;
+dos ventanas comparten sesión; logout ventana1→`/`; foco explícito en ventana2
+headless→revalidación BFF→`/`; acceso directo sin sesión a dashboard/reservas/
+calendario/staff-habitaciones→`/`, sin guard permanente. No registro, OTP ni correo
+real enviado. Aislamiento Guest/Staff comprobado en tests.
+
+Siguiente: repetir QA manual Alan cross-window y registro real cuando el proveedor
+permita el destinatario. No cambiar reglas de seguridad para resolver resend.dev.
+
+### Ajuste QA posterior — form state y reset LOCAL propuesto
+
+**EN_QA**, sin commit/push/merge. Solo fix Web; Backend, límites y producción
+intactos. Causa: submitted/touched se conservaban tras vaciar password/confirm
+al enviar y al Volver; además el requestId SSR podía restaurarse tras tabs.
+Login y registro ya tenían emails React separados. No se confirma autofill en
+el perfil Firefox de Alan; perfil temporal limpio no autocompleta ni hereda.
+
+- Reset de validación al enviar válidamente/Volver; Volver conserva solo email,
+  tabs descartan restore inicial, CTA explícito login transfiere solo email.
+- Web **1406 PASS /250 archivos**; focalizado **51 PASS**. Typecheck/lint/build
+  `NEXT_PUBLIC_USE_MOCK_API=false` PASS. Backend verify no repetido: sin cambios
+  de código Backend en este pase.
+- Compose config/up `-d --build`/ps PASS, tres servicios healthy, volumen intacto.
+- SQL propuesto: `qa/AUTH-GUEST-REG-HISTORY-01_LOCAL_RESET.sql`, **NO ejecutado**;
+  SELECTs sin secretos, targets por email + UUID explícitos, locks, orden FK,
+  lista vacía y ROLLBACK por defecto. Protege CONSUMED/evidencia verificada.
+- DB local observada: 6 INVALID +5 UNKNOWN, 12 request events, 7 delivery rows.
+  Solo un requestId se atribuye inequívocamente al smoke previo registrado;
+  restantes requieren email/requestIds QA confirmados por Alan. UNKNOWN indica
+  delivery de resultado incierto: el reset no resuelve proveedor/entrega.
+- Cuota: guest_registration_request_events; delivery: guest_registration_deliveries;
+  cooldown/intentos/no-op: guest_pending_registrations. No helper oficial ni
+  endpoint administrativo añadido. GuestAccount Google y resto del hotel intactos.
+- Tras reset autorizado local: borrar únicamente cookie pms_guest_registration,
+  recargar /acceso, repetir tabs/429/OTP422/Volver/CTA login/F5 y registro OTP.
+  Contextos consumidos/proof-backed conservan cuotas hasta su ventana temporal.
+
+### Ajuste QA posterior — existentes sin Resend + botones PMS
+
+**Estado EN_QA**, sin commit/push/merge, misma rama. Causa previa: `deliver(existing=true)` llamaba `sendExistingGuestAccessInstructions`; método y correo informativo retirados. Existentes password/Google/DISABLED mantienen202 opaco sin OTP, password hash persistido, delivery, sender/executor, credential/identity nuevas, cambios de status, sesión ni auto-link. No-op con binding INVALID conserva continuación segura para resend/verify, no challenge utilizable. Nuevo011 de request-budget/backfill mantiene cuotas/cooldown/errores indistinguibles sin inventar envíos; anteriores010/009 aplicados intactos.
+
+- Backend verify **731 PASS**, cero fallos/errores/skipped; OpenAPI focal **13 PASS**, mismo inventario41 operaciones/31paths/41schemas/12tags, docs de comportamiento sin envíos y paridad live/generated.
+- Web **1401 PASS/250 archivos**; typecheck/lint/build sin mocks PASS. Tests neutral202, CTA login sin request/email solo memoria/password vacío, focus, loading/disabled y doble-submit; anteriores Google/Guest/Staff/UTF8 conservados.
+- Estilos: `Button` y helper compartido `buttonClassName` para anchors (sin controles anidados), primary/outline/ghost; tokens existentes, CTA48px, auxiliares44px, radius12px, Inter. CSS scoped de acceso sin colores arbitrarios/overrides de primary/register/google/guest, spinner duplicado ni estilos dead de consents/strength. Disabled con tokens y contraste legible, hover compartido, active/focus/reduced-motion, inputs/OTP/tabs alineados.
+- Firefox real perfil temporal: Login/Create/OTP desktop1440 y tablet768; el sistema impone mínimo500px de ventana, por lo que móviles390/320 se verificaron dentro de frame same-origin con esos viewports CSS reales. Sin overflow; targets48px/radius12px/font Inter; focus-visible real por teclado solid2px en ambos viewports móviles. Capturas comparadas contra home/habitaciones/checkout vacío/cuenta demo, sin rediseño global. Guest login UI→cuenta y logout UI→acceso PASS. Capturas temporales `/tmp/pms-noop-shots`, sin correos reales ni tokens.
+- Smoke integrado posterior: registration202 (solo requestId), resend202 tras61s; SQL persistencia **deliveries0 / OTP ausente / password hash ausente**. Staff y Guest login201, sesión Staff200 tras logout Guest204, logout Staff204, Google307. Prueba de ausencia de llamadas sender/executor para password/Google/DISABLED/repeated/case-insensitive en integración; ningún envío informativo ni correo real de prueba.
+- Configuración runtime actual: HMAC/Resend API key/from **configurados**; no se leyeron/imprimieron valores ni se escribieron secretos. Tablas y datos previos conservados; Compose up build/ps healthy. El estado vacío registrado en el pase anterior abajo es histórico.
+- Smoke nuevo con recepción Resend/OTP verify externo queda para Alan: no hay destinatario QA nuevo autorizado ni OTP proporcionado, no se envió correo de prueba arbitrario. Flujo nuevo sender/delivery/verify/linking validado en integración. Google inicio307, consentimiento interactivo pendiente.
+- Siguiente: QA manual final de Alan; no marcar COMPLETADA.
+
+### Evidencia técnica y límites de QA de AUTH-GUEST-REG-HISTORY-01
+
+- Web final: `npm test` **1393 PASS / 250 archivos**; `npm run typecheck`, `npm run lint` y `NEXT_PUBLIC_USE_MOCK_API=false npm run build` PASS. Auth real en ambos flags verificado mediante tests; los fixtures de otros dominios reciben sesión BFF controlada exclusivamente en tests.
+- Backend: PostgreSQL17/Java21 en Compose aislado `pms-guest-reg-qa`; `./mvnw -B --no-transfer-progress verify` **726 PASS, 0 fallos, 0 errores, 0 skipped**, BUILD SUCCESS (2026-10-07 21:28 UTC). Tests de registro incluyen 0/1/N, foreign profile/link, acompañantes, múltiples stays, intentos/rates/daily, colisiones, replay/binding, Google, rollback credential/link/session, concurrencia registro/verify/manual-auto/profile mutation. Migración clean/upgrade con fila OTP previa y checksums históricos PASS focalizado.
+- OpenAPI live/generated: paths y components igualdad exacta PASS; **41 operaciones / 31 paths / 41 schemas / 12 tags**. Tres nuevos endpoints, schemas writeOnly/límites/binding y Postman BD1 actualizados.
+- Compose integrado: config/up `-d --build`/ps PASS; postgres/backend/web healthy, puerto 127.0.0.1:3001. Volumen de datos conservado. Permisos de artefactos generados `backend/target` resueltos mediante chown solo de ese directorio; no cambios de código para ocultar el fallo del entorno.
+- Smoke HTTP final: Staff login201, Guest login201, access Guest ausente401 → refresh200 → retry200; Account Summary BFF canónico200; Staff sigue200 tras refresh y logout Guest204; Staff logout204. Públicas `/`, `/habitaciones`, `/acceso`, `/cuenta`200. Inicio Google307; no se completó consentimiento/OIDC interactivo real.
+- Registro real integrado devuelve503 porque **RESEND_API_KEY, RESEND_FROM_EMAIL y PMS_RESERVATION_LINK_OTP_HMAC_KEY no están configurados**. No se enviaron emails reales, no se sustituyó el proveedor productivo por uno fake y no se expusieron secretos. OTP/verify/auto-link se comprobaron con EmailSender controlado en integración. Smoke completo de cuenta nueva/OTP real/históricas debe hacerlo Alan tras configurar el entorno y un destinatario autorizado.
+- **Histórico del pase previo, decisión pendiente sustituida por aprobación posterior:** BCrypt(12) conserva límite técnico72 bytes UTF-8: actualmente un valor de <=50 caracteres que exceda72 bytes devuelve400, sin truncamiento ni prehash. No se adoptó una política adicional sin decisión; consulta pendiente a Alan para resolver esta incompatibilidad técnica. Staff/hashes existentes intactos.
+- OTP manual no cambia: confirmationCode + OTP reservation-specific mantiene restricciones previas de matching al email de la cuenta. Esta entrega no añade un email alternativo al request manual ni habilita vinculación cross-email. La regla nueva sustituye la obligatoriedad universal de ese flujo para las coincidencias verificadas.
+- F5 durante OTP, logout Guest→`/acceso`, fallo de logout sin simular éxito, recuperación de5xx y aislamiento se verificaron automatizadamente. Navegación visual/browser y QA manual de Alan siguen pendientes; no declaradas PASS por el smoke HTTP.
+- No commit/push/merge. No marcar COMPLETADA. Siguiente: configurar proveedor/HMAC, resolver72 bytes y realizar QA manual con 0/1/N reservas y Google real.
+
+### Pase posterior aprobado — 72 bytes UTF-8 y preparación OTP real
+
+Estado **EN_QA**, misma rama, sin commit/push/merge. La consulta BCrypt previa queda resuelta por decisión explícita de Alan: registration8..50 caracteres y máximo72 bytes UTF-8; login sin mínimo8, máximo50 caracteres y72 bytes. Backend usa `getBytes(StandardCharsets.UTF_8)`; Browser/BFF `TextEncoder`. No trim, lowercase, normalización, prehash ni truncamiento. BCrypt(12) intacto. Registro byte overflow400; acceso canónico/Backend401 con credenciales genéricas antes de lookup/BCrypt. Se conserva el boundary400 genérico de input del POST Staff BFF previo, sin cambios de su implementación.
+
+Validación de este pase: Backend **728 PASS, 0 fallos/errores/skipped**, verify BUILD SUCCESS (2026-10-07 21:43 UTC); Web **1399 PASS/250 archivos**; typecheck/lint/build sin mocks/diff-check PASS. Compose reconstruido, postgres/backend/web healthy; OpenAPI live/generated paths/components PASS. Smoke byte-limit canonical/login Backend401 genérico para known/unknown, registration BFF400, sin cookies. OTP real sigue bloqueado por configuración; no QA manual declarada PASS.
+
+Tests nuevos: 72/75 bytes con caracteres de3 bytes; 72/74 con2 bytes; emoji72/76; NFC/decomposed y espacios conservados; rechazo Browser/BFF antes de transporte; cuentas conocidas/desconocidas con mismo error; OpenAPI documenta bytes sin cambiar maxLength50. El fixture de stays de la prueba de acompañantes ahora crea/elimina su propio RoomType: no depende de datos que deje otro test, sin tocar lógica de producto ni dataset demo.
+
+#### Configuración local: inspección sin secretos
+
+No se abrió `.env` ni se imprimieron valores: se clasificó únicamente presencia/vacío en los procesos de contenedores.
+
+| Variable | Estado runtime | Uso |
+|---|---|---|
+| PMS_RESERVATION_LINK_OTP_HMAC_KEY | vacía | HMAC registration con separación de propósito; mínimo32 bytes de clave; también OTP manual |
+| RESEND_API_KEY | vacía | Authorization server-side contra Resend |
+| RESEND_FROM_EMAIL | vacía | from literal que Backend envía al proveedor |
+| PMS_JWT_SECRET | configurada | Firma Guest session al verify; configuración existente |
+| PMS_WEB_PUBLIC_URL | configurada | Origin BFF; localhost:3001 canónico |
+| PMS_BACKEND_INTERNAL_URL | configurada | Transporte BFF→Backend |
+| GOOGLE_CLIENT_ID | configurada | Google Guest |
+| GOOGLE_CLIENT_SECRET | configurada | Google Guest |
+| GOOGLE_REDIRECT_URI | configurada | Solo Google; callback canónico `/api/auth/guest/google/callback` |
+
+No existe flag de provider para registration: ResendEmailSender está registrado siempre; OTP es8 dígitos introducido en UI y no requiere callback/webhook/email-link propio. Backend espera `pms.resend.from-email` mapeado desde RESEND_FROM_EMAIL, sin fallback automático.
+
+- HMAC ausente/corto: POST registration503 (estado actual).
+- HMAC listo pero API key/from ausentes o rechazo proveedor: POST202 persiste pending; entrega asíncrona falla, estado UNKNOWN, no cuenta utilizable; verify422 genérico. El rechazo del proveedor no cambia anti-enumeration. 202 no garantiza envío. Resend se puede reintentar después de configurar, sujeto a cuotas/expiry.
+- No hay remitente local configurado que validar. `onboarding@resend.dev` permite desarrollo exclusivamente hacia el email asociado a la cuenta Resend; otros destinatarios/aliases requieren dominio remitente verificado. [Resend oficial](https://resend.com/docs/knowledge-base/403-error-resend-dev-domain).
+
+Alan puede configurar temporalmente la misma terminal, sin escribir secretos al repo:
+
+```bash
+export PMS_RESERVATION_LINK_OTP_HMAC_KEY="$(openssl rand -hex 32)"
+read -rsp 'RESEND_API_KEY: ' RESEND_API_KEY
+printf '\n'
+export RESEND_API_KEY
+export RESEND_FROM_EMAIL='PMS QA <onboarding@resend.dev>'
+export NEXT_PUBLIC_USE_MOCK_API=false
+docker compose --env-file .env up -d --build
+docker compose --env-file .env ps
+```
+
+Usar key real creada en Resend con permiso de envío; no una cadena sintética para RESEND_API_KEY. Para múltiples inbox/aliases controlados usar remitente del dominio verificado. Mantener HMAC estable durante QA: regenerarla invalida verificadores pendientes. No ejecutar `docker compose config` sin `--quiet` ni imprimir env. No se generaron/aplicaron secretos automáticamente ni se enviaron emails en este pase.
+
+#### Datos 0/1/N — propuesta, NO ejecutada
+
+Inspección PostgreSQL local: **0 reservations, 0 guest_profiles, 0 grupos de email sin reclamar**. Bootstrap demo crea catálogo/inventario/cuentas, no reservas históricas. No existe endpoint REST confirmado para crear GuestProfile/Reservation header ni POST público bookings; los comandos/services de Juan no equivalen a API.
+
+Para A usar correo nuevo controlado sin reservas. Para B/C proponer fixtures explícitos únicamente en DB QA desechable o copia aislada: un GuestProfile sin GuestAccount y1 o3 Reservation headers que lo referencien como booking_guest_id. No insertar links/proof, no modificar reservas ajenas, pagos, ATS o código booking. Usar distintos correos nuevos recibibles, <=50; no borrar cuentas/links append-only para reutilizar una dirección.
+
+Plantilla para que Alan ejecute manualmente SOLO en la DB QA elegida (no ejecutada por Codex): abrir psql interactivo con ON_ERROR_STOP y usar datos ingresados localmente. Si decide usar el stack local de desarrollo actual: `docker compose --env-file .env exec postgres psql -U pms_app -d pms_hotel -v ON_ERROR_STOP=1`; revisar primero que sea DB de desarrollo/QA.
+
+```sql
+\prompt 'Correo QA nuevo y controlado: ' qa_email
+\prompt 'Cantidad (1 o 3): ' qa_count
+BEGIN;
+SELECT NOT EXISTS (
+  SELECT 1 FROM guest_accounts
+  WHERE lower(btrim(email))=lower(btrim(:'qa_email'))
+) AS qa_new_account \gset
+\if :qa_new_account
+WITH property AS (
+  SELECT id FROM properties WHERE code='HB-GT-DEMO'
+), profile AS (
+  INSERT INTO guest_profiles
+    (id,property_id,first_name,last_name,email,status,created_at,updated_at)
+  SELECT gen_random_uuid(),id,'QA','GuestHistory',
+    lower(btrim(:'qa_email')),'ACTIVE',now(),now() FROM property
+  RETURNING id,property_id
+), candidates AS (
+  SELECT gen_random_uuid() AS id,p.id AS booking_guest_id,p.property_id
+  FROM profile p CROSS JOIN generate_series(1,:'qa_count'::integer)
+)
+INSERT INTO reservations
+  (id,property_id,booking_guest_id,confirmation_code,status,currency,
+   source_channel,source_reference,created_at,updated_at)
+SELECT id,property_id,booking_guest_id,
+  'QH'||substr(replace(id::text,'-',''),1,12),'PENDING','GTQ',
+  'QA_GUEST_HISTORY','AUTH-GUEST-REG-HISTORY-01 QA',now(),now()
+FROM candidates;
+COMMIT;
+\else
+ROLLBACK;
+\echo 'Correo ya registrado: usar otro correo controlado.'
+\endif
+```
+
+Confirmar INSERT count1/3 y existencia de HB-GT-DEMO antes de probar. No stays en esta plantilla: summary linkedReservationsCount debe ser1/3; upcomingStay puede sernull y no se espera listado completo. Los fixtures se descartan con la DB QA, sin UPDATE/DELETE de links. Esta preparación no implementa ni altera booking de Juan.
+
+#### QA manual A–N
+
+Base `http://localhost:3001`. Preparación: proveedor listo, direcciones nuevas controladas según restricción Resend, mocks de datos false, DevTools Network con Preserve log. HMAC estable. Cuotas por email:3 envíos/hora,10/día; cooldown60s, OTP10min, continuación30min y5 intentos. Separar correos/casos o esperar cuotas; no resetear DB para saltarse límites. Antes de A–G/L/M/N cerrar sesiones Guest/Staff por sus flujos UI; K establece coexistencia de forma controlada.
+
+Regla S para **cada** caso: compartir únicamente nombre del caso, PASS/FAIL, URL, método/status, mensaje seguro y count esperado. **NO compartir OTP, passwords, JWT, cookies, binding, API keys, headers/body sensibles, correos reales ni HAR sin sanear.** Resend dashboard/email solo revisión local; no capturas del OTP. Backend201 tokens NO se inspeccionan desde JavaScript.
+
+| Caso / URL | Acción exacta | Esperado | Network (sin compartir secretos; regla S) |
+|---|---|---|---|
+| A `/acceso`→`/cuenta` | Crear cuenta con correo nuevo sin fixtures, password8..50/max72bytes y confirmación exacta; copiar OTP recibido y verificar | OTP view tras202; éxito lleva a cuenta y count0 | POST `/api/auth/guest/registrations`202 UUID únicamente; POST `/verify`200 `{authenticated:true,context:GUEST}`; GET `/api/auth/guest/session`200 y `/api/auth/guest/account/summary`200 count0 |
+| B `/acceso`→`/cuenta` | Preparar1 header con bookingGuest email igual; registrar usando mixed case y verificar | Link automático sin confirmationCode; count1 | Mismos202/200/summary200; linkedReservationsCount1; sin requests reservation-link manual |
+| C `/acceso`→`/cuenta` | Preparar3 headers para otro correo nuevo; registrar y verificar | Count3, un link por Reservation; no historial completo prometido | Summary200 linkedReservationsCount3; antes de verify no candidates/counts |
+| D `/acceso` OTP | En pending nuevo introducir8 dígitos diferentes del OTP recibido; repetir hasta5 si se prueba bloqueo | Error seguro, sin sesión; quinto bloquea, OTP correcto posterior falla | POST `/verify`422; no cookies Guest aplicadas ni summary autorizado |
+| E `/acceso` OTP | Esperar más de10min desde envío, menos de30min de contexto; enviar código anterior | Expirado/invalid genérico, no signed-in; resend sujeto a cuota | POST `/verify`422; no sesión nueva |
+| F `/acceso` OTP | Tras registro observar botón/cooldown; esperar60s, Reenviar; intentar código anterior y luego nuevo recibido | Reenvío202; anterior422; nuevo éxito; intentos anteriores conservados | POST `/resend`202; verify anterior422, nuevo200. Intento anticipado por request existente repetido <60s devuelve429; cuarto envío/hora429 |
+| G `/acceso` OTP | F5 antes de verify; no reintroducir password; verificar con correo recibido | OTP view restaurada; continuación revalidada en Backend | GET `/acceso`200; no POST registration repetido al cargar; verify200 con contexto cookie HttpOnly; ningún storage con credentials |
+| H `/cuenta`→`/acceso` | Cerrar sesión Guest | Solo Guest sale; destino acceso | DELETE `/api/auth/guest/session`204 antes de navegación; si503 conservar ruta/sesión y permitir retry |
+| I `/acceso`→`/cuenta` | Login con email/password exactos de A; sin min8 nuevo para credenciales previas | Guest válido; summary conserva links | POST `/api/auth/login`201 `{authenticated:true,context:GUEST}`; sesión/summary200 |
+| J `/cuenta` | F5 autenticado; opcional esperar access TTL vigente para restauración | Cuenta se conserva/restaura, sin falso signed-out | GET session200; si401: POST guest/refresh200 una vez, retry session200 una vez. 5xx muestra error recuperable |
+| K `/acceso`, `/dashboard`, `/cuenta` | Iniciar pending Guest en tab1. Tab2 `/acceso`, elegir Iniciar sesión y acceder Staff. Verificar Guest en tab1. F5 dashboard tab2. Logout Guest tab1; comprobar Staff. Re-login Guest y logout Staff tab2 | Coexistencia; Guest logout→acceso conserva Staff; Staff logout→/ conserva Guest | GET Staff session200 después de verify/logout Guest; GET Guest session200 después de logout Staff. DELETE por contexto204; cookies/caches ajenos intactos |
+| L `/acceso`→Google→`/cuenta` | Google desde cualquiera de los tabs con cuenta controlada; nueva sin colisión para auto-link | OIDC real, sin OTP adicional; cuenta nueva auto-link según fixtures. Cuenta password previa con ese email no se fusiona | GET `/api/auth/guest/google`307; callback redirect y sesión/summary200 tras consentimiento válido. Colisión: error seguro, no500 ni overwrite |
+| M `/acceso` Crear cuenta | Repetir registro con email ya usado en A; otra password | Mismo202 y copy genérico; no OTP ni correo informativo; no overwrite | Registration202 UUID; verify con código arbitrario422. Login password original201; sin409/email-exists/counts |
+| N `/acceso` | En Crear cuenta usar25 caracteres `界` (25chars/75bytes) y confirmación igual; probar también Iniciar sesión conocido/desconocido | Registro muestra error multibyte, sin enviar; login error genérico. 24 `界` son72bytes y válidos para registro | UI: ningún POST registro/login en rechazo local. BFF forzado: registration400 y acceso canónico401; Backend mismo400/401, nunca500. maxLength sigue50 |
+
+Detalle: éxito Web verify200 frente a Backend201 es el contrato BFF actual. No pedir confirmationCode en B/C; summary es autoridad persistida. Los estados expired/bloqueado comparten422 y copy segura: UI no distingue información privada.
+
+### Archivos de este incremento (incluidos ajustes QA posteriores)
+
+- `backend/docs/10_GUEST_AUTH_CONTRACT_C3.md`
+- `backend/docs/30_BD1_HISTORICAL_RESERVATION_OTP_CONTRACT_PROPOSAL.md`
+- `backend/docs/31_BD1_HISTORICAL_RESERVATION_OTP_BACKEND_QA.md`
+- `backend/docs/42_GUEST_ACCOUNT_SUMMARY_CONTRACT_QA.md`
+- `backend/docs/44_UNIFIED_LOGIN_CONTRACT_QA.md`
+- `backend/docs/AlanHandoff.md`
+- `backend/docs/AlanPlan.md`
+- `backend/postman/BD1-Backend-APIs.postman_collection.json`
+- `backend/src/main/java/com/pms/hotelboutique/backend/infrastructure/openapi/OpenApiConfiguration.java`
+- `backend/src/main/java/com/pms/hotelboutique/backend/infrastructure/openapi/OpenApiSchemaConfiguration.java`
+- `backend/src/main/java/com/pms/hotelboutique/backend/infrastructure/security/PasswordLoginValidator.java`
+- `backend/src/main/java/com/pms/hotelboutique/backend/infrastructure/security/SecurityConfiguration.java`
+- `backend/src/main/java/com/pms/hotelboutique/backend/modules/guestauth/api/GuestLoginRequest.java`
+- `backend/src/main/java/com/pms/hotelboutique/backend/modules/guestauth/application/GuestAuthService.java`
+- `backend/src/main/java/com/pms/hotelboutique/backend/modules/guestauth/application/GuestAuthServiceImpl.java`
+- `backend/src/main/java/com/pms/hotelboutique/backend/modules/guestauth/domain/GuestAccount.java`
+- `backend/src/main/java/com/pms/hotelboutique/backend/modules/guestauth/infrastructure/email/EmailSender.java`
+- `backend/src/main/java/com/pms/hotelboutique/backend/modules/guestauth/infrastructure/email/ResendEmailSender.java`
+- `backend/src/main/java/com/pms/hotelboutique/backend/modules/securityauth/api/StaffLoginRequest.java`
+- `backend/src/main/java/com/pms/hotelboutique/backend/modules/securityauth/api/UnifiedLoginRequest.java`
+- `backend/src/main/resources/db/changelog/003ServiceSecurityAuth/db.changelog.yaml`
+- `backend/src/main/resources/db/changelog/004ServiceReservations/db.changelog.yaml`
+- `backend/src/test/java/com/pms/hotelboutique/backend/infrastructure/openapi/OpenApiContractIntegrationTests.java`
+- `backend/src/test/java/com/pms/hotelboutique/backend/infrastructure/security/UnifiedLoginIntegrationTests.java`
+- `backend/src/test/java/com/pms/hotelboutique/backend/infrastructure/security/UnifiedLoginMigrationIntegrationTests.java`
+- `backend/src/test/java/com/pms/hotelboutique/backend/modules/reservations/PublicBookingReceiptSchemaUpgradeTests.java`
+- `backend/src/test/java/com/pms/hotelboutique/backend/modules/securityauth/StaffAuthAuditAppendOnlyIntegrationTests.java`
+- `backend/src/test/java/com/pms/hotelboutique/backend/modules/securityauth/StaffAuthAuditAttributionIntegrationTests.java`
+- `backend/src/test/resources/db/changelog/db.changelog-before-bd2.yaml`
+- `backend/src/test/resources/db/changelog/db.changelog-before-bd3.yaml`
+- `backend/src/test/resources/db/changelog/db.changelog-before-public-booking-receipts.yaml`
+- `backend/src/test/resources/db/changelog/db.changelog-before-staff-auth-audit-append-only.yaml`
+- `backend/src/test/resources/db/changelog/db.changelog-before-staff-auth-audit-attribution.yaml`
+- `backend/src/test/resources/db/changelog/db.changelog-before-unified-login.yaml`
+- `frontend/pms-hotel-web/docs/13_AUTH_AND_SESSIONS.md`
+- `frontend/pms-hotel-web/docs/49_PUBLIC_02_IDENTITY_ACCESS.md`
+- `frontend/pms-hotel-web/docs/51_PUBLIC_02_EXISTING_RESERVATION_LINK.md`
+- `frontend/pms-hotel-web/src/app/(public)/acceso/guest-identity-access.tsx`
+- `frontend/pms-hotel-web/src/app/(public)/acceso/page.tsx`
+- `frontend/pms-hotel-web/src/app/api/auth/auth-routes.test.ts`
+- `frontend/pms-hotel-web/src/app/api/auth/guest/refresh/route.ts`
+- `frontend/pms-hotel-web/src/app/api/auth/guest/session/route.ts`
+- `frontend/pms-hotel-web/src/app/api/auth/login/route.test.ts`
+- `frontend/pms-hotel-web/src/app/api/auth/login/route.ts`
+- `frontend/pms-hotel-web/src/data/mocks/server.ts`
+- `frontend/pms-hotel-web/src/lib/login-input.test.ts`
+- `frontend/pms-hotel-web/src/lib/login-input.ts`
+- `frontend/pms-hotel-web/src/modules/account/components/account-dashboard-page.tsx`
+- `frontend/pms-hotel-web/src/modules/account/components/public-account.test.tsx`
+- `frontend/pms-hotel-web/src/modules/account/components/reservation-link-page.test.tsx`
+- `frontend/pms-hotel-web/src/modules/account/components/reservation-link.test.tsx`
+- `frontend/pms-hotel-web/src/modules/auth/components/guest-access-page.module.css`
+- `frontend/pms-hotel-web/src/modules/auth/components/guest-access-page.test.tsx`
+- `frontend/pms-hotel-web/src/modules/auth/components/guest-access-page.tsx`
+- `frontend/pms-hotel-web/src/modules/auth/components/guest-real-session.test.tsx`
+- `frontend/pms-hotel-web/src/modules/auth/components/guest-registration-form.tsx`
+- `frontend/pms-hotel-web/src/modules/auth/components/guest-session-check.tsx`
+- `frontend/pms-hotel-web/src/modules/auth/components/guest-session-provider.tsx`
+- `frontend/pms-hotel-web/src/modules/auth/hooks/use-guest-session-controller.ts`
+- `frontend/pms-hotel-web/src/modules/auth/model/guest-registration.ts`
+- `frontend/pms-hotel-web/src/modules/auth/service/guest-session.service.ts`
+- `frontend/pms-hotel-web/src/modules/auth/service/unified-login.service.test.ts`
+- `frontend/pms-hotel-web/src/modules/auth/service/unified-login.service.ts`
+- `frontend/pms-hotel-web/src/modules/checkout/components/public-checkout-review-page.test.tsx`
+- `frontend/pms-hotel-web/src/modules/checkout/components/public-guest-data-page.test.tsx`
+- `frontend/pms-hotel-web/src/modules/checkout/components/public-real-checkout.test.tsx`
+- `frontend/pms-hotel-web/src/shared/components/button/button.tsx`
+- `frontend/pms-hotel-web/src/shared/components/button/index.ts`
+- `backend/src/main/java/com/pms/hotelboutique/backend/infrastructure/security/PasswordLoginExceptionHandler.java`
+- `backend/src/main/java/com/pms/hotelboutique/backend/modules/guestauth/api/GuestRegistrationController.java`
+- `backend/src/main/java/com/pms/hotelboutique/backend/modules/guestauth/api/GuestRegistrationExceptionHandler.java`
+- `backend/src/main/java/com/pms/hotelboutique/backend/modules/guestauth/application/GuestRegistrationException.java`
+- `backend/src/main/java/com/pms/hotelboutique/backend/modules/guestauth/application/GuestRegistrationService.java`
+- `backend/src/main/java/com/pms/hotelboutique/backend/modules/guestauth/application/VerifiedEmailHistoryPort.java`
+- `backend/src/main/java/com/pms/hotelboutique/backend/modules/guestauth/application/VerifiedEmailHistoryService.java`
+- `backend/src/main/java/com/pms/hotelboutique/backend/modules/reservations/application/VerifiedEmailHistoryAdapter.java`
+- `backend/src/main/resources/db/changelog/003ServiceSecurityAuth/010-guest-registration.yaml`
+- `backend/src/main/resources/db/changelog/003ServiceSecurityAuth/011-guest-registration-request-quota.yaml`
+- `backend/src/main/resources/db/changelog/004ServiceReservations/009-verified-email-history.yaml`
+- `backend/src/test/java/com/pms/hotelboutique/backend/modules/guestauth/GuestRegistrationIntegrationTests.java`
+- `backend/src/test/java/com/pms/hotelboutique/backend/modules/guestauth/GuestRegistrationMigrationIntegrationTests.java`
+- `backend/src/test/resources/db/changelog/db.changelog-before-guest-registration.yaml`
+- `frontend/pms-hotel-web/src/app/api/auth/guest/registrations/resend/route.ts`
+- `frontend/pms-hotel-web/src/app/api/auth/guest/registrations/route.ts`
+- `frontend/pms-hotel-web/src/app/api/auth/guest/registrations/verify/route.ts`
+- `frontend/pms-hotel-web/src/lib/bff/guest-registration.test.ts`
+- `frontend/pms-hotel-web/src/lib/bff/guest-registration.ts`
+- `frontend/pms-hotel-web/src/modules/auth/components/guest-registration-form.test.tsx`
+- `frontend/pms-hotel-web/src/modules/auth/dtos/guest-registration.dto.ts`
+- `frontend/pms-hotel-web/src/modules/auth/hooks/use-guest-registration.ts`
+- `frontend/pms-hotel-web/src/modules/auth/mappers/guest-registration.mapper.ts`
+- `frontend/pms-hotel-web/src/modules/auth/service/guest-registration.service.ts`
+- `frontend/pms-hotel-web/src/modules/auth/service/guest-session.service.test.ts`
+- `frontend/pms-hotel-web/src/test/guest-session-fixture.ts`
+
 ## AUTH-UNIFIED-01 — Cierre COMPLETADA (2026-10-06)
 
 - **Estado final:** EN_QA → COMPLETADA. Alan confirmó QA manual PASS en

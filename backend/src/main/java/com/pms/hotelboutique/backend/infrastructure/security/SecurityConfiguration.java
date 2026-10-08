@@ -27,7 +27,7 @@ public class SecurityConfiguration {
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/actuator/health", "/actuator/health/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/public/availability").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/v1/auth/sessions", "/api/v1/guest-auth/sessions", "/api/v1/staff-auth/sessions", "/api/v1/staff-auth/login", "/api/v1/staff-auth/refresh", "/api/v1/guest-auth/google/start", "/api/v1/guest-auth/google/exchange", "/api/v1/guest-auth/refresh").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/auth/sessions", "/api/v1/guest-auth/sessions", "/api/v1/staff-auth/sessions", "/api/v1/staff-auth/login", "/api/v1/staff-auth/refresh", "/api/v1/guest-auth/google/start", "/api/v1/guest-auth/google/exchange", "/api/v1/guest-auth/refresh", "/api/v1/guest-auth/registrations", "/api/v1/guest-auth/registrations/verify", "/api/v1/guest-auth/registrations/resend").permitAll()
                 .anyRequest().authenticated())
             .addFilterBefore(staffJwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(guestJwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

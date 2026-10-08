@@ -1,5 +1,27 @@
 # 13 — Auth and Sessions
 
+## Ajuste QA posterior — respuesta neutral y CTA PMS
+
+Guest existente no recibe correo informativo ni OTP; registration/resend mantienen202 genérico sujeto al mismo binding/cooldown/cuotas. Web no conoce existencia/método/status. Después de202: “Revisa tu correo”, código si puede continuarse y orientación a iniciar sesión si ya tiene cuenta. CTA “Ir a iniciar sesión” cambia de tab, conserva email solo en memoria si disponible y elimina password/OTP sin request Backend.
+
+`Button`/`buttonClassName` compartidos para primary, outline, ghost y links Google/invitado; tokens de color/radius/font/spacing del PMS, targets48px (acciones auxiliares44px), loading/disabled/focus visibles. CSS de acceso conserva layout y elimina overrides independientes de CTA, spinner propio y estilos sin consumidores de strength/consents. Google mantiene icono de marca. No cambia Staff Auth ni las reglas password8..50/max72bytes de registro y login vigente.
+
+## AUTH-GUEST-REG-HISTORY-01 — decisión vigente (2026-10-07), EN_QA
+
+**Regla anterior (superseded para coincidencias verificadas):** confirmationCode + OTP obligatorio para todo historical link.
+**Regla nueva aprobada por Alan:** verified Guest email auto-links compatible reservations; reservation-specific OTP remains manual fallback. La coincidencia utiliza únicamente Reservation.bookingGuest → GuestProfile.email con trim/lowercase; sin filtro de fecha, estado o property ACTIVE. Nunca acompañantes ni IDs elegidos por cliente. Links propios se conservan; conflictos ajenos se omiten/auditan, sin transferencia/UPDATE/DELETE. Las consultas Guest siguen autorizadas exclusivamente por links persistidos.
+
+Registro real exclusivamente Guest: email requerido/formato/max50 normalizado, password8..50 sin trim/normalización/composición, confirmación exacta solo Web. Sin nombre, marketing ni aceptación persistida de términos. Login conserva sus límites previos y no recibe mínimo8. Cuenta password/Google/DISABLED existente no se sobrescribe ni fusiona. `/acceso` único; Google nuevo usa el mismo auto-link tras OIDC verificado, sin OTP extra.
+
+Pending registration separado, hash BCrypt(12), binding HttpOnly BFF y OTP8 con HMAC por propósito/generación. TTL OTP10min, contexto30min, cinco intentos compartidos contra reinicios, resend60s, 3 envíos/email/hora y 10/email/día. 202 genérico no acredita existencia ni envío. Verify atómico crea cuenta/credential/proof/links/sesión y consume pending; sin OTP/password/tokens en claro persistidos. Prueba de email separada respalda N links; evidencia OTP manual histórica y append-only preservados.
+
+Backend: POST `/api/v1/guest-auth/registrations`, `/verify`, `/resend`; verify201 tokens exclusivamente al BFF, errores400/403/422/429/503 genéricos. Header secreto `X-Guest-Registration-Binding` server-to-server. Browser: `/api/auth/guest/registrations` y mismas acciones; tokens únicamente cookies Guest. F5 recupera contexto HttpOnly; Backend siempre revalida. Account Summary refleja count y próxima estadía tras commit; no implementa historial completo.
+
+Guest auth real con ambos flags de datos mock. Logout Guest confirmado → `/acceso`; fallo conserva sesión. Bootstrap401 → un refresh Guest deduplicado → un retry; segundo401 signed-out; red/5xx/mapping error recuperable. Staff implementación/destino `/` preservados, caches separados.
+
+**QA pendiente:** confirmación manual de Alan, entrega real Resend y configuración HMAC del entorno. Decisión posterior aprobada por Alan: registration8..50 caracteres y máximo72 bytes UTF-8 reales; login conserva máximo50 sin mínimo8 y rechaza >72 bytes con credenciales genéricas antes de BCrypt. Sin trim/lowercase/Unicode normalization/truncamiento. BCrypt(12) intacto; límite resuelto, sin cambios a sesiones Staff. OpenAPI/Postman, tests y resultados finales se registran en AlanHandoff. Ninguna entrada histórica inferior declara vigente una regla sustituida aquí.
+
+
 Actualización de presentación autorizada por José (2026-10-07), acordada con BD1:
 se recuperan las pestañas de login/registro y el diseño Public 02 en `/acceso`.
 Login real, Google BFF, sesiones, cookies, permisos y retornos permanecen intactos.
@@ -96,3 +118,25 @@ calendario sigue bloqueado y Staffsession401, con Guest coexistente200 conservad
 Se verifica replace manteniendo history.length, URL exacta http://localhost:3001/
 y ausencia de «Sesión Staff requerida» en Home. Alan confirmó logout desde ambas
 rutas y Atrás sin recuperar sesión Staff PASS; COMPLETADA.
+
+
+## Ajuste QA posterior — salida privada Staff y copy neutral (EN_QA)
+
+Decisión aprobada de Alan: el bloqueo estático «Sesión Staff requerida» de las
+secciones históricas anteriores queda sustituido por `router.replace("/")`
+cuando session/refresh/retry termina definitivamente en401, incluido acceso
+directo. El guard muestra transición, retira contenido y limpia solo caches
+Staff. Logout confirmado conserva la misma salida; fallos5xx/network/DTO siguen
+recuperables y no se reinterpretan como ausencia de sesión.
+
+Las ventanas normales comparten cookies. Se conserva revalidación de visibilidad
+TanStack y se añade revalidación de la misma consulta al recuperar foco de ventana,
+coalesciendo requests en curso. Al regresar a la otra ventana después de logout,
+BFF confirma el401 y esa ventana abandona la ruta privada. No auth por ventana,
+localStorage, polling ni cambio de tokens/BFF/Backend.
+
+Se retira el párrafo «Crea tu cuenta Guest...» de Crear cuenta. Tras202: «Si podemos
+continuar con este correo, recibirás instrucciones para verificarlo. Si ya tienes
+una cuenta, inicia sesión con tu método habitual.» No se afirma envío realizado.
+La regla validada existentes→202→0 Resend no cambia. Limitación del proveedor
+resend.dev registrada como bloqueo externo para QA de correo real.
