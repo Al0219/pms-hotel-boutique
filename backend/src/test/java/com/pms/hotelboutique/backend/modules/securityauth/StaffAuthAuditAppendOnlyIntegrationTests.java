@@ -163,7 +163,7 @@ class StaffAuthAuditAppendOnlyIntegrationTests {
                 migrate(schema, MASTER);
                 var upgradedManifest = manifest(connection, schema);
                 // Upgrade includes AUTH-01 append-only and AUTH-02 attribution columns.
-                assertEquals(previousManifest.size() + 3, upgradedManifest.size());
+                assertEquals(previousManifest.size() + 6, upgradedManifest.size());
                 previousManifest.forEach((key, checksum) -> assertEquals(checksum, upgradedManifest.get(key)));
                 assertEquals(manifest(connection, "public"), upgradedManifest);
                 assertEquals(before, auditRows(connection, schema));

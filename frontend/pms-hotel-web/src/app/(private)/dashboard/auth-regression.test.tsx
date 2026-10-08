@@ -84,7 +84,7 @@ describe("Dashboard authentication with independent real BFF contexts", () => {
   it.each([200, 401])("Staff 401 blocks dashboard even if Guest returns %s", async guestStatus => {
     mockServer.use(http.get(staffURL, () => new HttpResponse(null, { status: 401 })),
       http.get(guestURL, () => guestStatus === 200 ? HttpResponse.json(guestDTO) : new HttpResponse(null, { status: 401 })));
-    mount(); await screen.findByRole("heading", { name: "Sesión Staff requerida" });
+    mount(); await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/"));
     await waitFor(() => expect(screen.getByLabelText("Estado Guest")).toHaveTextContent(guestStatus === 200 ? "signed-in" : "signed-out"));
     expect(screen.queryByRole("heading", { name: heading })).not.toBeInTheDocument();
   });
@@ -100,11 +100,10 @@ describe("Dashboard authentication with independent real BFF contexts", () => {
     await act(async () => { release.resolve(); await pending; });
     expect(screen.getByRole("heading", { name: heading })).toBe(dashboard);
   });
-  it("recovers immediately from initial Staff 401 to a later 200 without reload/focus", async () => {
+  it("leaves an initially unauthenticated private route instead of waiting there for a later login", async () => {
     mockServer.use(http.get(staffURL, () => new HttpResponse(null, { status: 401 })));
-    const client = mount(); await screen.findByRole("heading", { name: "Sesión Staff requerida" });
-    mockServer.use(http.get(staffURL, () => HttpResponse.json(staffDTO))); await refetch(client);
-    expect(await screen.findByRole("heading", { name: heading })).toBeInTheDocument();
+    mount();await waitFor(() => expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/"));
+    expect(screen.queryByRole("heading", {name: heading})).not.toBeInTheDocument();
     expect(screen.queryByText("Sesión Staff requerida")).not.toBeInTheDocument();
   });
   it("reload with valid access renders dashboard without a refresh", async () => {
@@ -123,19 +122,19 @@ describe("Dashboard authentication with independent real BFF contexts", () => {
   it("invalid refresh stops without retry and requires a Staff session", async () => {
     const get = vi.fn(() => new HttpResponse(null, { status: 401 })), refresh = vi.fn(() => new HttpResponse(null, { status: 401 }));
     mockServer.use(http.get(staffURL, get), http.post(refreshURL, refresh)); mount();
-    await screen.findByRole("heading", { name: "Sesión Staff requerida" }); expect(get).toHaveBeenCalledTimes(1); expect(refresh).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/")); expect(get).toHaveBeenCalledTimes(1); expect(refresh).toHaveBeenCalledTimes(1);
   });
   it("refresh 200 followed by session 401 stops with no refresh loop", async () => {
     const get = vi.fn(() => new HttpResponse(null, { status: 401 })), refresh = vi.fn(() => HttpResponse.json({ refreshed: true }));
     mockServer.use(http.get(staffURL, get), http.post(refreshURL, refresh)); mount();
-    await screen.findByRole("heading", { name: "Sesión Staff requerida" }); expect(get).toHaveBeenCalledTimes(2); expect(refresh).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/")); expect(get).toHaveBeenCalledTimes(2); expect(refresh).toHaveBeenCalledTimes(1);
   });
   it("keeps cached Staff on temporary 503, but a definitive 401 removes dashboard", async () => {
     const client = mount(); await screen.findByRole("heading", { name: heading });
     mockServer.use(http.get(staffURL, () => new HttpResponse(null, { status: 503 }))); await refetch(client);
     expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
     mockServer.use(http.get(staffURL, () => new HttpResponse(null, { status: 401 }))); await refetch(client);
-    expect(await screen.findByRole("heading", { name: "Sesión Staff requerida" })).toBeInTheDocument();
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/"));
   });
   it("labels invalid 200 authorization as a load error and recovers on valid DTO", async () => {
     mockServer.use(http.get(staffURL, () => HttpResponse.json({ ...staffDTO, permissions: ["INVALID_PERMISSION"] })));

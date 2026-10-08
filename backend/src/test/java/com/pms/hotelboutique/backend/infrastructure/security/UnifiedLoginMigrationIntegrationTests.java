@@ -36,7 +36,7 @@ class UnifiedLoginMigrationIntegrationTests {
  @Test void upgradePreservesAccountsHashesAndChecksumsAndIsIdempotent()throws Exception {
   inSchema((c,schema)->{migrate(c,schema,PREVIOUS);Map<String,String> before=manifest(c);
    sql(c,"INSERT INTO guest_accounts(id,email,email_verified_at,status,created_at,updated_at) VALUES('00000000-0000-4000-8000-000000000002','GoogleOnly@Example.test',now(),'ACTIVE',now(),now())");
-   migrate(c,schema,MASTER);var after=manifest(c);assertEquals(before.size()+1,after.size());before.forEach((id,checksum)->assertEquals(checksum,after.get(id)));
+   migrate(c,schema,MASTER);var after=manifest(c);assertEquals(before.size()+4,after.size());before.forEach((id,checksum)->assertEquals(checksum,after.get(id)));
    try(var stmt=c.createStatement();var rs=stmt.executeQuery("SELECT email,(SELECT count(*) FROM guest_password_credentials) FROM guest_accounts WHERE id='00000000-0000-4000-8000-000000000002'")){assertTrue(rs.next());assertEquals("GoogleOnly@Example.test",rs.getString(1));assertEquals(0,rs.getInt(2));}
    migrate(c,schema,MASTER);assertEquals(after,manifest(c));
   });

@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "PMS BD1 — Backend APIs",
-    "description": "Colección BD1 para probar rutas Backend Guest y Staff. El flujo OTP Guest requiere Google Guest Auth, envío OTP y PMS_RESERVATION_LINK_OTP_HMAC_KEY en el entorno. No guardar ni exportar tokens reales después de usarla.",
+    "description": "Colección BD1 para probar rutas Backend Guest y Staff. El flujo OTP Guest requiere Google Guest Auth, envío OTP y PMS_RESERVATION_LINK_OTP_HMAC_KEY en el entorno. No guardar ni exportar tokens reales después de usarla.\nAUTH-GUEST-REG-HISTORY-01: password registration8..50 caracteres y máximo72 bytes UTF-8 reales; login sin mínimo8, max50/max72bytes. Sin trim/normalización/truncamiento; exceso bytes login401 genérico, registro400. BCrypt(12) intacto.\nAjuste QA: existing Guest account registration/resend mantienen202 opaco sin OTP ni email delivery/Resend. Cooldown/cuotas request-budget indistinguibles, ninguna flag de existencia en respuestas.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -1265,6 +1265,92 @@
               }
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "AUTH-GUEST-REG-HISTORY-01",
+      "item": [
+        {
+          "name": "Guest registration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Guest-Registration-Binding",
+                "value": "{{guestRegistrationBinding}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{guestRegistrationEmail}}\",\n  \"password\": \"{{guestRegistrationPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/guest-auth/registrations",
+            "description": "AUTH-GUEST-REG-HISTORY-01. Private BFF transport. Sensitive inputs are supplied locally; never save tokens or OTP in shared evidence."
+          }
+        },
+        {
+          "name": "Verify Guest registration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Guest-Registration-Binding",
+                "value": "{{guestRegistrationBinding}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestId\": \"{{guestRegistrationRequestId}}\",\n  \"otp\": \"{{guestRegistrationOtp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/guest-auth/registrations/verify",
+            "description": "AUTH-GUEST-REG-HISTORY-01. Private BFF transport. Sensitive inputs are supplied locally; never save tokens or OTP in shared evidence."
+          }
+        },
+        {
+          "name": "Resend Guest registration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Guest-Registration-Binding",
+                "value": "{{guestRegistrationBinding}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestId\": \"{{guestRegistrationRequestId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/guest-auth/registrations/resend",
+            "description": "AUTH-GUEST-REG-HISTORY-01. Private BFF transport. Sensitive inputs are supplied locally; never save tokens or OTP in shared evidence."
+          }
         }
       ]
     }

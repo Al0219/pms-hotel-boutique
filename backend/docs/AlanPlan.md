@@ -1,5 +1,19 @@
 # AlanPlan — Seguimiento Backend
 
+## AUTH-GUEST-REG-HISTORY-01 — Registro Guest verificado e historial
+
+- **Estado:** COMPLETADA; implementación y QA automatizado PASS. Alan confirmó QA manual final PASS y autorizó el cierre del incremento.
+- **QA manual final:** PASS confirmado por Alan: 1 reserva histórica con el mismo email verificado se vincula; N reservas compatibles con ese email se vinculan todas; email distinto → 0 links; un link de otra GuestAccount no se transfiere; Account Summary lee exclusivamente los `guest_reservation_links` persistidos.
+- **Owner/rama/base:** Alan / BD1; `feature/guest-registration-verified-history`, base `6223196`; árbol inicial limpio. Sin commit/push/merge.
+- **DoR/decisiones:** registro exclusivamente Guest email/password8..50 y máximo72 bytes UTF-8 reales, confirmación solo Web; sin nombre/marketing/consentimientos. Cuenta solo tras OTP8/10min/5 intentos; resend60s, 3/email/hora y 10/email/día. Login sin mínimo nuevo. Cookies/contextos separados.
+- **Nueva regla aprobada:** email verificado auto-vincula todas las Reservation compatibles por bookingGuest.email trim/lowercase; sin filtro de fechas/estado/property ACTIVE. Sin transferencias; OTP manual complementario. Google nuevo reutiliza el puerto.
+- **Alcance:** pending registration, evidencia verificada, provenance append-only, tres endpoints/BFF, UI OTP y F5, restore/logout Guest y mocks de datos sin autoridad auth; OpenAPI/Postman/docs/tests/migración.
+- **Validación/DoD:** Backend731 PASS; Web1401 PASS/250 archivos; typecheck/lint/build sin mocks PASS; clean/upgrade/checksums, OpenAPI live/generated, Compose y diff-check PASS. Smoke auth/restore/summary/aislamiento HTTP PASS; QA manual final PASS confirmado por Alan. Evidencia técnica previa y límites históricos conservados en AlanHandoff.
+- **Ajuste QA posterior aprobado:** existentes sin OTP/email delivery/Resend y sin cambios de cuenta;202 neutral con continuación no utilizable y cuotas indistinguibles. Web CTA PMS compartidos y vuelta a login en memoria. Nuevo011 de request-budget, checksums previos conservados.
+- **Ajuste QA Web posterior:** copy neutral sin promesa de envío; guard Staff401 definitivo→`/`, revalidación al recuperar foco entre ventanas compartiendo cookies. Backend/OTP/Resend intactos; resend.dev conserva su limitación externa para el provider Resend alternativo; no bloquea este cierre manual.
+- **Ajuste SMTP aprobado:** EmailSender admite smtp/resend por PMS_EMAIL_PROVIDER; SMTP requiere configuración completa al arrancar, AUTH+STARTTLS obligatorio, timeouts y errores sanitizados. Resend/default intacto. Backend verify743 PASS; Docker SMTP seleccionado/healthy; sin envíos reales automatizados.
+- **Siguiente:** incremento cerrado tras QA manual PASS; cualquier publicación o trabajo adicional requiere autorización independiente. Sin commit/push/merge; Staff intacto.
+
 ## Propósito
 
 Este archivo conserva el trabajo de Alan (BD1) y el seguimiento de BD2. Sustituye el uso

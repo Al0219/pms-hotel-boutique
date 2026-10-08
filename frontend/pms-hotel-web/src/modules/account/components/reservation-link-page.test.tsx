@@ -1,3 +1,5 @@
+import {activateGuestFixture} from '@/test/guest-session-fixture';
+import {useQueryClient} from '@tanstack/react-query';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -19,8 +21,8 @@ beforeEach(() => { fixtureEmail = 'guest.google@example.com'; resetAccountFixtur
 afterEach(() => { cleanup(); clients.splice(0).forEach(client => client.clear()); vi.unstubAllEnvs(); vi.clearAllMocks(); });
 
 function FixtureAccess() {
-  const { signIn, account } = useGuestSession();
-  return account ? <GuestLinkedAccount authProvider="email" returnTo={path} /> : <button onClick={() => void signIn({ method: 'EMAIL', email: fixtureEmail, registration: { fullName: 'José Pérez' } })}>Preparar cuenta email</button>;
+  const { account } = useGuestSession();const client=useQueryClient();
+  return account ? <GuestLinkedAccount authProvider="email" returnTo={path} /> : <button onClick={() => void activateGuestFixture({ method: 'EMAIL', email: fixtureEmail, registration: { fullName: 'José Pérez' } },client)}>Preparar cuenta email</button>;
 }
 function setup(initial: View = 'access') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -83,9 +85,9 @@ describe('Dedicated existing-reservation link screen', () => {
     expect(screen.getByText(/2 estadías · Responsable/)).toBeInTheDocument();
     expect(sessionStorage.length).toBe(0); expect(localStorage.length).toBe(0);
   });
-  it('preserves the destination for anonymous access and never exposes the reservation form', () => {
+  it('preserves the destination for anonymous access and never exposes the reservation form', async () => {
     setup('link');
-    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/acceso?returnTo=%2Fcuenta%2Freservas%2Fvincular');
+    expect(await screen.findByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/acceso?returnTo=%2Fcuenta%2Freservas%2Fvincular');
     expect(screen.queryByLabelText('Referencia de reserva')).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Vincular reserva existente' })).not.toBeInTheDocument();
   });

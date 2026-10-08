@@ -68,6 +68,22 @@ class OpenApiContractIntegrationTests {
                 + " tags=" + doc.path("tags").size());
     }
     @Test
+    void verifiedRegistrationHasExactSchemasAndBffBinding() throws Exception {
+        var doc=document();var schemas=doc.path("components").path("schemas");
+        var request=schemas.path("RegistrationRequest");
+        assertEquals(Set.of("email","password"),strings(request.path("required")));
+        assertEquals(50,request.path("properties").path("email").path("maxLength").asInt());
+        var password=request.path("properties").path("password");assertEquals(8,password.path("minLength").asInt());assertEquals(50,password.path("maxLength").asInt());assertTrue(password.path("writeOnly").asBoolean());
+        assertTrue(password.path("description").asText().contains("72 bytes UTF-8"));
+        assertFalse(request.path("additionalProperties").asBoolean());
+        var verify=operation(doc,"/api/v1/guest-auth/registrations/verify","post");assertSuccessSchema(verify,"201","GuestAuthResponse");
+        assertTrue(verify.path("security").get(0).has("guestRegistrationBinding"));
+        assertTrue(schemas.path("RegistrationVerifyRequest").path("properties").path("otp").path("writeOnly").asBoolean());
+        var register=operation(doc,"/api/v1/guest-auth/registrations","post");assertSuccessSchema(register,"202","RegistrationAccepted");
+        assertEquals(Set.of("requestId"),strings(schemas.path("RegistrationAccepted").path("required")));
+    }
+
+    @Test
     void guestAccountSummaryDocumentsOwnIdentityAndOptionalRealDataOnly() throws Exception {
         var doc = document();
         var op = operation(doc, "/api/v1/guest-auth/account/summary", "get");
@@ -117,11 +133,11 @@ class OpenApiContractIntegrationTests {
             boolean publicAvailability = route.equals("/api/v1/public/availability") && method.getKey().equals("get");
             assertEquals(publicAvailability ? "public" : staffAuth || guestAuth ? "internal-bff" : "staff", op.path("x-audience").asText());
             boolean anonymous = route.endsWith("/google/start") || route.endsWith("/google/exchange")
-                    || route.equals("/api/v1/auth/sessions") || route.equals("/api/v1/guest-auth/sessions") || route.equals("/api/v1/staff-auth/sessions") || route.equals("/api/v1/staff-auth/login") || publicAvailability;
+                    || route.equals("/api/v1/auth/sessions") || route.equals("/api/v1/guest-auth/sessions") || route.equals("/api/v1/staff-auth/sessions") || route.equals("/api/v1/staff-auth/login") || route.equals("/api/v1/guest-auth/registrations") || publicAvailability;
             if (anonymous) assertTrue(op.path("security").isMissingNode() || op.path("security").isEmpty());
             else {
                 String scheme = route.endsWith("/refresh") ? (staffAuth ? "staffRefreshCookie" : "guestRefreshCookie")
-                        : guestAuth ? "guestBearerAuth" : "bearerAuth";
+                        : route.startsWith("/api/v1/guest-auth/registrations/") ? "guestRegistrationBinding" : guestAuth ? "guestBearerAuth" : "bearerAuth";
                 assertEquals(1, op.path("security").size());
                 assertTrue(op.path("security").get(0).has(scheme), route + " " + method.getKey());
             }

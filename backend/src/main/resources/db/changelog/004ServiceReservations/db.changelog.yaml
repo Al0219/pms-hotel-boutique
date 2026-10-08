@@ -24,3 +24,6 @@ databaseChangeLog:
   - include:
       file: 008-public-booking-receipts.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 009-verified-email-history.yaml
+      relativeToChangelogFile: true

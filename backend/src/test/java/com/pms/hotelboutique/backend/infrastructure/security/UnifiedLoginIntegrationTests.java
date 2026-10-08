@@ -199,4 +199,17 @@ class UnifiedLoginIntegrationTests {
             .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.title").value("Invalid credentials"))
             .andExpect(jsonPath("$.context").doesNotExist()).andExpect(jsonPath("$.contexts").doesNotExist());
     }
+    @Test void excessiveUtf8PasswordIsGenericBeforeAnyAccountLookupOrBcrypt()throws Exception{
+        String known=email();guest(known,true);staff(known);
+        for(String path:List.of("/api/v1/auth/sessions","/api/v1/guest-auth/sessions","/api/v1/staff-auth/sessions"))for(String email:List.of(known,email())){
+            mvc.perform(post(path).contentType(MediaType.APPLICATION_JSON).content(body(email,"界".repeat(25))))
+                .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.title").value("Invalid credentials"));
+        }
+        assertFalse(PasswordLoginValidator.exceedsPasswordByteLimit("界".repeat(24)));
+        assertFalse(PasswordLoginValidator.exceedsPasswordByteLimit("é".repeat(36)));
+        assertTrue(PasswordLoginValidator.exceedsPasswordByteLimit("é".repeat(37)));
+        assertFalse(PasswordLoginValidator.exceedsPasswordByteLimit("😀".repeat(18)));
+        assertTrue(PasswordLoginValidator.exceedsPasswordByteLimit("😀".repeat(19)));
+    }
+
 }
