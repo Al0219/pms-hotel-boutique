@@ -1,5 +1,33 @@
 # Public 02 — Acceso y registro Guest
 
+**Restauración visual autorizada por José (2026-10-07), coordinada con BD1:**
+Se recupera la presentación diseñada para `/acceso`: pestañas Iniciar sesión/Crear
+cuenta, Google con su icono, campos de registro, fuerza de contraseña, términos y
+preferencias. El mismo componente se muestra con y sin mocks en el puerto **3001**.
+El login conserva `useUnifiedLogin` y el BFF real de AUTH-UNIFIED-01, sus límites50,
+selección posterior a validación y redirecciones Staff/Guest. Google conserva su
+enlace al BFF, no una identidad simulada. Header limpio y checkout se mantienen.
+
+BD1 implementará la creación de cuentas de clientes. Hasta confirmar su API,
+el formulario de registro valida localmente y comunica indisponibilidad; no envía
+datos, crea cuenta/sesión, guarda contraseñas o registra consentimientos. Los
+límites/política visual del registro anterior son provisionales, no un contrato
+Backend. Recuperación y documentos legales comunican su disponibilidad real.
+Esta autorización sustituye la exclusión visual del registro descrita abajo;
+no declara implementada su integración. La confirmación «Cuenta vinculada» se
+retomará al contar con un registro real exitoso, sin emitir éxitos ficticios.
+
+Validación de esta restauración: lint, TypeScript estricto y build PASS; 19
+archivos/211 pruebas PASS de Auth, BFF, composición de `/acceso` y guard Staff.
+Chrome en 3001: login/registro, validaciones y foco, documentos legales,
+contraseña transitoria y registro sin requests PASS. Sin overflow a 320, 390,
+540, 768, 1024 y 1440 px ni excepciones de ejecución. Esto valida la presentación
+y las regresiones automatizadas; no certifica registro Backend ni Google real.
+Punto de integración de BD1: `components/guest-registration-form.tsx`, después
+de validar el formulario. Debe acordar DTO/service/mapper/hook, crear la cuenta
+Guest real y devolver un resultado antes de mostrar confirmación. No usar el
+endpoint de login como registro ni restaurar la creación ficticia anterior.
+
 **Actualización aprobada AUTH-UNIFIED-01 (2026-10-06):**
 [Contrato vigente](../../../backend/docs/44_UNIFIED_LOGIN_CONTRACT_QA.md): login tradicional universal correo electrónico + contraseña;
 Guest/Staff separados, Google solo Guest e invitado público. Guest password solo

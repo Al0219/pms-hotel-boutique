@@ -65,8 +65,9 @@ describe('Canonical universal login', () => {
     expect(screen.getByRole('link',{name:'Continuar con Google'})).toHaveAttribute('href','/api/auth/guest/google');
     expect(screen.getByRole('link',{name:'Continuar como invitado'})).toHaveAttribute('href','/');
     expect(screen.queryByLabelText('Usuario')).not.toBeInTheDocument();
-    expect(screen.queryByRole('tab')).not.toBeInTheDocument();
-    expect(screen.queryByText('Crear cuenta')).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Iniciar sesión' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Crear cuenta' })).toHaveAttribute('aria-selected', 'false');
+    expect(screen.queryByLabelText('Nombre completo')).not.toBeInTheDocument();
     expect(screen.queryByText('¿Cómo deseas continuar?')).not.toBeInTheDocument();
   });
   it.each(['STAFF','GUEST'])('submits only email/password and redirects %s',async context => {
@@ -187,5 +188,73 @@ describe('Canonical universal login', () => {
     await user.click(screen.getByRole('button',{name:'Mostrar contraseña'}));expect(screen.getByLabelText('Contraseña')).toHaveAttribute('type','text');
     await user.click(screen.getByRole('button',{name:'Ocultar contraseña'}));expect(screen.getByLabelText('Contraseña')).toHaveAttribute('type','password');
     expect(localStorage.length).toBe(0);expect(sessionStorage.length).toBe(0);
+  });
+  it('restores registration presentation without sending credentials or creating a fake session', async () => {
+    const calls = vi.fn(() => HttpResponse.json({ authenticated: true, context: 'GUEST' }, { status: 201 }));
+    mockServer.use(http.post('*/api/auth/login', calls));
+    const user = await setup(checkout);
+    await user.click(screen.getByRole('tab', { name: 'Crear cuenta' }));
+    expect(screen.getByRole('link', { name: 'Registrarse con Google' })).toHaveAttribute('href', '/api/auth/guest/google');
+    fireEvent.change(screen.getByLabelText('Nombre completo'), { target: { value: 'Ana Pérez' } });
+    fireEvent.change(screen.getByLabelText('Correo electrónico'), { target: { value: 'ana@example.test' } });
+    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: password } });
+    fireEvent.change(screen.getByLabelText('Confirmar contraseña'), { target: { value: password } });
+    await user.click(screen.getByRole('checkbox', { name: /Acepto los Términos/ }));
+    await user.click(screen.getByRole('button', { name: 'Crear mi cuenta' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('La creación de cuentas no está disponible');
+    expect(calls).not.toHaveBeenCalled(); expect(navigation.replace).not.toHaveBeenCalled();
+    expect(localStorage.length).toBe(0); expect(sessionStorage.length).toBe(0);
+    expect(screen.getByRole('link', { name: 'Continuar como invitado' })).toHaveAttribute('href', checkout);
+    await user.click(screen.getByRole('tab', { name: 'Iniciar sesión' }));
+    expect(screen.getByLabelText('Contraseña')).toHaveValue('');
+    expect(screen.queryByLabelText('Confirmar contraseña')).not.toBeInTheDocument();
+  });
+  it('validates registration on blur and submit, focuses the first error and updates strength', async () => {
+    const user = await setup();
+    await user.click(screen.getByRole('tab', { name: 'Crear cuenta' }));
+    await user.click(screen.getByRole('button', { name: 'Crear mi cuenta' }));
+    expect(screen.getByLabelText('Nombre completo')).toHaveFocus();
+    expect(screen.getByLabelText('Correo electrónico')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByText('Confirma tu contraseña.')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: password } });
+    expect(screen.getByRole('meter', { name: 'Fortaleza de contraseña' })).toHaveAttribute('aria-valuenow', '3');
+    fireEvent.change(screen.getByLabelText('Confirmar contraseña'), { target: { value: 'different' } });
+    expect(screen.getByText('Las contraseñas no coinciden.')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /Deseo recibir/ })).not.toBeChecked();
+  });
+  it('requires terms for Google registration and restores focus after dismissing policies', async () => {
+    const user = await setup();
+    await user.click(screen.getByRole('tab', { name: 'Crear cuenta' }));
+    await user.click(screen.getByRole('link', { name: 'Registrarse con Google' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Acepta los términos');
+    expect(screen.getByRole('checkbox', { name: /Acepto los Términos/ })).toHaveFocus();
+    await user.click(screen.getByRole('button', { name: 'Leer política de privacidad' }));
+    expect(screen.getByRole('dialog', { name: 'Política de privacidad' })).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Leer política de privacidad' })).toHaveFocus();
+  });
+  it('supports keyboard tabs and preserves the real login contract after switching modes', async () => {
+    const received: unknown[] = [];
+    mockServer.use(http.post('*/api/auth/login', async ({ request }) => {
+      received.push(await request.json()); return HttpResponse.json({ authenticated: true, context: 'STAFF' }, { status: 201 });
+    }));
+    const user = await setup();
+    screen.getByRole('tab', { name: 'Iniciar sesión' }).focus();
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByRole('tab', { name: 'Crear cuenta' })).toHaveFocus();
+    expect(screen.getByRole('tab', { name: 'Crear cuenta' })).toHaveAttribute('aria-selected', 'true');
+    await user.keyboard('{Home}');
+    expect(screen.getByRole('tab', { name: 'Iniciar sesión' })).toHaveFocus();
+    submit(); await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith('/dashboard'));
+    expect(received).toEqual([{ email: 'person@example.test', password }]);
+  });
+  it('shows recovery as unavailable without claiming an email was sent', async () => {
+    const user = await setup();
+    await user.click(screen.getByRole('button', { name: '¿Olvidaste tu contraseña?' }));
+    expect(screen.getByRole('dialog')).toHaveTextContent('no está disponible');
+    await user.click(screen.getByRole('button', { name: 'Entendido' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '¿Olvidaste tu contraseña?' })).toHaveFocus();
   });
 });
