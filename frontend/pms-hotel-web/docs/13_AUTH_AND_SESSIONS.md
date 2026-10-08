@@ -1,5 +1,11 @@
 # 13 — Auth and Sessions
 
+Herramienta local solicitada por José (2026-10-07): `npm run dev:staff` permite
+revisar el frontend privado sin Backend, con una identidad ficticia y cache
+separada. Solo development/localhost y un flag explícito; no es un login ni se
+activa por habilitar mocks de datos. El acceso normal y production conservan
+AUTH-UNIFIED-01. [Uso y límites](54_STAFF_FRONTEND_PREVIEW.md).
+
 Actualización de presentación autorizada por José (2026-10-07), acordada con BD1:
 se recuperan las pestañas de login/registro y el diseño Public 02 en `/acceso`.
 Login real, Google BFF, sesiones, cookies, permisos y retornos permanecen intactos.

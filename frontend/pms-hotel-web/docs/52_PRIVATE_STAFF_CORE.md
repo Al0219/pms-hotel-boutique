@@ -1,16 +1,35 @@
 # Staff: reservas e inventario para la presentación
 
+Para revisar estas pantallas sin levantar Backend, usar la
+[vista previa local Staff](54_STAFF_FRONTEND_PREVIEW.md), habilitada por un comando
+separado. El login integrado de BD1 y sus guards permanecen en el modo normal.
+
+Actualización autorizada: el botón «Nueva reserva» dispone del
+[recorrido frontend de alta Staff](53_PRIVATE_STAFF_NEW_RESERVATION.md).
+Su transporte real continúa pendiente; los límites de integración originales
+se conservan. No se declara terminado el motor de reservas Backend.
+
+Incremento posterior autorizado: [asignación inicial por estadía](55_STAFF_INITIAL_ROOM_ASSIGNMENT.md)
+implementada como escenario local, conservando estado, precio y consumo de ATS.
+La asignación real sigue pendiente del contrato HTTP Backend.
+
+El tablero incorpora [ocupación por fecha y filtros combinados](56_STAFF_ROOM_OCCUPANCY.md),
+con una proyección local de estadías asignadas y su consulta real pendiente.
+
+«Nueva habitación» permite [personalizar el inventario y la ficha del tipo](57_STAFF_ROOM_PERSONALIZATION.md),
+con vista previa alineada a Public 01. Su publicación y almacenamiento real siguen pendientes de integración.
+
 ## Alcance autorizado
 
 Reutilizar `/reservas`, `/reservas/[reservationId]` y `/staff/habitaciones`, sin conectar Backend ni modificar Public 01/02. Reservas corresponde a IMP-WEB-0301/0302 (WEB-3, reviewer WEB-4); este incremento no declara cerrado el backlog ni valida los contratos provisionales como API real.
 
 - Listado: referencia, huésped, fechas/noches, habitación o tipo cuando lo provee el read model, estado, finanzas básicas y origen. Búsqueda sin distinción de acentos; filtros por estado y rango inclusivo de **fecha de llegada**, con limpieza y paginación.
 - Detalle: huésped principal, N estadías, tipo y habitación física nullable, estado de cada estadía, origen, notas y resumen financiero. Una estadía sin habitación asignada no ofrece cambio de habitación.
-- Habitaciones: búsqueda por número/tipo y filtro operativo ACTIVE/OOO/OOS; total físico y cantidad visible. ACTIVE no significa libre. La ocupación no se deduce del estado operativo; el piso desconocido permanece null.
-- Catálogo: listar, ver, crear y editar tipos (código/nombre) y habitaciones (código/tipo al crear; solo código al editar). Sin eliminación. Crear un tipo no crea inventario físico; editar una habitación conserva su ID y RoomType.
+- Habitaciones: búsqueda por número/tipo y filtros por ocupación, operación ACTIVE/OOO/OOS, tipo y piso; fecha local del hotel, total físico y cantidad visible. ACTIVE no significa libre. La ocupación proviene de estadías asignadas; las pendientes de asignación se muestran aparte y el piso desconocido permanece null.
+- Catálogo: listar, ver, crear y editar tipos con ficha pública (código/nombre, capacidad, camas, área, descripción, amenidades/fotos) y habitaciones (código/tipo/piso/notas internas al crear; tipo e ID conservados al editar). Nueva habitación puede crear un tipo personalizado y su primera unidad en el escenario local. Sin eliminación, tarifas inventadas ni publicación automática real. Crear solo un tipo no crea inventario físico.
 - Contexto: propiedad obtenida de la sesión Staff y `PropertyProvider`. ALL_PROPERTIES obliga a elegir una propiedad concreta para estas operaciones; las respuestas de otra propiedad/ID se rechazan en los hooks. El menú móvil puede abrirse/cerrarse sin ocupar toda la pantalla.
 - Menú de la presentación: solo Panel, Reservas, Calendario y Habitaciones. El Panel ofrece accesos a estos tres módulos y no muestra el dashboard Multi-property. Se retiran del menú los módulos aplazados, el acceso a Sesiones/seguridad y la campana que dirige a Mensajería; sus rutas, código y controles de autorización se conservan. Ocultar un enlace no revoca permisos ni bloquea la ruta.
-- Centro de Reservas: encabezado y resúmenes en la paleta crema/oliva, alertas plegables, filtros con etiquetas visibles, contador de resultados, acceso explícito al detalle y estados vacíos orientativos. Conserva los datos, búsqueda, filtros, paginación y conversión de waitlist existentes. Nueva reserva permanece pendiente de una tarea posterior.
+- Centro de Reservas: encabezado y resúmenes en la paleta crema/oliva, alertas plegables, filtros con etiquetas visibles, contador de resultados, acceso explícito al detalle y estados vacíos orientativos. Conserva los datos, búsqueda, filtros, paginación y conversión de waitlist existentes. Nueva reserva dispone del recorrido local descrito arriba; su integración real sigue pendiente.
 - Cerrar sesión Staff regresa a `/` después de confirmar su cierre. Un fallo conserva el panel y permite reintentar; un acceso directo sin sesión BFF permanece protegido por el guard, sin ofrecer reinicio local desde el área privada. Guest mantiene su sesión independiente.
 
 ## Contratos y conexión pendiente
@@ -35,9 +54,9 @@ Los read models de Reservas y del tablero operativo conservan sus contratos prov
 
 Pruebas de filtros y fechas, estadía sin habitación asignada, rechazo de respuestas fuera de scope, mapper del catálogo, creación/edición preservando identidad, códigos duplicados, consulta sin permisos y bloqueo del transporte mock en modo Backend. Validar también la navegación, formularios y aislamiento de propiedades en navegador en http://localhost:3001, lint, typecheck y build.
 
-## Validación de integración con AUTH-UNIFIED-01
+## Validación previa de integración con AUTH-UNIFIED-01
 
-Merge origin/main resuelto semánticamente sin publicar: se conserva el Panel nuevo,
+Integración de origin/main resuelta semánticamente: se conserva el Panel nuevo,
 menú Staff, workspace, reservas, habitaciones y mocks de datos. Autenticación
 Staff exclusivamente BFF, incluso con datos mock; consulta canónica y restauración
 acotada intactas. Se retira la bifurcación StaffMockSession del provider.
@@ -56,4 +75,15 @@ reservas/habitaciones conservan su transporte pendiente en modo Backend; no se
 afirma integración ni persistencia de sus datos. Google callback completo conserva
 el QA manual PASS previo de Alan; este smoke verificó su entrada Guest canónica.
 AUTH-UNIFIED-01 conserva COMPLETADA; este registro no certifica el cierre del
-backlog Staff frontend-first. Sin commit ni push; merge pendiente de commit.
+backlog Staff frontend-first. Este registro corresponde a la integración previa,
+sin la vista previa explícita ni los incrementos locales descritos arriba.
+
+## Validación conjunta de los incrementos Staff
+
+La suite completa ejecutó 258 archivos: 1.447 pruebas aprobadas y dos fallos por
+una sesión de prueba sin `memberships` en `staff-property-workspace.test.tsx`.
+Se actualizó ese fixture al modelo `StaffSession` tipado y se verificó que el
+tablero recibe el nombre y timezone de la propiedad. Las seis pruebas de ese
+archivo pasaron al repetirlo; no se cambiaron guards ni código de producción
+para admitir una sesión incompleta. Las validaciones específicas y de navegador
+de cada incremento se detallan en los documentos 53–57.
