@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from 'next/link';
 
 import { HttpNetworkError } from "@/lib/http/errors";
@@ -11,6 +11,7 @@ import type { ReservationDetailData, ReservationStayDetail, StayTravelState } fr
 import type { ReservationStatus } from "../model/reservation-summary";
 import { ReservationCancellation } from "./reservation-cancellation";
 import { ReservationNoShow } from "./reservation-no-show";
+import { RoomAssignment } from './room-assignment';
 
 import styles from "./reservation-detail.module.css";
 
@@ -93,17 +94,21 @@ function StayBlock({
   stay,
   onRoomMove,
   onExtend,
-}: Readonly<{ stay: ReservationStayDetail; singleRoom: boolean; onRoomMove?: () => void; onExtend?: () => void }>) {
+  onAssign,
+}: Readonly<{ stay: ReservationStayDetail; singleRoom: boolean; onRoomMove?: () => void; onExtend?: () => void; onAssign?: () => void }>) {
   const moveable = stay.roomId !== null && onRoomMove !== undefined && ACTIVE_TRAVEL_STATES.has(stay.travelState);
   const extensible = onExtend !== undefined && ACTIVE_TRAVEL_STATES.has(stay.travelState);
 
   return (
-    <div className={styles.stayItem}>
+    <div className={styles.stayItem} role="group" aria-label={`Estadía ${stay.id}`}>
       <p className={styles.stayRoom}>{stay.roomLabel ?? 'Sin asignar'} · {stay.roomType}</p>
       <p className={styles.stayMeta}>
         {formatShortDate(stay.checkIn)} → {formatShortDate(stay.checkOut)} · {pluralize(stay.nights, "noche", "noches")}
       </p>
       <p className={styles.stayMeta}>Estado de la estadía: <span>{TRAVEL_STATE_LABELS[stay.travelState]}</span></p>
+      <div className={styles.stayActions}>
+      {stay.roomId === null && stay.travelState === 'RESERVED' && onAssign
+        ? <button className={styles.assignAction} type="button" onClick={onAssign}>Asignar habitación</button> : null}
       {moveable ? (
         <button className={styles.stayAction} type="button" onClick={onRoomMove}>
           Cambiar habitación
@@ -114,6 +119,7 @@ function StayBlock({
           Extender estadía
         </button>
       ) : null}
+      </div>
     </div>
   );
 }
@@ -124,14 +130,19 @@ interface ReservationDetailProps {
   /** Must be supplied only after Backend approves the provisional Reservation Detail contract. */
   endpoint?: string;
   reservationId?: string;
+  sessionId?: string;
+  canManage?: boolean;
 }
 
-export function ReservationDetail({ propertyId, endpoint, reservationId }: Readonly<ReservationDetailProps>) {
+export function ReservationDetail({ propertyId, endpoint, reservationId, sessionId, canManage = false }: Readonly<ReservationDetailProps>) {
   const { data: detail, error, isLoading, refetch } = useReservationDetail(propertyId, endpoint, reservationId);
   const [cancelling, setCancelling] = useState(false);
   const [markingNoShow, setMarkingNoShow] = useState(false);
   const [movingRoom, setMovingRoom] = useState<string | null>(null);
   const [extending, setExtending] = useState<string | null>(null);
+  const [assigning, setAssigning] = useState<string | null>(null);
+  const [assignmentMessage, setAssignmentMessage] = useState('');
+  const heading = useRef<HTMLHeadingElement>(null);
 
   const title = reservationId ? `Reserva ${reservationId}` : "Detalle de reserva";
 
@@ -179,7 +190,7 @@ export function ReservationDetail({ propertyId, endpoint, reservationId }: Reado
       <Link className={styles.stayAction} href="/reservas">← Volver a reservas</Link>
       <header className={styles.header}>
         <div className={styles.titleBlock}>
-          <h1>{title}</h1>
+          <h1 ref={heading} tabIndex={-1}>{title}</h1>
           <p className={styles.subtitle}>
             <span className={`${styles.badge} ${STATUS_BADGE[detail.status]}`}>{STATUS_LABELS[detail.status]}</span>
           </p>
@@ -206,6 +217,11 @@ export function ReservationDetail({ propertyId, endpoint, reservationId }: Reado
           ) : null}
         </div>
       </header>
+      {assignmentMessage && <p className={styles.assignmentNotice} role="status">{assignmentMessage}</p>}
+      {assigning && sessionId && canManage && <RoomAssignment key={assigning} propertyId={propertyId} reservationId={reservationId}
+        stayId={assigning} sessionId={sessionId} allowed={canManage} onClose={() => setAssigning(null)}
+        onAssigned={result => { setAssigning(null); setAssignmentMessage(`Habitación ${result.roomNumber} asignada a la estadía. Estado y tarifa conservados.`);
+          queueMicrotask(() => heading.current?.focus()); }} />}
 
       {cancelling && propertyId && endpoint && reservationId ? (
         <ReservationCancellation
@@ -266,9 +282,11 @@ export function ReservationDetail({ propertyId, endpoint, reservationId }: Reado
             <div className={styles.definitionRow}>
               <dt>{singleRoom ? "Habitación" : "Habitaciones"}</dt>
               <dd>
-                <StayBlock stay={detail.stays[0]} singleRoom={singleRoom} onRoomMove={() => setMovingRoom(detail.stays[0].id)} onExtend={() => setExtending(detail.stays[0].id)} />
+                <StayBlock stay={detail.stays[0]} singleRoom={singleRoom} onRoomMove={() => setMovingRoom(detail.stays[0].id)} onExtend={() => setExtending(detail.stays[0].id)}
+                  onAssign={canManage && sessionId && cancellable ? () => setAssigning(detail.stays[0].id) : undefined} />
                 {detail.stays.slice(1).map((stay) => (
-                  <StayBlock key={stay.id} stay={stay} singleRoom={false} onRoomMove={() => setMovingRoom(stay.id)} onExtend={() => setExtending(stay.id)} />
+                  <StayBlock key={stay.id} stay={stay} singleRoom={false} onRoomMove={() => setMovingRoom(stay.id)} onExtend={() => setExtending(stay.id)}
+                    onAssign={canManage && sessionId && cancellable ? () => setAssigning(stay.id) : undefined} />
                 ))}
               </dd>
             </div>

@@ -8,6 +8,10 @@ import { logoutStaffSession } from "../service/staff-session.service";
 import { staffSessionKey, staffSessionQuery } from "../hooks/staff-session-query";
 import { DomainMappingError } from "@/lib/errors/domain-mapping-error";
 import type { StaffSession } from "../model/staff-session";
+import { staffPreviewEnabled } from '@/lib/staff-preview';
+import { staffPreviewKey, staffPreviewQuery } from '../hooks/staff-preview-query';
+import { closeStaffPreview, openStaffPreview } from '../service/staff-preview.service';
+import styles from './staff-preview.module.css';
 
 const StaffContext = createContext<StaffSession | null>(null);
 const StaffActions = createContext<{ logout: () => void; busy: boolean; error: boolean } | null>(null);
@@ -30,22 +34,25 @@ export function StaffLogout() {
 }
 
 export function StaffSessionProvider({ children }: { children: ReactNode }) {
-  return <StaffBffSession>{children}</StaffBffSession>;
+  return <StaffBffSession preview={staffPreviewEnabled()}>{children}</StaffBffSession>;
 }
 
-function StaffBffSession({ children }: { children: ReactNode }) {
+function StaffBffSession({ children, preview }: { children: ReactNode; preview: boolean }) {
   const client = useQueryClient();
   const router = useRouter();
   const [leaving, setLeaving] = useState(false);
-  const session = useQuery(staffSessionQuery);
+  const sessionKey = preview ? staffPreviewKey : staffSessionKey;
+  const session = useQuery({ queryKey: sessionKey,
+    queryFn: preview ? staffPreviewQuery.queryFn : staffSessionQuery.queryFn, retry: false });
+  const reopen = useMutation({ mutationFn: openStaffPreview, onSuccess: () => client.invalidateQueries({ queryKey: staffPreviewKey }) });
   const logout = useMutation({
-    mutationFn: logoutStaffSession,
+    mutationFn: preview ? closeStaffPreview : logoutStaffSession,
     onSuccess: async () => {
       setLeaving(true);
-      await client.cancelQueries({ queryKey: staffSessionKey });
-      client.setQueryData(staffSessionKey, null);
+      await client.cancelQueries({ queryKey: sessionKey });
+      client.setQueryData(sessionKey, null);
       // Dashboard/calendar caches are Staff-owned; Guest/public queries stay intact.
-      for (const key of ["private-09", "reservations", "rooms", "staff-room-catalog"]) {
+      for (const key of ["private-09", "reservations", "rooms", "staff-room-catalog", "staff-reservation-quotes", "staff-room-assignment", "staff-room-occupancy"]) {
         await client.cancelQueries({ queryKey: [key] });
         client.removeQueries({ queryKey: [key] });
       }
@@ -62,14 +69,21 @@ function StaffBffSession({ children }: { children: ReactNode }) {
     <button type="button" onClick={() => void session.refetch()}>Reintentar sesión</button>
   </section>;
   if (!session.data) return <section>
-    <h1>Sesión Staff requerida</h1>
+    <h1>{preview ? 'Vista previa Staff cerrada' : 'Sesión Staff requerida'}</h1>
+    {preview ? <>
+      <p>Este entorno local permite revisar el frontend sin iniciar sesión en Backend.</p>
+      <button type="button" disabled={reopen.isPending} onClick={() => reopen.mutate()}>Abrir vista previa Staff</button>
+      {reopen.isError && <p role="alert">No se pudo abrir la vista previa. Inténtalo nuevamente.</p>}
+    </> : <>
     <p>Inicia sesión con tu correo electrónico y contraseña.</p>
     <Link href="/acceso">Iniciar sesión</Link>
+    </>}
     <button type="button" onClick={() => void session.refetch()}>Reintentar sesión</button>
   </section>;
   return <StaffContext.Provider value={session.data}>
     <StaffActions.Provider value={{
       logout: () => logout.mutate(), busy: logout.isPending, error: logout.isError,
-    }}>{children}</StaffActions.Provider>
+    }}>{preview && <div className={styles.notice} role="status"><strong>Vista previa Staff</strong>
+      Datos ficticios del frontend · Sin Backend, cuentas ni pagos reales.</div>}{children}</StaffActions.Provider>
   </StaffContext.Provider>;
 }
