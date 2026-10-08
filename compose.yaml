@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: pms_postgres
+    environment:
+      POSTGRES_USER: pms_user
+      POSTGRES_PASSWORD: pms_password
+      POSTGRES_DB: pms_boutique_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - pms-network
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pms_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@hotelboutique.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    networks:
+      - pms-network
+    restart: unless-stopped
+
+  # Placeholder para el futuro backend Spring Boot
+  # backend:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   container_name: pms_backend
+  #   ports:
+  #     - "8080:8080"
+  #   depends_on:
+  #     - db
+  #   environment:
+  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/pms_boutique_db
+  #     - SPRING_DATASOURCE_USERNAME=pms_user
+  #     - SPRING_DATASOURCE_PASSWORD=pms_password
+  #   networks:
+  #     - pms-network
+
+volumes:
+  pgdata:
+
+networks:
+  pms-network:
+    driver: bridge

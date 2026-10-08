@@ -160,5 +160,20 @@ La fuente visual y funcional canónica para Android es `238:132 — Implementati
 
 **Coexistencia V2/V3:** Home V2 conserva temporalmente `Inicio · Solicitudes · Explorar · Hotel`. No se agrega Inicio al shell V3. Su futura migración exige una tarea y Change Control independientes.
 
+### DEC-W-016 — Handoff y Mock Transicional del BFF (Web-4)
+
+**Fecha:** 2026-10-08
+**Status:** APPROVED
+**Responsable:** Domingo (WEB-4)
+
+**Contexto:** La arquitectura dictamina un BFF en `api/v1/*` dentro de Next.js para comunicar el Frontend con el Monolito en Spring Boot. Actualmente, el Backend no cuenta con implementación Java, pero el Frontend ha avanzado de manera significativa (Pagos, Disponibilidad, Folios).
+
+**Decisión:** Las rutas de API en `src/app/api/v1/*` operarán como un **Mock Transaccional** apoyado en `DEC-G-013`. Devolverán JSON estáticos o simulados que cumplen con el contrato de los modelos de dominio.
+Cuando el equipo de Backend (Spring Boot) exponga los endpoints reales:
+1. El BFF reemplazará la lógica Mock por un `fetch` seguro hacia el contenedor Backend.
+2. Los DTOs actuales no cambiarán; el BFF será el responsable de mapear las respuestas de Java al contrato de UI.
+
+**Consecuencias:** Desacopla el trabajo de Frontend del Backend. WEB-4 asegura la continuidad del desarrollo visual y de estado sin generar deuda técnica masiva cuando se integre Spring Boot.
+
 ## Nueva decisión futura
 Registrar ID, fecha, status, contexto, problema, decisión, alternativas, consecuencias y responsables. No borrar historia; usar `SUPERSEDED`.
