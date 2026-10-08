@@ -5,6 +5,9 @@
  */
 
 import { http, HttpResponse } from "msw";
+import { staffReservationCreationHandlers, staffCreatedList, staffCreatedReservation } from './staff-reservation-create';
+import { roomAssignmentHandlers, projectAssignedDetail, projectAssignmentSummary } from './room-assignment';
+import { roomOccupancyHandlers } from './room-occupancy';
 
 import type {
   CancellationApplyDto,
@@ -400,6 +403,9 @@ const extensionPreviews: Record<string, StayExtensionPreviewDto> = {
 };
 
 export const reservationHandlers = [
+  ...roomOccupancyHandlers(() => Object.values(reservationDetails)),
+  ...roomAssignmentHandlers(() => Object.values(reservationDetails)),
+  ...staffReservationCreationHandlers(() => Object.values(reservationDetails)),
   http.get(RESERVATIONS_ENDPOINT, ({ request }) => {
     const propertyId = new URL(request.url).searchParams.get("propertyId");
     if (!propertyId) return new HttpResponse(null, { status: 400 });
@@ -408,16 +414,21 @@ export const reservationHandlers = [
       center.summary = { arrivals_today: 0, departures_today: 0, vip_today: 0, multi_room_today: 0, late_checkout_today: 0, alerts: 0, confirmed_next_days: 0, decisions_required: 0, total: 0 };
       center.alerts = [];
     }
+    center.reservations = [...staffCreatedList(propertyId), ...center.reservations];
+    center.reservations = center.reservations.map(row => projectAssignmentSummary(row,
+      staffCreatedReservation(row.reservation_id, propertyId) ?? reservationDetails[row.reservation_id]));
+    center.summary.total = center.reservations.length;
     return HttpResponse.json(center);
   }),
   http.get(`${RESERVATIONS_ENDPOINT}/:reservationId`, ({ params, request }) => {
-    const detail = reservationDetails[String(params.reservationId)];
+    const propertyId = new URL(request.url).searchParams.get('propertyId') ?? '';
+    const detail = staffCreatedReservation(String(params.reservationId), propertyId) ?? reservationDetails[String(params.reservationId)];
 
     if (!detail || detail.property_id !== new URL(request.url).searchParams.get('propertyId')) {
       return HttpResponse.text(null, { status: 404 });
     }
 
-    return HttpResponse.json(detail);
+    return HttpResponse.json(projectAssignedDetail(detail));
   }),
   http.get(`${RESERVATIONS_ENDPOINT}/:reservationId/cancellation-preview`, ({ params }) => {
     const preview = cancellationPreviews[String(params.reservationId)];

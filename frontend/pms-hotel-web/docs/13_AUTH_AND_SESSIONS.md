@@ -22,6 +22,12 @@ Guest auth real con ambos flags de datos mock. Logout Guest confirmado → `/acc
 **QA pendiente:** confirmación manual de Alan, entrega real Resend y configuración HMAC del entorno. Decisión posterior aprobada por Alan: registration8..50 caracteres y máximo72 bytes UTF-8 reales; login conserva máximo50 sin mínimo8 y rechaza >72 bytes con credenciales genéricas antes de BCrypt. Sin trim/lowercase/Unicode normalization/truncamiento. BCrypt(12) intacto; límite resuelto, sin cambios a sesiones Staff. OpenAPI/Postman, tests y resultados finales se registran en AlanHandoff. Ninguna entrada histórica inferior declara vigente una regla sustituida aquí.
 
 
+Herramienta local solicitada por José (2026-10-07): `npm run dev:staff` permite
+revisar el frontend privado sin Backend, con una identidad ficticia y cache
+separada. Solo development/localhost y un flag explícito; no es un login ni se
+activa por habilitar mocks de datos. El acceso normal y production conservan
+AUTH-UNIFIED-01. [Uso y límites](54_STAFF_FRONTEND_PREVIEW.md).
+
 Actualización de presentación autorizada por José (2026-10-07), acordada con BD1:
 se recuperan las pestañas de login/registro y el diseño Public 02 en `/acceso`.
 Login real, Google BFF, sesiones, cookies, permisos y retornos permanecen intactos.
