@@ -23,6 +23,7 @@ interface ReservationCenterProps {
   propertyId?: string;
   /** Must be supplied only after Backend approves the provisional Reservation Center contract. */
   endpoint?: string;
+  canCreate?: boolean;
 }
 
 function KpiCard({ label, value, detail }: Readonly<{ label: string; value: number; detail?: string }>) {
@@ -53,7 +54,7 @@ function AlertsPanel({ alerts }: Readonly<{ alerts: ReadonlyArray<ReservationAle
   );
 }
 
-export function ReservationCenter({ propertyId, endpoint }: Readonly<ReservationCenterProps>) {
+export function ReservationCenter({ propertyId, endpoint, canCreate = false }: Readonly<ReservationCenterProps>) {
   const { data: center, error, isLoading, refetch } = useReservationCenter(propertyId, endpoint);
   const [convertingWaitlistId, setConvertingWaitlistId] = useState<string | null>(null);
 
@@ -62,7 +63,8 @@ export function ReservationCenter({ propertyId, endpoint }: Readonly<Reservation
   }
 
   if (!endpoint) {
-    return <section className={styles.page} role="status"><h1>Centro de Reservas</h1><p>El centro de reservas estará disponible al confirmar el contrato API con Backend.</p></section>;
+    return <section className={styles.page} role="status"><h1>Centro de Reservas</h1><p>El centro de reservas estará disponible al confirmar el contrato API con Backend.</p>
+      {canCreate && <Link className={styles.primaryAction} href="/reservas/nueva">+ Nueva reserva</Link>}</section>;
   }
 
   if (isLoading) {
@@ -84,7 +86,8 @@ export function ReservationCenter({ propertyId, endpoint }: Readonly<Reservation
   }
 
   if (!center?.reservations.length) {
-    return <section className={styles.page}><h1>Centro de Reservas</h1><p>No hay reservas para esta propiedad.</p></section>;
+    return <section className={styles.page}><h1>Centro de Reservas</h1><p>No hay reservas para esta propiedad.</p>
+      {canCreate && <Link className={styles.primaryAction} href="/reservas/nueva">+ Nueva reserva</Link>}</section>;
   }
 
   return (
@@ -98,7 +101,8 @@ export function ReservationCenter({ propertyId, endpoint }: Readonly<Reservation
         <div className={styles.headerActions}>
           <Link className={styles.secondaryAction} href="/calendario">Ver calendario</Link>
           <Link className={styles.secondaryAction} href="/lista-espera">Ver lista de espera</Link>
-          <button className={styles.primaryAction} type="button" disabled title="El flujo de creación de reservas se implementa por separado.">+ Nueva reserva</button>
+          {canCreate ? <Link className={styles.primaryAction} href="/reservas/nueva">+ Nueva reserva</Link>
+            : <button className={styles.primaryAction} type="button" disabled title="Tu sesión no tiene permiso para gestionar reservas.">+ Nueva reserva</button>}
         </div>
       </header>
 

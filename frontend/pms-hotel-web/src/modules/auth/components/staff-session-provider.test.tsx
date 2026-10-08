@@ -6,6 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { mockServer } from "@/data/mocks/server";
 import { staffSessionKey } from "../hooks/staff-session-query";
+import { staffPreviewKey } from '../hooks/staff-preview-query';
+import { resetStaffPreview } from '@/data/mocks/staff-preview';
 
 import { StaffLogout, StaffSessionProvider, useStaffSession } from "./staff-session-provider";
 
@@ -127,5 +129,52 @@ describe("Staff logout navigation", () => {
     expect(navigation.replace).not.toHaveBeenCalled();
     expect(screen.queryByRole("button", { name: "Cerrar sesión" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Iniciar demostración Staff" })).not.toBeInTheDocument();
+  });
+});
+
+describe('Staff frontend preview, independent from BFF Auth', () => {
+  beforeEach(() => {
+    vi.stubEnv('NODE_ENV', 'development');
+    vi.stubEnv('NEXT_PUBLIC_STAFF_PREVIEW', 'true');
+    vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'true');
+    resetStaffPreview();
+  });
+  it('mounts only the fictional property without querying or overwriting the real Staff cache', async () => {
+    const bff = vi.fn(() => new HttpResponse(null, { status: 503 }));
+    mockServer.use(http.all('*/api/auth/staff/*', bff));
+    const { client } = mount();
+    client.setQueryData(staffSessionKey, { staffUserId: 'real-account-preserved' });
+    expect(await screen.findByText('Staff · Vista previa|SUPER_ADMIN|GT-HB-01')).toBeInTheDocument();
+    expect(screen.getByText('Vista previa Staff')).toBeInTheDocument();
+    expect(client.getQueryData(staffPreviewKey)).toMatchObject({ id: 'PREVIEW-STAFF-SESSION' });
+    expect(client.getQueryData(staffSessionKey)).toEqual({ staffUserId: 'real-account-preserved' });
+    expect(bff).not.toHaveBeenCalled();
+  });
+  it('closes the preview and returns home without logging out a real Staff or Guest session', async () => {
+    const bff = vi.fn(() => new HttpResponse(null, { status: 503 }));
+    mockServer.use(http.all('*/api/auth/staff/*', bff));
+    const { client } = mount();
+    await screen.findByText('Staff · Vista previa|SUPER_ADMIN|GT-HB-01');
+    client.setQueryData(['guest-session'], { account: 'guest-independent' });
+    client.setQueryData(staffSessionKey, { staffUserId: 'real-account-preserved' });
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }));
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith('/'));
+    expect(client.getQueryData(staffPreviewKey)).toBeNull();
+    expect(client.getQueryData(staffSessionKey)).toEqual({ staffUserId: 'real-account-preserved' });
+    expect(client.getQueryData(['guest-session'])).toEqual({ account: 'guest-independent' });
+    expect(bff).not.toHaveBeenCalled();
+    cleanup(); mount();
+    await screen.findByRole('heading', { name: 'Vista previa Staff cerrada' });
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir vista previa Staff' }));
+    expect(await screen.findByText('Staff · Vista previa|SUPER_ADMIN|GT-HB-01')).toBeInTheDocument();
+  });
+  it('still requires a real Staff session in production with preview flags accidentally set', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    mockServer.use(http.get('*/api/auth/staff/session', () => new HttpResponse(null, { status: 401 })),
+      http.post('*/api/auth/staff/refresh', () => new HttpResponse(null, { status: 401 })));
+    mount();
+    await screen.findByRole('heading', { name: 'Sesión Staff requerida' });
+    expect(screen.queryByText('Vista previa Staff')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Abrir vista previa Staff' })).not.toBeInTheDocument();
   });
 });

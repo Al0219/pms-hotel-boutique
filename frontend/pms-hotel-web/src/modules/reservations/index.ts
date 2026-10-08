@@ -5,6 +5,7 @@
  */
 
 export { ReservationCenter } from "./components/reservation-center";
+export { StaffNewReservation } from './components/staff-new-reservation';
 export { confirmDemoBooking } from './hooks/confirm-demo-booking';
 export type { DemoBookingRequest, DemoBookingConfirmation } from './model/demo-booking';
 export { ReservationDetail } from "./components/reservation-detail";
