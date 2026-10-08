@@ -1,5 +1,27 @@
 # AlanHandoff — Seguimiento Backend
 
+## Juan / J6 — cierre con QA manual PASS (2026-10-08)
+
+- **Estado / aceptación:** COMPLETADA. Juan confirmó expresamente «QA manual
+  PASS» para J6 el 2026-10-08, tras la lista de validación del flujo público,
+  persistencia, replay/conflicto/precio/stock, Swagger y protección de Staff.
+- **Rama / entrega:** feature/backend-public-booking-core, commit `4c18940`
+  de implementación publicado con autorización; PR140 abierto como borrador.
+- **Evidencia técnica:** focalizados148 PASS; `mvn -B --no-transfer-progress verify`
+  794 PASS, cero failures/errors/skipped y JAR generado. Java21.0.9,
+  Maven3.9.11/PostgreSQL17.11. Se conserva la evidencia de la entrada anterior;
+  este cierre documental no modifica código ni requiere reejecutar la suite.
+- **CI:** 2/2 PASS sobre `4c18940`:
+  [verify-backend](https://github.com/Al0219/pms-hotel-boutique/actions/runs/37732935434/job/113165956896)
+  y [verify-stack](https://github.com/Al0219/pms-hotel-boutique/actions/runs/37732935348/job/113165956716).
+- **DoD / revisión:** contrato HTTP, seguridad real, OpenAPI, persistencia,
+  idempotencia/rollback/concurrencia y alcance J6 verificados con evidencia técnica
+  PASS y aceptación manual del owner. DoD J6 PASS; historial de Alan preservado.
+  A4 y los estados de otras tareas se mantienen bajo sus confirmaciones propias.
+- **Entrega documental / siguiente:** Juan autorizó commit y push de este cierre
+  a su rama el 2026-10-08; cambio de borrador y merge del PR140 pendientes
+  de autorización explícita.
+
 ## Juan / J6 — integración A4 y validación técnica (2026-10-07)
 
 - **Estado / rama:** EN_QA, validación técnica PASS y QA manual pendiente;

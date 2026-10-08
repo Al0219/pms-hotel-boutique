@@ -8,9 +8,10 @@ Backend confirmados.
 
 ## Reserva pública — Juan / J6: endpoint HTTP de booking
 
-- **Estado vigente:** EN_QA; QA técnico posterior a A4 PASS y QA manual
-  pendiente. Rama `feature/backend-public-booking-core`, integración local
-  `860d3bd` de main `308174d`; PR140 existente como borrador. Sin push nuevo.
+- **Estado vigente:** COMPLETADA; QA técnico posterior a A4 PASS y QA manual
+  PASS confirmado expresamente por Juan el 2026-10-08. Rama
+  `feature/backend-public-booking-core`, commit `4c18940` publicado e integración
+  `860d3bd` de main `308174d`; PR140 abierto como borrador.
 - **Autorización vigente:** usuario solicitó integrar main y continuar J6;
   aprobó preservar ambos historiales de AlanHandoff y adaptar exclusivamente
   SecurityConfigurationIntegrationTests, PublicBookingPreJ6SecurityHttpIntegrationTests
@@ -43,12 +44,17 @@ Backend confirmados.
 - **Artefactos:** target/public-booking-j6-a4-focused-final.log,
   public-booking-j6-a4-verify.log, surefire-reports/OpenAPI/JAR J6-A4 ignorados.
   Diff-check/alcance y conservación de documentos ajenos PASS.
-- **QA manual / siguiente:** usuario debe validar availability→booking con IDs
-  y total reales, verificar una Reservation/N stays/receipt en PostgreSQL y
-  replay/conflicto/precio/stock/protección Staff/Swagger. DECLINED/ERROR solo en
-  fixtures de tests del gateway simulado, sin toggles HTTP. Mantener EN_QA hasta
-  confirmación manual PASS. Commit propio `fix(public-booking): validate HTTP booking with A4`,
-  reporte y detenerse para autorización de push exclusivamente a la rama actual.
+- **CI / entrega técnica:** implementación `4c18940` publicada con autorización;
+  `verify-backend` y `verify-stack` PASS (2/2) sobre ese commit.
+- **QA manual / cierre:** Juan confirma expresamente «QA manual PASS» el
+  2026-10-08 para J6, tras la lista de availability→booking, persistencia de
+  Reservation/N stays/receipt, replay/conflicto/precio/stock/protección Staff/Swagger.
+  DECLINED/ERROR permanecen cubiertos por fixtures del gateway simulado.
+  Aceptación, DoD y revisión del alcance J6 registrados en AlanHandoff;
+  el cierre de A4 y los estados de otras tareas no forman parte de esta confirmación.
+- **Entrega documental / siguiente:** Juan autorizó commit y push de este cierre
+  a feature/backend-public-booking-core el 2026-10-08. Cambio de borrador/merge
+  del PR140 pendiente de autorización explícita.
 
 ### Primera entrega J6 — historial (2026-10-07)
 
