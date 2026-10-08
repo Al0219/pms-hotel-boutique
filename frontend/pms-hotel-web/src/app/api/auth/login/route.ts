@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { applyStaffCookies, backendStaffRequest, type StaffTokens } from '@/lib/bff/staff-auth';
 import { applyGuestCookies } from '@/lib/bff/guest-auth';
+import { passwordExceedsByteLimit } from '@/lib/login-input';
 import { loginCredentials } from '@/lib/bff/login-credentials';
 
 const failure = (status: number) => NextResponse.json({ error: status === 503 ? 'Authentication unavailable' : 'Invalid credentials' }, { status, headers: { 'Cache-Control': 'no-store' } });
@@ -11,6 +12,7 @@ export async function POST(request: NextRequest) {
   if (origin && origin !== publicOrigin) return failure(403);
   let body: unknown;
   try { body = await request.json(); } catch { return failure(400); }
+  if (body && typeof body === "object" && passwordExceedsByteLimit((body as Record<string,unknown>).password)) return failure(401);
   const credentials = loginCredentials(body);
   if (!credentials) return failure(400);
   try {

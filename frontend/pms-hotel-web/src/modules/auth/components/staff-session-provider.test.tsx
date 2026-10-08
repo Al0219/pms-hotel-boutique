@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -19,9 +19,10 @@ function Probe() {
   return <><p>{`${session.userName}|${session.roleId}|${session.memberships[0]?.propertyCode}`}</p><StaffLogout /></>;
 }
 
-function mount() {
+function mount(cachedSignedOut = false) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   clients.push(client);
+  if (cachedSignedOut) client.setQueryData(staffSessionKey, null);
   return { ...render(<AppRouterContext.Provider value={navigation}><QueryClientProvider client={client}><StaffSessionProvider><Probe /></StaffSessionProvider></QueryClientProvider></AppRouterContext.Provider>), client };
 }
 
@@ -66,7 +67,7 @@ describe("StaffSessionProvider with C2 BFF", () => {
       http.post("*/api/auth/staff/refresh", () => HttpResponse.json({ error: "Staff session expired" }, { status: 401 })),
     );
     mount();
-    expect(await screen.findByRole("heading", { name: "Sesión Staff requerida" })).toBeInTheDocument();
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/"));
     expect(screen.queryByText(/\|/)).not.toBeInTheDocument();
   });
 });
@@ -125,11 +126,65 @@ describe("Staff logout navigation", () => {
       http.post("*/api/auth/staff/refresh", () => new HttpResponse(null, { status: 401 })),
     );
     mount();
-    await screen.findByRole("heading", { name: "Sesión Staff requerida" });
-    expect(navigation.replace).not.toHaveBeenCalled();
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/"));
     expect(screen.queryByRole("button", { name: "Cerrar sesión" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Iniciar demostración Staff" })).not.toBeInTheDocument();
   });
+});
+
+
+describe("shared-cookie Staff session loss", () => {
+  it("revalidates on window focus and leaves on definitive 401 without touching Guest", async () => {
+    let authenticated=true;
+    const get=vi.fn(()=>authenticated?HttpResponse.json({
+      staffUserId:"staff-1",sessionId:"session-1",username:"staff",roleCode:"GERENCIA",
+      permissions:[],memberships:[],
+    }):new HttpResponse(null,{status:401}));
+    const refresh=vi.fn(()=>new HttpResponse(null,{status:401}));
+    mockServer.use(http.get("*/api/auth/staff/session",get),http.post("*/api/auth/staff/refresh",refresh));
+    const {client}=mount();await screen.findByText("staff|GERENCIA|undefined");
+    client.setQueryData(["guest-session"],{guest:true});
+    client.setQueryData(["guest","summary"],{summary:true});
+    for (const key of ["reservations", "staff-reservation-quotes", "staff-room-assignment", "staff-room-occupancy"]) {
+      client.setQueryData([key, "staff"], { private: true });
+    }
+    authenticated=false; // Cookie/session removed by another window's successful logout.
+    act(()=>window.dispatchEvent(new Event("focus")));
+    await waitFor(()=>expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/"));
+    expect(get).toHaveBeenCalledTimes(2);expect(refresh).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("staff|GERENCIA|undefined")).not.toBeInTheDocument();
+    expect(screen.queryByText("Sesión Staff requerida")).not.toBeInTheDocument();
+    expect(client.getQueryData(staffSessionKey)).toBeNull();
+    for (const key of ["reservations", "staff-reservation-quotes", "staff-room-assignment", "staff-room-occupancy"]) {
+      expect(client.getQueriesData({ queryKey: [key] })).toEqual([]);
+    }
+    expect(client.getQueryData(["guest-session"])).toEqual({guest:true});
+    expect(client.getQueryData(["guest","summary"])).toEqual({summary:true});
+  });
+  it("does not redirect on a window-focus 503",async()=>{
+    mockServer.use(http.get("*/api/auth/staff/session",()=>HttpResponse.json({staffUserId:"staff-1",sessionId:"session-1",username:"staff",roleCode:"GERENCIA",permissions:[],memberships:[]})));
+    mount();const identity=await screen.findByText("staff|GERENCIA|undefined");
+    const failure=vi.fn(()=>new HttpResponse(null,{status:503}));
+    mockServer.use(http.get("*/api/auth/staff/session",failure));
+    act(()=>window.dispatchEvent(new Event("focus")));
+    await waitFor(()=>expect(failure).toHaveBeenCalledTimes(1));
+    expect(screen.getByText("staff|GERENCIA|undefined")).toBe(identity);
+    expect(navigation.replace).not.toHaveBeenCalled();
+  });
+});
+
+
+it("revalidates cached signed-out data before redirecting after a new Staff login",async()=>{
+  let release!:()=>void;const pending=new Promise<void>(resolve=>{release=resolve;});
+  mockServer.use(http.get("*/api/auth/staff/session",async()=>{
+    await pending;return HttpResponse.json({staffUserId:"staff-1",sessionId:"new-session",username:"staff",roleCode:"GERENCIA",permissions:[],memberships:[]});
+  }));
+  mount(true);
+  expect(screen.getByText("Cargando sesión Staff…")).toBeInTheDocument();
+  expect(navigation.replace).not.toHaveBeenCalled();
+  release();await screen.findByText("staff|GERENCIA|undefined");
+  expect(navigation.replace).not.toHaveBeenCalled();
+
 });
 
 describe('Staff frontend preview, independent from BFF Auth', () => {
@@ -148,6 +203,7 @@ describe('Staff frontend preview, independent from BFF Auth', () => {
     expect(screen.getByText('Vista previa Staff')).toBeInTheDocument();
     expect(client.getQueryData(staffPreviewKey)).toMatchObject({ id: 'PREVIEW-STAFF-SESSION' });
     expect(client.getQueryData(staffSessionKey)).toEqual({ staffUserId: 'real-account-preserved' });
+    act(() => window.dispatchEvent(new Event('focus')));
     expect(bff).not.toHaveBeenCalled();
   });
   it('closes the preview and returns home without logging out a real Staff or Guest session', async () => {
@@ -173,7 +229,8 @@ describe('Staff frontend preview, independent from BFF Auth', () => {
     mockServer.use(http.get('*/api/auth/staff/session', () => new HttpResponse(null, { status: 401 })),
       http.post('*/api/auth/staff/refresh', () => new HttpResponse(null, { status: 401 })));
     mount();
-    await screen.findByRole('heading', { name: 'Sesión Staff requerida' });
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledExactlyOnceWith('/'));
+    expect(screen.queryByRole('heading', { name: 'Sesión Staff requerida' })).not.toBeInTheDocument();
     expect(screen.queryByText('Vista previa Staff')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Abrir vista previa Staff' })).not.toBeInTheDocument();
   });

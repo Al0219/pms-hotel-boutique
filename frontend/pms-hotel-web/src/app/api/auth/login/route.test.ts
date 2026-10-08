@@ -8,6 +8,12 @@ function request(value: unknown=body,origin?: string){return new NextRequest('ht
 beforeEach(async()=>{vi.resetModules();backend.mockReset();vi.stubGlobal('fetch',backend);vi.stubEnv('PMS_BACKEND_INTERNAL_URL','http://backend:8080');vi.stubEnv('NODE_ENV','production');vi.stubEnv('PMS_WEB_PUBLIC_URL','http://localhost:3001');login=await import('./route');});
 afterEach(()=>{vi.unstubAllEnvs();vi.unstubAllGlobals();});
 describe('Universal BFF boundary',()=>{
+ it('rejects excessive UTF-8 bytes with generic credentials and no Backend request',async()=>{
+   for(const email of ['known@example.test','unknown@example.test']){
+    const response=await login.POST(request({email,password:'界'.repeat(25)}));
+    expect(response.status).toBe(401);expect(await response.json()).toEqual({error:'Invalid credentials'});expect(response.cookies.getAll()).toEqual([]);
+   }expect(backend).not.toHaveBeenCalled();
+ });
  it.each(['STAFF','GUEST'])('accepts exact 50-character email/password for %s after email normalization',async context=>{
   backend.mockResolvedValue(Response.json({...tokens,context},{status:201}));
   const email='a'.repeat(37)+'@example.test', password=' '+'X!'.repeat(24)+' ';

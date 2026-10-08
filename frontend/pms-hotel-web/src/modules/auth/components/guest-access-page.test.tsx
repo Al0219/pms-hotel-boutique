@@ -19,9 +19,9 @@ beforeEach(() => {
     http.post('*/api/auth/staff/refresh', () => new HttpResponse(null, { status: 401 })));
 });
 afterEach(() => { cleanup(); clients.splice(0).forEach(c => c.clear()); vi.unstubAllEnvs(); vi.clearAllMocks(); sessionStorage.clear(); localStorage.clear(); });
-async function setup(returnTo?: string) {
+async function setup(returnTo?: string, pendingRequestId?: string) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } }); clients.push(client);
-  render(<AppRouterContext.Provider value={navigation}><QueryClientProvider client={client}><GuestSessionProvider><GuestAccessPage returnTo={returnTo} /></GuestSessionProvider></QueryClientProvider></AppRouterContext.Provider>);
+  render(<AppRouterContext.Provider value={navigation}><QueryClientProvider client={client}><GuestSessionProvider><GuestAccessPage returnTo={returnTo} pendingRequestId={pendingRequestId} /></GuestSessionProvider></QueryClientProvider></AppRouterContext.Provider>);
   await screen.findByRole('heading', { name: 'Accede a tu cuenta' });
   return userEvent.setup();
 }
@@ -189,50 +189,23 @@ describe('Canonical universal login', () => {
     await user.click(screen.getByRole('button',{name:'Ocultar contraseña'}));expect(screen.getByLabelText('Contraseña')).toHaveAttribute('type','password');
     expect(localStorage.length).toBe(0);expect(sessionStorage.length).toBe(0);
   });
-  it('restores registration presentation without sending credentials or creating a fake session', async () => {
-    const calls = vi.fn(() => HttpResponse.json({ authenticated: true, context: 'GUEST' }, { status: 201 }));
-    mockServer.use(http.post('*/api/auth/login', calls));
-    const user = await setup(checkout);
-    await user.click(screen.getByRole('tab', { name: 'Crear cuenta' }));
-    expect(screen.getByRole('link', { name: 'Registrarse con Google' })).toHaveAttribute('href', '/api/auth/guest/google');
-    fireEvent.change(screen.getByLabelText('Nombre completo'), { target: { value: 'Ana Pérez' } });
-    fireEvent.change(screen.getByLabelText('Correo electrónico'), { target: { value: 'ana@example.test' } });
-    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: password } });
-    fireEvent.change(screen.getByLabelText('Confirmar contraseña'), { target: { value: password } });
-    await user.click(screen.getByRole('checkbox', { name: /Acepto los Términos/ }));
-    await user.click(screen.getByRole('button', { name: 'Crear mi cuenta' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('La creación de cuentas no está disponible');
-    expect(calls).not.toHaveBeenCalled(); expect(navigation.replace).not.toHaveBeenCalled();
-    expect(localStorage.length).toBe(0); expect(sessionStorage.length).toBe(0);
-    expect(screen.getByRole('link', { name: 'Continuar como invitado' })).toHaveAttribute('href', checkout);
-    await user.click(screen.getByRole('tab', { name: 'Iniciar sesión' }));
-    expect(screen.getByLabelText('Contraseña')).toHaveValue('');
-    expect(screen.queryByLabelText('Confirmar contraseña')).not.toBeInTheDocument();
+  it('creates only email/password through registration BFF and opens OTP',async()=>{
+    const received:unknown[]=[];
+    mockServer.use(http.post('*/api/auth/guest/registrations',async({request})=>{received.push(await request.json());return HttpResponse.json({requestId:'11111111-1111-4111-8111-111111111111'},{status:202});}));
+    const user=await setup();await user.click(screen.getByRole('tab',{name:'Crear cuenta'}));
+    expect(screen.queryByLabelText('Nombre completo')).not.toBeInTheDocument();expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(screen.queryByText('Crea tu cuenta Guest y verifica tu correo para consultar tus reservas compatibles.')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Correo electrónico'),{target:{value:' Person@Example.test '}});
+    fireEvent.change(screen.getByLabelText('Contraseña'),{target:{value:password}});fireEvent.change(screen.getByLabelText('Confirmar contraseña'),{target:{value:password}});
+    await user.click(screen.getByRole('button',{name:'Crear mi cuenta'}));
+    expect(await screen.findByRole('heading',{name:'Revisa tu correo'})).toBeInTheDocument();expect(received).toEqual([{email:'person@example.test',password}]);
+    expect(navigation.replace).not.toHaveBeenCalled();expect(localStorage.length).toBe(0);expect(sessionStorage.length).toBe(0);
   });
-  it('validates registration on blur and submit, focuses the first error and updates strength', async () => {
-    const user = await setup();
-    await user.click(screen.getByRole('tab', { name: 'Crear cuenta' }));
-    await user.click(screen.getByRole('button', { name: 'Crear mi cuenta' }));
-    expect(screen.getByLabelText('Nombre completo')).toHaveFocus();
-    expect(screen.getByLabelText('Correo electrónico')).toHaveAttribute('aria-invalid', 'true');
-    expect(screen.getByText('Confirma tu contraseña.')).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: password } });
-    expect(screen.getByRole('meter', { name: 'Fortaleza de contraseña' })).toHaveAttribute('aria-valuenow', '3');
-    fireEvent.change(screen.getByLabelText('Confirmar contraseña'), { target: { value: 'different' } });
-    expect(screen.getByText('Las contraseñas no coinciden.')).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: /Deseo recibir/ })).not.toBeChecked();
-  });
-  it('requires terms for Google registration and restores focus after dismissing policies', async () => {
-    const user = await setup();
-    await user.click(screen.getByRole('tab', { name: 'Crear cuenta' }));
-    await user.click(screen.getByRole('link', { name: 'Registrarse con Google' }));
-    expect(screen.getByRole('alert')).toHaveTextContent('Acepta los términos');
-    expect(screen.getByRole('checkbox', { name: /Acepto los Términos/ })).toHaveFocus();
-    await user.click(screen.getByRole('button', { name: 'Leer política de privacidad' }));
-    expect(screen.getByRole('dialog', { name: 'Política de privacidad' })).toBeInTheDocument();
-    await user.keyboard('{Escape}');
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Leer política de privacidad' })).toHaveFocus();
+  it('validates registration without adding composition rules or legal consent',async()=>{
+    const user=await setup();await user.click(screen.getByRole('tab',{name:'Crear cuenta'}));await user.click(screen.getByRole('button',{name:'Crear mi cuenta'}));
+    expect(screen.getByLabelText('Correo electrónico')).toHaveFocus();expect(screen.getAllByRole('alert').length).toBeGreaterThan(0);
+    expect(screen.getByLabelText('Correo electrónico')).toHaveAttribute('maxlength','50');expect(screen.queryByRole('meter')).not.toBeInTheDocument();
+    expect(screen.getByRole('link',{name:'Registrarse con Google'})).toHaveAttribute('href','/api/auth/guest/google');
   });
   it('supports keyboard tabs and preserves the real login contract after switching modes', async () => {
     const received: unknown[] = [];
@@ -257,4 +230,78 @@ describe('Canonical universal login', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: '¿Olvidaste tu contraseña?' })).toHaveFocus();
   });
+  it('offers neutral OTP and switches to login in memory without a second request or password',async()=>{
+    const registration=vi.fn(()=>HttpResponse.json({requestId:'11111111-1111-4111-8111-111111111111'},{status:202}));const loginRequest=vi.fn();
+    mockServer.use(http.post('*/api/auth/guest/registrations',registration),http.post('*/api/auth/login',loginRequest));
+    const user=await setup();await user.click(screen.getByRole('tab',{name:'Crear cuenta'}));
+    fireEvent.change(screen.getByLabelText('Correo electrónico'),{target:{value:'memory@example.test'}});
+    fireEvent.change(screen.getByLabelText('Contraseña'),{target:{value:password}});fireEvent.change(screen.getByLabelText('Confirmar contraseña'),{target:{value:password}});
+    fireEvent.submit(screen.getByLabelText('Correo electrónico').closest('form')!);
+    expect(await screen.findByRole('heading',{name:'Revisa tu correo'})).toBeInTheDocument();
+    expect(screen.getByText(/Si ya tienes una cuenta, inicia sesión con tu método habitual/)).toBeInTheDocument();
+    expect(screen.getByRole('button',{name:'Verificar código'})).toBeDisabled();
+    await user.click(screen.getByRole('button',{name:'Ir a iniciar sesión'}));
+    expect(screen.getByRole('tab',{name:'Iniciar sesión'})).toHaveAttribute('aria-selected','true');
+    expect(screen.getByLabelText('Correo electrónico')).toHaveValue('memory@example.test');expect(screen.getByLabelText('Correo electrónico')).toHaveFocus();
+    expect(screen.getByLabelText('Contraseña')).toHaveValue('');expect(screen.queryByLabelText('Código de verificación')).not.toBeInTheDocument();
+    expect(registration).toHaveBeenCalledTimes(1);expect(loginRequest).not.toHaveBeenCalled();expect(localStorage.length).toBe(0);expect(sessionStorage.length).toBe(0);
+  });
+
+  it('opens registration empty and untouched without inheriting login values',async()=>{
+    const user=await setup();
+    expect(screen.getByLabelText('Contraseña')).toHaveAttribute('autocomplete','current-password');
+    fireEvent.change(screen.getByLabelText('Correo electrónico'),{target:{value:'login@example.test'}});
+    fireEvent.change(screen.getByLabelText('Contraseña'),{target:{value:password}});
+    await user.click(screen.getByRole('tab',{name:'Crear cuenta'}));
+    for(const label of ['Correo electrónico','Contraseña','Confirmar contraseña']){
+      expect(screen.getByLabelText(label)).toHaveValue('');
+      expect(screen.getByLabelText(label)).not.toHaveAttribute('aria-invalid','true');
+    }
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Correo electrónico')).toHaveAttribute('autocomplete','email');
+    expect(screen.getByLabelText('Contraseña')).toHaveAttribute('autocomplete','new-password');
+    expect(screen.getByLabelText('Confirmar contraseña')).toHaveAttribute('autocomplete','new-password');
+  });
+  it('does not inherit login errors when opening registration',async()=>{
+    mockServer.use(http.post('*/api/auth/login',()=>new HttpResponse(null,{status:401})));
+    const user=await setup();submit();await screen.findByRole('alert');
+    await user.click(screen.getByRole('tab',{name:'Crear cuenta'}));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Correo electrónico')).toHaveValue('');
+  });
+  it('shows current 429 without required errors, clears stale state, and still reports subsequent 429',async()=>{
+    const calls=vi.fn(()=>new HttpResponse(null,{status:429}));
+    mockServer.use(http.post('*/api/auth/guest/registrations',calls));
+    const user=await setup();await user.click(screen.getByRole('tab',{name:'Crear cuenta'}));
+    function register(){
+      fireEvent.change(screen.getByLabelText('Correo electrónico'),{target:{value:'qa@example.test'}});
+      fireEvent.change(screen.getByLabelText('Contraseña'),{target:{value:password}});
+      fireEvent.change(screen.getByLabelText('Confirmar contraseña'),{target:{value:password}});
+      fireEvent.submit(screen.getByLabelText('Correo electrónico').closest('form')!);
+    }
+    register();expect(await screen.findByRole('alert')).toHaveTextContent('límite temporal');
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+    expect(screen.getByLabelText('Contraseña')).toHaveValue('');
+    await user.click(screen.getByRole('tab',{name:'Iniciar sesión'}));
+    await user.click(screen.getByRole('tab',{name:'Crear cuenta'}));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Correo electrónico')).toHaveValue('');
+    register();expect(await screen.findByRole('alert')).toHaveTextContent('límite temporal');
+    expect(calls).toHaveBeenCalledTimes(2);
+  });
+  it('does not resurrect restored OTP or its errors after abandoning via manual tabs',async()=>{
+    mockServer.use(http.post('*/api/auth/guest/registrations/verify',()=>new HttpResponse(null,{status:422})));
+    const user=await setup(undefined,'11111111-1111-4111-8111-111111111111');
+    fireEvent.change(screen.getByLabelText('Código de verificación'),{target:{value:'12345678'}});
+    fireEvent.submit(screen.getByLabelText('Código de verificación').closest('form')!);
+    await screen.findByRole('alert');
+    await user.click(screen.getByRole('tab',{name:'Iniciar sesión'}));
+    expect(screen.getByLabelText('Contraseña')).toHaveValue('');
+    await user.click(screen.getByRole('tab',{name:'Crear cuenta'}));
+    expect(screen.queryByLabelText('Código de verificación')).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Correo electrónico')).toHaveValue('');
+    expect(localStorage.length).toBe(0);expect(sessionStorage.length).toBe(0);
+  });
+
 });

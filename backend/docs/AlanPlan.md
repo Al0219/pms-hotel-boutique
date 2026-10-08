@@ -1,5 +1,19 @@
 # AlanPlan — Seguimiento Backend
 
+## AUTH-GUEST-REG-HISTORY-01 — Registro Guest verificado e historial
+
+- **Estado:** COMPLETADA; implementación y QA automatizado PASS. Alan confirmó QA manual final PASS y autorizó el cierre del incremento.
+- **QA manual final:** PASS confirmado por Alan: 1 reserva histórica con el mismo email verificado se vincula; N reservas compatibles con ese email se vinculan todas; email distinto → 0 links; un link de otra GuestAccount no se transfiere; Account Summary lee exclusivamente los `guest_reservation_links` persistidos.
+- **Owner/rama/base:** Alan / BD1; `feature/guest-registration-verified-history`, base `6223196`; árbol inicial limpio. Sin commit/push/merge.
+- **DoR/decisiones:** registro exclusivamente Guest email/password8..50 y máximo72 bytes UTF-8 reales, confirmación solo Web; sin nombre/marketing/consentimientos. Cuenta solo tras OTP8/10min/5 intentos; resend60s, 3/email/hora y 10/email/día. Login sin mínimo nuevo. Cookies/contextos separados.
+- **Nueva regla aprobada:** email verificado auto-vincula todas las Reservation compatibles por bookingGuest.email trim/lowercase; sin filtro de fechas/estado/property ACTIVE. Sin transferencias; OTP manual complementario. Google nuevo reutiliza el puerto.
+- **Alcance:** pending registration, evidencia verificada, provenance append-only, tres endpoints/BFF, UI OTP y F5, restore/logout Guest y mocks de datos sin autoridad auth; OpenAPI/Postman/docs/tests/migración.
+- **Validación/DoD:** Backend731 PASS; Web1401 PASS/250 archivos; typecheck/lint/build sin mocks PASS; clean/upgrade/checksums, OpenAPI live/generated, Compose y diff-check PASS. Smoke auth/restore/summary/aislamiento HTTP PASS; QA manual final PASS confirmado por Alan. Evidencia técnica previa y límites históricos conservados en AlanHandoff.
+- **Ajuste QA posterior aprobado:** existentes sin OTP/email delivery/Resend y sin cambios de cuenta;202 neutral con continuación no utilizable y cuotas indistinguibles. Web CTA PMS compartidos y vuelta a login en memoria. Nuevo011 de request-budget, checksums previos conservados.
+- **Ajuste QA Web posterior:** copy neutral sin promesa de envío; guard Staff401 definitivo→`/`, revalidación al recuperar foco entre ventanas compartiendo cookies. Backend/OTP/Resend intactos; resend.dev conserva su limitación externa para el provider Resend alternativo; no bloquea este cierre manual.
+- **Ajuste SMTP aprobado:** EmailSender admite smtp/resend por PMS_EMAIL_PROVIDER; SMTP requiere configuración completa al arrancar, AUTH+STARTTLS obligatorio, timeouts y errores sanitizados. Resend/default intacto. Backend verify743 PASS; Docker SMTP seleccionado/healthy; sin envíos reales automatizados.
+- **Siguiente:** incremento cerrado tras QA manual PASS; cualquier publicación o trabajo adicional requiere autorización independiente. Sin commit/push/merge; Staff intacto.
+
 ## Propósito
 
 Este archivo conserva el trabajo de Alan (BD1) y el seguimiento de BD2. Sustituye el uso
@@ -27,7 +41,7 @@ Backend confirmados.
   produce RequestRejectedException durante binding MVC. Advice exclusivo lo
   traduce a INVALID_REQUEST400, sin datos del header; ya no BOOKING_FAILED500.
   No reconfigurar firewall ni modificar reglas/globales de Alan.
-- **Validación final:** focalizados148 PASS (62 propios J6 y 86 regresión de
+- **Validación antes de PR143:** focalizados148 PASS (62 propios J6 y 86 regresión de
   core/seguridad/OpenAPI). `mvn -B --no-transfer-progress verify`: 794 PASS,
   cero failures/errors/skipped, BUILD SUCCESS y JAR generado. Maven3.9.11,
   Java21.0.9/PostgreSQL17.11; entorno pms-public-j6-qa aislado sin puertos del host.
@@ -46,15 +60,25 @@ Backend confirmados.
   Diff-check/alcance y conservación de documentos ajenos PASS.
 - **CI / entrega técnica:** implementación `4c18940` publicada con autorización;
   `verify-backend` y `verify-stack` PASS (2/2) sobre ese commit.
+- **Integración posterior de main:** usuario autorizó integrar `2bfacba` (PR143)
+  en la rama de Juan desde `f13df76`, conservando ambos historiales del handoff
+  y ambas reglas de anonimato en OpenApiContractIntegrationTests: booking y
+  Guest registration. Configuración global, migraciones, dependencias y Web
+  importados intactos; código HTTP J6 idéntico al commit aceptado.
+  `mvn -B --no-transfer-progress verify`: 832 PASS, cero failures/errors/skipped,
+  BUILD SUCCESS y JAR generado, Java21.0.9/Maven3.9.11/PostgreSQL17.11 aislados.
+  Paridad OpenAPI42ops/32paths/47schemas/13tags PASS, sin nuevas rutas de negocio
+  público de Juan. Evidencia target/public-booking-j6-main143-verify.log y reportes.
 - **QA manual / cierre:** Juan confirma expresamente «QA manual PASS» el
   2026-10-08 para J6, tras la lista de availability→booking, persistencia de
   Reservation/N stays/receipt, replay/conflicto/precio/stock/protección Staff/Swagger.
   DECLINED/ERROR permanecen cubiertos por fixtures del gateway simulado.
   Aceptación, DoD y revisión del alcance J6 registrados en AlanHandoff;
   el cierre de A4 y los estados de otras tareas no forman parte de esta confirmación.
-- **Entrega documental / siguiente:** Juan autorizó commit y push de este cierre
-  a feature/backend-public-booking-core el 2026-10-08. Cambio de borrador/merge
-  del PR140 pendiente de autorización explícita.
+- **Entrega / siguiente:** cierre documental `f13df76` publicado con autorización;
+  merge local de main autorizado el 2026-10-08. Push de esta integración a
+  feature/backend-public-booking-core, cambio de borrador y merge del PR140
+  pendientes de autorización explícita. J6 conserva su QA manual PASS registrado.
 
 ### Primera entrega J6 — historial (2026-10-07)
 

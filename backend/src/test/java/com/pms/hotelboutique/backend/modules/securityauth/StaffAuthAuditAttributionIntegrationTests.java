@@ -73,7 +73,7 @@ class StaffAuthAuditAttributionIntegrationTests {
                 String trigger = triggerDefinition(connection, schema);
                 migrate(schema, MASTER);
                 var upgraded = manifest(connection, schema);
-                assertEquals(checksums.size() + 2, upgraded.size());
+                assertEquals(checksums.size() + 5, upgraded.size());
                 checksums.forEach((key, checksum) -> assertEquals(checksum, upgraded.get(key)));
                 assertEquals(manifest(connection, "public"), upgraded);
                 assertEquals(before, auditRows(connection, schema));

@@ -8,7 +8,7 @@ import { GuestSessionCheck } from './guest-session-check';
 import { AuthPasswordField } from './auth-password-field';
 import { AuthModeTabs, type AuthMode } from './auth-mode-tabs';
 import { GuestRegistrationForm } from './guest-registration-form';
-import { Modal, Button } from '@/shared/components';
+import { Modal, Button, buttonClassName } from '@/shared/components';
 import { useUnifiedLogin } from '../hooks/use-unified-login';
 import { guestAccessReturn } from '../model/checkout-return';
 import { clearGuestCheckoutReturn, readGuestCheckoutReturn, rememberGuestCheckoutReturn } from '../model/guest-checkout-context';
@@ -21,32 +21,36 @@ const accessInformation = {
 } as const;
 
 /** Shared presentation; login always delegates to BD1's existing BFF. */
-export function GuestAccessPage({ returnTo, googleError }: { returnTo?: string; googleError?: boolean } = {}) {
+export function GuestAccessPage({ returnTo, googleError, pendingRequestId }: { returnTo?: string; googleError?: boolean; pendingRequestId?:string } = {}) {
   const { status, account } = useGuestSession();
   const login = useUnifiedLogin(returnTo, googleError);
   const router = useRouter();
-  const [mode, setMode] = useState<AuthMode>('login');
-  const [registrationEmail, setRegistrationEmail] = useState('');
-  const [terms, setTerms] = useState(false);
+  const [mode, setMode] = useState<AuthMode>(pendingRequestId?'register':'login');
+  const [registrationBusy,setRegistrationBusy]=useState(false);
+  const [restorePending,setRestorePending]=useState(pendingRequestId);
   const [notice, setNotice] = useState<string>();
   const [information, setInformation] = useState<keyof typeof accessInformation | null>(null);
   const informationTrigger = useRef<HTMLElement | null>(null);
-  useStaffAccessRedirect(status === 'signed-out' && !account && !login.busy && !login.redirecting);
+  const loginEmail = useRef<HTMLInputElement>(null);
+  const focusLogin = useRef(false);
+  useEffect(()=>{if(mode==='login' && focusLogin.current){focusLogin.current=false;loginEmail.current?.focus();}},[mode]);
+  useStaffAccessRedirect(mode==='login' && !registrationBusy && status === 'signed-out' && !account && !login.busy && !login.redirecting);
   const redirected = useRef(false);
   const destination = guestAccessReturn(returnTo);
   useEffect(() => {
-    if (!account || redirected.current || login.busy || login.redirecting) return;
+    if (!account || redirected.current || login.busy || login.redirecting || registrationBusy) return;
     redirected.current = true;
     const target = destination ?? (returnTo === undefined ? readGuestCheckoutReturn() : undefined) ?? '/cuenta';
     clearGuestCheckoutReturn(); router.replace(target);
-  }, [account, destination, returnTo, router, login.busy, login.redirecting]);
+  }, [account, destination, returnTo, router, login.busy, login.redirecting, registrationBusy]);
   if (status === 'checking' || status === 'error') return <GuestSessionCheck />;
   if (account || login.redirecting) return <p role="status">Acceso correcto. Redirigiendo…</p>;
   const publicDestination = destination === '/mis-reservas' || destination === '/cuenta/reservas/vincular' ? '/habitaciones' : destination ?? '/';
   const reservationsAccess = destination === '/mis-reservas' || destination === '/cuenta/reservas/vincular';
   function changeMode(next: AuthMode) {
-    if (login.busy) return;
-    login.changePassword(''); setNotice(undefined); setTerms(false); setMode(next);
+    if (login.busy || registrationBusy || next === mode) return;
+    setRestorePending(undefined);
+    login.changePassword(''); setNotice(undefined); setMode(next);
   }
   function openInformation(key: keyof typeof accessInformation) {
     informationTrigger.current = document.activeElement as HTMLElement;
@@ -61,20 +65,15 @@ export function GuestAccessPage({ returnTo, googleError }: { returnTo?: string; 
       <h1 id="access-title">Accede a tu cuenta</h1>
       <p>Consulta tus reservas, beneficios y preferencias. Iniciar sesión es opcional: puedes buscar y reservar sin crear una cuenta.</p>
       <div className={`${styles.card} ${styles.authCard}`}>
-        <AuthModeTabs mode={mode} disabled={login.busy} onChange={changeMode} />
+        <AuthModeTabs mode={mode} disabled={login.busy || registrationBusy} onChange={changeMode} />
         <div id={`auth-panel-${mode === 'login' ? 'register' : 'login'}`} role="tabpanel"
           aria-labelledby={`auth-tab-${mode === 'login' ? 'register' : 'login'}`} hidden />
         <div id={`auth-panel-${mode}`} role="tabpanel" aria-labelledby={`auth-tab-${mode}`} tabIndex={0}>
-          {mode === 'register' && <p className={styles.welcome}>Regístrate para guardar tu historial de reservas y obtener tarifas exclusivas.</p>}
           {reservationsAccess && <div className={styles.linkNotice}><strong>¿Reservaste como invitado?</strong>
-            <p>Accede con el mismo correo de tu reserva. Necesitarás su referencia y un código de verificación para vincularla.</p></div>}
+            <p>Las reservas compatibles se vinculan al verificar el correo de tu nueva cuenta. Puedes utilizar la vinculación manual cuando corresponda.</p></div>}
           <div className={styles.socialOptions}>
-            <a className={styles.google} href="/api/auth/guest/google" aria-disabled={login.busy || undefined} onClick={event => {
-              if (login.busy) { event.preventDefault(); return; }
-              if (mode === 'register' && !terms) {
-                event.preventDefault(); setNotice('Acepta los términos y la política de privacidad para continuar.');
-                document.getElementById('auth-terms')?.focus(); return;
-              }
+            <a className={buttonClassName({variant:'outline',disabled:login.busy || registrationBusy,className:`${styles.action} ${styles.google}`})} href="/api/auth/guest/google" aria-disabled={login.busy || registrationBusy || undefined} onClick={event => {
+              if (login.busy || registrationBusy) { event.preventDefault(); return; }
               rememberGuestCheckoutReturn(returnTo);
             }}>
               <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
@@ -86,30 +85,26 @@ export function GuestAccessPage({ returnTo, googleError }: { returnTo?: string; 
             </a>
           </div>
           <div className={styles.divider}><span>o continúa con correo</span></div>
-          {mode === 'register' ? <GuestRegistrationForm email={registrationEmail} onEmailChange={value => { setRegistrationEmail(value); setNotice(undefined); }}
-            terms={terms} onTermsChange={accepted => { setTerms(accepted); setNotice(undefined); }} onLegal={openInformation}
-            onContinue={() => setNotice('La creación de cuentas no está disponible en este momento. Puedes acceder con Google o continuar como invitado.')} /> :
+          {mode === 'register' ? <GuestRegistrationForm pendingRequestId={restorePending} onBusyChange={setRegistrationBusy} onLogin={email=>{focusLogin.current=true;setRestorePending(undefined);if(email)login.changeEmail(email);changeMode('login');}} /> :
         <form className={styles.credentialsForm} onSubmit={event => { event.preventDefault(); void login.submit(); }}>
           <div className={styles.field}>
             <label htmlFor="auth-email">Correo electrónico</label>
-            <input id="auth-email" name="email" type="email" autoComplete="email" placeholder="ejemplo@correo.com" required maxLength={50}
+            <input ref={loginEmail} id="auth-email" name="email" type="email" autoComplete="email" placeholder="ejemplo@correo.com" required maxLength={50}
               value={login.email} onChange={event => login.changeEmail(event.target.value)} disabled={login.busy} />
           </div>
           <AuthPasswordField id="auth-password" label="Contraseña" value={login.password} onChange={login.changePassword}
             onBlur={() => {}} disabled={login.busy} autoComplete="current-password" />
-          <button type="button" className={styles.recovery} disabled={login.busy} onClick={() => openInformation('recovery')}>¿Olvidaste tu contraseña?</button>
+          <Button variant="ghost" type="button" className={styles.textAction} disabled={login.busy} onClick={() => openInformation('recovery')}>¿Olvidaste tu contraseña?</Button>
           {login.contexts.length > 0 ? <fieldset disabled={login.busy}>
             <legend>¿Cómo deseas continuar?</legend>
-            <button className={styles.primary} type="button" onClick={() => void login.submit('STAFF')}>Personal del hotel</button>
-            <button className={styles.secondary} type="button" onClick={() => void login.submit('GUEST')}>Huésped</button>
-          </fieldset> : <button className={styles.primary} type="submit" disabled={login.busy || !login.password}>
-            {login.busy && <span className={styles.spinner} aria-hidden="true" />}Iniciar sesión
-          </button>}
+            <Button className={styles.action} type="button" onClick={() => void login.submit('STAFF')}>Personal del hotel</Button>
+            <Button variant="outline" className={styles.action} type="button" onClick={() => void login.submit('GUEST')}>Huésped</Button>
+          </fieldset> : <Button className={styles.action} type="submit" disabled={!login.password} isLoading={login.busy} loadingText="Iniciando sesión…">Iniciar sesión</Button>}
         </form>}
         {login.busy && <p role="status" className={styles.status}>Verificando acceso…</p>}
         {(notice || (mode === 'login' && login.error)) && <p role="alert" className={styles.accessError}>{notice ?? login.error}</p>}
         </div>
-        <div className={styles.guestOption}><Link className={styles.secondary} href={publicDestination}>Continuar como invitado</Link>
+        <div className={styles.guestOption}><Link className={buttonClassName({variant:'outline',className:styles.action,disabled:login.busy || registrationBusy})} aria-disabled={login.busy || registrationBusy || undefined} onClick={event=>{if(login.busy || registrationBusy)event.preventDefault();}} href={publicDestination}>Continuar como invitado</Link>
           <p>Al crear una cuenta podrás consultar reservas, beneficios y preferencias. La reserva pública funciona también sin cuenta.</p>
         </div>
       </div>
