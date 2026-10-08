@@ -1,5 +1,5 @@
-/**
- * Public API for the promotions module.
- * Export only intentionally public Domain Models, hooks and components.
- * Do not expose DTOs, mappers or service internals without an approved reason.
- */
+export { PromotionsPage } from "./components/promotions-page";
+export * from "./dtos/promotions.dto";
+export * from "./model/promotions";
+export * from "./mappers/promotions.mapper";
+export * from "./service/promotions.service";

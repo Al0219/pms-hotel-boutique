@@ -1,5 +1,5 @@
-/**
- * Public API for the rewards module.
- * Export only intentionally public Domain Models, hooks and components.
- * Do not expose DTOs, mappers or service internals without an approved reason.
- */
+export { RewardsPage } from "./components/rewards-page";
+export * from "./dtos/rewards.dto";
+export * from "./model/rewards";
+export * from "./mappers/rewards.mapper";
+export * from "./service/rewards.service";

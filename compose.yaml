@@ -1,55 +1,70 @@
-version: '3.8'
+name: pms-hotel-boutique
 
 services:
-  db:
-    image: postgres:15-alpine
-    container_name: pms_postgres
+  postgres:
+    image: postgres:17-alpine
     environment:
-      POSTGRES_USER: pms_user
-      POSTGRES_PASSWORD: pms_password
-      POSTGRES_DB: pms_boutique_db
-    ports:
-      - "5433:5432"
+      POSTGRES_DB: pms_hotel
+      POSTGRES_USER: pms_app
+      POSTGRES_PASSWORD: ${PMS_POSTGRES_PASSWORD:-pms-local-development}
     volumes:
-      - pgdata:/var/lib/postgresql/data
-    networks:
-      - pms-network
-    restart: unless-stopped
+      - pms-hotel-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pms_app -d pms_hotel"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: pms_pgadmin
+  backend:
+    build:
+      context: ./backend
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@hotelboutique.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-    ports:
-      - "5050:80"
+      PMS_DATABASE_URL: jdbc:postgresql://postgres:5432/pms_hotel
+      PMS_DATABASE_USERNAME: pms_app
+      PMS_DATABASE_PASSWORD: ${PMS_POSTGRES_PASSWORD:-pms-local-development}
+      PMS_JWT_SECRET: ${PMS_JWT_SECRET:-}
+      PMS_BOOTSTRAP_ADMIN_USERNAME: ${PMS_BOOTSTRAP_ADMIN_USERNAME:-}
+      PMS_BOOTSTRAP_ADMIN_EMAIL: ${PMS_BOOTSTRAP_ADMIN_EMAIL:-}
+      PMS_BOOTSTRAP_ADMIN_PASSWORD: ${PMS_BOOTSTRAP_ADMIN_PASSWORD:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}
+    expose:
+      - "8080"
     depends_on:
-      - db
-    networks:
-      - pms-network
-    restart: unless-stopped
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
 
-  # Placeholder para el futuro backend Spring Boot
-  # backend:
-  #   build:
-  #     context: ./backend
-  #     dockerfile: Dockerfile
-  #   container_name: pms_backend
-  #   ports:
-  #     - "8080:8080"
-  #   depends_on:
-  #     - db
-  #   environment:
-  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/pms_boutique_db
-  #     - SPRING_DATASOURCE_USERNAME=pms_user
-  #     - SPRING_DATASOURCE_PASSWORD=pms_password
-  #   networks:
-  #     - pms-network
+  web:
+    build:
+      context: ./frontend/pms-hotel-web
+      args:
+        NEXT_PUBLIC_USE_MOCK_API: ${NEXT_PUBLIC_USE_MOCK_API:-true}
+        NEXT_PUBLIC_API_BASE_URL: /api
+    environment:
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
+      PMS_BACKEND_INTERNAL_URL: http://backend:8080
+      PMS_WEB_PUBLIC_URL: ${PMS_WEB_PUBLIC_URL:-http://localhost:3000}
+    ports:
+      - "${PMS_WEB_PORT:-3000}:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000').then(response => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
 
 volumes:
-  pgdata:
-
-networks:
-  pms-network:
-    driver: bridge
+  pms-hotel-postgres:

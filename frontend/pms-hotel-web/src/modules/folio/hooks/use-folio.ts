@@ -26,8 +26,8 @@ export interface UseFolioResult {
   isLoading: boolean;
   error: string | null;
   loadFolio: (folioId: string) => Promise<void>;
-  splitCharge: (params: SplitChargeRequest) => Promise<SplitChargeResult>;
-  transferCharge: (params: TransferChargeRequest) => Promise<TransferChargeResult>;
+  splitCharge: (params: SplitChargeRequest & { folioId?: string }) => Promise<SplitChargeResult>;
+  transferCharge: (params: TransferChargeRequest & { sourceFolioId?: string }) => Promise<TransferChargeResult>;
 }
 
 export function useFolio(initialFolioId?: string): UseFolioResult {
@@ -52,15 +52,16 @@ export function useFolio(initialFolioId?: string): UseFolioResult {
   }, []);
 
   const splitCharge = useCallback(
-    async (params: SplitChargeRequest): Promise<SplitChargeResult> => {
+    async (params: SplitChargeRequest & { folioId?: string }): Promise<SplitChargeResult> => {
       setIsLoading(true);
       setError(null);
       try {
+        const targetFolio = params.folioId || folio?.folioId || initialFolioId || "";
         const dtoPayload = mapSplitChargeRequestToDto(params);
-        const resDto = await splitFolioChargeDto(params.folioId, dtoPayload);
+        const resDto = await splitFolioChargeDto(targetFolio, dtoPayload);
         const result = mapSplitChargeResultDtoToDomain(resDto);
-        if (params.folioId) {
-          await loadFolio(params.folioId);
+        if (targetFolio) {
+          await loadFolio(targetFolio);
         }
         return result;
       } catch (err) {
@@ -71,19 +72,20 @@ export function useFolio(initialFolioId?: string): UseFolioResult {
         setIsLoading(false);
       }
     },
-    [loadFolio]
+    [folio, initialFolioId, loadFolio]
   );
 
   const transferCharge = useCallback(
-    async (params: TransferChargeRequest): Promise<TransferChargeResult> => {
+    async (params: TransferChargeRequest & { sourceFolioId?: string }): Promise<TransferChargeResult> => {
       setIsLoading(true);
       setError(null);
       try {
+        const targetSource = params.sourceFolioId || folio?.folioId || initialFolioId || "";
         const dtoPayload = mapTransferChargeRequestToDto(params);
-        const resDto = await transferFolioChargeDto(params.sourceFolioId, dtoPayload);
+        const resDto = await transferFolioChargeDto(targetSource, dtoPayload);
         const result = mapTransferChargeResultDtoToDomain(resDto);
-        if (params.sourceFolioId) {
-          await loadFolio(params.sourceFolioId);
+        if (targetSource) {
+          await loadFolio(targetSource);
         }
         return result;
       } catch (err) {
@@ -94,7 +96,7 @@ export function useFolio(initialFolioId?: string): UseFolioResult {
         setIsLoading(false);
       }
     },
-    [loadFolio]
+    [folio, initialFolioId, loadFolio]
   );
 
   useEffect(() => {

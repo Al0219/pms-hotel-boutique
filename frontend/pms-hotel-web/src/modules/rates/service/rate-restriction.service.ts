@@ -6,6 +6,18 @@ import type {
   BatchUpdateRateRestrictionsPayloadDto,
   RateRestrictionBatchResultDto,
 } from "../dtos/rate-restriction.dto";
+import type {
+  RateRestriction,
+  RateRestrictionFilter,
+  BatchUpdateRateRestrictionsParams,
+  RateRestrictionBatchResult,
+} from "../model/rate-restriction";
+import {
+  toDtoRateRestrictionQuery,
+  toDomainRateRestriction,
+  toDtoBatchUpdatePayload,
+  toDomainRateRestrictionBatchResult,
+} from "../mappers/rate-restriction.mapper";
 
 export async function fetchRateRestrictionsDto(
   queryDto: RateRestrictionQueryDto,
@@ -37,7 +49,25 @@ export async function batchUpdateRateRestrictionsDto(
   return httpRequest<RateRestrictionBatchResultDto>({
     path: "/api/v1/private/rates/restrictions",
     method: "POST",
-    body: payload,
+    json: payload,
     signal,
   });
+}
+
+export async function fetchRateRestrictions(
+  filter: RateRestrictionFilter,
+  signal?: AbortSignal
+): Promise<RateRestriction[]> {
+  const queryDto = toDtoRateRestrictionQuery(filter);
+  const response = await fetchRateRestrictionsDto(queryDto, signal);
+  return response.restrictions.map(toDomainRateRestriction);
+}
+
+export async function batchUpdateRateRestrictions(
+  params: BatchUpdateRateRestrictionsParams,
+  signal?: AbortSignal
+): Promise<RateRestrictionBatchResult> {
+  const payload = toDtoBatchUpdatePayload(params);
+  const resultDto = await batchUpdateRateRestrictionsDto(payload, signal);
+  return toDomainRateRestrictionBatchResult(resultDto);
 }

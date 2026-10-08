@@ -46,6 +46,26 @@ describe("Availability Mapper", () => {
   };
 
   describe("mapRatePlanDtoToDomain", () => {
+    it('validates an optional stay estimate and derives risk styling from explicit penalties', () => {
+      const result = mapRatePlanDtoToDomain({ ...validRatePlanDto, stay_price_breakdown: { service_charge: '22.00', estimated_taxes: '48.00', estimated_total: '520.00' },
+        cancellation_terms: [{ window_label: '72 h', penalty_percent: 0 }, { window_label: '48 h', penalty_percent: 50 }, { window_label: '24 h', penalty_percent: 100 }] });
+      expect(result.priceBreakdown).toEqual({ serviceCharge: 22, estimatedTaxes: 48, estimatedTotal: 520 });
+      expect(result.cancellationTerms?.map(term => term.severity)).toEqual(['low', 'medium', 'high']);
+      expect(mapRatePlanDtoToDomain(validRatePlanDto).priceBreakdown).toBeUndefined();
+    });
+    it.each([
+      { stay_price_breakdown: { service_charge: '22', estimated_taxes: '48', estimated_total: '999' } },
+      { stay_price_breakdown: { service_charge: '-22', estimated_taxes: '48', estimated_total: '476' } },
+      { cancellation_terms: [{ window_label: '72 h', penalty_percent: -1 }] },
+      { cancellation_terms: [{ window_label: '', penalty_percent: 50 }] },
+      { cancellation_terms: [] },
+    ])('rejects corrupt quote or policy metadata %o', patch => {
+      expect(() => mapRatePlanDtoToDomain({ ...validRatePlanDto, ...patch })).toThrow(DomainMappingError);
+    });
+    it("rejects missing policy and malformed currency without inventing a non-refundable policy", () => {
+      expect(() => mapRatePlanDtoToDomain({ ...validRatePlanDto, cancellation_policy: "" })).toThrow(DomainMappingError);
+      expect(() => mapRatePlanDtoToDomain({ ...validRatePlanDto, currency: "US" })).toThrow(DomainMappingError);
+    });
     it("maps a valid rate plan DTO to domain model with numeric amounts", () => {
       const result = mapRatePlanDtoToDomain(validRatePlanDto);
 
@@ -99,6 +119,15 @@ describe("Availability Mapper", () => {
   });
 
   describe("mapRoomTypeDtoToDomain", () => {
+    it("maps explicit catalogue metadata without deriving it from the name", () => {
+      const result = mapRoomTypeDtoToDomain({ ...validRoomTypeDto, category: "DELUXE", bed_description: " King ", area_square_meters: 32, amenities: [" Wi-Fi "], badge: " Vista al jardín " });
+      expect(result).toMatchObject({ category: "DELUXE", bedDescription: "King", areaSquareMeters: 32, amenities: ["Wi-Fi"], badge: "Vista al jardín" });
+      expect(mapRoomTypeDtoToDomain(validRoomTypeDto).category).toBeUndefined();
+      expect(mapRoomTypeDtoToDomain(validRoomTypeDto).amenities).toBeUndefined();
+    });
+    it.each([{ category: "OTHER" }, { area_square_meters: 0 }, { bed_description: "" }, { amenities: [null] }, { amenities: "Wi-Fi" }])("rejects malformed optional metadata %o", patch => {
+      expect(() => mapRoomTypeDtoToDomain({ ...validRoomTypeDto, ...patch } as unknown as AvailableRoomTypeDto)).toThrow(DomainMappingError);
+    });
     it("maps a valid room type DTO to domain", () => {
       const result = mapRoomTypeDtoToDomain(validRoomTypeDto);
 
@@ -123,6 +152,16 @@ describe("Availability Mapper", () => {
   });
 
   describe("mapAvailabilityResponseToDomain", () => {
+    it.each([
+      { check_in_date: "2026-02-30" }, { check_out_date: "2026-09-30" }, { total_nights: 5 },
+    ])("rejects impossible or inconsistent stay metadata %o", patch => {
+      expect(() => mapAvailabilityResponseToDomain({ ...validResponseDto, ...patch })).toThrow(DomainMappingError);
+    });
+
+    it("rejects missing required lists instead of converting a malformed response to empty inventory", () => {
+      expect(() => mapAvailabilityResponseToDomain({ ...validResponseDto, available_room_types: null } as unknown as AvailabilityResponseDto)).toThrow(DomainMappingError);
+      expect(() => mapRoomTypeDtoToDomain({ ...validRoomTypeDto, rate_plans: null } as unknown as AvailableRoomTypeDto)).toThrow(DomainMappingError);
+    });
     it("maps complete availability response to domain result", () => {
       const result = mapAvailabilityResponseToDomain(validResponseDto);
 

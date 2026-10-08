@@ -1,0 +1,19 @@
+{
+  "hosting": {
+    "public": "frontend/pms-hotel-web/out",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
+  "apphosting": {
+    "rootDirectory": "frontend/pms-hotel-web"
+  }
+}

@@ -18,3 +18,13 @@ describe("mapGuestAccount", () => {
     expect(() => mapGuestAccount({ account_id: " ", email: null, external_identities: [] })).toThrow(DomainMappingError);
   });
 });
+
+it("rejects an unknown external identity provider", () => {
+  const dto = JSON.parse('{"account_id":"guest-01","email":null,"external_identities":[{"provider":"UNKNOWN","external_subject":"s","connected_at":"2026-09-10T12:00:00.000Z"}]}');
+  expect(() => mapGuestAccount(dto)).toThrow(DomainMappingError);
+});
+
+it("rejects a malformed identity list and non-text email", () => {
+  expect(() => mapGuestAccount(JSON.parse('{"account_id":"guest-01","email":null,"external_identities":null}'))).toThrow(DomainMappingError);
+  expect(() => mapGuestAccount(JSON.parse('{"account_id":"guest-01","email":123,"external_identities":[]}'))).toThrow(DomainMappingError);
+});

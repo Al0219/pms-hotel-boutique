@@ -1,6 +1,7 @@
 # Node / Next
 **/node_modules/
 **/.next/
+**/.wrangler/
 **/out/
 **/dist/
 **/coverage/
@@ -9,6 +10,7 @@
 # Android / Gradle
 **/.gradle/
 **/build/
+**/target/
 **/local.properties
 **/*.iml
 

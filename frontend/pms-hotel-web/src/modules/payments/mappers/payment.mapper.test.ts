@@ -119,10 +119,10 @@ describe("Payment Mapper", () => {
         paymentMethod: "CREDIT_CARD",
       });
 
-      expect(dto.property_id).toBe("prop_01");
-      expect(dto.folio_id).toBe("fol_101");
-      expect(dto.status).toBe("AUTHORIZED");
-      expect(dto.payment_method).toBe("CREDIT_CARD");
+      expect(dto?.property_id).toBe("prop_01");
+      expect(dto?.folio_id).toBe("fol_101");
+      expect(dto?.status).toBe("AUTHORIZED");
+      expect(dto?.payment_method).toBe("CREDIT_CARD");
     });
   });
 });

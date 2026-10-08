@@ -1,0 +1,98 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-commercial-003
+      author: juan-bd3
+      changes:
+        - createTable:
+            tableName: promotions
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: property_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_promotions_property, references: properties(id) } }
+              - column: { name: code, type: varchar(64), constraints: { nullable: false } }
+              - column: { name: name, type: varchar(160), constraints: { nullable: false } }
+              - column: { name: status, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: priority, type: int, constraints: { nullable: false } }
+              - column: { name: stackable, type: boolean, constraints: { nullable: false } }
+              - column: { name: benefit_type, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: benefit_value_minor, type: bigint, constraints: { nullable: false } }
+              - column: { name: valid_from, type: date }
+              - column: { name: valid_to, type: date }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: updated_at, type: timestamptz, constraints: { nullable: false } }
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE promotions ADD CONSTRAINT ck_promotions_status CHECK (status IN ('DRAFT', 'ACTIVE', 'PAUSED', 'EXPIRED'))
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE promotions ADD CONSTRAINT ck_promotions_code CHECK (btrim(code) <> '')
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE promotions ADD CONSTRAINT ck_promotions_name CHECK (btrim(name) <> '')
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE promotions ADD CONSTRAINT ck_promotions_benefit CHECK (benefit_type IN ('PERCENT_OFF', 'AMOUNT_OFF') AND benefit_value_minor > 0)
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE promotions ADD CONSTRAINT ck_promotions_percent CHECK (benefit_type <> 'PERCENT_OFF' OR benefit_value_minor <= 10000)
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE promotions ADD CONSTRAINT ck_promotions_validity CHECK (valid_from IS NULL OR valid_to IS NULL OR valid_from <= valid_to)
+        - addUniqueConstraint:
+            tableName: promotions
+            columnNames: property_id, code
+            constraintName: uq_promotions_property_code
+        - createIndex: { tableName: promotions, indexName: ix_promotions_property, columns: [ { column: { name: property_id } } ] }
+        # Reward ledger: append-only points history per guest profile. Balance
+        # is always derived (SUM), never stored. EARN applies once per
+        # CHECKED_OUT stay; CANCELLED/NO_SHOW stays never earn.
+        - createTable:
+            tableName: reward_ledger
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: guest_profile_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_rewards_profile, references: guest_profiles(id) } }
+              - column: { name: property_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_rewards_property, references: properties(id) } }
+              - column: { name: kind, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: points, type: bigint, constraints: { nullable: false } }
+              - column: { name: stay_id, type: uuid, constraints: { nullable: true, foreignKeyName: fk_rewards_stay, references: reservation_stays(id) } }
+              - column: { name: reverses_id, type: uuid, constraints: { nullable: true, foreignKeyName: fk_rewards_reversal, references: reward_ledger(id) } }
+              - column: { name: reason, type: varchar(255), constraints: { nullable: false } }
+              - column: { name: created_by, type: uuid, constraints: { nullable: true, foreignKeyName: fk_rewards_actor, references: staff_users(id) } }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE reward_ledger ADD CONSTRAINT ck_rewards_kind CHECK (kind IN ('EARN', 'REDEEM', 'EXPIRE', 'REVERSE'))
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE reward_ledger ADD CONSTRAINT ck_rewards_points CHECK (points <> 0)
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE reward_ledger ADD CONSTRAINT ck_rewards_reason CHECK (btrim(reason) <> '')
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE reward_ledger ADD CONSTRAINT ck_rewards_earn_stay CHECK ((kind <> 'EARN') OR (stay_id IS NOT NULL))
+        - sql:
+            dbms: postgresql
+            sql: CREATE UNIQUE INDEX uq_reward_earn_stay ON reward_ledger(stay_id) WHERE kind = 'EARN' AND stay_id IS NOT NULL
+        - createIndex: { tableName: reward_ledger, indexName: ix_rewards_profile, columns: [ { column: { name: guest_profile_id } } ] }
+        - createIndex: { tableName: reward_ledger, indexName: ix_rewards_property, columns: [ { column: { name: property_id } } ] }
+        # Append-only enforcement at the database level, same pattern as
+        # folio_movements / reservation_audit_events (BD3 convention).
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              CREATE OR REPLACE FUNCTION bd3_reject_reward_ledger_mutation() RETURNS trigger AS $$
+              BEGIN
+                RAISE EXCEPTION 'reward_ledger is append-only (tried %)', TG_OP;
+              END; $$ LANGUAGE plpgsql;
+        - sql:
+            dbms: postgresql
+            sql: CREATE TRIGGER trg_reward_ledger_append_only BEFORE UPDATE OR DELETE ON reward_ledger FOR EACH ROW EXECUTE FUNCTION bd3_reject_reward_ledger_mutation();
+      rollback:
+        - sql:
+            dbms: postgresql
+            sql: |
+              DROP TRIGGER IF EXISTS trg_reward_ledger_append_only ON reward_ledger;
+              DROP FUNCTION IF EXISTS bd3_reject_reward_ledger_mutation();
+              DROP TABLE reward_ledger;
+              DROP TABLE promotions;

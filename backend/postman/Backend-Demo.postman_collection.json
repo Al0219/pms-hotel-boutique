@@ -1,0 +1,1641 @@
+{
+  "info": {
+    "name": "PMS — Demostración Backend (BD1 + BD2 + BD3)",
+    "description": "Usar compose.demo.yaml y seleccionar No environment. Credenciales públicas exclusivamente de demo; API real, sin mocks. Run collection en orden: crea datos nuevos, prueba seguridad y ATS 0→1, tarifas sin inventario y logout. Booking/idempotencia interna se demuestra con Maven, no con endpoints inexistentes. No exportar esta colección después de ejecutarla: sus variables locales pueden contener tokens.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{staffAccessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:18080",
+      "type": "string"
+    },
+    {
+      "key": "staffEmail",
+      "value": "demo.profesor@example.test",
+      "type": "string"
+    },
+    {
+      "key": "staffPassword",
+      "value": "DemoHotel2026!SoloLocal",
+      "type": "string"
+    },
+    {
+      "key": "staffAccessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "propertyId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "roomTypeId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "arrival",
+      "value": "2035-01-01",
+      "type": "string"
+    },
+    {
+      "key": "departure",
+      "value": "2035-01-03",
+      "type": "string"
+    },
+    {
+      "key": "unauthorizedPropertyId",
+      "value": "00000000-0000-4000-8000-000000000001",
+      "type": "string"
+    },
+    {
+      "key": "missingRoomTypeId",
+      "value": "00000000-0000-4000-8000-000000000002",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "00 — Backend y documentación",
+      "item": [
+        {
+          "name": "Backend encendido",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/actuator/health",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Backend UP', () => pm.expect(pm.response.json().status).to.eql('UP'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Documentación OpenAPI",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/v3/api-docs",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('API real documentada', () => pm.expect(pm.response.json().paths).to.have.property('/api/v1/properties/{propertyId}/availability'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 — Propiedades y seguridad Staff",
+      "item": [
+        {
+          "name": "01 — Login Staff",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/staff-auth/sessions",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"{{staffEmail}}\",\"password\":\"{{staffPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Login: email required, formato email, maxLength=50 tras trim/lowercase; password required/NotBlank, maxLength=50, intacta sin trim ni complejidad nueva. 51 caracteres o entrada inválida: HTTP400. Password writeOnly; no exportar credenciales/tokens reales."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('staffAccessToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 — Crear propiedad",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/properties",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"code\":\"{{propertyCode}}\",\"name\":\"Postman Properties\",\"timezone\":\"America/Guatemala\",\"currency\":\"GTQ\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('propertyCode', 'QA-' + pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) { const p = pm.response.json(); pm.collectionVariables.set('createdPropertyId', p.id); pm.collectionVariables.set('createdAt', p.createdAt); pm.test('ACTIVE and UTC', () => { pm.expect(p.status).to.equal('ACTIVE'); pm.expect(p.createdAt).to.match(/Z$/); }); pm.test('Location', () => pm.expect(pm.response.headers.get('Location')).to.equal('/api/v1/properties/' + p.id)); }",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('propertyId', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 — Listar scope actualizado",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/properties"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('New property belongs to live C2 scope', () => pm.expect(pm.response.json().some(p => p.id === pm.collectionVariables.get('createdPropertyId'))).to.equal(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 — Consultar propiedad",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/properties/{{createdPropertyId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Currency and timezone', () => { const p=pm.response.json(); pm.expect(p.currency).to.equal('GTQ'); pm.expect(p.timezone).to.equal('America/Guatemala'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05 — Editar nombre",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/v1/properties/{{createdPropertyId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Postman Properties Editado\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) { const p=pm.response.json(); pm.collectionVariables.set('updatedAt',p.updatedAt); pm.test('Preserves creation timestamp', () => pm.expect(p.createdAt).to.equal(pm.collectionVariables.get('createdAt'))); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06 — Repetir sin cambios",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/v1/properties/{{createdPropertyId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Postman Properties Editado\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('No-op preserves updatedAt', () => pm.expect(pm.response.json().updatedAt).to.equal(pm.collectionVariables.get('updatedAt')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "07 — Código duplicado",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/properties",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"code\":\"{{propertyCode}}\",\"name\":\"Postman Properties\",\"timezone\":\"America/Guatemala\",\"currency\":\"GTQ\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "08 — PATCH vacío",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/v1/properties/{{createdPropertyId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "09 — Moneda no editable",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/v1/properties/{{createdPropertyId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"currency\":\"USD\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "10 — Nombre null",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/v1/properties/{{createdPropertyId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":null}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11 — Organización inyectada",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/properties",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"code\":\"{{propertyCode}}\",\"name\":\"Postman Properties\",\"timezone\":\"America/Guatemala\",\"currency\":\"GTQ\",\"organizationId\":\"00000000-0000-4000-8000-000000000001\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "12 — Sin token",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/properties",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/staff-auth/session"
+          },
+          "name": "13 — Logout Staff",
+          "event": [
+            {
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Logout', () => pm.response.to.have.status(204));"
+                ]
+              },
+              "listen": "test"
+            }
+          ]
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/properties"
+          },
+          "name": "14 — Sesión revocada",
+          "event": [
+            {
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Revoked token', () => pm.response.to.have.status(401));"
+                ]
+              },
+              "listen": "test"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 — Tipos de habitación",
+      "item": [
+        {
+          "name": "01 — Login Staff",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/staff-auth/sessions",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"{{staffEmail}}\",\"password\":\"{{staffPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Login: email required, formato email, maxLength=50 tras trim/lowercase; password required/NotBlank, maxLength=50, intacta sin trim ni complejidad nueva. 51 caracteres o entrada inválida: HTTP400. Password writeOnly; no exportar credenciales/tokens reales."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('staffAccessToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear RoomType",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) { const r=pm.response.json(); pm.collectionVariables.set('roomTypeId',r.id); pm.collectionVariables.set('roomTypeCode',r.code); }",
+                  "pm.test('UTC', () => pm.expect(pm.response.json().createdAt).to.match(/Z$/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/room-types",
+            "body": {
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw",
+              "raw": "{\"code\":\"PM-{{$guid}}\",\"name\":\"Postman Suite\"}"
+            },
+            "header": [
+              {
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "method": "POST"
+          }
+        },
+        {
+          "name": "Listar RoomTypes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Tipo presente', () => pm.expect(pm.response.json().map(r=>r.id)).to.include(pm.collectionVariables.get('roomTypeId')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/room-types",
+            "header": [
+              {
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "method": "GET"
+          }
+        },
+        {
+          "name": "Leer RoomType",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/room-types/{{roomTypeId}}",
+            "header": [
+              {
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "method": "GET"
+          }
+        },
+        {
+          "name": "Editar RoomType",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('roomTypeUpdatedAt',pm.response.json().updatedAt);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/room-types/{{roomTypeId}}",
+            "body": {
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw",
+              "raw": "{\"name\":\"Postman Suite Norte\"}"
+            },
+            "header": [
+              {
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "method": "PATCH"
+          }
+        },
+        {
+          "name": "Repetir PATCH",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('No-op conserva timestamp', () => pm.expect(pm.response.json().updatedAt).to.eql(pm.collectionVariables.get('roomTypeUpdatedAt')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/room-types/{{roomTypeId}}",
+            "body": {
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw",
+              "raw": "{\"name\":\"Postman Suite Norte\"}"
+            },
+            "header": [
+              {
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "method": "PATCH"
+          }
+        },
+        {
+          "name": "Campo inmutable",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/room-types/{{roomTypeId}}",
+            "body": {
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw",
+              "raw": "{\"propertyId\":\"{{propertyId}}\"}"
+            },
+            "header": [
+              {
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "method": "PATCH"
+          }
+        },
+        {
+          "name": "Codigo duplicado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/room-types",
+            "body": {
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw",
+              "raw": "{\"code\":\"{{roomTypeCode}}\",\"name\":\"Duplicate\"}"
+            },
+            "header": [
+              {
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "method": "POST"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 — Disponibilidad antes de crear Rooms",
+      "item": [
+        {
+          "name": "Tipo sin habitaciones físicas: ATS = 0",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/availability?roomTypeId={{roomTypeId}}&arrival={{arrival}}&departure={{departure}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Availability returned', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test('Explicit IDs and nonnegative integer ATS', () => {",
+                  "    pm.expect(body.propertyId).to.equal(pm.variables.get('propertyId'));",
+                  "    pm.expect(body.roomTypeId).to.equal(pm.variables.get('roomTypeId'));",
+                  "    pm.expect(body.arrival).to.equal(pm.variables.get('arrival'));",
+                  "    pm.expect(body.departure).to.equal(pm.variables.get('departure'));",
+                  "    pm.expect(Number.isInteger(body.availableUnits)).to.equal(true);",
+                  "    pm.expect(body.availableUnits).to.be.at.least(0);",
+                  "  });",
+                  "}",
+                  "pm.test('Tipo nuevo sin Rooms: ATS = 0', () => pm.expect(pm.response.json().availableUnits).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 — Habitaciones físicas",
+      "item": [
+        {
+          "name": "01 — Login Staff",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/staff-auth/sessions",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"{{staffEmail}}\",\"password\":\"{{staffPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Login: email required, formato email, maxLength=50 tras trim/lowercase; password required/NotBlank, maxLength=50, intacta sin trim ni complejidad nueva. 51 caracteres o entrada inválida: HTTP400. Password writeOnly; no exportar credenciales/tokens reales."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('staffAccessToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear Room",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) { const r=pm.response.json(); pm.collectionVariables.set('roomId',r.id); pm.collectionVariables.set('roomCode',r.code); }",
+                  "pm.test('UTC', () => pm.expect(pm.response.json().createdAt).to.match(/Z$/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rooms",
+            "body": {
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw",
+              "raw": "{\"roomTypeId\":\"{{roomTypeId}}\",\"code\":\"PM-{{$guid}}\"}"
+            },
+            "header": [
+              {
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "method": "POST"
+          }
+        },
+        {
+          "name": "Listar Rooms",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Tipo presente', () => pm.expect(pm.response.json().map(r=>r.id)).to.include(pm.collectionVariables.get('roomId')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rooms",
+            "header": [
+              {
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "method": "GET"
+          }
+        },
+        {
+          "name": "Leer Room",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rooms/{{roomId}}",
+            "header": [
+              {
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "method": "GET"
+          }
+        },
+        {
+          "name": "Editar Room",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('roomUpdatedAt',pm.response.json().updatedAt);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rooms/{{roomId}}",
+            "body": {
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw",
+              "raw": "{\"code\":\"{{roomCode}}-EDIT\"}"
+            },
+            "header": [
+              {
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "method": "PATCH"
+          }
+        },
+        {
+          "name": "Repetir PATCH",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('No-op conserva timestamp', () => pm.expect(pm.response.json().updatedAt).to.eql(pm.collectionVariables.get('roomUpdatedAt')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rooms/{{roomId}}",
+            "body": {
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw",
+              "raw": "{\"code\":\"{{roomCode}}-EDIT\"}"
+            },
+            "header": [
+              {
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "method": "PATCH"
+          }
+        },
+        {
+          "name": "Campo inmutable",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rooms/{{roomId}}",
+            "body": {
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw",
+              "raw": "{\"propertyId\":\"{{propertyId}}\"}"
+            },
+            "header": [
+              {
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "method": "PATCH"
+          }
+        },
+        {
+          "name": "Codigo duplicado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rooms",
+            "body": {
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw",
+              "raw": "{\"roomTypeId\":\"{{roomTypeId}}\",\"code\":\"{{roomCode}}-EDIT\"}"
+            },
+            "header": [
+              {
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "method": "POST"
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 — Tarifas: no crean inventario",
+      "item": [
+        {
+          "name": "01 — Login Staff",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/staff-auth/sessions",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"{{staffEmail}}\",\"password\":\"{{staffPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Login: email required, formato email, maxLength=50 tras trim/lowercase; password required/NotBlank, maxLength=50, intacta sin trim ni complejidad nueva. 51 caracteres o entrada inválida: HTTP400. Password writeOnly; no exportar credenciales/tokens reales."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('staffAccessToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ATS antes de tarifas",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/availability?roomTypeId={{roomTypeId}}&arrival=2035-01-01&departure=2035-01-03"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) pm.collectionVariables.set('ratePlanAtsBefore',pm.response.json().availableUnits);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear RatePlan",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) { const r=pm.response.json(); pm.collectionVariables.set('ratePlanId',r.id); pm.collectionVariables.set('ratePlanCode',r.code); }",
+                  "pm.test('UTC', () => pm.expect(pm.response.json().createdAt).to.match(/Z$/));",
+                  "pm.test('Precio exacto como texto', () => pm.expect(pm.response.json().basePrice.amount).to.eql('125.50'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rate-plans",
+            "body": {
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw",
+              "raw": "{\"roomTypeId\":\"{{roomTypeId}}\",\"code\":\"PM-{{$guid}}\",\"name\":\"Flexible\",\"basePrice\":{\"amount\":\"125.50\",\"currency\":\"GTQ\"}}"
+            },
+            "header": [
+              {
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "method": "POST"
+          }
+        },
+        {
+          "name": "Listar RatePlans",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Tipo presente', () => pm.expect(pm.response.json().map(r=>r.id)).to.include(pm.collectionVariables.get('ratePlanId')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rate-plans",
+            "header": [
+              {
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "method": "GET"
+          }
+        },
+        {
+          "name": "Leer RatePlan",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rate-plans/{{ratePlanId}}",
+            "header": [
+              {
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "method": "GET"
+          }
+        },
+        {
+          "name": "Editar RatePlan",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('ratePlanUpdatedAt',pm.response.json().updatedAt);",
+                  "pm.test('Precio editado exacto', () => pm.expect(pm.response.json().basePrice.amount).to.eql('99.99'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rate-plans/{{ratePlanId}}",
+            "body": {
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw",
+              "raw": "{\"name\":\"Flexible Norte\",\"basePrice\":{\"amount\":\"99.99\",\"currency\":\"GTQ\"}}"
+            },
+            "header": [
+              {
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "method": "PATCH"
+          }
+        },
+        {
+          "name": "Repetir PATCH",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('No-op conserva timestamp', () => pm.expect(pm.response.json().updatedAt).to.eql(pm.collectionVariables.get('ratePlanUpdatedAt')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rate-plans/{{ratePlanId}}",
+            "body": {
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw",
+              "raw": "{\"name\":\"Flexible Norte\",\"basePrice\":{\"amount\":\"99.99\",\"currency\":\"GTQ\"}}"
+            },
+            "header": [
+              {
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "method": "PATCH"
+          }
+        },
+        {
+          "name": "Campo inmutable",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rate-plans/{{ratePlanId}}",
+            "body": {
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw",
+              "raw": "{\"propertyId\":\"{{propertyId}}\"}"
+            },
+            "header": [
+              {
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "method": "PATCH"
+          }
+        },
+        {
+          "name": "Codigo duplicado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rate-plans",
+            "body": {
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw",
+              "raw": "{\"roomTypeId\":\"{{roomTypeId}}\",\"code\":\"{{ratePlanCode}}\",\"name\":\"Duplicate\",\"basePrice\":{\"amount\":\"125.50\",\"currency\":\"GTQ\"}}"
+            },
+            "header": [
+              {
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "method": "POST"
+          }
+        },
+        {
+          "name": "ATS despues de tarifas",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/availability?roomTypeId={{roomTypeId}}&arrival=2035-01-01&departure=2035-01-03"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('RatePlan no modifica inventario', () => pm.expect(pm.response.json().availableUnits).to.eql(Number(pm.collectionVariables.get('ratePlanAtsBefore'))));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 — Disponibilidad y controles de acceso",
+      "item": [
+        {
+          "name": "01 — Login Staff (201)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"{{staffEmail}}\",\"password\":\"{{staffPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/staff-auth/sessions",
+            "description": "Login: email required, formato email, maxLength=50 tras trim/lowercase; password required/NotBlank, maxLength=50, intacta sin trim ni complejidad nueva. 51 caracteres o entrada inválida: HTTP400. Password writeOnly; no exportar credenciales/tokens reales."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Staff session created', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test('Access token returned', () => pm.expect(body.accessToken).to.be.a('string').and.not.empty);",
+                  "  pm.collectionVariables.set('staffAccessToken', body.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 — Sesión y propiedades autorizadas (200)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/staff-auth/session"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Active Staff session', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test('Scope and permissions returned', () => {",
+                  "    pm.expect(body.memberships).to.be.an('array');",
+                  "    pm.expect(body.permissions).to.be.an('array');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 — Disponibilidad (200)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/availability?roomTypeId={{roomTypeId}}&arrival={{arrival}}&departure={{departure}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Availability returned', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test('Explicit IDs and nonnegative integer ATS', () => {",
+                  "    pm.expect(body.propertyId).to.equal(pm.variables.get('propertyId'));",
+                  "    pm.expect(body.roomTypeId).to.equal(pm.variables.get('roomTypeId'));",
+                  "    pm.expect(body.arrival).to.equal(pm.variables.get('arrival'));",
+                  "    pm.expect(body.departure).to.equal(pm.variables.get('departure'));",
+                  "    pm.expect(Number.isInteger(body.availableUnits)).to.equal(true);",
+                  "    pm.expect(body.availableUnits).to.be.at.least(0);",
+                  "  });",
+                  "}",
+                  "pm.test('Una habitación física: ATS = 1', () => pm.expect(pm.response.json().availableUnits).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 — Sin token (401)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/availability?roomTypeId={{roomTypeId}}&arrival={{arrival}}&departure={{departure}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Missing token rejected', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05 — Token inválido (401)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "invalid-token",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/availability?roomTypeId={{roomTypeId}}&arrival={{arrival}}&departure={{departure}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Invalid token rejected', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06 — Propiedad no autorizada (403)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/properties/{{unauthorizedPropertyId}}/availability?roomTypeId={{roomTypeId}}&arrival={{arrival}}&departure={{departure}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Unauthorized property rejected', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "07 — Fechas iguales (400)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/availability?roomTypeId={{roomTypeId}}&arrival={{arrival}}&departure={{arrival}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Invalid range rejected', () => pm.response.to.have.status(400));",
+                  "if (pm.response.code === 400) pm.test('ProblemDetail status', () => pm.expect(pm.response.json().status).to.equal(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "08 — Tipo inexistente en propiedad autorizada (404)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/availability?roomTypeId={{missingRoomTypeId}}&arrival={{arrival}}&departure={{departure}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Unknown room type rejected', () => pm.response.to.have.status(404));",
+                  "if (pm.response.code === 404) pm.test('ProblemDetail status', () => pm.expect(pm.response.json().status).to.equal(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 — Cierre y revocación de sesión",
+      "item": [
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/staff-auth/session"
+          },
+          "name": "13 — Logout Staff",
+          "event": [
+            {
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Logout', () => pm.response.to.have.status(204));"
+                ]
+              },
+              "listen": "test"
+            }
+          ]
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/properties"
+          },
+          "name": "14 — Sesión revocada",
+          "event": [
+            {
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Revoked token', () => pm.response.to.have.status(401));"
+                ]
+              },
+              "listen": "test"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

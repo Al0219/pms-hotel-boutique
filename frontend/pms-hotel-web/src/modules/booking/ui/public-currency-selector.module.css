@@ -1,0 +1,5 @@
+.control { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; color: #596459; font-size: 12px; }
+.control select { border: 1px solid #dfe3db; border-radius: 8px; padding: 10px 12px; background: white; color: #38443a; font: inherit; min-height: 42px; }
+.control small { width: 100%; font-size: 11px; line-height: 1.6; max-width: 640px; }
+.control a { color: #50654d; }
+.control select:focus-visible { outline: 2px solid #5a6b5d; outline-offset: 3px; }

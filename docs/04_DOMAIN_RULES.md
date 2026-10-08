@@ -79,6 +79,15 @@ ATS depende de:
 
 No borrar Room.
 
+### Precisión MVP BD2 — 2026-09-30
+
+Según el plan de ejecución autorizado, el MVP usa overbooking = 0.
+OOO descuenta capacidad vendible; OOS se registra como condición operativa sin
+descontar ATS. Las restricciones de venta aplicables siguen siendo independientes.
+El cálculo se realiza por RoomType, propiedad y noche, sin duplicar habitaciones
+por registros OOO superpuestos. Consultar ATS no sustituye el control transaccional
+del consumo de inventario al reservar.
+
 ---
 
 ## OOO/OOS

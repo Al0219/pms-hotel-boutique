@@ -26,6 +26,12 @@ La validación Foundation usa `npm ci`, `npx expo-doctor`, `npx tsc --noEmit`, `
 - State Holder/ViewModel
 - UI
 
+## Ejecución frontend-first
+
+En la fase actual, la fuente Remote/API puede ser una implementación mock con datos dummy/locales; Backend real no es un prerrequisito de una feature Android. La política operativa y la ubicación canónica de los datasets se definen únicamente en `07_MOCK_AND_DATA_POLICY.md`.
+
+Una integración posterior sustituye la implementación mock por una implementación API. DTO/Mapper absorben la forma externa real sin exponer DTOs a UI ni rediseñar Domain, UI, hooks públicos o query keys cuando sea razonable.
+
 ## Principio
 Mismo patrón conceptual que Web.
 

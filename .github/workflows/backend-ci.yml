@@ -1,0 +1,52 @@
+name: Backend CI
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: pms_hotel
+          POSTGRES_USER: pms_app
+          POSTGRES_PASSWORD: ci-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pms_app -d pms_hotel"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+      - run: ./mvnw -B verify
+        env:
+          PMS_DATABASE_URL: jdbc:postgresql://localhost:5432/pms_hotel
+          PMS_DATABASE_USERNAME: pms_app
+          PMS_DATABASE_PASSWORD: ci-password
+          SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "2"
+          SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "0"

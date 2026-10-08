@@ -30,10 +30,9 @@ export function PaymentsPage() {
     }
   };
 
-  const handleCaptureConfirm = async (req: CapturePaymentRequest) => {
-    if (!selectedCapturePayment) return;
+  const handleCaptureConfirm = async (paymentId: string, req: CapturePaymentRequest) => {
     try {
-      await capture(selectedCapturePayment.paymentId, req);
+      await capture(paymentId, req);
       setFeedback({ type: "success", text: `Captura de pago $${req.amount.toFixed(2)} procesada exitosamente.` });
       setSelectedCapturePayment(null);
     } catch (err) {
@@ -41,10 +40,9 @@ export function PaymentsPage() {
     }
   };
 
-  const handleVoidConfirm = async (req: VoidPaymentRequest) => {
-    if (!selectedVoidPayment) return;
+  const handleVoidConfirm = async (paymentId: string, req: VoidPaymentRequest) => {
     try {
-      await voidPayment(selectedVoidPayment.paymentId, req);
+      await voidPayment(paymentId, req);
       setFeedback({ type: "success", text: "Autorización anulada (Void) exitosamente." });
       setSelectedVoidPayment(null);
     } catch (err) {
@@ -52,10 +50,9 @@ export function PaymentsPage() {
     }
   };
 
-  const handleRefundConfirm = async (req: RefundPaymentRequest) => {
-    if (!selectedRefundPayment) return;
+  const handleRefundConfirm = async (paymentId: string, req: RefundPaymentRequest) => {
     try {
-      await refund(selectedRefundPayment.paymentId, req);
+      await refund(paymentId, req);
       setFeedback({ type: "success", text: `Reembolso de $${req.amount.toFixed(2)} registrado correctamente.` });
       setSelectedRefundPayment(null);
     } catch (err) {

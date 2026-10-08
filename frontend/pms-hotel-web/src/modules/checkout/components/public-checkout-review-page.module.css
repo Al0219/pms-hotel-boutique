@@ -1,0 +1,45 @@
+.page { max-width: var(--public-container-max); margin: 0 auto; padding: 36px 32px 80px; color: #2e3531; }
+.page header { margin: 28px 0 32px; }
+.page h1 { font-family: var(--font-family-display); font-size: clamp(34px,4vw,48px); font-weight: 500; margin: 0 0 14px; }
+.page header > p { font-size: 14px; line-height: 1.8; color: #697367; }
+.page header .eyebrow { font-size: 10px; letter-spacing: .16em; margin: 0 0 14px; color: #5a6b5d; }
+.topBar { display: flex; align-items: start; justify-content: space-between; gap: 24px; }
+.back { display: inline-block; padding: 10px 0; color: #5a6b5d; font-size: 12px; text-decoration: none; min-height: 44px; }
+.back:hover { text-decoration: underline; }
+.layout { display: grid; grid-template-columns: minmax(0,2fr) minmax(310px,1fr); gap: 28px; align-items: start; }
+.card,.summary { min-width: 0; background: white; border: 1px solid #e4e8df; border-radius: 24px; box-shadow: 0 4px 24px #2e353107; }
+.card { padding: 0 32px 28px; }
+.block { padding: 26px 0; }
+.block + .block { border-top: 1px solid #e9ece6; }
+.blockHeading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.page h2 { font-size: 17px; font-weight: 600; margin: 0; }
+.edit { display: inline-flex; align-items: center; min-height: 44px; font-size: 12px; color: #747d72; text-decoration: none; transition: color .2s; flex-shrink: 0; }
+.edit:hover { color: #5a6b5d; text-decoration: underline; text-underline-offset: 4px; }
+.block p { color: #74816b; font-size: 13px; line-height: 1.9; margin: 8px 0 0; overflow-wrap: anywhere; }
+.block .name { color: #2e3531; font-size: 16px; font-weight: 600; }
+.rooms { list-style: none; padding: 0; margin: 0 0 16px; }
+.rooms li + li { margin-top: 16px; }
+.rooms strong { display: block; font-family: var(--font-family-display); font-size: 25px; font-weight: 500; }
+.rooms span { display: block; margin-top: 6px; color: #74816b; font-size: 11px; }
+.requests { white-space: pre-wrap; }
+.availabilityNote { display: flex; align-items: start; gap: 14px; background: #e3e8e3; color: #506550; border-radius: 12px; padding: 20px; }
+.availabilityNote svg { flex-shrink: 0; }
+.availabilityNote p { margin: 0; font-size: 12px; line-height: 1.9; }
+.summary { padding: 30px; position: sticky; top: 96px; }
+.summary h2 { margin-bottom: 28px; }
+.amounts { margin: 0; }
+.amounts > div { display: flex; align-items: start; justify-content: space-between; gap: 12px; padding-bottom: 20px; font-size: 12px; line-height: 1.8; color: #727e6a; }
+.amounts dd { margin: 0; white-space: nowrap; color: #2e3531; }
+.amounts .total { border-top: 1px solid #e9ece6; padding-top: 24px; font-weight: 600; color: #2e3531; flex-wrap: wrap; align-items: center; }
+.total dd { font-family: var(--font-family-display); font-size: 30px; font-weight: 500; }
+.note { font-size: 11px; color: #7c8774; line-height: 1.9; margin: 0 0 24px; }
+.continue { width: 100%; min-height: 50px; background: #5a6b5d; border-radius: 10px; border: 0; padding: 14px 12px; font-size: 13px !important; transition: background .2s,transform .2s; }
+.continue:not(:disabled):hover { background: #485b4c; transform: translateY(-1px); }
+.continue:not(:disabled):active { transform: translateY(0); }
+.continue + .note { margin: 16px 0 0; font-size: 10px; }
+.error { background: #fff5f6; color: #9e3547; border: 1px solid #efd1d7; border-radius: 10px; padding: 12px; font-size: 12px; line-height: 1.8; }
+.page :is(a,button,select):focus-visible { outline: 2px solid #5a6b5d; outline-offset: 4px; }
+@media(max-width:950px) { .layout { grid-template-columns: minmax(0,1.6fr) minmax(285px,1fr); gap: 20px; } .card { padding-inline: 24px; } .summary { padding: 24px; } }
+@media(max-width:800px) { .page { padding: 24px 20px 60px; } .layout { grid-template-columns: 1fr; } .summary { position: static; } }
+@media(max-width:540px) { .page { padding-inline: 16px; } .topBar { flex-direction: column; gap: 12px; } .card { padding: 0 20px 20px; border-radius: 20px; } .summary { padding: 24px 20px; border-radius: 20px; } .block { padding-block: 20px; } .page h2 { font-size: 15px; } .availabilityNote { padding: 16px; } }
+@media(prefers-reduced-motion:reduce) { .page * { transition: none; } .continue:hover { transform: none; } }

@@ -22,6 +22,9 @@ export interface RatePlanOptionDto {
   currency: string;
   cancellation_policy: string;
   meals_included: string | null;
+  /** PROVISIONAL, server estimate for this stay; absent means unconfirmed. */
+  stay_price_breakdown?: { service_charge: string; estimated_taxes: string; estimated_total: string };
+  cancellation_terms?: { window_label: string; penalty_percent: number }[];
 }
 
 export interface AvailableRoomTypeDto {
@@ -33,6 +36,13 @@ export interface AvailableRoomTypeDto {
   available_rooms_count: number;
   rate_plans: RatePlanOptionDto[];
   images: string[];
+  /** Optional PROVISIONAL catalogue metadata; not a confirmed Backend contract. */
+  category?: "DELUXE" | "SUITE" | "SUPERIOR";
+  bed_description?: string;
+  area_square_meters?: number;
+  amenities?: string[];
+  badge?: string;
+  view_description?: string;
 }
 
 export interface AvailabilityResponseDto {

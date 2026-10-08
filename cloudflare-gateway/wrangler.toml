@@ -1,0 +1,14 @@
+name = "pms-cloudflare-gateway"
+main = "src/index.ts"
+compatibility_date = "2024-09-25"
+
+[vars]
+WEBHOOK_SECRET = "pms_secret_webhook_key_2026"
+
+[[durable_objects.bindings]]
+name = "NOTIFICATION_HUB"
+class_name = "NotificationHub"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["NotificationHub"]

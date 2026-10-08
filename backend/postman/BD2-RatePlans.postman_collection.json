@@ -1,0 +1,321 @@
+{
+  "info": {
+    "name": "PMS BD2 — RatePlans",
+    "description": "Contrato 18. Solo base QA: crea y conserva una tarifa, sin DELETE. Requiere Staff COMMERCIAL_MANAGE y propertyId autorizado. Configurar propertyId y roomTypeId autorizados. Credenciales en environment privado.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:18080"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{staffAccessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "01 — Login Staff",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/staff-auth/sessions",
+        "auth": {
+          "type": "noauth"
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"{{staffEmail}}\",\"password\":\"{{staffPassword}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "Login: email required, formato email, maxLength=50 tras trim/lowercase; password required/NotBlank, maxLength=50, intacta sin trim ni complejidad nueva. 51 caracteres o entrada inválida: HTTP400. Password writeOnly; no exportar credenciales/tokens reales."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "if (pm.response.code === 201) pm.environment.set('staffAccessToken', pm.response.json().accessToken);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ATS antes de tarifas",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/availability?roomTypeId={{roomTypeId}}&arrival=2035-01-01&departure=2035-01-03"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "if (pm.response.code === 200) pm.environment.set('ratePlanAtsBefore',pm.response.json().availableUnits);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Crear RatePlan",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "if (pm.response.code === 201) { const r=pm.response.json(); pm.environment.set('ratePlanId',r.id); pm.environment.set('ratePlanCode',r.code); }",
+              "pm.test('UTC', () => pm.expect(pm.response.json().createdAt).to.match(/Z$/));",
+              "pm.test('Precio exacto como texto', () => pm.expect(pm.response.json().basePrice.amount).to.eql('125.50'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rate-plans",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"roomTypeId\":\"{{roomTypeId}}\",\"code\":\"PM-{{$guid}}\",\"name\":\"Flexible\",\"basePrice\":{\"amount\":\"125.50\",\"currency\":\"GTQ\"}}"
+        },
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "POST"
+      }
+    },
+    {
+      "name": "Listar RatePlans",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Tipo presente', () => pm.expect(pm.response.json().map(r=>r.id)).to.include(pm.environment.get('ratePlanId')));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rate-plans",
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "GET"
+      }
+    },
+    {
+      "name": "Leer RatePlan",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rate-plans/{{ratePlanId}}",
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "GET"
+      }
+    },
+    {
+      "name": "Editar RatePlan",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.environment.set('ratePlanUpdatedAt',pm.response.json().updatedAt);",
+              "pm.test('Precio editado exacto', () => pm.expect(pm.response.json().basePrice.amount).to.eql('99.99'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rate-plans/{{ratePlanId}}",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"name\":\"Flexible Norte\",\"basePrice\":{\"amount\":\"99.99\",\"currency\":\"GTQ\"}}"
+        },
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "PATCH"
+      }
+    },
+    {
+      "name": "Repetir PATCH",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('No-op conserva timestamp', () => pm.expect(pm.response.json().updatedAt).to.eql(pm.environment.get('ratePlanUpdatedAt')));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rate-plans/{{ratePlanId}}",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"name\":\"Flexible Norte\",\"basePrice\":{\"amount\":\"99.99\",\"currency\":\"GTQ\"}}"
+        },
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "PATCH"
+      }
+    },
+    {
+      "name": "Campo inmutable",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rate-plans/{{ratePlanId}}",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"propertyId\":\"{{propertyId}}\"}"
+        },
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "PATCH"
+      }
+    },
+    {
+      "name": "Codigo duplicado",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 409', () => pm.response.to.have.status(409));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/rate-plans",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"roomTypeId\":\"{{roomTypeId}}\",\"code\":\"{{ratePlanCode}}\",\"name\":\"Duplicate\",\"basePrice\":{\"amount\":\"125.50\",\"currency\":\"GTQ\"}}"
+        },
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "POST"
+      }
+    },
+    {
+      "name": "ATS despues de tarifas",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/availability?roomTypeId={{roomTypeId}}&arrival=2035-01-01&departure=2035-01-03"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('RatePlan no modifica inventario', () => pm.expect(pm.response.json().availableUnits).to.eql(Number(pm.environment.get('ratePlanAtsBefore'))));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

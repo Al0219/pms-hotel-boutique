@@ -1,0 +1,5 @@
+# Perfil local parcial para el módulo de Alan. Cuando existan módulos dependientes,
+# este changelog debe incluirlos explícitamente antes de ejecutar el perfil.
+spring:
+  liquibase:
+    change-log: classpath:db/changelog/003ServiceSecurityAuth/db.changelog.yaml

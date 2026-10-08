@@ -1,4 +1,13 @@
+import { accountHandlers } from "./account-handlers";
+import { staffPreviewHandlers } from './staff-preview';
+import { staffRoomCatalogHandlers } from "./staff-room-catalog";
+import { reservationLinkHandlers } from './reservation-link-handlers';
+import { publicCheckoutHandlers } from './public-checkout-handlers';
 import { http, HttpResponse } from "msw";
+import { private07Handlers } from "./private-07";
+import { private09Handlers } from "./private-09";
+import { buildPublicAvailabilityMock } from "./public-availability";
+import { publicCatalogueFixture } from "./public-catalogue";
 
 import type { AvailabilityMatrixResponseDto } from "@/modules/availability";
 import type {
@@ -192,11 +201,9 @@ function handleAvailabilityRequest({ request }: { request: Request }) {
     return HttpResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 
-  if (propertyId === "empty_property") {
-    return HttpResponse.json(mockAvailabilityEmptyDto);
-  }
-
-  return HttpResponse.json(mockAvailabilitySuccessDto);
+  const response = buildPublicAvailabilityMock(url.searchParams,
+    propertyId === "empty_property" ? mockAvailabilityEmptyDto : publicCatalogueFixture);
+  return response ? HttpResponse.json(response) : HttpResponse.json({ error: "Invalid search criteria" }, { status: 400 });
 }
 
 async function handlePaymentGuaranteeRequest({ request }: { request: Request }) {
@@ -240,6 +247,9 @@ function handleGetFolioById({ params }: { params: Record<string, string | readon
   const folioId = params.id;
   if (folioId === "error_folio") {
     return HttpResponse.json({ error: "Folio Internal Error" }, { status: 500 });
+  }
+  if (folioId === "fol_unauthorized") {
+    return HttpResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (folioId === "missing_folio") {
     return HttpResponse.json({ error: "Folio Not Found" }, { status: 404 });
@@ -1454,7 +1464,17 @@ function handleGetRevenueKpis({ request }: { request: Request }) {
   return HttpResponse.json(mockResponse);
 }
 
+import { guestAccessHandlers } from "./guest-access-handlers";
+
 export const handlers = [
+  ...staffPreviewHandlers,
+  ...staffRoomCatalogHandlers,
+  ...publicCheckoutHandlers,
+  ...reservationLinkHandlers,
+  ...guestAccessHandlers,
+  ...accountHandlers,
+  ...private07Handlers,
+  ...private09Handlers,
   http.get("http://pms.test/__msw/health", () => HttpResponse.json({ status: "ok" })),
   http.get("http://pms.test/__msw/missing", () => HttpResponse.text(null, { status: 404 })),
   http.get("http://pms.test/guest-accounts/:accountId", ({ params }) =>
@@ -1505,6 +1525,3 @@ export const handlers = [
   http.get("/api/v1/private/revenue/kpis", handleGetRevenueKpis),
   http.get("http://pms.test/api/v1/private/revenue/kpis", handleGetRevenueKpis),
 ];
-
-
-

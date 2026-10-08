@@ -1,0 +1,26 @@
+databaseChangeLog:
+  - include:
+      file: 002ServiceManagement/db.changelog.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 003ServiceSecurityAuth/db.changelog.yaml
+      relativeToChangelogFile: true
+  # Core inventory references Staff actors; run only after SecurityAuth.
+  - include:
+      file: 002ServiceManagement/002-core-inventory.yaml
+      relativeToChangelogFile: true
+  # BD3 reservations (GuestProfile first). References guest_accounts and
+  # properties; runs after SecurityAuth and core inventory.
+  - include:
+      file: 004ServiceReservations/db.changelog.yaml
+      relativeToChangelogFile: true
+  # BD3 operations (housekeeping, maintenance). References properties, rooms
+  # and staff actors; runs after reservations.
+  - include:
+      file: 005ServiceOperations/db.changelog.yaml
+      relativeToChangelogFile: true
+  # BD3 commercial B2B base (companies, agencies). Property-scoped; runs
+  # after operations. No links to reservations/folios yet (F13/F14).
+  - include:
+      file: 006ServiceCommercial/db.changelog.yaml
+      relativeToChangelogFile: true

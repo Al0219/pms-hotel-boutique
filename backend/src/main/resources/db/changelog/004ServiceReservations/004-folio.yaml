@@ -1,0 +1,75 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-reservations-004
+      author: juan-bd3
+      changes:
+        - createTable:
+            tableName: folios
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: property_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_folios_property, references: properties(id) } }
+              - column: { name: type, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: status, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: reservation_id, type: uuid, constraints: { nullable: true, foreignKeyName: fk_folios_reservation, references: reservations(id) } }
+              - column: { name: stay_id, type: uuid, constraints: { nullable: true, foreignKeyName: fk_folios_stay, references: reservation_stays(id) } }
+              - column: { name: currency, type: char(3), constraints: { nullable: false } }
+              - column: { name: holder_label, type: varchar(160) }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: updated_at, type: timestamptz, constraints: { nullable: false } }
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE folios ADD CONSTRAINT ck_folios_type CHECK (type IN ('GUEST', 'COMPANY', 'MASTER'))
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE folios ADD CONSTRAINT ck_folios_status CHECK (status IN ('OPEN', 'SETTLED', 'CLOSED'))
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE folios ADD CONSTRAINT ck_folios_currency CHECK (currency ~ '^[A-Z]{3}$')
+        - createIndex: { tableName: folios, indexName: ix_folios_property, columns: [ { column: { name: property_id } } ] }
+        - createIndex: { tableName: folios, indexName: ix_folios_reservation, columns: [ { column: { name: reservation_id } } ] }
+        - createTable:
+            tableName: folio_movements
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: folio_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_movements_folio, references: folios(id) } }
+              - column: { name: kind, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: amount_minor, type: bigint, constraints: { nullable: false } }
+              - column: { name: currency, type: char(3), constraints: { nullable: false } }
+              - column: { name: description, type: varchar(255), constraints: { nullable: false } }
+              - column: { name: reverses_id, type: uuid, constraints: { nullable: true, foreignKeyName: fk_movements_reversal, references: folio_movements(id) } }
+              - column: { name: created_by, type: uuid, constraints: { nullable: true, foreignKeyName: fk_movements_actor, references: staff_users(id) } }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE folio_movements ADD CONSTRAINT ck_movements_kind CHECK (kind IN ('CHARGE', 'PAYMENT', 'ADJUSTMENT'))
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE folio_movements ADD CONSTRAINT ck_movements_amount CHECK (amount_minor <> 0)
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE folio_movements ADD CONSTRAINT ck_movements_currency CHECK (currency ~ '^[A-Z]{3}$')
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE folio_movements ADD CONSTRAINT ck_movements_description CHECK (btrim(description) <> '')
+        - createIndex: { tableName: folio_movements, indexName: ix_movements_folio, columns: [ { column: { name: folio_id } } ] }
+        # Append-only enforcement at the database level: history can only grow
+        # through INSERTs; corrections use compensating ADJUSTMENT movements.
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              CREATE OR REPLACE FUNCTION bd3_reject_folio_movement_mutation() RETURNS trigger AS $$
+              BEGIN
+                RAISE EXCEPTION 'folio_movements is append-only (tried %)', TG_OP;
+              END; $$ LANGUAGE plpgsql;
+        - sql:
+            dbms: postgresql
+            sql: CREATE TRIGGER trg_folio_movements_append_only BEFORE UPDATE OR DELETE ON folio_movements FOR EACH ROW EXECUTE FUNCTION bd3_reject_folio_movement_mutation();
+      rollback:
+        - sql:
+            dbms: postgresql
+            sql: |
+              DROP TRIGGER IF EXISTS trg_folio_movements_append_only ON folio_movements;
+              DROP FUNCTION IF EXISTS bd3_reject_folio_movement_mutation();
+              DROP TABLE folio_movements;
+              DROP TABLE folios;

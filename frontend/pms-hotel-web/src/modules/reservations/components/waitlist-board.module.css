@@ -1,0 +1,25 @@
+.page { display: grid; gap: var(--space-4); }
+.page h1 { margin: 0; }
+.header { align-items: flex-start; display: flex; flex-wrap: wrap; gap: var(--space-3); justify-content: space-between; }
+.header p { color: var(--color-text-secondary); margin: var(--space-2) 0 0; }
+.header a, .page a { color: var(--color-text-brand); }
+.list { display: grid; gap: var(--space-2); list-style: none; margin: 0; padding: 0; }
+.list button {
+  align-items: center;
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  justify-content: space-between;
+  min-height: 56px;
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  width: 100%;
+}
+.list button strong, .list button small { display: block; }
+.list button small { color: var(--color-text-secondary); }
+.list button:hover, .list button[aria-pressed="true"] { border-color: var(--color-brand-primary); background: var(--color-brand-subtle); }
+.list button:focus-visible, .page button:focus-visible, .page a:focus-visible { outline: 3px solid var(--color-brand-accent); outline-offset: 2px; }

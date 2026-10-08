@@ -63,6 +63,8 @@ export {
 export {
   fetchRateRestrictionsDto,
   batchUpdateRateRestrictionsDto,
+  fetchRateRestrictions,
+  batchUpdateRateRestrictions,
 } from "./service/rate-restriction.service";
 
 export {

@@ -1,0 +1,35 @@
+.card { padding: 28px; background: #fff; border: 1px solid #e1e5dd; border-radius: 22px; box-shadow: 0 4px 20px #2e353107; min-width: 0; }
+.intro h2 { font-family: var(--font-family-display); font-weight: 500; font-size: 28px; margin: 10px 0; }
+.intro p, .notice, .demo p, .success p { font-size: 12px; line-height: 1.9; color: #687464; }
+.eyebrow { font-size: 10px; letter-spacing: .15em; color: #5a6b5d; }
+.card form { display: flex; flex-direction: column; margin-top: 24px; gap: 10px; }
+.card label { font-size: 12px; color: #465646; font-weight: 600; }
+.card input { min-height: 48px; width: 100%; min-width: 0; padding: 12px; border: 1px solid #d9e0d4; border-radius: 9px; font: inherit; font-size: 14px; background: #fff; }
+.card input[aria-invalid='true'] { border-color: #e29aa7; background: #fff7f8; }
+.card small { color: #737c6e; font-size: 11px; line-height: 1.8; overflow-wrap: anywhere; }
+.card :is(input, button, a, summary):focus-visible { outline: 2px solid #6b7c62; outline-offset: 3px; }
+.card .demo { background: #f4f6f0; color: #51664e; padding: 14px; border-radius: 10px; margin-top: 20px; }
+.demo summary { cursor: pointer; font-size: 12px; }
+.demo p { overflow-wrap: anywhere; margin-bottom: 0; }
+.card .primary { margin-top: 12px; width: 100%; background: #5a6b5d; color: #fff; border-color: #5a6b5d; font-size: 12px; min-height: 46px; }
+.primary:not(:disabled):hover { background: #485c4b; }
+.actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px; margin-top: 10px; }
+.card .actions button { font: inherit; font-size: 11px; background: none; border: 0; padding: 8px 0; color: #5a6b5d; cursor: pointer; }
+.actions button:disabled { opacity: .5; cursor: not-allowed; }
+.notice { background: #f2f5ed; padding: 14px; border-radius: 10px; margin: 0 0 10px; }
+.notice a { color: #4b644b; text-decoration: none; font-size: 12px; }
+.success { margin-top: 20px; padding: 18px; border-radius: 12px; background: #e3eae0; color: #3b583c; font-size: 13px; line-height: 1.8; overflow-wrap: anywhere; }
+.card .success button { background: #5a6b5d; font-size: 12px; color: #fff; }
+.card .error { color: #a2334a; font-size: 12px; line-height: 1.8; margin: 0; }
+.standalone { border-radius: 28px; padding: 32px; }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; list-style: none; padding: 20px 0; margin: 24px 0 0; border-block: 1px solid #edf0eb; }
+.steps li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 11px; color: #647066; }
+.steps li > span { display: grid; place-items: center; width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%; background: #f1f4ef; font-size: 11px; }
+.steps li[aria-current='step'] { color: #2a362b; font-weight: 600; }.steps li[aria-current='step'] > span { color: #fff; background: #5a6b5d; }
+.steps li[data-completed='true'] > span { color: #405545; background: #e3e8e3; }
+.security { font-size: 11px; color: #647066; line-height: 1.9; margin: 22px 0 0; }
+.success h3 { margin: 8px 0; font-size: 17px; font-weight: 600; outline: none; }
+.successIcon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; color: #fff; background: #5a6b5d; font-size: 18px; }
+.viewReservations { display: flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px; color: #fff; background: #2a362b; border-radius: 12px; text-decoration: none; margin: 18px 0 12px; font-size: 12px; font-weight: 500; }
+.viewReservations:hover { background: #1f2820; }.card .success button { width: 100%; background: #fff; border-color: #5a6b5d; color: #405545; }
+@media (max-width: 540px) { .card { padding: 22px; } }

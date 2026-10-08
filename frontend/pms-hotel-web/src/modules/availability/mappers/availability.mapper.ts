@@ -14,7 +14,7 @@ import type {
 } from "../model/availability-option";
 
 function parseMoneyAmount(value: string | undefined | null, fieldName: string): number {
-  if (value === undefined || value === null || value.trim() === "") {
+  if (typeof value !== "string" || !/^\d+(?:\.\d+)?$/.test(value.trim())) {
     throw new DomainMappingError(`INVALID_AMOUNT_${fieldName.toUpperCase()}`);
   }
 
@@ -35,19 +35,54 @@ export function mapRatePlanDtoToDomain(dto: RatePlanOptionDto): RatePlanOption {
     throw new DomainMappingError("MISSING_RATE_PLAN_NAME");
   }
 
-  if (typeof dto.currency !== "string" || !dto.currency.trim()) {
+  if (typeof dto.currency !== "string" || !/^[A-Za-z]{3}$/.test(dto.currency.trim())) {
     throw new DomainMappingError("MISSING_CURRENCY");
   }
 
+  if (typeof dto.cancellation_policy !== "string" || !dto.cancellation_policy.trim()) {
+    throw new DomainMappingError("MISSING_CANCELLATION_POLICY");
+  }
+
+  const baseNightlyRate = parseMoneyAmount(dto.base_nightly_rate, "base_nightly_rate");
+  const totalAmount = parseMoneyAmount(dto.total_amount, "total_amount");
+  let priceBreakdown: RatePlanOption["priceBreakdown"];
+  if (dto.stay_price_breakdown !== undefined) {
+    const breakdown = dto.stay_price_breakdown;
+    if (!breakdown || typeof breakdown !== "object") throw new DomainMappingError("INVALID_STAY_PRICE_BREAKDOWN");
+    const serviceCharge = parseMoneyAmount(breakdown.service_charge, "service_charge");
+    const estimatedTaxes = parseMoneyAmount(breakdown.estimated_taxes, "estimated_taxes");
+    const estimatedTotal = parseMoneyAmount(breakdown.estimated_total, "estimated_total");
+    const digits = new Intl.NumberFormat("es", { style: "currency", currency: dto.currency.trim() }).resolvedOptions().maximumFractionDigits ?? 2;
+    const minor = (amount: number) => Math.round(amount * 10 ** digits);
+    if (![totalAmount, serviceCharge, estimatedTaxes, estimatedTotal].every(amount => Number.isSafeInteger(minor(amount))) ||
+      minor(totalAmount) + minor(serviceCharge) + minor(estimatedTaxes) !== minor(estimatedTotal)) {
+      throw new DomainMappingError("INCONSISTENT_STAY_PRICE_BREAKDOWN");
+    }
+    priceBreakdown = { serviceCharge, estimatedTaxes, estimatedTotal };
+  }
+  let cancellationTerms: RatePlanOption["cancellationTerms"];
+  if (dto.cancellation_terms !== undefined) {
+    if (!Array.isArray(dto.cancellation_terms) || !dto.cancellation_terms.length) throw new DomainMappingError("INVALID_CANCELLATION_TERMS");
+    cancellationTerms = dto.cancellation_terms.map(term => {
+      if (!term || typeof term.window_label !== "string" || !term.window_label.trim() ||
+        !Number.isFinite(term.penalty_percent) || term.penalty_percent < 0 || term.penalty_percent > 100) {
+        throw new DomainMappingError("INVALID_CANCELLATION_TERM");
+      }
+      return { windowLabel: term.window_label.trim(), penaltyPercent: term.penalty_percent,
+        severity: term.penalty_percent === 0 ? "low" : term.penalty_percent === 100 ? "high" : "medium" };
+    });
+  }
   return {
     ratePlanId: dto.rate_plan_id.trim(),
     name: dto.rate_plan_name.trim(),
     description: dto.description ?? null,
-    baseNightlyRate: parseMoneyAmount(dto.base_nightly_rate, "base_nightly_rate"),
-    totalAmount: parseMoneyAmount(dto.total_amount, "total_amount"),
+    baseNightlyRate,
+    totalAmount,
     currency: dto.currency.trim().toUpperCase(),
-    cancellationPolicy: dto.cancellation_policy ?? "Non-refundable",
+    cancellationPolicy: dto.cancellation_policy.trim(),
     mealsIncluded: dto.meals_included ?? null,
+    ...(priceBreakdown ? { priceBreakdown } : {}),
+    ...(cancellationTerms ? { cancellationTerms } : {}),
   };
 }
 
@@ -64,19 +99,33 @@ export function mapRoomTypeDtoToDomain(dto: AvailableRoomTypeDto): AvailableRoom
     throw new DomainMappingError("MISSING_ROOM_TYPE_CODE");
   }
 
-  const maxOccupancy = Number(dto.max_occupancy);
-  if (!Number.isInteger(maxOccupancy) || maxOccupancy <= 0) {
+  const maxOccupancy = dto.max_occupancy;
+  if (!Number.isSafeInteger(maxOccupancy) || maxOccupancy <= 0) {
     throw new DomainMappingError("INVALID_MAX_OCCUPANCY");
   }
 
-  const availableRoomsCount = Number(dto.available_rooms_count);
-  if (!Number.isInteger(availableRoomsCount) || availableRoomsCount < 0) {
+  const availableRoomsCount = dto.available_rooms_count;
+  if (!Number.isSafeInteger(availableRoomsCount) || availableRoomsCount < 0) {
     throw new DomainMappingError("INVALID_AVAILABLE_ROOMS_COUNT");
   }
 
-  const ratePlans = Array.isArray(dto.rate_plans)
-    ? dto.rate_plans.map(mapRatePlanDtoToDomain)
-    : [];
+  if (!Array.isArray(dto.rate_plans)) throw new DomainMappingError("MISSING_RATE_PLANS");
+  const ratePlans = dto.rate_plans.map(mapRatePlanDtoToDomain);
+
+  if (dto.category !== undefined && !["DELUXE", "SUITE", "SUPERIOR"].includes(dto.category)) {
+    throw new DomainMappingError("INVALID_ROOM_CATEGORY");
+  }
+  for (const value of [dto.bed_description, dto.badge, dto.view_description]) {
+    if (value !== undefined && (typeof value !== "string" || !value.trim())) {
+      throw new DomainMappingError("INVALID_CATALOGUE_TEXT");
+    }
+  }
+  if (dto.area_square_meters !== undefined && (!Number.isFinite(dto.area_square_meters) || dto.area_square_meters <= 0)) {
+    throw new DomainMappingError("INVALID_ROOM_AREA");
+  }
+  if (dto.amenities !== undefined && (!Array.isArray(dto.amenities) || dto.amenities.some(value => typeof value !== "string" || !value.trim()))) {
+    throw new DomainMappingError("INVALID_ROOM_AMENITIES");
+  }
 
   return {
     roomTypeId: dto.room_type_id.trim(),
@@ -87,6 +136,12 @@ export function mapRoomTypeDtoToDomain(dto: AvailableRoomTypeDto): AvailableRoom
     availableRoomsCount,
     ratePlans,
     images: Array.isArray(dto.images) ? [...dto.images] : [],
+    category: dto.category,
+    bedDescription: dto.bed_description?.trim(),
+    areaSquareMeters: dto.area_square_meters,
+    amenities: dto.amenities?.map(value => value.trim()),
+    badge: dto.badge?.trim(),
+    viewDescription: dto.view_description?.trim(),
   };
 }
 
@@ -103,14 +158,24 @@ export function mapAvailabilityResponseToDomain(dto: AvailabilityResponseDto): A
     throw new DomainMappingError("MISSING_CHECK_OUT_DATE");
   }
 
-  const totalNights = Number(dto.total_nights);
-  if (!Number.isInteger(totalNights) || totalNights <= 0) {
+  const validDate = (value: string) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const date = new Date(`${value}T00:00:00Z`);
+    return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+  };
+  if (!validDate(dto.check_in_date) || !validDate(dto.check_out_date) || dto.check_out_date <= dto.check_in_date) {
+    throw new DomainMappingError("INVALID_STAY_DATES");
+  }
+  const totalNights = dto.total_nights;
+  if (!Number.isSafeInteger(totalNights) || totalNights <= 0) {
     throw new DomainMappingError("INVALID_TOTAL_NIGHTS");
   }
 
-  const roomTypes = Array.isArray(dto.available_room_types)
-    ? dto.available_room_types.map(mapRoomTypeDtoToDomain)
-    : [];
+  if (totalNights !== (Date.parse(`${dto.check_out_date}T00:00:00Z`) - Date.parse(`${dto.check_in_date}T00:00:00Z`)) / 86400000) {
+    throw new DomainMappingError("INCONSISTENT_TOTAL_NIGHTS");
+  }
+  if (!Array.isArray(dto.available_room_types)) throw new DomainMappingError("MISSING_AVAILABLE_ROOM_TYPES");
+  const roomTypes = dto.available_room_types.map(mapRoomTypeDtoToDomain);
 
   return {
     propertyId: dto.property_id.trim(),

@@ -1,3 +1,6 @@
+import { PublicBookingProvider, PublicBookingShell } from '@/modules/booking';
+import { CheckoutDraftProvider } from '@/modules/checkout';
+
 export default function PublicLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <><header aria-label="Public shell header" /><main>{children}</main><footer aria-label="Public shell footer" /></>;
+  return <PublicBookingProvider><CheckoutDraftProvider><PublicBookingShell>{children}</PublicBookingShell></CheckoutDraftProvider></PublicBookingProvider>;
 }

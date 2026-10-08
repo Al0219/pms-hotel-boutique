@@ -1,0 +1,46 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-operations-003
+      author: juan-bd3
+      changes:
+        - createTable:
+            tableName: business_days
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: property_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_bd_property, references: properties(id) } }
+              - column: { name: business_date, type: date, constraints: { nullable: false } }
+              - column: { name: status, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: closed_by, type: uuid, constraints: { nullable: true, foreignKeyName: fk_bd_actor, references: staff_users(id) } }
+              - column: { name: closed_at, type: timestamptz }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: updated_at, type: timestamptz, constraints: { nullable: false } }
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE business_days ADD CONSTRAINT ck_bd_status CHECK (status IN ('OPEN', 'CLOSED'))
+        - addUniqueConstraint:
+            tableName: business_days
+            columnNames: property_id, business_date
+            constraintName: uq_business_days_property_date
+        - sql:
+            dbms: postgresql
+            sql: CREATE UNIQUE INDEX uq_business_days_open ON business_days(property_id) WHERE status = 'OPEN'
+        - createTable:
+            tableName: night_audit_runs
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: property_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_nar_property, references: properties(id) } }
+              - column: { name: business_day_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_nar_day, references: business_days(id) } }
+              - column: { name: status, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: blockers, type: text }
+              - column: { name: started_by, type: uuid, constraints: { nullable: true, foreignKeyName: fk_nar_actor, references: staff_users(id) } }
+              - column: { name: finished_at, type: timestamptz }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: updated_at, type: timestamptz, constraints: { nullable: false } }
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE night_audit_runs ADD CONSTRAINT ck_nar_status CHECK (status IN ('IN_PROGRESS', 'COMPLETED', 'BLOCKED'))
+        - createIndex: { tableName: night_audit_runs, indexName: ix_nar_property, columns: [ { column: { name: property_id } } ] }
+      rollback:
+        - sql:
+            dbms: postgresql
+            sql: DROP TABLE night_audit_runs; DROP TABLE business_days;

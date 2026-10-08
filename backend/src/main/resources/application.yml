@@ -1,0 +1,64 @@
+spring:
+  application:
+    name: pms-hotel-backend
+  datasource:
+    url: ${PMS_DATABASE_URL:jdbc:postgresql://localhost:5432/pms_hotel}
+    username: ${PMS_DATABASE_USERNAME:pms_app}
+    password: ${PMS_DATABASE_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  sql:
+    init:
+      mode: never
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+management:
+  # Email delivery is checked by the OTP adapter, not by hotel readiness probes.
+  health:
+    mail:
+      enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+pms:
+  demo:
+    data:
+      enabled: ${PMS_DEMO_DATA_ENABLED:false}
+  security:
+    jwt-secret: ${PMS_JWT_SECRET:}
+    access-token-ttl: ${PMS_ACCESS_TOKEN_TTL:PT15M}
+    refresh-token-ttl: ${PMS_REFRESH_TOKEN_TTL:P7D}
+    reservation-link-otp-hmac-key: ${PMS_RESERVATION_LINK_OTP_HMAC_KEY:}
+    bootstrap-admin-username: ${PMS_BOOTSTRAP_ADMIN_USERNAME:}
+    bootstrap-admin-email: ${PMS_BOOTSTRAP_ADMIN_EMAIL:}
+    bootstrap-admin-password: ${PMS_BOOTSTRAP_ADMIN_PASSWORD:}
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:}
+    client-secret: ${GOOGLE_CLIENT_SECRET:}
+    redirect-uri: ${GOOGLE_REDIRECT_URI:}
+  email:
+    provider: ${PMS_EMAIL_PROVIDER:resend}
+  smtp:
+    host: ${PMS_SMTP_HOST:}
+    port: ${PMS_SMTP_PORT:}
+    username: ${PMS_SMTP_USERNAME:}
+    app-password: ${PMS_SMTP_APP_PASSWORD:}
+    from: ${PMS_SMTP_FROM:}
+  resend:
+    api-key: ${RESEND_API_KEY:}
+    from-email: ${RESEND_FROM_EMAIL:}

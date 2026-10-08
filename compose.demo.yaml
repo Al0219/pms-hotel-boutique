@@ -1,0 +1,46 @@
+# Public sample credentials for an isolated, localhost-only presentation.
+# Reuses the real backend and PostgreSQL; no mocks or production secrets.
+name: pms-backend-demo
+
+services:
+  postgres:
+    extends:
+      file: compose.yaml
+      service: postgres
+    environment:
+      POSTGRES_DB: pms_demo
+      POSTGRES_USER: pms_demo
+      POSTGRES_PASSWORD: demo-database-only
+    volumes:
+      - pms-demo-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pms_demo -d pms_demo"]
+
+  backend:
+    extends:
+      file: compose.yaml
+      service: backend
+    environment:
+      PMS_DATABASE_URL: jdbc:postgresql://postgres:5432/pms_demo
+      PMS_DATABASE_USERNAME: pms_demo
+      PMS_DATABASE_PASSWORD: demo-database-only
+      PMS_JWT_SECRET: ""
+      PMS_BOOTSTRAP_ADMIN_USERNAME: demo.profesor
+      PMS_BOOTSTRAP_ADMIN_EMAIL: demo.profesor@example.test
+      PMS_BOOTSTRAP_ADMIN_PASSWORD: DemoHotel2026!SoloLocal
+      GOOGLE_CLIENT_ID: ""
+      GOOGLE_CLIENT_SECRET: ""
+      GOOGLE_REDIRECT_URI: ""
+      PMS_EMAIL_PROVIDER: resend
+      PMS_SMTP_HOST: ""
+      PMS_SMTP_PORT: ""
+      PMS_SMTP_USERNAME: ""
+      PMS_SMTP_APP_PASSWORD: ""
+      PMS_SMTP_FROM: ""
+      RESEND_API_KEY: ""
+      RESEND_FROM_EMAIL: ""
+    ports: !override
+      - "127.0.0.1:18080:8080"
+
+volumes:
+  pms-demo-postgres:

@@ -3,3 +3,16 @@
  * Export only intentionally public Domain Models, hooks and components.
  * Do not expose DTOs, mappers or service internals without an approved reason.
  */
+
+export { RoomMove } from "./components/room-move";
+export { StayExtension } from "./components/stay-extension";
+export type {
+  RoomMoveCandidate,
+  RoomMovePreview,
+  RoomMoveResult,
+} from "./model/room-move";
+export type {
+  StayExtensionCurrentStay,
+  StayExtensionPreview,
+  StayExtensionResult,
+} from "./model/stay-extension";

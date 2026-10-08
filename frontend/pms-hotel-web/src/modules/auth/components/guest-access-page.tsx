@@ -1,17 +1,115 @@
 "use client";
-import { useState } from "react";
-import styles from "./guest-access-page.module.css";
-type AccessStep = "options" | "email" | "review" | "emailDone" | "google" | "accountLinked" | "link" | "reservationLinked";
-export function GuestAccessPage() {
- const [step,setStep]=useState<AccessStep>("options"),[email,setEmail]=useState(""),[submitting,setSubmitting]=useState(false),[message,setMessage]=useState<string|null>(null);
- const guest=()=>window.history.back();
- const send=(e:React.FormEvent<HTMLFormElement>)=>{e.preventDefault();setSubmitting(true);window.setTimeout(()=>{setSubmitting(false);setStep("review");},250);};
- if(step==="review") return <section className={styles.page}><button className={styles.back} onClick={()=>setStep("email")} type="button">← Cambiar correo</button><div className={styles.content}><p className={styles.eyebrow}>ENLACE ENVIADO</p><h1>Revisa tu correo</h1><p>Si el correo corresponde a una cuenta habilitada, recibirás instrucciones para continuar. No compartas el enlace ni el código.</p><div className={styles.card}>Enviado a<strong>{email || "a***@email.com"}</strong><p>El enlace expira en 15 minutos y solo puede utilizarse una vez.</p></div><button className={styles.primary} onClick={()=>setStep("emailDone")} type="button">Simular enlace verificado</button></div></section>;
- if(step==="emailDone") return <section className={styles.page}><button className={styles.back} onClick={()=>setStep("options")} type="button">← Volver a opciones</button><div className={styles.content}><p className={styles.eyebrow}>ACCESO VERIFICADO</p><h1>Acceso por correo completado</h1><p>El enlace de un solo uso fue validado y la sesión de huésped quedó iniciada en el PMS.</p><div className={styles.card}><h2>Alan Palacios</h2><p>{email || "alan@email.com"}</p><p>Cuenta PMS <strong>Activa</strong></p><p>Método de acceso <strong>Enlace de un solo uso</strong></p></div><button className={styles.primary} type="button">Ir a mi cuenta</button><button className={styles.secondary} onClick={guest} type="button">Continuar reservando</button></div></section>;
- if(step==="google") return <section className={styles.page} aria-labelledby="google-title"><button className={styles.back} onClick={()=>setStep("options")} type="button">← Volver a opciones</button><div className={styles.content}><p className={styles.eyebrow}>GOOGLE IDENTITY SERVICES</p><h1 id="google-title">Continuar con Google</h1><p>La autenticación se delegará a Google Identity Services. Al finalizar, volverás al PMS como huésped.</p><div className={styles.notice}>En producción, Google devuelve al huésped mediante callback/redirect. No se guardan tokens en este navegador.</div><button className={styles.primary} onClick={()=>setStep("accountLinked")} type="button">Continuar retorno al PMS</button></div></section>;
- if(step==="accountLinked") return <section className={styles.page}><button className={styles.back} onClick={()=>setStep("options")} type="button">← Volver a opciones</button><div className={styles.content}><p className={styles.eyebrow}>AUTENTICACIÓN COMPLETADA</p><h1>Cuenta vinculada</h1><p>Tu identidad externa quedó asociada a tu cuenta de huésped.</p><div className={styles.card}><h2>Alan Palacios</h2><p>alan@email.com</p><p>Cuenta PMS <strong>Activa</strong></p><p>Identidad externa <strong>Google conectado</strong></p></div><button className={styles.primary} type="button">Ir a mi cuenta</button><button className={styles.secondary} onClick={()=>setStep("link")} type="button">Vincular reserva existente</button></div></section>;
- if(step==="link") return <section className={styles.page}><button className={styles.back} onClick={()=>setStep("accountLinked")} type="button">← Volver a mi cuenta</button><div className={styles.content}><p className={styles.eyebrow}>SEGURIDAD DE CUENTA</p><h1>Vincular una reserva existente</h1><p>Usa datos de la reserva que solo el responsable debería conocer.</p><form className={styles.card} onSubmit={e=>{e.preventDefault();setStep("reservationLinked");}}><h2>Verifica la reserva</h2><label htmlFor="code">Código de reserva *</label><input id="code" defaultValue="HB-2026-07214" required/><label htmlFor="lastName">Apellido del responsable *</label><input id="lastName" defaultValue="Palacios" required/><label htmlFor="arrival">Fecha de llegada *</label><input id="arrival" required type="date"/><button className={styles.primary} type="submit">Verificar y vincular</button></form></div></section>;
- if(step==="reservationLinked") return <section className={styles.page}><div className={styles.content}><p className={styles.eyebrow}>VERIFICACIÓN COMPLETADA</p><h1>Reserva vinculada</h1><p>El código, apellido y fecha de llegada coincidieron. La reserva ya forma parte de tu cuenta PMS.</p><div className={styles.card}><p>Reserva</p><h2>HB-2026-07214</h2><p>Responsable: Alan Palacios</p><p>Evento ACCOUNT_RESERVATION_LINKED registrado sin guardar datos sensibles de verificación.</p></div><button className={styles.primary} type="button">Volver a mi cuenta</button><button className={styles.secondary} onClick={()=>setStep("link")} type="button">Vincular otra reserva</button></div></section>;
- if(step==="email") return <section className={styles.page} aria-labelledby="email-title"><button className={styles.back} onClick={()=>setStep("options")} type="button">← Volver a opciones</button><div className={styles.content}><p className={styles.eyebrow}>ALTERNATIVA A GOOGLE</p><h1 id="email-title">Accede con tu correo</h1><p>Te enviaremos un enlace de un solo uso. No necesitas contraseña.</p><form className={styles.card} onSubmit={send}><label htmlFor="guest-email">Correo electrónico</label><input autoComplete="email" id="guest-email" onChange={e=>setEmail(e.target.value)} placeholder="alan@email.com" required type="email" value={email}/><p>Por seguridad, la respuesta no revela información sensible sobre la cuenta.</p><button className={styles.primary} disabled={submitting} type="submit">{submitting?"Enviando enlace…":"Enviar enlace de acceso"}</button></form>{message&&<p className={styles.status} role="status">{message}</p>}</div></section>;
- return <section className={styles.page} aria-labelledby="access-title"><button className={styles.back} onClick={guest} type="button">← Volver al inicio</button><div className={styles.content}><h1 id="access-title">Accede a tu cuenta</h1><p>Consulta tus reservas, beneficios y preferencias. Iniciar sesión es opcional: puedes buscar y reservar habitaciones sin crear una cuenta.</p><div className={styles.card}><h2>Elige cómo continuar</h2><p>Tu cuenta es opcional. Puedes reservar sin iniciar sesión.</p><button className={styles.google} onClick={()=>setStep("google")} type="button"><span aria-hidden="true">G</span>Continuar con Google</button><button className={styles.primary} onClick={()=>setStep("email")} type="button">Continuar con correo</button><button className={styles.secondary} onClick={guest} type="button">Continuar como invitado</button><small>Al iniciar sesión podrás consultar reservas, beneficios y preferencias. La reserva pública funciona también sin cuenta.</small></div></div></section>;
+import { useEffect, useRef, useState } from 'react';
+import { useStaffAccessRedirect } from '../hooks/use-staff-access-redirect';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useGuestSession } from './guest-session-provider';
+import { GuestSessionCheck } from './guest-session-check';
+import { AuthPasswordField } from './auth-password-field';
+import { AuthModeTabs, type AuthMode } from './auth-mode-tabs';
+import { GuestRegistrationForm } from './guest-registration-form';
+import { Modal, Button, buttonClassName } from '@/shared/components';
+import { useUnifiedLogin } from '../hooks/use-unified-login';
+import { guestAccessReturn } from '../model/checkout-return';
+import { clearGuestCheckoutReturn, readGuestCheckoutReturn, rememberGuestCheckoutReturn } from '../model/guest-checkout-context';
+import styles from './guest-access-page.module.css';
+
+const accessInformation = {
+  recovery: { title: 'Recupera el acceso a tu cuenta', text: 'La recuperación de contraseña por correo no está disponible en este momento. Si accediste con Google, utiliza ese mismo método. Puedes seguir reservando como invitado.' },
+  terms: { title: 'Términos y condiciones', text: 'Los términos y condiciones del hotel están pendientes de publicación. Consulta al hotel las condiciones antes de crear tu cuenta.' },
+  privacy: { title: 'Política de privacidad', text: 'La política de privacidad del hotel está pendiente de publicación. Solicita al hotel información sobre el tratamiento de tus datos antes de enviar información personal.' },
+} as const;
+
+/** Shared presentation; login always delegates to BD1's existing BFF. */
+export function GuestAccessPage({ returnTo, googleError, pendingRequestId }: { returnTo?: string; googleError?: boolean; pendingRequestId?:string } = {}) {
+  const { status, account } = useGuestSession();
+  const login = useUnifiedLogin(returnTo, googleError);
+  const router = useRouter();
+  const [mode, setMode] = useState<AuthMode>(pendingRequestId?'register':'login');
+  const [registrationBusy,setRegistrationBusy]=useState(false);
+  const [restorePending,setRestorePending]=useState(pendingRequestId);
+  const [notice, setNotice] = useState<string>();
+  const [information, setInformation] = useState<keyof typeof accessInformation | null>(null);
+  const informationTrigger = useRef<HTMLElement | null>(null);
+  const loginEmail = useRef<HTMLInputElement>(null);
+  const focusLogin = useRef(false);
+  useEffect(()=>{if(mode==='login' && focusLogin.current){focusLogin.current=false;loginEmail.current?.focus();}},[mode]);
+  useStaffAccessRedirect(mode==='login' && !registrationBusy && status === 'signed-out' && !account && !login.busy && !login.redirecting);
+  const redirected = useRef(false);
+  const destination = guestAccessReturn(returnTo);
+  useEffect(() => {
+    if (!account || redirected.current || login.busy || login.redirecting || registrationBusy) return;
+    redirected.current = true;
+    const target = destination ?? (returnTo === undefined ? readGuestCheckoutReturn() : undefined) ?? '/cuenta';
+    clearGuestCheckoutReturn(); router.replace(target);
+  }, [account, destination, returnTo, router, login.busy, login.redirecting, registrationBusy]);
+  if (status === 'checking' || status === 'error') return <GuestSessionCheck />;
+  if (account || login.redirecting) return <p role="status">Acceso correcto. Redirigiendo…</p>;
+  const publicDestination = destination === '/mis-reservas' || destination === '/cuenta/reservas/vincular' ? '/habitaciones' : destination ?? '/';
+  const reservationsAccess = destination === '/mis-reservas' || destination === '/cuenta/reservas/vincular';
+  function changeMode(next: AuthMode) {
+    if (login.busy || registrationBusy || next === mode) return;
+    setRestorePending(undefined);
+    login.changePassword(''); setNotice(undefined); setMode(next);
+  }
+  function openInformation(key: keyof typeof accessInformation) {
+    informationTrigger.current = document.activeElement as HTMLElement;
+    setInformation(key);
+  }
+  function closeInformation() {
+    setInformation(null); informationTrigger.current?.focus();
+  }
+  return <section className={`${styles.page} ${styles.authPage}`} aria-labelledby="access-title" aria-busy={login.busy}>
+    <div className={styles.content}>
+      <p className={styles.eyebrow}>TU PRÓXIMA ESTADÍA COMIENZA AQUÍ</p>
+      <h1 id="access-title">Accede a tu cuenta</h1>
+      <p>Consulta tus reservas, beneficios y preferencias. Iniciar sesión es opcional: puedes buscar y reservar sin crear una cuenta.</p>
+      <div className={`${styles.card} ${styles.authCard}`}>
+        <AuthModeTabs mode={mode} disabled={login.busy || registrationBusy} onChange={changeMode} />
+        <div id={`auth-panel-${mode === 'login' ? 'register' : 'login'}`} role="tabpanel"
+          aria-labelledby={`auth-tab-${mode === 'login' ? 'register' : 'login'}`} hidden />
+        <div id={`auth-panel-${mode}`} role="tabpanel" aria-labelledby={`auth-tab-${mode}`} tabIndex={0}>
+          {reservationsAccess && <div className={styles.linkNotice}><strong>¿Reservaste como invitado?</strong>
+            <p>Las reservas compatibles se vinculan al verificar el correo de tu nueva cuenta. Puedes utilizar la vinculación manual cuando corresponda.</p></div>}
+          <div className={styles.socialOptions}>
+            <a className={buttonClassName({variant:'outline',disabled:login.busy || registrationBusy,className:`${styles.action} ${styles.google}`})} href="/api/auth/guest/google" aria-disabled={login.busy || registrationBusy || undefined} onClick={event => {
+              if (login.busy || registrationBusy) { event.preventDefault(); return; }
+              rememberGuestCheckoutReturn(returnTo);
+            }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#4285F4" d="M21.8 12.2c0-.7-.1-1.4-.2-2.1H12v4h5.5a4.7 4.7 0 0 1-2 3.1v2.6h3.3c1.9-1.8 3-4.4 3-7.6Z" />
+                <path fill="#34A853" d="M12 22c2.7 0 5-.9 6.8-2.5l-3.3-2.6c-.9.6-2.1.9-3.5.9-2.6 0-4.9-1.8-5.7-4.2H2.9v2.7A10 10 0 0 0 12 22Z" />
+                <path fill="#FBBC05" d="M6.3 13.6a6 6 0 0 1 0-3.2V7.7H2.9a10 10 0 0 0 0 8.6l3.4-2.7Z" />
+                <path fill="#EA4335" d="M12 6.2c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 2.9 7.7l3.4 2.7c.8-2.4 3.1-4.2 5.7-4.2Z" />
+              </svg>{mode === 'register' ? 'Registrarse' : 'Continuar'} con Google
+            </a>
+          </div>
+          <div className={styles.divider}><span>o continúa con correo</span></div>
+          {mode === 'register' ? <GuestRegistrationForm pendingRequestId={restorePending} onBusyChange={setRegistrationBusy} onLogin={email=>{focusLogin.current=true;setRestorePending(undefined);if(email)login.changeEmail(email);changeMode('login');}} /> :
+        <form className={styles.credentialsForm} onSubmit={event => { event.preventDefault(); void login.submit(); }}>
+          <div className={styles.field}>
+            <label htmlFor="auth-email">Correo electrónico</label>
+            <input ref={loginEmail} id="auth-email" name="email" type="email" autoComplete="email" placeholder="ejemplo@correo.com" required maxLength={50}
+              value={login.email} onChange={event => login.changeEmail(event.target.value)} disabled={login.busy} />
+          </div>
+          <AuthPasswordField id="auth-password" label="Contraseña" value={login.password} onChange={login.changePassword}
+            onBlur={() => {}} disabled={login.busy} autoComplete="current-password" />
+          <Button variant="ghost" type="button" className={styles.textAction} disabled={login.busy} onClick={() => openInformation('recovery')}>¿Olvidaste tu contraseña?</Button>
+          {login.contexts.length > 0 ? <fieldset disabled={login.busy}>
+            <legend>¿Cómo deseas continuar?</legend>
+            <Button className={styles.action} type="button" onClick={() => void login.submit('STAFF')}>Personal del hotel</Button>
+            <Button variant="outline" className={styles.action} type="button" onClick={() => void login.submit('GUEST')}>Huésped</Button>
+          </fieldset> : <Button className={styles.action} type="submit" disabled={!login.password} isLoading={login.busy} loadingText="Iniciando sesión…">Iniciar sesión</Button>}
+        </form>}
+        {login.busy && <p role="status" className={styles.status}>Verificando acceso…</p>}
+        {(notice || (mode === 'login' && login.error)) && <p role="alert" className={styles.accessError}>{notice ?? login.error}</p>}
+        </div>
+        <div className={styles.guestOption}><Link className={buttonClassName({variant:'outline',className:styles.action,disabled:login.busy || registrationBusy})} aria-disabled={login.busy || registrationBusy || undefined} onClick={event=>{if(login.busy || registrationBusy)event.preventDefault();}} href={publicDestination}>Continuar como invitado</Link>
+          <p>Al crear una cuenta podrás consultar reservas, beneficios y preferencias. La reserva pública funciona también sin cuenta.</p>
+        </div>
+      </div>
+    </div>
+    {information && <div className={styles.modalLayer}><Modal title={accessInformation[information].title} onClose={closeInformation}
+      footer={<Button onClick={closeInformation}>Entendido</Button>}><p>{accessInformation[information].text}</p></Modal></div>}
+  </section>;
 }

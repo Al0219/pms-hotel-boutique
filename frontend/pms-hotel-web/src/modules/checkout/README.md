@@ -12,6 +12,18 @@ WEB-4 / WEB-2
 
 Guest checkout composition, booking-guest data, guarantee, and confirmation composition.
 
+### Initial guest data UI — 2026-10-05
+
+The user-authorized selection review now links to `/reserva/checkout`.
+`PublicGuestDataPage` consumes Booking's public review hook, requires a current
+selection, and reviews contact fields locally without creating an account,
+profile, reservation or payment. Fields remain in component memory only.
+The original Structure Freeze below describes the baseline shell; this limited
+UI delivery is documented in `docs/41_PUBLIC_BOOKING_SELECTION_REVIEW.md`.
+Payment/confirmation now have a frontend-only demonstration documented in
+`docs/44_PUBLIC_BOOKING_PAYMENT_GUARANTEE.md`. Real payment, occupants per stay
+and transactional admission remain pending.
+
 ## Does not own
 
 Related domain internals owned by other modules. This module does not own another module's DTOs, mappers, services, hooks, components, or business rules.

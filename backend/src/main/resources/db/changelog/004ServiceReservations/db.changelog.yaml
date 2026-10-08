@@ -1,0 +1,29 @@
+databaseChangeLog:
+  - include:
+      file: 001-guest-profile.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 002-reservation.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 003-reservation-stay.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 004-folio.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 005-audit-trail.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 006-local-operation-receipts.yaml
+      relativeToChangelogFile: true
+  # Guest link persistence references both Guest Auth and Reservations.
+  - include:
+      file: 007-reservation-link-otp.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 008-public-booking-receipts.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 009-verified-email-history.yaml
+      relativeToChangelogFile: true

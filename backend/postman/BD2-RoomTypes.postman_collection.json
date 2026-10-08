@@ -1,0 +1,281 @@
+{
+  "info": {
+    "name": "PMS BD2 — RoomTypes",
+    "description": "Contrato 16. Solo base QA: crea y conserva un tipo, sin DELETE. Requiere Staff COMMERCIAL_MANAGE y propertyId autorizado. Ejecutar después de Properties o configurar propertyId. Credenciales en environment privado.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:18080"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{staffAccessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "01 — Login Staff",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/staff-auth/sessions",
+        "auth": {
+          "type": "noauth"
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"{{staffEmail}}\",\"password\":\"{{staffPassword}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "Login: email required, formato email, maxLength=50 tras trim/lowercase; password required/NotBlank, maxLength=50, intacta sin trim ni complejidad nueva. 51 caracteres o entrada inválida: HTTP400. Password writeOnly; no exportar credenciales/tokens reales."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "if (pm.response.code === 201) pm.environment.set('staffAccessToken', pm.response.json().accessToken);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Crear RoomType",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "if (pm.response.code === 201) { const r=pm.response.json(); pm.environment.set('roomTypeId',r.id); pm.environment.set('roomTypeCode',r.code); }",
+              "pm.test('UTC', () => pm.expect(pm.response.json().createdAt).to.match(/Z$/));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/room-types",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"code\":\"PM-{{$guid}}\",\"name\":\"Postman Suite\"}"
+        },
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "POST"
+      }
+    },
+    {
+      "name": "Listar RoomTypes",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Tipo presente', () => pm.expect(pm.response.json().map(r=>r.id)).to.include(pm.environment.get('roomTypeId')));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/room-types",
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "GET"
+      }
+    },
+    {
+      "name": "Leer RoomType",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/room-types/{{roomTypeId}}",
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "GET"
+      }
+    },
+    {
+      "name": "Editar RoomType",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.environment.set('roomTypeUpdatedAt',pm.response.json().updatedAt);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/room-types/{{roomTypeId}}",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"name\":\"Postman Suite Norte\"}"
+        },
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "PATCH"
+      }
+    },
+    {
+      "name": "Repetir PATCH",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('No-op conserva timestamp', () => pm.expect(pm.response.json().updatedAt).to.eql(pm.environment.get('roomTypeUpdatedAt')));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/room-types/{{roomTypeId}}",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"name\":\"Postman Suite Norte\"}"
+        },
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "PATCH"
+      }
+    },
+    {
+      "name": "Campo inmutable",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/room-types/{{roomTypeId}}",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"propertyId\":\"{{propertyId}}\"}"
+        },
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "PATCH"
+      }
+    },
+    {
+      "name": "Codigo duplicado",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 409', () => pm.response.to.have.status(409));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "url": "{{baseUrl}}/api/v1/properties/{{propertyId}}/room-types",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"code\":\"{{roomTypeCode}}\",\"name\":\"Duplicate\"}"
+        },
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "POST"
+      }
+    }
+  ]
+}

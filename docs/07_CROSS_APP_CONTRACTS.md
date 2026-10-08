@@ -45,3 +45,11 @@ No inventar strings distintos sin decisión para:
 
 ## Regla
 Un cambio de naming externo que no cambia semántica debe absorberse en DTO/Mapper, no propagarse innecesariamente a UI.
+
+## C2 — Sesión Staff y scope
+
+La sesión Staff integrada por BFF publica identidad, `roleCode`, permisos
+vigentes y propiedades autorizadas. El contrato canónico está en
+`backend/docs/09_AUTHORIZATION_SCOPE_CONTRACT_C2.md`. Los fixtures de Web o
+Android continúan siendo contratos de UI hasta que sus DTO/Mapper BFF se
+implementen; no fijan nombres API ni permisos Backend.

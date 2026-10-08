@@ -1,3 +1,6 @@
+import { StaffSessionProvider } from "@/modules/auth";
+import { PropertyProvider } from "@/modules/properties";
+import { StaffShell } from "./staff-shell";
 export default function PrivateLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <><aside aria-label="Private shell sidebar" /><header aria-label="Private shell header" /><main>{children}</main></>;
+  return <StaffSessionProvider><PropertyProvider><StaffShell>{children}</StaffShell></PropertyProvider></StaffSessionProvider>;
 }

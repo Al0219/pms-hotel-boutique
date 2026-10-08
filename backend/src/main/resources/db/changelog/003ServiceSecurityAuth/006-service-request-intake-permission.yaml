@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-staff-auth-006
+      author: alan
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: true
+            sql: |
+              INSERT INTO permission_catalog (code, description)
+              VALUES ('SERVICE_REQUEST_INTAKE', 'Open and read property-scoped service requests');
+              INSERT INTO role_permissions (role_code, permission_code)
+              VALUES ('SUPER_ADMIN', 'SERVICE_REQUEST_INTAKE'),
+                     ('RECEPCION', 'SERVICE_REQUEST_INTAKE');
