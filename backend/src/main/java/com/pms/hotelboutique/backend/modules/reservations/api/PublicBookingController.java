@@ -34,7 +34,8 @@ public class PublicBookingController {
     @Operation(operationId = "publicBooking", summary = "Create or replay a public booking", security = {},
             extensions = @Extension(properties = @ExtensionProperty(name = "x-audience", value = "public")),
             description = "Requires Idempotency-Key and SIMULATED_CARD; card data and unknown fields are rejected. "
-                    + "New bookings require an ACTIVE property and the official GTQ total. "
+                    + "New bookings require YYYY-MM-DD calendar dates, text without NUL, and the official GTQ total. "
+                    + "Property must remain ACTIVE from inventory admission through transaction commit. "
                     + "Both creation and replay return 201. Replay returns the original persisted snapshot "
                     + "without another payment, reservation or stay; another payload with the same key is 409.")
     @ApiResponse(responseCode = "201", description = "Persisted CONFIRMED booking, or its original idempotent replay",

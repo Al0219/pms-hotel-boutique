@@ -1,5 +1,95 @@
 # AlanPlan — Seguimiento Backend
 
+## Juan / publicación de correcciones H1–H4 vía PR
+
+- **Estado:** EN PUBLICACIÓN; usuario autoriza actualizar rama, push, PR y
+  entrega a main, sin edición de código. Desde `d01a707` a nueva base `a0f62d0`
+  (PR153), rama `fix/backend-public-booking-audit-h1-h4`.
+- **Resolución:** único conflicto documental en AlanHandoff resuelto con ambos
+  historiales; Backend src intacto y Web idéntico a main. Configuración local
+  aprobada3001/demo/SMTP preservada; migraciones, tests y secretos intactos.
+- **Validación:** Backend868 PASS/QA manual H1–H4 previo; Web CI de main153
+  success sobre fuentes idénticas. Verificar CI propio del PR antes de fusionar.
+- **Siguiente:** cerrar merge local, push, PR y fusión mediante política de main
+  (PR obligatorio, sin approvals obligatorios/force-push). Cinco untracked excluidos.
+  No nueva tarea funcional ni edición manual de código autorizada.
+
+## Juan / integración local main PR150–PR152
+
+- **Estado:** COMPLETADA (integración Git local); continuación autorizada de traer
+  main, desde merge local `85922a5` a `e354b6b` (PR150/PR152), en
+  `fix/backend-public-booking-audit-h1-h4`. Sin push ni despliegue solicitados.
+- **Alcance/resolución:** asignación física real y calendario de main importados;
+  conflicto Compose en Property ID resuelto conservando el entorno demo aprobado.
+  Compose/CI idénticos a `9674151`; .env.example aclara solo la configuración
+  del UUID demo. H1–H4, migraciones y secretos intactos; historiales preservados.
+- **Validación:** nuevo verify Backend868 PASS/BUILD SUCCESS/JAR; Web1783 PASS
+  y3 timeouts iniciales de5s. Los tres archivos repiten38 PASS con un worker,
+  mismo timeout y fuentes intactas:1786 casos verificados entre ambas ejecuciones.
+  Typecheck/lint/build mocks=false/UUID demo explícito PASS. QA en copias aisladas,
+  sin puertos ni BD del hotel. Detalle de resultados y límites en AlanHandoff.
+- **Evidencia/siguiente:** backend/target/public-booking-main152-* ignorado;
+  resultados completos retenidos; cierre del segundo merge local autorizado.
+  QA temporal retirado; cinco untracked iniciales excluidos. Sin despliegue ni push.
+
+## Juan / integración local main PR149
+
+- **Estado:** COMPLETADA (integración Git local); usuario autoriza traer main
+  y resolver conflictos el
+  2026-10-08. Rama `fix/backend-public-booking-audit-h1-h4`, desde `9674151`;
+  main remoto verificado en `2e29426`. Sin push autorizado para esta integración.
+- **Alcance/resultado:** cambios Staff/Web de main incorporados al merge local;
+  único conflicto textual en AlanHandoff resuelto conservando ambos historiales.
+  Correcciones H1–H4 preservadas, sin modificar migraciones ni secretos.
+- **Validación:** Backend verify 860 PASS; Web 1698 PASS/284 archivos,
+  typecheck/lint/build sin mocks PASS en copias/contenedores aislados.
+- **Decisión aprobada:** usuario elige conservar el entorno AUTH-UNIFIED-01
+  APPROVED y puerto canónico3001 el 2026-10-08. Se preservan Compose/CI previos:
+  bind127.0.0.1:3001, mocks false, Property/perfil demo, OTP/email/SMTP y callback
+  Google/origen público3001. Schema y assertions de integración de configuración
+  PASS, sin arrancar el hotel ni modificar secretos. Cierre local autorizado.
+- **Evidencia:** backend/target/public-booking-main149-* ignorado; cinco documentos
+  untracked iniciales preservados. Detalle en el bloque propio de AlanHandoff;
+  QA temporal retirado. Integración local únicamente, sin despliegue ni push.
+
+## Reserva pública — Juan / correcciones de auditoría H1–H4
+
+- **Estado:** COMPLETADA; Juan / BD3. QA manual PASS confirmado expresamente
+  por Juan el 2026-10-08. Usuario aprueba la recomendación e inicia
+  implementación el 2026-10-08. Rama `fix/backend-public-booking-audit-h1-h4`,
+  base `bb83103`; cinco documentos untracked preexistentes preservados.
+- **Decisión H1 aprobada:** nuevas reservas requieren Property ACTIVE al admitir
+  inventario y protección de esa elegibilidad hasta commit/rollback. Replay
+  conserva el resultado original sin reevaluar el estado actual.
+- **Alcance H2/H3/H4:** rechazar NUL antes de pago/lookup; alinear fechas nuevas
+  con YYYY-MM-DD/calendario válido, verificando recibos históricos; publicar GTQ
+  exacto y nombres no blank en OpenAPI. Mantener hash V1 y recibos inmutables.
+- **Archivos/aceptación:** DTO/validación/orquestación/lookup propios Reservations,
+  tests unitarios, PostgreSQL/concurrencia/HTTP/OpenAPI y seguimiento de Juan.
+  Sin nuevas dependencias, migraciones, cambios Security/Staff/Guest Auth ni
+  modificaciones de la auditoría histórica. Focalizados y verify Java21/PG17;
+  QA manual PASS del owner registrado, sin commit/push/merge.
+- **Entrega técnica:** NUL/no blank compartidos en el DTO, sin normalización;
+  fechas de cuatro dígitos verificadas antes de hash/persistencia; enum GTQ y
+  restricciones en OpenAPI vivo. J4 usa lookup JDBC propio `FOR SHARE` tras locks
+  de RoomType; bloqueo hasta la transacción exterior, incluyendo moneda actual.
+- **Compatibilidad:** copia aislada del volumen local original montado read-only:
+  0 recibos totales y 0 con fechas extendidas. No se modificó la base original.
+  En otro entorno con recibos previos se requiere la misma comprobación antes
+  de desplegar el cambio de validación. Hash V1 y snapshots no se reescriben.
+- **Pruebas:** focalizados iniciales 257 PASS; `mvn -o -B --no-transfer-progress
+  verify` final 852 PASS, cero failures/errors/skipped, BUILD SUCCESS y JAR.
+  Incluye 20 casos nuevos y regresiones PG/HTTP/OpenAPI/seguridad; nuevas carreras
+  de desactivación, protección hasta commit/rollback y admisiones paralelas.
+  JAR real: availability200, NUL/año extendido/moneda inválida400, booking/replay201
+  con snapshot idéntica; regex OpenAPI comprobada también con ECMA-262.
+- **Evidencia/siguiente:** logs, surefire-reports y JAR `public-booking-audit-fixes*`
+  en backend/target ignorado. Diff-check/alcance PASS. Aceptación/DoD del incremento
+  H1–H4 cerrados con QA técnico y manual PASS; cierre registrado en Handoff.
+  Estados de J1–J6/A4 preservados. Usuario autoriza el commit `bugs y errores resueltos`
+  y push de esta rama el 2026-10-08; merge y nueva tarea requieren autorización aparte.
+
+
 ## AUTH-GUEST-REG-HISTORY-01 — Registro Guest verificado e historial
 
 - **Estado:** COMPLETADA; implementación y QA automatizado PASS. Alan confirmó QA manual final PASS y autorizó el cierre del incremento.

@@ -259,6 +259,30 @@ class PublicBookingHttpIntegrationTests {
         assertNoWrites(key(), request(request(1).stays(), 130000L, DEPARTURE, ARRIVAL), 400, "INVALID_DATE_RANGE");
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"firstName", "lastName", "email"})
+    void guestNulIs400BeforePaymentOrAnyWrite(String field) throws Exception {
+        var payload = (ObjectNode) json.valueToTree(request(1));
+        ((ObjectNode) payload.get("bookingGuest")).put(field, "A\0B");
+        var before = counts();
+        assertError(raw(key(), json.writeValueAsString(payload), 400), "INVALID_REQUEST");
+        assertEquals(before, counts());
+        verifyNoInteractions(payments);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"+10000-01-01", "-0001-01-01"})
+    void signedOrExtendedDateIs400BeforePaymentOrAnyWrite(String date) throws Exception {
+        var before = counts();
+        for (String field : List.of("arrival", "departure")) {
+            var payload = (ObjectNode) json.valueToTree(request(1));
+            payload.put(field, date);
+            assertError(raw(key(), json.writeValueAsString(payload), 400), "INVALID_REQUEST");
+        }
+        assertEquals(before, counts());
+        verifyNoInteractions(payments);
+    }
+
     @Test
     void missingAndInactivePropertyHave404() throws Exception {
         var input = request(1);

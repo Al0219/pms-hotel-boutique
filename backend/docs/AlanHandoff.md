@@ -1,3 +1,50 @@
+## Juan / publicación de correcciones H1–H4 vía PR (2026-10-08)
+
+- **Autorización:** usuario solicita actualizar la rama, publicarla y entregar
+  sus cambios en main mediante PR; autoriza comandos/decisiones recomendadas,
+  con prohibición de editar código sin nueva autorización. Rama vigente
+  `fix/backend-public-booking-audit-h1-h4`, desde `d01a707`.
+- **Nueva base:** main `a0f62d0` (PR153 Panel Staff real). Único conflicto en
+  este documento resuelto conservando ambos historiales. Backend src íntegro
+  respecto a `d01a707`; Web idéntico a main. Sin edición manual de código,
+  tests, migraciones ni secretos. Compose/CI conservan entorno aprobado3001.
+- **Evidencia reutilizada:** Backend868 PASS/BUILD SUCCESS y QA manual H1–H4
+  previamente confirmado. Web de la nueva base: CI `37883662077` success,
+  exactamente las mismas fuentes/lockfile. Backend/Stack CI de main también
+  success; no sustituye el CI propio del PR que se verificará antes de fusionar.
+- **Proceso/siguiente:** finalizar este merge documental, push de la rama,
+  crear PR y revisar sus checks. Reglas efectivas de main exigen PR,0 approvals
+  obligatorios y prohíben force-push/deletion; sin bypass de políticas.
+  Cinco documentos untracked iniciales quedan excluidos y preservados.
+
+## Juan / integración local main PR150–PR152 (2026-10-08)
+
+- **Autorización/base:** continuación de traer la última main a la rama local
+  `fix/backend-public-booking-audit-h1-h4`. PR149 integrado en `85922a5`; nueva
+  main recibida `e354b6b` (PR150 asignación real de habitación y PR152 calendario).
+  Sin push ni despliegue solicitados para estas integraciones.
+- **Resolución:** único conflicto textual adicional en Compose, Property ID;
+  se conserva la configuración demo aprobada por el usuario. Compose/CI idénticos
+  a `9674151`: puerto3001 localhost, mocks false, demo y OTP/email/SMTP.
+  Comentarios de .env.example alineados con el UUID configurado por Compose;
+  .env real y secretos intactos. Historiales nuevos de Alan y Juan preservados.
+- **Estado:** COMPLETADA (integración Git local), resolución técnica validada.
+- **Validación Backend:** verify 868 PASS, 0 failures/errors/skipped,
+  BUILD SUCCESS/JAR (7:49). Fuentes read-only, PostgreSQL tmpfs, sin puertos
+  ni uso de la BD del hotel. H1–H4 y nuevos contratos Staff/OpenAPI incluidos.
+- **Validación Web:** suite completa de 1786 casos/293 archivos: 1783 PASS y
+  3 timeouts de5000ms bajo ejecución simultánea con Backend. Repetición de los
+  tres archivos afectados, `--maxWorkers=1`, con mismo timeout:38 PASS/3 archivos;
+  los tres casos pasan en2.99s/3.43s/3.14s. No se cambian fuentes/tests/timeouts.
+  Todos los casos quedan verificados entre ambas ejecuciones; no se atribuye
+  1786 PASS a una única invocación. Typecheck/lint/build PASS; mocks false y UUID
+  demo explícito. Web coincide íntegro con main `e354b6b`. Solo config/docs resueltos.
+- **Evidencia/siguiente:** backend/target/public-booking-main152-* ignorado;
+  logs Backend/instalación/tests/retry/typecheck/lint/build y surefire/JAR retenidos.
+  Validación de configuración PR149 conservada: Compose/CI siguen idénticos.
+  Contenedores QA retirados; volumen original y caché conservados.
+  Cierre del segundo merge local autorizado; sin despliegue ni push.
+  Cinco documentos untracked iniciales excluidos de los commits y conservados.
 ## 2026-10-08 — Panel Staff real: cierre con QA manual PASS
 
 - **Estado/aceptación/DoD:** EN_QA → COMPLETADA; PASS. Alan confirmó «QA manual
@@ -142,6 +189,114 @@
   sin commit/push/merge.
 
 # AlanHandoff — Seguimiento Backend
+
+## Juan / integración main PR149 — validación local (2026-10-08)
+
+- **Autorización/rama/base:** usuario solicita traer main y resolver conflictos;
+  rama `fix/backend-public-booking-audit-h1-h4`, desde `9674151`, main recibido
+  `2e29426` (PR149). Publicación previa `9674151` verificada; este merge es local.
+- **Resolución:** único conflicto textual en este handoff. Se conservan completos
+  los bloques de Juan y los nuevos historiales de Alan; AlanPlan integra ambos.
+  Código de correcciones H1–H4 idéntico a `9674151`; nuevos módulos/contratos Staff
+  y Web importados de main, sin modificar migraciones, dependencias o secretos.
+- **Validación Backend:** `mvn -o -B --no-transfer-progress verify`:860 PASS,
+  0 failures/errors/skipped, BUILD SUCCESS/JAR. PG17.11 tmpfs, Java21.0.9/Maven3.9.11
+  aislados en `pms-juan-main149-qa`, sin puertos ni uso de la BD del hotel.
+- **Decisión aprobada:** usuario elige expresamente la opción recomendada el
+  2026-10-08: conservar el entorno AUTH-UNIFIED-01 APPROVED. Compose preserva
+  `127.0.0.1:3001:3000`, mocks false por defecto, Property demo, perfil/demo,
+  passthrough OTP/email/SMTP y callback Google/origen público3001; CI curl3001.
+  Se revisan y resuelven todos los cambios de esos dos archivos respecto a main;
+  quedan idénticos a `9674151`, sin exponer/modificar secretos ni arrancar el hotel.
+- **Validación de configuración:** Compose schema sin interpolar PASS; assertions
+  de puerto/origen/callback/mocks/passthrough y Backend/PostgreSQL internos PASS.
+  Evidencia: backend/target/public-booking-main149-compose-validation.log ignorado.
+- **Validación Web:** copia aislada sin .env; Node24.21.0/npm11.19.0,
+  `npm test -- --maxWorkers=2`: 1698 PASS / 284 archivos. `npm run typecheck`,
+  `npm run lint` y `npm run build` (mocks false) PASS. Dependencias instaladas
+  con `npm ci --include=dev --ignore-scripts --no-audit --no-fund` únicamente en
+  contenedor temporal; ejecución en su capa /tmp por mount tmpfs noexec.
+- **Evidencia/siguiente:** backend/target/public-booking-main149-verify.log,
+  public-booking-main149-surefire-reports y public-booking-main149.jar ignorados.
+  Logs Web public-booking-main149-web-{install,tests,typecheck,lint,build}.log.
+  Cinco documentos untracked originales conservados; sin push ni cambio de main.
+  Conflictos textuales resueltos y diff-check PASS. Decisión de configuración
+  resuelta; cierre del merge local autorizado. Contenedores QA retirados,
+  volumen del hotel conservado. No despliegue ni push de esta integración.
+
+
+## Juan / correcciones H1–H4 — publicación autorizada (2026-10-08)
+
+- **Autorización/entrega:** usuario solicita el commit exacto `bugs y errores resueltos`
+  y push de `fix/backend-public-booking-audit-h1-h4`; incremento COMPLETADA,
+  QA técnico852 PASS y QA manual PASS conservados.
+- **Alcance:** cinco fuentes, cinco tests y seguimiento propio en AlanPlan/Handoff.
+  Cinco documentos untracked preexistentes y artefactos ignorados quedan fuera.
+- **Siguiente/límite:** crear el commit revisado y publicar esta rama con upstream;
+  sin merge, force-push, cambio de main o avance a otra tarea.
+
+
+## Juan / correcciones H1–H4 — cierre con QA manual PASS (2026-10-08)
+
+- **Estado/aceptación:** COMPLETADA. Juan confirma expresamente «QA PASS» tras
+  la entrega EN_QA y su checklist; queda registrado el QA manual final del incremento.
+- **Rama/base:** `fix/backend-public-booking-audit-h1-h4`, `bb83103`; fuentes y
+  tests de la entrega preservados. Este cierre modifica solo el seguimiento propio.
+- **Validación/DoD:** evidencia técnica previa final852 PASS, 0 failures/errors/
+  skipped, BUILD SUCCESS; HTTP real, PG/concurrencia/rollback/replay/OpenAPI y
+  diff-check PASS. QA manual del owner PASS; aceptación y DoD H1–H4 cerrados.
+- **Límites/siguiente:** historial EN_QA conservado debajo; estados J1–J6/A4 y
+  archivos ajenos intactos. Sin commit/push/merge; publicación o nueva tarea
+  requieren autorización independiente.
+
+
+## Juan / correcciones H1–H4 — entrega técnica EN_QA (2026-10-08)
+
+- **Estado/rama/base:** EN_QA; `fix/backend-public-booking-audit-h1-h4`,
+  `bb83103`. Usuario aprueba las recomendaciones de la auditoría y autoriza
+  implementarlas; cinco documentos untracked preexistentes intactos.
+- **Decisiones/alcance:** ACTIVE al admitir y protegido hasta commit para nuevas
+  reservas; replay original. Entrada NUL inválida antes de pago, fechas del formato
+  aprobado con comprobación de recibos históricos y metadata OpenAPI coherente.
+  Solo fuentes/tests Reservations y seguimiento propio; hash V1 y recibos intactos.
+- **Validación prevista:** unit/HTTP/OpenAPI y PostgreSQL real, carreras de estado,
+  rollback y replay; focalizados y verify sin exclusiones, diff-check/alcance.
+  Mantener EN_QA al entregar hasta QA manual PASS del owner. Sin commit/push/merge.
+- **Entregado:** cinco fuentes Reservations (una nueva de lookup) y cinco tests.
+  `FOR SHARE` después de locks RoomType relee status/currency actuales sin cache
+  JPA y protege hasta commit/rollback exterior; admite lectores/bookings paralelos.
+  DTO rechaza NUL y publica no blank compatible con Java/ECMA-262 sin alterar caso,
+  espacios válidos o Unicode. Fechas signed/extendidas INVALID_REQUEST400 en J3;
+  GTQ exacto mediante enum Swagger. Sin migraciones, POM o Security global.
+- **Compatibilidad local:** Docker apagado al iniciar; volumen original leído solo
+  para una copia de 49MB, PG17.11 independiente. Conteos: public_booking_receipts=0,
+  recibos con fechas fuera YYYY-MM-DD=0. Original montado read-only; sin consultas
+  de PII, modificaciones de filas o arranque del stack original.
+- **Validación:** focalizados iniciales257 PASS; verify final852 PASS, 0 failures/
+  errors/skipped, BUILD SUCCESS/JAR; Java21.0.9/Maven3.9.11/PG17.11, proyecto
+  `pms-public-juan-fix-h1-h4`, sin puertos. Cuatro pruebas PG nuevas de concurrencia
+  cubren estado cambiado durante espera, writer bloqueado hasta commit/rollback
+  y dos RoomTypes avanzando simultáneamente; replay original y hash golden PASS.
+- **HTTP real final:** GET availability200 y OpenAPI42 operaciones; NUL/año10000/
+  USDGTQ → INVALID_REQUEST400. POST válido201 y replay201 con reserva
+  `4167efa8-60c4-472b-b5c0-aa370081cb50` y JSON idéntico. Schema GTQ-only, nombres
+  vacíos/NUL/Unicode blank rechazados; NBSP y composición Unicode conservadas en
+  regex comprobada con ECMA-262. Sin errores técnicos nuevos ni pruebas omitidas.
+- **Artefactos:** backend/target/public-booking-audit-fixes-focused.log,
+  public-booking-audit-fixes-verify.log, public-booking-audit-fixes-surefire-reports
+  y public-booking-audit-fixes.jar. Evidencia ignorada; auditoría histórica y
+  otros cuatro documentos untracked preservados. Diff-check/alcance PASS.
+- **QA manual pendiente de Juan:** usar una base QA y catálogo reales: obtener
+  offers y crear/repetir booking201; mismo reservationId/confirmationCode/payment
+  y filas sin duplicados. Nombre con NUL, fechas +10000 y moneda USDGTQ deben400
+  sin pago/filas. Comprobar Swagger GTQ/no blank. Para H1 inspeccionar fixtures PG
+  de `PublicBookingServiceIntegrationTests`: deactivación durante espera aborta;
+  writer espera commit/rollback y replay tras INACTIVE conserva respuesta original.
+  Ejecutar esos casos exclusivamente sobre BD QA; no cambiar estado por SQL en el
+  volumen del hotel. Confirmar QA manual PASS antes de COMPLETADA.
+- **Siguiente/límite:** entrega EN_QA; solo falta validación manual del owner.
+  No commit/push/merge ni cierre de otras tareas. El conteo local de recibos no
+  sustituye comprobar otro entorno antes de desplegar validación más estricta.
 
 ## 2026-10-08 — Integración Staff Habitaciones/C-R-U: cierre con QA manual real PASS
 

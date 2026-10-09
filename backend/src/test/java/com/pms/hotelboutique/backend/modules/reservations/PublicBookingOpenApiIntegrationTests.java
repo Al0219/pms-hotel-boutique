@@ -3,6 +3,7 @@ package com.pms.hotelboutique.backend.modules.reservations;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -109,6 +110,32 @@ class PublicBookingOpenApiIntegrationTests {
         assertEquals(Set.of("string", "null"), values(stay.path("properties").path("roomId").path("type")));
         assertEquals("date", stay.path("properties").path("arrival").path("format").asText());
         assertEquals("date", stay.path("properties").path("departure").path("format").asText());
+    }
+
+    @Test
+    void requestConstraintsMatchExactCurrencyNonBlankUnicodeAndDateFormat() throws Exception {
+        var doc = document();
+        var request = schema(doc, "PublicBookingRequest").path("properties");
+        assertEquals(Set.of("GTQ"), values(request.path("currency").path("enum")));
+        for (String field : List.of("arrival", "departure")) {
+            var date = request.path(field);
+            assertEquals("date", date.path("format").asText());
+            var pattern = Pattern.compile(date.path("pattern").asText());
+            assertTrue(pattern.matcher("2028-02-29").matches());
+            assertFalse(pattern.matcher("+10000-01-01").matches());
+            assertFalse(pattern.matcher("-0001-01-01").matches());
+        }
+        var guest = schema(doc, "PublicBookingGuestRequest").path("properties");
+        for (String field : List.of("firstName", "lastName", "email")) {
+            assertEquals(1, guest.path(field).path("minLength").asInt());
+            var pattern = Pattern.compile(guest.path(field).path("pattern").asText());
+            for (String blank : List.of("", " \t\n", "\u1680", "\u2003", "\u2028", "\u3000", "Ana\0")) {
+                assertFalse(pattern.matcher(blank).matches(), field);
+            }
+            for (String text : List.of("\u00a0", "\u2007", "\u202f", "Jos\u00e9", "Jose\u0301", "\ud83d\ude00")) {
+                assertTrue(pattern.matcher(text).matches(), field);
+            }
+        }
     }
 
     @Test
