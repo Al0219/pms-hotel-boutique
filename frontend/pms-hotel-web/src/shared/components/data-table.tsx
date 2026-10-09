@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 
 import styles from "./data-table.module.css";
 
@@ -20,6 +20,10 @@ export interface DataTableProps<T> {
   emptyState?: ReactNode;
   /** Ancho mínimo en px cuando la tabla necesita scroll horizontal. */
   minWidth?: number;
+  density?: 'standard' | 'compact';
+  /** Optional row composition for shared interaction adapters; keeps table semantics. */
+  renderRow?: (row: T, cells: ReactNode) => ReactNode;
+  scrollLabel?: string;
 }
 
 /**
@@ -27,14 +31,14 @@ export interface DataTableProps<T> {
  * (`table`/`thead`/`th scope`/`tbody`) y estados vacíos. El contenido de cada
  * celda lo decide el módulo consumidor. Se consume vía `@/shared/components`.
  */
-export function DataTable<T>({ columns, rows, getRowKey, label, emptyState, minWidth }: Readonly<DataTableProps<T>>) {
+export function DataTable<T>({ columns, rows, getRowKey, label, emptyState, minWidth, density = 'standard', renderRow, scrollLabel }: Readonly<DataTableProps<T>>) {
   if (rows.length === 0 && emptyState !== undefined) {
     return <p className={styles.empty}>{emptyState}</p>;
   }
 
   return (
-    <div className={styles.container}>
-      <table className={styles.table} style={minWidth ? { minWidth } : undefined}>
+    <div className={styles.container} role={scrollLabel ? 'region' : undefined} aria-label={scrollLabel} tabIndex={scrollLabel ? 0 : undefined}>
+      <table className={`${styles.table} ${density === 'compact' ? styles.compact : ''}`} style={minWidth ? { minWidth } : undefined}>
         <caption className={styles.visuallyHidden}>{label}</caption>
         <thead>
           <tr>
@@ -44,13 +48,13 @@ export function DataTable<T>({ columns, rows, getRowKey, label, emptyState, minW
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
-            <tr key={getRowKey(row)}>
-              {columns.map((column) => (
+          {rows.map((row) => {
+            const cells = columns.map((column) => (
                 <td key={column.key}>{column.render(row)}</td>
-              ))}
-            </tr>
-          ))}
+              ));
+            return renderRow ? <Fragment key={getRowKey(row)}>{renderRow(row, cells)}</Fragment>
+              : <tr key={getRowKey(row)}>{cells}</tr>;
+          })}
         </tbody>
       </table>
     </div>

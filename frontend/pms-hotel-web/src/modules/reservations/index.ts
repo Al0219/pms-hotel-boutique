@@ -14,6 +14,8 @@ export { ReservationDetail } from "./components/reservation-detail";
 export { WaitlistBoard } from "./components/waitlist-board";
 export { ReservationCancellation } from "./components/reservation-cancellation";
 export { CalendarGantt } from "./calendar/calendar-gantt";
+export { useStaffReservationStays } from './hooks/use-staff-reservation-stays';
+export type { StaffReservationStayRead } from './model/staff-reservation-stay-read';
 export type { GanttBooking, GanttCell, GanttGrid, GanttRow } from "./calendar/calendar-gantt-model";
 export { ReservationNoShow } from "./components/reservation-no-show";
 export { WaitlistConversionPanel } from "./components/waitlist-conversion-panel";

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 
 import { HttpNetworkError } from "@/lib/http/errors";
@@ -10,6 +9,7 @@ import type { ReservationAlertItem } from "../model/reservation-summary";
 import { ReservationList } from "./reservation-list";
 import { WaitlistConversionPanel } from "./waitlist-conversion-panel";
 import styles from "./reservation-center.module.css";
+import workspace from "@/shared/components/entity-workspace.module.css";
 
 const ALERT_KINDS: Record<string, string> = {
   NO_SHOW_PENDING: styles.alertError,
@@ -54,21 +54,20 @@ function AlertsPanel({ alerts }: Readonly<{ alerts: ReadonlyArray<ReservationAle
   );
 }
 
-export function ReservationCenter({ propertyId, endpoint, canCreate = false }: Readonly<ReservationCenterProps>) {
+export function ReservationCenter({ propertyId, endpoint }: Readonly<ReservationCenterProps>) {
   const { data: center, error, isLoading, refetch } = useReservationCenter(propertyId, endpoint);
   const [convertingWaitlistId, setConvertingWaitlistId] = useState<string | null>(null);
 
   if (!propertyId) {
-    return <section className={styles.page} role="status"><h1>Centro de Reservas</h1><p>La sesión debe proporcionar un scope de propiedad autorizado antes de consultar reservas.</p></section>;
+    return <section className={workspace.page} role="status"><p>La sesión debe proporcionar un scope de propiedad autorizado antes de consultar reservas.</p></section>;
   }
 
   if (!endpoint) {
-    return <section className={styles.page} role="status"><h1>Centro de Reservas</h1><p>El centro de reservas estará disponible al confirmar el contrato API con Backend.</p>
-      {canCreate && <Link className={styles.primaryAction} href="/reservas/nueva">+ Nueva reserva</Link>}</section>;
+    return <section className={workspace.page} role="status"><p>El centro de reservas estará disponible al confirmar el contrato API con Backend.</p></section>;
   }
 
   if (isLoading) {
-    return <section className={styles.page} aria-busy="true"><p>Cargando reservas…</p></section>;
+    return <section className={workspace.page} aria-busy="true"><p>Cargando reservas…</p></section>;
   }
 
   if (error) {
@@ -77,8 +76,7 @@ export function ReservationCenter({ propertyId, endpoint, canCreate = false }: R
       : "No se pudieron cargar las reservas.";
 
     return (
-      <section className={styles.page} role="alert">
-        <h1>Centro de Reservas</h1>
+      <section className={workspace.page} role="alert">
         <p>{message}</p>
         <button className={styles.retryButton} type="button" onClick={() => void refetch()}>Reintentar</button>
       </section>
@@ -86,26 +84,11 @@ export function ReservationCenter({ propertyId, endpoint, canCreate = false }: R
   }
 
   if (!center?.reservations.length) {
-    return <section className={styles.page}><h1>Centro de Reservas</h1><p>No hay reservas para esta propiedad.</p>
-      {canCreate && <Link className={styles.primaryAction} href="/reservas/nueva">+ Nueva reserva</Link>}</section>;
+    return <section className={workspace.page}><p>No hay reservas para esta propiedad.</p></section>;
   }
 
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <div className={styles.titleBlock}>
-          <span className={styles.overline}>RECEPCIÓN · RESERVAS</span>
-          <h1>Centro de Reservas</h1>
-          <p className={styles.subtitle}>Consulta las próximas estadías, encuentra a tus huéspedes y gestiona cada reserva desde un solo lugar.</p>
-        </div>
-        <div className={styles.headerActions}>
-          <Link className={styles.secondaryAction} href="/calendario">Ver calendario</Link>
-          <Link className={styles.secondaryAction} href="/lista-espera">Ver lista de espera</Link>
-          {canCreate ? <Link className={styles.primaryAction} href="/reservas/nueva">+ Nueva reserva</Link>
-            : <button className={styles.primaryAction} type="button" disabled title={center.readOnly ? "Creación de reservas aún no disponible." : "Tu sesión no tiene permiso para gestionar reservas."}>+ Nueva reserva</button>}
-        </div>
-      </header>
-
+    <div className={workspace.page}>
       {center.summary && <div className={styles.kpis} aria-label="Resumen del día">
         <KpiCard label="Llegadas hoy" value={center.summary.arrivalsToday} />
         <KpiCard
@@ -131,7 +114,7 @@ export function ReservationCenter({ propertyId, endpoint, canCreate = false }: R
           onClose={() => setConvertingWaitlistId(null)}
         />
       ) : null}
-      <ReservationList reservations={center.reservations} onConvert={setConvertingWaitlistId} />
+      <ReservationList propertyId={propertyId} reservations={center.reservations} onConvert={setConvertingWaitlistId} />
     </div>
   );
 }

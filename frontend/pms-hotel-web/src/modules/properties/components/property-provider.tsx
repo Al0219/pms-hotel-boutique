@@ -49,15 +49,18 @@ export function usePropertyScope() {
   return value;
 }
 
-export function PropertySwitcher() {
+export function PropertySwitcher({ compact = false }: { compact?: boolean } = {}) {
   const session = useStaffSession();
   const context = usePropertyScope();
+  const selectedProperty = session.memberships.find(property => property.propertyId === context.selection);
+  const title = context.selection === allProperties ? 'Todas mis propiedades autorizadas'
+    : selectedProperty ? `${selectedProperty.name} · ${selectedProperty.propertyId}` : 'Selecciona una propiedad';
   return <div>
     <label htmlFor="staff-property">Propiedad</label>{" "}
-    <select id="staff-property" value={context.selection} disabled={!context.ready || !session.memberships.length} onChange={event => context.select(event.target.value)}>
+    <select id="staff-property" title={compact ? title : undefined} value={context.selection} disabled={!context.ready || !session.memberships.length} onChange={event => context.select(event.target.value)}>
       <option value="" disabled>Selecciona una propiedad</option>
-      {session.permissions.includes("MULTI_PROPERTY_READ") && session.memberships.length > 0 && <option value={allProperties}>Todas mis propiedades autorizadas</option>}
-      {session.memberships.map(property => <option key={property.propertyId} value={property.propertyId}>{property.propertyId} · {property.name}</option>)}
+      {session.permissions.includes("MULTI_PROPERTY_READ") && session.memberships.length > 0 && <option value={allProperties}>{compact ? 'Todas mis propiedades' : 'Todas mis propiedades autorizadas'}</option>}
+      {session.memberships.map(property => <option key={property.propertyId} value={property.propertyId}>{compact ? property.name : `${property.propertyId} · ${property.name}`}</option>)}
     </select>
     {context.ready && !context.scope && <p role="status">No hay un contexto autorizado seleccionado.</p>}
     <p role="status">{context.notice}</p>

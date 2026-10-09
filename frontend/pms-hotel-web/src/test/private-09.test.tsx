@@ -44,7 +44,7 @@ describe("Private 09 frontend journeys", () => {
     expect(within(region).queryByText(/Hotel Boutique Antigua/)).not.toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText("Propiedad"), "GT-HB-03");
     await waitFor(() => expect(screen.getByRole("region", { name: "Métricas por propiedad" })).toHaveTextContent("Hotel Boutique Antigua"));
-    expect(screen.getByText("Gerencia · Sesión Staff")).toBeInTheDocument();
+    expect(screen.getByText("Gerencia")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Métricas por propiedad" })).not.toHaveTextContent("Hotel Boutique Huehue");
     cleanup(); mount();
     await screen.findByRole("region", { name: "Métricas por propiedad" });
@@ -61,7 +61,7 @@ describe("Private 09 frontend journeys", () => {
     let requests = 0;
     mockServer.use(http.get("*/__mock/private-09/metrics", () => { requests++; return HttpResponse.json({ metrics: [] }); }));
     sessionStorage.setItem("pms:private-09:scope:staff-current", "NOT-AUTHORIZED");
-    mount(); await screen.findByText("Selecciona una propiedad autorizada en el encabezado para continuar.");
+    mount(); await screen.findByText("Selecciona una propiedad autorizada en el menú Staff para continuar.");
     expect(requests).toBe(0);
     expect(screen.queryByRole("region", { name: "Métricas por propiedad" })).not.toBeInTheDocument();
   });

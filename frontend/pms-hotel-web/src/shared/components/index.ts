@@ -2,6 +2,8 @@ export * from './button';
 export * from './input';
 export { DataTable } from "./data-table";
 export type { DataTableColumn, DataTableProps } from "./data-table";
+export { EntityDataGrid } from './entity-data-grid';
+export type { EntityDataGridColumn, EntityDataGridProps } from './entity-data-grid';
 export { Modal } from "./modal";
 export type { ModalProps } from "./modal";
 export { ConfirmDialog } from "./confirm-dialog";
@@ -32,3 +34,6 @@ export { EmptyState } from "./empty-state";
 export type { EmptyStateProps } from "./empty-state";
 
 export { NotificationBell } from "@/components/NotificationBell";
+
+export { EntityListSurface, EntityListFooter, EntityFilterField, ENTITY_LIST_TABLE_MIN_WIDTH } from './entity-list-surface';
+export { EntityPagination, useEntityPagination } from './entity-pagination';

@@ -1,5 +1,41 @@
 # AlanHandoff — Seguimiento Backend
 
+## 2026-10-08 — Integración Staff Habitaciones/C-R-U: cierre con QA manual real PASS
+
+- **Estado/aceptación:** EN_QA → COMPLETADA. Alan confirmó «QA manual real: PASS»
+  y autorizó el cierre de integración Staff Habitaciones/C-R-U y sus ajustes
+  visuales/paginación. Confirmación del owner; no es una nueva ejecución del agente
+  ni evidencia individual HTTP/SQL inventada.
+- **Owner/rama/base:** Alan integración/QA, UI WEB-3/José y revisión colaborativa
+  WEB-4/owners Inventory/Reservations; `feature/staff-room-inventory-read`,
+  base `main 63279d7`. Sin commit/push/merge; trabajo local preexistente preservado.
+- **Alcance:** Staff/PropertyContext reales, BFF same-origin HttpOnly, Rooms y
+  RoomTypes PostgreSQL, stays de `/api/staff/reservations` por roomId/null;
+  C/R/U contractual (Room code y RoomType code/name), crear compacto/editar inline,
+  tabla agrupada de cuatro columnas, sidebar, filtros compactos de Reservas y
+  paginación compartida5/10/25/50/100 default25. Solo filas paginadas; métricas y
+  Sin asignar completos. Datos operativos sin fuente real siguen no disponibles.
+- **Contratos/dependencias:** [16](16_BD2_ROOM_TYPES_CRUD_CONTRACT_PROPOSAL.md),
+  [17](17_BD2_ROOMS_CRUD_CONTRACT.md), [49](49_STAFF_RESERVATIONS_READ_CONTRACT.md)
+  existentes; sin cambios Backend/HTTP, OpenAPI/Swagger/Postman ni migraciones.
+  No se altera el cierre previo de BD2-007B/BD2-008/BD2-010 o Reservations.
+- **Evidencia técnica previa:** suite Web relevante416 PASS/70 archivos,
+  focalizados finales32 PASS/3 archivos; typecheck/lint/build con
+  NEXT_PUBLIC_USE_MOCK_API=false y diff-check PASS. Visual responsive y regresión
+  inline C/R/U con fixtures HTTP PASS, diferenciados del QA manual real de Alan.
+  En este cierre solo documentación y `git diff --check`; suites no repetidas.
+- **Documentación:** [58 lectura](../../frontend/pms-hotel-web/docs/58_STAFF_ROOMS_REAL_READ_QA.md),
+  [59 sidebar](../../frontend/pms-hotel-web/docs/59_STAFF_SIDEBAR_PRESENTATION_QA.md),
+  [60 C/R/U y paginación](../../frontend/pms-hotel-web/docs/60_STAFF_INVENTORY_CRU_QA.md)
+  pasan a COMPLETADA; estados/límites de las entregas iniciales quedan históricos.
+  La integración de datos de Calendario conserva su límite previo, fuera del cierre.
+- **Bloqueo separado:** DELETE sigue bloqueado por falta de contrato/operación
+  canónica y política de baja/retención; sin delete local, archive ni status inventado.
+- **Siguiente:** asignación física, siguiente incremento fuera de esta entrega;
+  verificar DoR/contratos/decisiones antes de iniciar, sin conceder READY ni
+  implementar ahora. Otras capacidades operativas no se incluyen. Publicación
+  y nueva implementación requieren autorización independiente.
+
 ## 2026-10-08 — STAFF-RESERVATIONS-READ-01: cierre con QA manual aplicable PASS
 
 - **Estado/aceptación/DoD:** EN_QA → COMPLETADA; aceptación y DoD PASS. Alan

@@ -58,6 +58,8 @@ describe('Staff reservations boundary before MSW', () => {
   });
 
   it.each([
+    '/api/staff/rooms?propertyId=real-property',
+    '/api/staff/room-types?propertyId=real-property',
     '/api/staff/reservations?propertyId=real-property',
     '/api/staff/reservations/11111111-1111-1111-1111-111111111111?propertyId=real-property',
     '/api/staff/reservations',
@@ -72,6 +74,11 @@ describe('Staff reservations boundary before MSW', () => {
     expect(worker.networkFetch).not.toHaveBeenCalled();
   });
 
+  it.each([['/api/staff/rooms', 'POST'], ['/api/staff/room-types', 'POST'], ['/api/staff/rooms/id?propertyId=real-property', 'PATCH'], ['/api/staff/room-types/id?propertyId=real-property', 'PATCH']])('does not intercept confirmed Inventory writes %s %s', async (path, method) => {
+    const worker = workerHarness(), event = await worker.dispatch(path, method);
+    expect(event.stopped).toBe(true); expect(event.respondWith).not.toHaveBeenCalled(); expect(worker.networkFetch).not.toHaveBeenCalled();
+  });
+
   it.each([
     ['http://pms.test/contract/reservations?propertyId=GT-HB-01', 'GET'],
     ['http://pms.test/contract/reservations/HB-2026-08421', 'GET'],
@@ -80,6 +87,8 @@ describe('Staff reservations boundary before MSW', () => {
     ['/api/v1/public/availability', 'GET'],
     ['/api/auth/staff/refresh', 'POST'],
     ['/api/staff/reservations', 'POST'],
+    ['/api/staff/room-types/id', 'GET'],
+    ['http://pms.test/rooms?propertyId=GT-HB-01', 'GET'],
     ['/api/staff/reservations/id/cancellation-preview', 'GET'],
     ['http://other.example.test/api/staff/reservations', 'GET'],
   ])('preserves the existing worker behavior for %s %s', async (path, method) => {

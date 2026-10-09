@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import { HttpNetworkError } from "@/lib/http/errors";
 import { ConfirmDialog } from "@/shared/components";
@@ -44,6 +44,7 @@ interface RoomStatusPanelProps {
 }
 
 export function RoomStatusPanel({ room, propertyId, endpoint }: Readonly<RoomStatusPanelProps>) {
+  const titleId = useId();
   const mutation = useChangeRoomStatus(propertyId, endpoint);
   const [pending, setPending] = useState<RoomStatus | null>(null);
   const [reason, setReason] = useState("");
@@ -76,9 +77,10 @@ export function RoomStatusPanel({ room, propertyId, endpoint }: Readonly<RoomSta
     );
   };
 
+  if (room.readOnly || room.status === null) return null;
   return (
-    <section className={styles.detailCard} aria-labelledby="room-status-change-title">
-      <h3 id="room-status-change-title">Bloqueo OOO / OOS</h3>
+    <section className={styles.detailCard} aria-labelledby={titleId}>
+      <h3 id={titleId}>Bloqueo OOO / OOS</h3>
       <div className={styles.actions}>
         {allowedRoomStatusChanges(room.status).map((target) => (
           <button
