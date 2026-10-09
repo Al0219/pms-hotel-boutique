@@ -2,6 +2,7 @@ export interface RoomAssignmentScope {
   propertyId: string;
   reservationId: string;
   stayId: string;
+  real?: boolean;
 }
 export interface AssignmentRoom {
   id: string;

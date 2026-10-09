@@ -37,7 +37,7 @@ beforeEach(() => { localStorage.clear(); sessionStorage.clear(); vi.stubEnv("NEX
 });
 afterEach(() => { cleanup(); clients.splice(0).forEach(client => client.clear()); vi.restoreAllMocks(); vi.unstubAllEnvs(); onlineManager.setOnline(true); });
 describe("Private 09 frontend journeys", () => {
-  it("switches property, preserves role, scopes queries and persists reload", async () => {
+  it("switches property, preserves role and restores the authorized default on reload", async () => {
     const user = userEvent.setup(); mount();
     const region = await screen.findByRole("region", { name: "Métricas por propiedad" });
     expect(within(region).getByText(/Hotel Boutique Huehue/)).toBeInTheDocument();
@@ -48,7 +48,8 @@ describe("Private 09 frontend journeys", () => {
     expect(screen.getByRole("region", { name: "Métricas por propiedad" })).not.toHaveTextContent("Hotel Boutique Huehue");
     cleanup(); mount();
     await screen.findByRole("region", { name: "Métricas por propiedad" });
-    expect(screen.getByLabelText("Propiedad")).toHaveValue("GT-HB-03");
+    expect(screen.getByLabelText("Propiedad")).toHaveValue("GT-HB-01");
+    expect(screen.getByRole("region", { name: "Métricas por propiedad" })).toHaveTextContent("Hotel Boutique Huehue");
   });
   it("shows consolidated authorized metrics when global is explicitly selected", async () => {
     const user = userEvent.setup(); mount();
@@ -57,12 +58,14 @@ describe("Private 09 frontend journeys", () => {
     expect(screen.getByText("158 / 200 room-nights")).toBeInTheDocument();
     expect(screen.getByText("79.0%")).toBeInTheDocument();
   });
-  it("does not query metrics with a stale unauthorized saved scope", async () => {
-    let requests = 0;
-    mockServer.use(http.get("*/__mock/private-09/metrics", () => { requests++; return HttpResponse.json({ metrics: [] }); }));
+  it("replaces stale saved scope and queries metrics only for the authorized default", async () => {
+    const requests: URL[] = [];
+    mockServer.use(http.get("*/__mock/private-09/metrics", ({ request }) => { requests.push(new URL(request.url)); return HttpResponse.json({ metrics: [] }); }));
     sessionStorage.setItem("pms:private-09:scope:staff-current", "NOT-AUTHORIZED");
-    mount(); await screen.findByText("Selecciona una propiedad autorizada en el menú Staff para continuar.");
-    expect(requests).toBe(0);
+    mount(); await screen.findByText("No hay datos para las propiedades y los criterios seleccionados.");
+    expect(requests.length).toBeGreaterThan(0);
+    expect(requests.every(url => url.searchParams.get('scope') === 'PROPERTY' && JSON.stringify(url.searchParams.getAll('property')) === '["GT-HB-01"]')).toBe(true);
+    expect(sessionStorage.getItem("pms:private-09:scope:staff-current")).toBe("GT-HB-01");
     expect(screen.queryByRole("region", { name: "Métricas por propiedad" })).not.toBeInTheDocument();
   });
   it("hides inactive properties and global comparison for Reception", async () => {

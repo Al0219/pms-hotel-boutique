@@ -1,3 +1,4 @@
+import { deriveReservationOperationalStatus } from '../model/reservation-operational-status';
 import { DomainMappingError } from '@/lib/errors';
 import { parseDateTime, parseDay, requiredText } from '@/lib/mapper';
 import type { StaffReservationDto } from '../dtos/staff-reservation.dto';
@@ -36,7 +37,7 @@ function projectDetail(dto: StaffReservationDto): ReservationDetailData {
   const guest = dto.responsibleGuest;
   return {
     id: uuid(dto.reservationId), propertyId: uuid(dto.propertyId), confirmationCode: text(dto.confirmationCode),
-    status: dto.status, createdAt: parseDateTime(dto.createdAt, 'INVALID_STAFF_RESERVATION_CREATED_AT'),
+    status: dto.status, operationalStatus: deriveReservationOperationalStatus(dto.status, stays), createdAt: parseDateTime(dto.createdAt, 'INVALID_STAFF_RESERVATION_CREATED_AT'),
     source: { label: optional(dto.source), reference: optional(dto.sourceReference) },
     currency: text(dto.currency), readOnly: true, stays,
     guest: { ...(guest === null ? {} : { profileId: uuid(guest.profileId) }),
@@ -62,7 +63,7 @@ function listItem(dto: StaffReservationDto): ReservationListItem {
   const start = arrivals.length ? new Date(Math.min(...arrivals)) : null;
   const end = departures.length ? new Date(Math.max(...departures)) : null;
   return { id: detail.id, propertyId: detail.propertyId, confirmationCode: detail.confirmationCode, readOnly: true,
-    status: detail.status, guestName: detail.guest.primaryName, sourceLabel: detail.source.label,
+    status: detail.status, operationalStatus: detail.operationalStatus, guestName: detail.guest.primaryName, sourceLabel: detail.source.label,
     sourceReference: detail.source.reference,
     roomLabel: detail.stays.map(s => s.roomLabel).filter((room): room is string => room !== null).join(', ') || null,
     stayRooms: detail.stays.map(s => ({ roomType: s.roomType, room: s.roomLabel })),

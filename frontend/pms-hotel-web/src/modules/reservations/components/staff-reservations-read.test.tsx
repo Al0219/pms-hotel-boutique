@@ -32,7 +32,8 @@ describe('existing Staff UI with real read data', () => {
     expect(screen.getByText(dto.reservationId)).toBeInTheDocument();
     expect(screen.getByText('Responsable de la reserva')).toBeInTheDocument();
     for (const label of ['Huéspedes', 'Teléfono', 'Tarifa', 'Política aplicable', 'Notas / solicitudes especiales', 'Resumen financiero']) expect(screen.queryByText(label)).not.toBeInTheDocument();
-    for (const name of ['Cancelar reserva', 'Asignar habitación', 'Cambiar habitación', 'Extender estadía']) expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Asignar habitación' })).toBeInTheDocument();
+    for (const name of ['Cancelar reserva', 'Cambiar habitación', 'Extender estadía']) expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
   });
   it('renders historical header without a fabricated stay and an empty list', () => {
     const dto = staffReservationFixture(); dto.stays = []; dto.responsibleGuest = null;

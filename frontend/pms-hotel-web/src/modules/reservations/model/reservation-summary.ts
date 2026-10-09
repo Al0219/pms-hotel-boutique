@@ -1,3 +1,4 @@
+import type { ReservationOperationalStatus } from './reservation-operational-status';
 export type ReservationStatus =
   | "CONFIRMED"
   | "PENDING"
@@ -34,6 +35,8 @@ export interface ReservationListItem {
   finance: ReservationFinancialSummary;
   alertText: string | null;
   status: ReservationStatus;
+  /** Derived display state; raw status remains the authority for commands. */
+  operationalStatus?: ReservationOperationalStatus;
   statusDetail: string | null;
 }
 

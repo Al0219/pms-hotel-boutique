@@ -1,3 +1,4 @@
+import { usePublicAvailability } from '@/modules/availability';
 import { PublicGlobalCart } from './public-global-cart';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -136,4 +137,37 @@ it('real code, price and ordering filters keep the selection and query source in
   fireEvent.change(screen.getByLabelText('Ordenar por'), { target: { value: 'price-asc' } }); expect(screen.getAllByRole('article')[0]).toHaveAccessibleName('Standard real');
   fireEvent.change(screen.getByLabelText('Ordenar por'), { target: { value: 'price-desc' } }); expect(screen.getAllByRole('article')[0]).toHaveAccessibleName('Deluxe real');
   expect(requests).toHaveBeenCalledTimes(1); expect(JSON.parse(screen.getByTestId('cart-evidence').textContent!).items).toHaveLength(1);
+});
+
+it('keeps all six confirmed offers through Response → DTO → mapper → hook → catalogue and Home', async () => {
+  const codes = ['CLASSIC', 'DLX', 'KING', 'STD', 'SUITE', 'TWIN'];
+  const dto = { ...backendAvailability, offers: codes.map((code, index) => {
+    const nightly = code === 'SUITE' ? 120000 : code === 'DLX' ? 85000 : 65000;
+    const plan = code === 'SUITE' ? 'DEMO_SUITE' : code === 'DLX' ? 'DEMO_DELUXE' : 'DEMO_STANDARD';
+    return { ...backendAvailability.offers[0], roomTypeId: `${index + 1}1111111-1111-3111-8111-111111111111`,
+      roomTypeCode: code, roomTypeName: `Real ${code}`, ratePlanId: plan, ratePlanCode: plan,
+      availableUnits: code === 'STD' ? 5 : 4, nightlyRateMinor: nightly, totalMinor: nightly * 2 };
+  }) };
+  const snapshot = structuredClone(dto);
+  const requests: Request[] = [];
+  mockServer.use(http.get('*/api/v1/public/availability', ({ request }) => {
+    requests.push(request); return HttpResponse.json(dto);
+  }));
+  function HookEvidence() {
+    const query = usePublicAvailability({ checkInDate: criteria.checkIn, checkOutDate: criteria.checkOut, adults: 2, children: 0, roomsCount: 1 });
+    return <output data-testid="availability-trace">{JSON.stringify({ status: query.status, count: query.data?.roomTypes.length,
+      rooms: query.data?.roomTypes.map(room => ({ id: room.roomTypeId, capacity: room.maxOccupancy, rate: room.ratePlans[0].totalMinor })) })}</output>;
+  }
+  const view = mount(<><PublicAvailabilityPage initialCriteria={criteria} /><HookEvidence /></>);
+  await screen.findByRole('article', { name: 'Real TWIN' });
+  expect(screen.getAllByRole('article')).toHaveLength(6);
+  expect(JSON.parse(screen.getByTestId('availability-trace').textContent!)).toEqual({ status: 'success', count: 6,
+    rooms: dto.offers.map(offer => ({ id: offer.roomTypeId, capacity: null, rate: offer.totalMinor })) });
+  expect(requests.length).toBeGreaterThan(0);
+  expect(new URL(requests[0].url).searchParams.get('propertyId')).toBe(publicPropertyId);
+  expect(screen.queryByText('Sin habitaciones disponibles')).not.toBeInTheDocument();
+  view.rerender(<PublicBookingHome initialCriteria={criteria} />);
+  await screen.findByRole('article', { name: 'Real CLASSIC' });
+  expect(screen.getAllByRole('article')).toHaveLength(6);
+  expect(dto).toEqual(snapshot);
 });

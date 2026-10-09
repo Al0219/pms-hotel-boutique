@@ -18,9 +18,11 @@ function StaffPropertyWorkspace({ children }: { children: (propertyId: string, s
 
 /** Staff reads always use the authenticated same-origin BFF, independent of data mocks. */
 export function StaffReservationsWorkspace({ reservationId, endpoint }: { reservationId?: string; endpoint?: string }) {
+  const session = useStaffSession();
+  const canAssign = session.permissions.includes('RESERVATION_MANAGE');
   const resource = endpoint ?? '/api/staff/reservations';
   return <StaffPropertyWorkspace>{(propertyId, sessionId) => reservationId
-    ? <ReservationDetail key={`${sessionId}:${propertyId}:${reservationId}`} reservationId={reservationId} propertyId={propertyId} endpoint={resource} sessionId={sessionId} canManage={false} />
+    ? <ReservationDetail key={`${sessionId}:${propertyId}:${reservationId}`} reservationId={reservationId} propertyId={propertyId} endpoint={resource} sessionId={sessionId} canManage={canAssign} />
     : <ReservationCenter key={`${sessionId}:${propertyId}`} propertyId={propertyId} endpoint={resource} canCreate={false} />}</StaffPropertyWorkspace>;
 }
 

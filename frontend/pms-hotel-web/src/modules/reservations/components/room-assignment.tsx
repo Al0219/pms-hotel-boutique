@@ -16,7 +16,7 @@ function day(value: string) {
   return new Date(year, month - 1, date).toLocaleDateString('es-GT', { day: 'numeric', month: 'short' });
 }
 export function RoomAssignment({ onClose, onAssigned, ...props }: Readonly<RoomAssignmentProps>) {
-  const action = useRoomAssignment({ propertyId: props.propertyId, reservationId: props.reservationId, stayId: props.stayId }, props.sessionId, props.allowed);
+  const action = useRoomAssignment({ propertyId: props.propertyId, reservationId: props.reservationId, stayId: props.stayId, real: props.real }, props.sessionId, props.allowed);
   const [selected, setSelected] = useState('');
   const returnFocus = useRef<HTMLElement | null>(null);
   useEffect(() => {
@@ -46,7 +46,7 @@ export function RoomAssignment({ onClose, onAssigned, ...props }: Readonly<RoomA
                 <p className={styles.summary}><strong>{preview.roomType}</strong><span>{day(preview.arrival)} → {day(preview.departure)}</span></p>
                 <p>Selecciona la habitación física para esta estadía. El tipo reservado y su tarifa se conservan.</p>
                 {!preview.canAssign && <p className={styles.notice} role="status">{preview.reason}</p>}
-                {preview.rooms.length === 0 ? <p role="status">No hay habitaciones de este tipo en el catálogo de la propiedad.</p>
+                {preview.rooms.length === 0 ? <p role="status">No hay habitaciones disponibles de este tipo para estas fechas.</p>
                   : <fieldset className={styles.choices} disabled={action.busy || !preview.canAssign}>
                     <legend>Habitaciones del mismo tipo</legend>
                     {preview.rooms.map(room => <label key={room.id} className={`${styles.room} ${selected === room.id ? styles.selected : ''} ${!room.selectable ? styles.blocked : ''}`}>

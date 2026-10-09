@@ -99,3 +99,10 @@ describe('Staff reservations boundary before MSW', () => {
     expect(worker.networkFetch).toHaveBeenCalledOnce();
   });
 });
+
+ it.each(['GET', 'PUT'])('real assignment %s bypasses MSW before interception', async method => {
+  const worker = workerHarness();
+  const event = await worker.dispatch('/api/staff/reservations/reservation/stays/stay/room-assignment?propertyId=property', method);
+  expect(event.stopped).toBe(true);
+  expect(event.respondWith).not.toHaveBeenCalled();
+});

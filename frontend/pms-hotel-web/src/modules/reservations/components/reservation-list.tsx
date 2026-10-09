@@ -5,30 +5,13 @@ import { useMemo, useState } from "react";
 
 import { EntityDataGrid, StatusBadge, EntityListSurface, EntityPagination, useEntityPagination, EntityFilterField, ENTITY_LIST_TABLE_MIN_WIDTH } from "@/shared/components";
 
-import type { ReservationListItem, ReservationStatus } from "../model/reservation-summary";
+import type { ReservationListItem } from "../model/reservation-summary";
 import { emptyReservationFilters, filterStaffReservations } from '../model/reservation-search';
+
+import { operationalStatusOptions, reservationStatusLabels, reservationStatusVariant, visibleReservationStatus, type ReservationVisibleStatus } from '../model/reservation-operational-status';
 
 import styles from "./reservation-list.module.css";
 import workspace from "@/shared/components/entity-workspace.module.css";
-
-const STATUS_OPTIONS: ReadonlyArray<{ value: ReservationStatus | "ALL"; label: string }> = [
-  { value: "ALL", label: "Todas" },
-  { value: "CONFIRMED", label: "Confirmadas" },
-  { value: "PENDING", label: "Pendientes" },
-  { value: "WAITLIST", label: "Waitlist" },
-  { value: "NO_SHOW_PENDING", label: "No-show pendiente" },
-  { value: "NO_SHOW", label: "No-show" },
-  { value: "CANCELLED", label: "Canceladas" },
-];
-
-const STATUS_LABELS: Record<ReservationStatus, string> = {
-  CONFIRMED: "Confirmada",
-  PENDING: "Pendiente",
-  WAITLIST: "Waitlist",
-  NO_SHOW_PENDING: "No-show pendiente",
-  NO_SHOW: "No-show",
-  CANCELLED: "Cancelada",
-};
 
 function formatMoney(amount: number | null, currency: string): string {
   if (amount === null) return "—";
@@ -80,8 +63,14 @@ interface ReservationListProps {
 }
 
 export function ReservationList({ reservations, onConvert, propertyId }: Readonly<ReservationListProps>) {
+  const statusOptions = [
+    { value: 'ALL', label: 'Todas' }, ...operationalStatusOptions,
+    ...(reservations.some(item => !item.readOnly) ? [
+      { value: 'WAITLIST', label: 'Waitlist' }, { value: 'NO_SHOW_PENDING', label: 'No-show pendiente' },
+    ] : []),
+  ];
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<ReservationStatus | "ALL">("ALL");
+  const [statusFilter, setStatusFilter] = useState<ReservationVisibleStatus | "ALL">("ALL");
   const [arrivalFrom, setArrivalFrom] = useState('');
   const [arrivalTo, setArrivalTo] = useState('');
 
@@ -116,10 +105,10 @@ export function ReservationList({ reservations, onConvert, propertyId }: Readonl
           <select
             value={statusFilter}
             onChange={(event) => {
-              setStatusFilter(event.target.value as ReservationStatus | "ALL");
+              setStatusFilter(event.target.value as ReservationVisibleStatus | "ALL");
             }}
           >
-            {STATUS_OPTIONS.map((option) => (
+            {statusOptions.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </select>
@@ -182,7 +171,7 @@ export function ReservationList({ reservations, onConvert, propertyId }: Readonl
                 header: "Estado",
                 render: (item) => (
                   <>
-                    <StatusBadge size="sm" variant={item.status === 'CONFIRMED' ? 'success' : item.status === 'PENDING' ? 'warning' : item.status === 'WAITLIST' ? 'info' : item.status === 'CANCELLED' ? 'neutral' : 'error'}>{STATUS_LABELS[item.status]}</StatusBadge>
+                    <StatusBadge size="sm" variant={reservationStatusVariant(visibleReservationStatus(item))}>{reservationStatusLabels[visibleReservationStatus(item)]}</StatusBadge>
                     {item.statusDetail ? <p className={styles.statusDetail}>{item.statusDetail}</p> : null}
                     {item.status === "WAITLIST" && onConvert ? (
                       <button className={styles.convertButton} type="button" onClick={() => onConvert(item.id)}>

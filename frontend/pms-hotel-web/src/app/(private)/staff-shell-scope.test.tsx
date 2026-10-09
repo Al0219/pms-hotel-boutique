@@ -37,6 +37,25 @@ beforeEach(() => {
   );
 });
 afterEach(() => { cleanup(); clients.splice(0).forEach(client => client.clear()); vi.unstubAllEnvs(); });
+it.each([true, false])('real Staff startup queries only its authorized default (Demo available=%s)', async hasDemo => {
+  sessionStorage.setItem('pms:private-09:scope:shell-scope', 'unauthorized');
+  mockServer.use(http.get('*/api/auth/staff/session', () => HttpResponse.json({
+    staffUserId: 'staff', sessionId: 'shell-scope', username: 'gerencia.real', roleCode: 'GERENCIA', permissions: [],
+    memberships: [{ propertyId: inventoryPropertyId, propertyCode: 'OTHER', name: 'Otro hotel', timezone: 'America/Guatemala', currency: 'GTQ' },
+      ...(hasDemo ? [{ propertyId: second, propertyCode: 'HB-GT-DEMO', name: 'Hotel Boutique Demo', timezone: 'America/Guatemala', currency: 'GTQ' }] : [])],
+  })));
+  route.pathname = '/reservas';
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } }); clients.push(client);
+  render(<AppRouterContext.Provider value={navigation}><QueryClientProvider client={client}><PrivateLayout>
+    <StaffReservationsWorkspace />
+  </PrivateLayout></QueryClientProvider></AppRouterContext.Provider>);
+  await screen.findByRole('row', { name: hasDemo ? /Segundo Responsible/ : /Primero Responsible/ });
+  const expected = hasDemo ? second : inventoryPropertyId;
+  expect(screen.getByLabelText('Propiedad')).toHaveValue(expected);
+  expect(sessionStorage.getItem('pms:private-09:scope:shell-scope')).toBe(expected);
+  expect(reads.length).toBeGreaterThan(0);
+  expect(reads.every(url => new URL(url).searchParams.get('propertyId') === expected)).toBe(true);
+});
 it.each(['rooms', 'reservations'] as const)('sidebar selector refreshes real %s reads and preserves ALL_PROPERTIES gating', async module => {
   const user = userEvent.setup();
   route.pathname = module === 'rooms' ? '/staff/habitaciones' : '/reservas';

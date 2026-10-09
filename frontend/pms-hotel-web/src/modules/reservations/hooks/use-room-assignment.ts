@@ -9,17 +9,17 @@ import type { RoomAssignmentScope } from '../model/room-assignment';
 
 export function useRoomAssignment(scope: RoomAssignmentScope, sessionId: string, allowed: boolean) {
   const client = useQueryClient();
-  const connected = getPublicEnvironment().useMockApi;
+  const connected = scope.real || getPublicEnvironment().useMockApi;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const request = useRef<AbortController | null>(null);
-  const identity = JSON.stringify([sessionId, scope.propertyId, scope.reservationId, scope.stayId]);
+  const identity = JSON.stringify([sessionId, scope.propertyId, scope.reservationId, scope.stayId, scope.real]);
   const current = useRef(identity);
   useEffect(() => {
     current.current = identity;
     return () => { current.current = ''; request.current?.abort(); };
   }, [identity]);
-  const query = useQuery({ queryKey: ['staff-room-assignment', sessionId, scope.propertyId, scope.reservationId, scope.stayId],
+  const query = useQuery({ queryKey: ['staff-room-assignment', sessionId, scope.propertyId, scope.reservationId, scope.stayId, scope.real],
     enabled: connected && allowed, retry: false, staleTime: 0,
     queryFn: async ({ signal }) => mapRoomAssignmentPreview(await getRoomAssignmentPreview(scope, signal), scope) });
   async function assign(roomId: string) {
@@ -31,6 +31,7 @@ export function useRoomAssignment(scope: RoomAssignmentScope, sessionId: string,
       if (controller.signal.aborted || current.current !== identity) return;
       await Promise.all([
         client.invalidateQueries({ queryKey: ['reservations', scope.propertyId] }),
+        client.invalidateQueries({ queryKey: ['reservations', 'staff-stays', sessionId, scope.propertyId] }),
         client.invalidateQueries({ queryKey: ['staff-room-assignment', sessionId, scope.propertyId] }),
         client.invalidateQueries({ queryKey: ['staff-room-occupancy', sessionId, scope.propertyId] }),
       ]);

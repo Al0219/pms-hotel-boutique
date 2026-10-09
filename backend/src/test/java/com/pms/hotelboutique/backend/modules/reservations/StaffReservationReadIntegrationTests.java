@@ -27,6 +27,8 @@ class StaffReservationReadIntegrationTests {
     private static final UUID ORGANIZATION = UUID.fromString("4f63ec16-4b5c-4daf-a9ba-fc4251fb81d1");
     private static final LocalDate FIRST = LocalDate.parse("2035-01-01");
     private static final String ROUTE = "/api/v1/reservations";
+    @Autowired com.pms.hotelboutique.backend.modules.reservations.application.StaffRoomAssignmentService assignmentService;
+    @Autowired org.springframework.transaction.PlatformTransactionManager transactionManager;
     @Autowired JdbcTemplate jdbc;
     @Autowired MockMvc mvc;
     @Autowired StaffJwtService jwt;
@@ -43,6 +45,15 @@ class StaffReservationReadIntegrationTests {
         type = insertRoomType(property);
         reservation = insertReservation(property, "CONFIRMED", "GTQ");
         insertStay(property, type, reservation, "RESERVED", FIRST, FIRST.plusDays(2));
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void cleanCommittedAssignmentFixtures() {
+        if (!org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()) {
+            // Concurrent commands need committed fixtures; preserve append-only audit history.
+            jdbc.update("DELETE FROM reservation_stays WHERE reservation_id=?", reservation);
+            jdbc.update("DELETE FROM reservations WHERE id=?", reservation);
+        }
     }
 
     @Test
@@ -142,6 +153,137 @@ class StaffReservationReadIntegrationTests {
             mvc.perform(get(ROUTE + "/" + invalidId).param("propertyId", property.toString()).header("Authorization", bearer(reception))).andExpect(status().isBadRequest());
     }
 
+    private UUID firstStay() {
+        return jdbc.queryForObject("SELECT id FROM reservation_stays WHERE reservation_id=? ORDER BY id LIMIT 1", UUID.class, reservation);
+    }
+    private String assignmentRoute(UUID stay) { return ROUTE + "/" + reservation + "/stays/" + stay + "/room-assignment"; }
+    private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder assign(UUID stay, UUID room) {
+        return org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(assignmentRoute(stay))
+                .param("propertyId", property.toString()).header("Authorization", bearer(reception))
+                .contentType("application/json").content("{\"room_id\":\"" + room + "\"}");
+    }
+    private UUID outage(UUID room, String kind, LocalDate from, LocalDate until) {
+        UUID id = UUID.randomUUID();
+        jdbc.update("INSERT INTO out_of_order_records(id,property_id,room_id,kind,start_date,end_date,reason,created_by,created_at) VALUES (?,?,?,?,?,?,'test',?,now())",
+                id, property, room, kind, from, until, reception.staffUserId());
+        return id;
+    }
+
+    @Test
+    void initialAssignmentPersistsAuditsAndNeverOverwritesEvenOnRetry() throws Exception {
+        UUID stay = firstStay(), room = insertRoom(property, type);
+        mvc.perform(get(assignmentRoute(stay)).param("propertyId", property.toString()).header("Authorization", bearer(reception)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.rooms[0].room_id").value(room.toString()));
+        mvc.perform(assign(stay, room)).andExpect(status().isOk()).andExpect(jsonPath("$.room_id").value(room.toString()));
+        entityManager.flush(); entityManager.clear();
+        mvc.perform(get(ROUTE + "/" + reservation).param("propertyId", property.toString()).header("Authorization", bearer(reception)))
+                .andExpect(jsonPath("$.stays[0].room.roomId").value(room.toString())).andExpect(jsonPath("$.stays[0].status").value("RESERVED"));
+        assertEquals(reception.staffUserId(), jdbc.queryForObject("SELECT actor_id FROM reservation_audit_events WHERE entity_id=? AND action='RESERVATION_STAY_ROOM_ASSIGNED' AND actor_type='STAFF' AND property_id=?", UUID.class, stay, property));
+        mvc.perform(assign(stay, room)).andExpect(status().isConflict());
+        mvc.perform(assign(stay, insertRoom(property, type))).andExpect(status().isConflict());
+        assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM reservation_audit_events WHERE entity_id=?", Integer.class, stay));
+    }
+
+    @Test
+    void excludesBothOutageKindsAndRevalidatesAfterPreviewButAllowsExclusiveBoundariesAndReleasedBlocks() throws Exception {
+        UUID stay = firstStay(), room = insertRoom(property, type);
+        for (String kind : new String[]{"OOO", "OOS"}) {
+            UUID block = outage(room, kind, FIRST.plusDays(1), FIRST.plusDays(3));
+            mvc.perform(get(assignmentRoute(stay)).param("propertyId", property.toString()).header("Authorization", bearer(reception)))
+                    .andExpect(jsonPath("$.rooms").isEmpty());
+            mvc.perform(assign(stay, room)).andExpect(status().isConflict());
+            jdbc.update("UPDATE out_of_order_records SET released_at=now(),released_by=?,release_reason='test' WHERE id=?", reception.staffUserId(), block); entityManager.clear();
+        }
+        outage(room, "OOO", FIRST.minusDays(1), FIRST);
+        outage(room, "OOS", FIRST.plusDays(2), FIRST.plusDays(3));
+        mvc.perform(assign(stay, room)).andExpect(status().isOk());
+    }
+
+    @Test
+    void roomConflictUsesHalfOpenDatesAndActiveTravelStates() throws Exception {
+        UUID stay = firstStay(), room = insertRoom(property, type);
+        UUID other = insertReservation(property, "CONFIRMED", "GTQ");
+        insertStay(property, type, other, "IN_HOUSE", FIRST.plusDays(1), FIRST.plusDays(3));
+        jdbc.update("UPDATE reservation_stays SET room_id=? WHERE reservation_id=?", room, other);
+        mvc.perform(assign(stay, room)).andExpect(status().isConflict());
+        jdbc.update("UPDATE reservation_stays SET arrival=?,departure=? WHERE reservation_id=?", FIRST.minusDays(2), FIRST, other);
+        entityManager.clear();
+        mvc.perform(assign(stay, room)).andExpect(status().isOk());
+    }
+
+    @Test
+    void assignmentRejectsTypeScopePairingTerminalStatusAndGuestAndRequiresCurrentPermission() throws Exception {
+        UUID stay = firstStay(), room = insertRoom(property, type);
+        mvc.perform(assign(stay, insertRoom(property, insertRoomType(property)))).andExpect(status().isConflict());
+        mvc.perform(assign(stay, insertRoom(otherProperty, insertRoomType(otherProperty)))).andExpect(status().isNotFound());
+        mvc.perform(assign(UUID.randomUUID(), room)).andExpect(status().isNotFound());
+        mvc.perform(assign(stay, room).param("propertyId", otherProperty.toString())).andExpect(status().isBadRequest());
+        mvc.perform(assign(stay, room).with(request -> { request.removeHeader("Authorization"); request.addHeader("Authorization", "Bearer " + guestJwt.issue(new GuestPrincipal(UUID.randomUUID(), UUID.randomUUID(), "guest@example.test"), Instant.now())); return request; }))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(assignmentRoute(stay)).param("propertyId", property.toString())
+                .contentType("application/json").content("{\"room_id\":\"" + room + "\"}")).andExpect(status().isUnauthorized());
+        for (String state : new String[]{"IN_HOUSE", "CHECKED_OUT", "CANCELLED", "NO_SHOW"}) {
+            jdbc.update("UPDATE reservation_stays SET status=? WHERE id=?", state, stay); entityManager.clear();
+            mvc.perform(assign(stay, room)).andExpect(status().isConflict());
+        }
+        jdbc.update("UPDATE reservation_stays SET status='RESERVED' WHERE id=?", stay);
+        jdbc.update("UPDATE reservations SET status='CANCELLED' WHERE id=?", reservation); entityManager.clear();
+        mvc.perform(assign(stay, room)).andExpect(status().isConflict());
+        jdbc.update("DELETE FROM role_permissions WHERE role_code='RECEPCION' AND permission_code='RESERVATION_MANAGE'");
+        mvc.perform(assign(stay, room)).andExpect(status().isForbidden());
+    }
+
+    @Test
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
+    void concurrentCommandsCannotDoubleBookRoomOrOverwriteStay() throws Exception {
+        UUID stay = firstStay(), room = insertRoom(property, type);
+        insertStay(property, type, reservation, "RESERVED", FIRST, FIRST.plusDays(2));
+        UUID second = jdbc.queryForObject("SELECT id FROM reservation_stays WHERE reservation_id=? AND id<>?", UUID.class, reservation, stay);
+        try (var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+            var gate = new java.util.concurrent.CountDownLatch(1);
+            var a = executor.submit(() -> { gate.await(); return mvc.perform(assign(stay, room)).andReturn().getResponse().getStatus(); });
+            var b = executor.submit(() -> { gate.await(); return mvc.perform(assign(second, room)).andReturn().getResponse().getStatus(); });
+            gate.countDown();
+            assertEquals(java.util.Set.of(200,409), java.util.Set.of(a.get(20, java.util.concurrent.TimeUnit.SECONDS), b.get(20, java.util.concurrent.TimeUnit.SECONDS)));
+        }
+        assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM reservation_stays WHERE room_id=?", Integer.class, room));
+        UUID unassigned = jdbc.queryForObject("SELECT id FROM reservation_stays WHERE reservation_id=? AND room_id IS NULL", UUID.class, reservation);
+        UUID roomA = insertRoom(property, type), roomB = insertRoom(property, type);
+        try (var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+            var gate = new java.util.concurrent.CountDownLatch(1);
+            var a = executor.submit(() -> { gate.await(); return mvc.perform(assign(unassigned, roomA)).andReturn().getResponse().getStatus(); });
+            var b = executor.submit(() -> { gate.await(); return mvc.perform(assign(unassigned, roomB)).andReturn().getResponse().getStatus(); });
+            gate.countDown();
+            assertEquals(java.util.Set.of(200,409), java.util.Set.of(a.get(20, java.util.concurrent.TimeUnit.SECONDS), b.get(20, java.util.concurrent.TimeUnit.SECONDS)));
+        }
+        assertEquals(2, jdbc.queryForObject("SELECT count(*) FROM reservation_audit_events WHERE property_id=? AND action='RESERVATION_STAY_ROOM_ASSIGNED'", Integer.class, property));
+    }
+
+    @Test
+    void rejectsExtraOrMissingCommandFieldsAndValidatesPropertyScopeBeforeReads() throws Exception {
+        UUID stay = firstStay(), room = insertRoom(property, type);
+        mvc.perform(assign(stay, room).content("{\"room_id\":\"" + room + "\",\"other\":true}")).andExpect(status().isBadRequest());
+        mvc.perform(assign(stay, room).content("{}")).andExpect(status().isBadRequest());
+        mvc.perform(get(assignmentRoute(stay)).param("propertyId", otherProperty.toString()).header("Authorization", bearer(reception)))
+                .andExpect(status().isForbidden());
+        mvc.perform(assign(stay, room).with(request -> { request.setParameter("propertyId", otherProperty.toString()); return request; }))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
+    void assignmentAndAuditRollBackTogether() {
+        UUID stay = firstStay(), room = insertRoom(property, type);
+        var transaction = new org.springframework.transaction.support.TransactionTemplate(transactionManager);
+        assertThrows(IllegalStateException.class, () -> transaction.execute(status -> {
+            assignmentService.assign(reception, property, reservation, stay, room);
+            entityManager.flush();
+            throw new IllegalStateException("Force transaction rollback");
+        }));
+        assertNull(jdbc.queryForObject("SELECT room_id FROM reservation_stays WHERE id=?", UUID.class, stay));
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM reservation_audit_events WHERE entity_id=?", Integer.class, stay));
+    }
+
     private String bearer(StaffPrincipal principal) { return "Bearer " + jwt.issue(principal, Instant.now()); }
 
     private UUID insertProperty(String timezone, String currency) {
@@ -162,7 +304,7 @@ class StaffReservationReadIntegrationTests {
     private UUID insertRoom(UUID propertyId, UUID typeId) {
         UUID id = UUID.randomUUID();
         jdbc.update("INSERT INTO rooms(id,property_id,room_type_id,code) VALUES (?,?,?,?)",
-                id, propertyId, typeId, "203");
+                id, propertyId, typeId, String.valueOf(203 + jdbc.queryForObject("SELECT count(*) FROM rooms WHERE property_id=?", Integer.class, propertyId)));
         return id;
     }
 
