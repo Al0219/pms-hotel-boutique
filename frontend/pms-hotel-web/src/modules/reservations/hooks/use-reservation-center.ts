@@ -8,9 +8,9 @@ import { DomainMappingError } from '@/lib/errors';
 import { mapReservationCenter } from "../mappers/reservation-list.mapper";
 import { listReservationCenter } from "../service/reservation.service";
 
-export function useReservationCenter(propertyId: string | undefined, endpoint: string | undefined) {
+export function useReservationCenter(propertyId: string | undefined, endpoint: string | undefined, sessionId?: string) {
   return useQuery({
-    queryKey: ["reservations", propertyId, endpoint],
+    queryKey: ["reservations", propertyId, endpoint, ...(sessionId ? [sessionId] : [])],
     enabled: Boolean(propertyId && endpoint),
     queryFn: async ({ signal }) => {
       if (!propertyId || !endpoint) {

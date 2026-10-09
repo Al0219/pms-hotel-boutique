@@ -1,5 +1,13 @@
 # Staff: reservas e inventario para la presentación
 
+## Panel Staff real — 2026-10-08
+
+El [Panel Staff real](63_STAFF_PANEL_REAL_QA.md) reutiliza PropertyContext y las
+lecturas BFF de Reservas/Habitaciones para mostrar totales de reservas, estadías
+y habitaciones físicas de una propiedad concreta. Conserva los tres accesos,
+oculta KPIs durante carga/error y aísla consultas por sesión/property. Estado
+**EN_QA**, pendiente QA manual real de Alan.
+
 ## Ampliación de inventario real — 2026-10-08
 
 [C/R/U real y UI compacta](60_STAFF_INVENTORY_CRU_QA.md) amplía el incremento58:
