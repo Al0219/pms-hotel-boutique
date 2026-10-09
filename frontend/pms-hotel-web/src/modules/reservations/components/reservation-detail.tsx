@@ -41,7 +41,8 @@ const TRAVEL_STATE_LABELS: Record<StayTravelState, string> = {
   NO_SHOW: "No-show",
 };
 
-function formatMoney(amount: number, currency: string): string {
+function formatMoney(amount: number | null, currency: string): string {
+  if (amount === null) return "—";
   const symbol = currency.toUpperCase() === "GTQ" ? "Q" : currency;
   return `${symbol}${amount.toLocaleString("en-US")}`;
 }
@@ -60,6 +61,7 @@ function pluralize(count: number, singular: string, plural: string): string {
 
 function occupancyLabel(detail: ReservationDetailData): string {
   const { guest } = detail;
+  if (guest.adults === null) return "No disponible";
   const base = pluralize(guest.adults, "adulto", "adultos");
 
   if (guest.children === null) {
@@ -73,12 +75,13 @@ function paymentLine(detail: ReservationDetailData): string {
   const { currency, finance } = detail;
 
   switch (finance.financeState) {
+    case null: return "No disponible";
     case "ESTIMATED":
       return `Tarifa estimada ${formatMoney(finance.totalAmount, currency)}`;
     case "PAID":
       return "Pagado";
     case "BALANCE": {
-      const pending = finance.paidAmount === null ? 0 : Math.max(finance.totalAmount - finance.paidAmount, 0);
+      const pending = finance.paidAmount === null ? 0 : Math.max((finance.totalAmount ?? 0) - finance.paidAmount, 0);
       return `Pendiente ${formatMoney(pending, currency)}`;
     }
     case "DEPOSIT":
@@ -182,19 +185,19 @@ export function ReservationDetail({ propertyId, endpoint, reservationId, session
 
   const singleRoom = detail.stays.length === 1;
   const reference = detail.source.reference ? ` · ${detail.source.reference}` : "";
-  const cancellable = detail.status === "CONFIRMED" || detail.status === "PENDING";
-  const noShowPending = detail.status === "NO_SHOW_PENDING";
+  const cancellable = !detail.readOnly && (detail.status === "CONFIRMED" || detail.status === "PENDING");
+  const noShowPending = !detail.readOnly && detail.status === "NO_SHOW_PENDING";
 
   return (
     <div className={styles.page}>
       <Link className={styles.stayAction} href="/reservas">← Volver a reservas</Link>
       <header className={styles.header}>
         <div className={styles.titleBlock}>
-          <h1 ref={heading} tabIndex={-1}>{title}</h1>
+          <h1 ref={heading} tabIndex={-1}>{detail.confirmationCode ? `Reserva ${detail.confirmationCode}` : title}</h1>
           <p className={styles.subtitle}>
             <span className={`${styles.badge} ${STATUS_BADGE[detail.status]}`}>{STATUS_LABELS[detail.status]}</span>
           </p>
-          <p className={styles.origin}>Origen: {detail.source.label}{reference} · Creada {formatLongDate(detail.createdAt)}</p>
+          <p className={styles.origin}>Origen: {detail.source.label ?? "No registrado"}{reference} · Creada {formatLongDate(detail.createdAt)}</p>
           {cancellable ? (
             <button
               className={styles.cancelAction}
@@ -267,6 +270,7 @@ export function ReservationDetail({ propertyId, endpoint, reservationId, session
         <section className={styles.card} aria-labelledby="reservation-data-title">
           <h2 id="reservation-data-title">Datos de la reserva</h2>
           <dl className={styles.definitionList}>
+            {detail.readOnly && <div className={styles.definitionRow}><dt>ID de reserva</dt><dd>{detail.id}</dd></div>}
             {singleRoom && (
               <>
                 <div className={styles.definitionRow}>
@@ -282,18 +286,19 @@ export function ReservationDetail({ propertyId, endpoint, reservationId, session
             <div className={styles.definitionRow}>
               <dt>{singleRoom ? "Habitación" : "Habitaciones"}</dt>
               <dd>
-                <StayBlock stay={detail.stays[0]} singleRoom={singleRoom} onRoomMove={() => setMovingRoom(detail.stays[0].id)} onExtend={() => setExtending(detail.stays[0].id)}
-                  onAssign={canManage && sessionId && cancellable ? () => setAssigning(detail.stays[0].id) : undefined} />
+                {detail.stays.length === 0 ? <p>Sin estadías registradas.</p> : <StayBlock stay={detail.stays[0]} singleRoom={singleRoom} onRoomMove={detail.readOnly ? undefined : () => setMovingRoom(detail.stays[0].id)} onExtend={detail.readOnly ? undefined : () => setExtending(detail.stays[0].id)}
+                  onAssign={canManage && sessionId && cancellable ? () => setAssigning(detail.stays[0].id) : undefined} />}
                 {detail.stays.slice(1).map((stay) => (
-                  <StayBlock key={stay.id} stay={stay} singleRoom={false} onRoomMove={() => setMovingRoom(stay.id)} onExtend={() => setExtending(stay.id)}
+                  <StayBlock key={stay.id} stay={stay} singleRoom={false} onRoomMove={detail.readOnly ? undefined : () => setMovingRoom(stay.id)} onExtend={detail.readOnly ? undefined : () => setExtending(stay.id)}
                     onAssign={canManage && sessionId && cancellable ? () => setAssigning(stay.id) : undefined} />
                 ))}
               </dd>
             </div>
             <div className={styles.definitionRow}>
-              <dt>Huésped principal</dt>
-              <dd>{detail.guest.primaryName}</dd>
+              <dt>{detail.readOnly ? "Responsable de la reserva" : "Huésped principal"}</dt>
+              <dd>{detail.guest.primaryName ?? "No registrado"}</dd>
             </div>
+            {!detail.readOnly && <>
             <div className={styles.definitionRow}>
               <dt>Huéspedes</dt>
               <dd>{occupancyLabel(detail)}</dd>
@@ -314,10 +319,11 @@ export function ReservationDetail({ propertyId, endpoint, reservationId, session
               <dt>Notas / solicitudes especiales</dt>
               <dd>{detail.notes ?? "—"}</dd>
             </div>
+            </>}
           </dl>
         </section>
 
-        <section className={styles.card} aria-labelledby="reservation-finance-title">
+        {!detail.readOnly && <section className={styles.card} aria-labelledby="reservation-finance-title">
           <h2 id="reservation-finance-title">Resumen financiero</h2>
           <ul className={styles.financeLines}>
             {detail.finance.lines.map((line, index) => (
@@ -333,7 +339,7 @@ export function ReservationDetail({ propertyId, endpoint, reservationId, session
           </p>
           <p className={styles.paymentLine}>{paymentLine(detail)}</p>
           <p className={styles.folioHint}>El folio completo se consulta vía el módulo Folio (API pública).</p>
-        </section>
+        </section>}
       </div>
     </div>
   );

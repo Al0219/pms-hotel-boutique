@@ -1,9 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { StaffSession } from '@/modules/auth';
+import type { ReactNode } from 'react';
 import { StaffReservationsWorkspace, StaffRoomsWorkspace } from './staff-property-workspace';
 
-const mocks = vi.hoisted(() => ({ scope: vi.fn(), session: vi.fn(), center: vi.fn(), detail: vi.fn(), board: vi.fn(), catalog: vi.fn() }));
+const mocks = vi.hoisted(() => ({ scope: vi.fn(), session: vi.fn(), center: vi.fn(), detail: vi.fn(), board: vi.fn(), catalog: vi.fn(), stays: vi.fn() }));
 const sessionFixture: StaffSession = {
   id: 'staff-1', userName: 'QA Staff', roleId: 'gerencia', roleName: 'Gerencia', permissions: [],
   memberships: [{ propertyId: 'GT-HB-01', propertyCode: 'GT-HB-01', name: 'Hotel Boutique',
@@ -11,10 +12,10 @@ const sessionFixture: StaffSession = {
 };
 vi.mock('@/modules/properties', () => ({ usePropertyScope: mocks.scope }));
 vi.mock('@/modules/auth', () => ({ useStaffSession: mocks.session }));
-vi.mock('@/modules/reservations', () => ({ ReservationCenter: (props: unknown) => { mocks.center(props); return <p>Reservas del hotel</p>; }, ReservationDetail: (props: unknown) => { mocks.detail(props); return <p>Detalle de reserva</p>; } }));
-vi.mock('@/modules/rooms', () => ({ RoomBoard: (props: unknown) => { mocks.board(props); return <p>Tablero del hotel</p>; }, RoomCatalogAdmin: (props: unknown) => { mocks.catalog(props); return <p>Catálogo del hotel</p>; } }));
+vi.mock('@/modules/reservations', () => ({ useStaffReservationStays: mocks.stays, ReservationCenter: (props: unknown) => { mocks.center(props); return <p>Reservas del hotel</p>; }, ReservationDetail: (props: unknown) => { mocks.detail(props); return <p>Detalle de reserva</p>; } }));
+vi.mock('@/modules/rooms', () => ({ RoomBoard: (props: { viewControls?: ReactNode }) => { mocks.board(props); return <>{props.viewControls}<p>Tablero del hotel</p></>; }, RoomCatalogAdmin: (props: unknown) => { mocks.catalog(props); return <p>Catálogo del hotel</p>; } }));
 beforeEach(() => {
-  vi.clearAllMocks(); vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'true');
+  vi.clearAllMocks(); mocks.stays.mockReturnValue({ data: [], isSuccess: true, isError: false, isFetching: false, error: null, refetch: vi.fn() }); vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'true');
   mocks.scope.mockReturnValue({ ready: true, scope: { kind: 'PROPERTY', propertyIds: ['GT-HB-01'] } });
   mocks.session.mockReturnValue({ ...sessionFixture });
 });
@@ -39,14 +40,28 @@ describe('Staff property composition', () => {
     expect(mocks.catalog).toHaveBeenCalledWith(expect.objectContaining({ propertyId: 'GT-HB-01', sessionId: 'staff-1', canManage: true }));
     expect(screen.queryByText('Tablero del hotel')).not.toBeInTheDocument();
   });
-  it('does not let a real GERENCIA session manage inventory without COMMERCIAL_MANAGE', () => {
+  it.each(['GERENCIA', 'SUPER_ADMIN'])('does not let real %s manage inventory without COMMERCIAL_MANAGE', roleId => {
     vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'false');
-    mocks.session.mockReturnValue({ ...sessionFixture, id: 'real-staff', roleId: 'GERENCIA' });
+    mocks.session.mockReturnValue({ ...sessionFixture, id: 'real-staff', roleId });
     render(<StaffRoomsWorkspace />); fireEvent.click(screen.getByRole('button', { name: 'Administrar inventario' }));
     expect(mocks.catalog).toHaveBeenCalledWith(expect.objectContaining({ canManage: false }));
+    expect(mocks.board).toHaveBeenCalledWith(expect.objectContaining({ endpoint: '/api/staff/rooms', occupancySource: mocks.stays.mock.results[0].value }));
+    expect(mocks.stays).toHaveBeenCalledWith('GT-HB-01', 'real-staff', true);
   });
-  it('does not inject provisional mock endpoints in backend mode', () => {
-    vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'false'); render(<StaffReservationsWorkspace />);
-    expect(mocks.center).toHaveBeenCalledWith(expect.objectContaining({ endpoint: undefined }));
+  it.each(['false', 'true'])('uses the real Staff BFF for list and detail with mocks=%s', mocksEnabled => {
+    vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', mocksEnabled);
+    const view = render(<StaffReservationsWorkspace />);
+    expect(mocks.center).toHaveBeenCalledWith(expect.objectContaining({ endpoint: '/api/staff/reservations', canCreate: false }));
+    view.rerender(<StaffReservationsWorkspace reservationId="real-reservation" />);
+    expect(mocks.detail).toHaveBeenCalledWith(expect.objectContaining({ endpoint: '/api/staff/reservations', canManage: false, reservationId: 'real-reservation' }));
   });
+});
+
+it('enables contracted real management with COMMERCIAL_MANAGE and keeps real source composition', () => {
+  vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'false');
+  mocks.session.mockReturnValue({ ...sessionFixture, roleId: 'GERENCIA', permissions: ['COMMERCIAL_MANAGE'] });
+  render(<StaffRoomsWorkspace />);
+  expect(mocks.board).toHaveBeenCalledWith(expect.objectContaining({ canManage: true }));
+  fireEvent.click(screen.getByRole('button', { name: 'Administrar inventario' }));
+  expect(mocks.catalog).toHaveBeenCalledWith(expect.objectContaining({ canManage: true }));
 });

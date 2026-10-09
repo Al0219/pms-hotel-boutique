@@ -7,11 +7,15 @@
 export { ReservationCenter } from "./components/reservation-center";
 export { StaffNewReservation } from './components/staff-new-reservation';
 export { confirmDemoBooking } from './hooks/confirm-demo-booking';
+export { confirmPublicBooking } from './hooks/confirm-public-booking';
+export type { PublicBookingRequest, PublicBookingConfirmation, BookingConfirmation } from './model/public-booking';
 export type { DemoBookingRequest, DemoBookingConfirmation } from './model/demo-booking';
 export { ReservationDetail } from "./components/reservation-detail";
 export { WaitlistBoard } from "./components/waitlist-board";
 export { ReservationCancellation } from "./components/reservation-cancellation";
 export { CalendarGantt } from "./calendar/calendar-gantt";
+export { useStaffReservationStays } from './hooks/use-staff-reservation-stays';
+export type { StaffReservationStayRead } from './model/staff-reservation-stay-read';
 export type { GanttBooking, GanttCell, GanttGrid, GanttRow } from "./calendar/calendar-gantt-model";
 export { ReservationNoShow } from "./components/reservation-no-show";
 export { WaitlistConversionPanel } from "./components/waitlist-conversion-panel";

@@ -2,6 +2,7 @@
 export type RoomOccupancyState = 'FREE' | 'RESERVED' | 'OCCUPIED' | 'CONFLICT';
 export interface RoomOccupancyStay {
   reservationId: string; stayId: string; guestName: string; roomType: string;
+  confirmationCode?: string;
   arrival: string; departure: string; state: 'RESERVED' | 'IN_HOUSE';
 }
 export interface RoomOccupancy {
@@ -9,6 +10,17 @@ export interface RoomOccupancy {
 }
 export interface RoomOccupancySnapshot {
   propertyId: string; date: string; rooms: RoomOccupancy[]; unassigned: RoomOccupancyStay[];
+}
+/** Input domain port supplied by app composition; avoids a Rooms -> Reservations cycle. */
+export interface RoomStaySource {
+  propertyId: string; reservationId: string; stayId: string; reservationStatus: string;
+  confirmationCode?: string;
+  roomId: string | null; guestName: string | null; roomType: string;
+  arrival: string; departure: string; travelState: string;
+}
+export interface RoomOccupancySource {
+  data?: readonly RoomStaySource[]; isSuccess: boolean; isError: boolean; isFetching: boolean;
+  error: Error | null; refetch: () => unknown;
 }
 export function isOccupancyDay(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;

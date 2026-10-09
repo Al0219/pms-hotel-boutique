@@ -79,7 +79,7 @@ describe("useReservationCenter", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(result.current.data?.reservations[0]).toEqual(expect.objectContaining({ id: "HB-2026-08421", propertyId: "GT-HB-01" }));
-    expect(result.current.data?.summary.confirmedNextDays).toBe(37);
+    expect(result.current.data?.summary?.confirmedNextDays).toBe(37);
     expect(listReservationCenterMock).toHaveBeenCalledWith(expect.objectContaining({
       endpoint: "http://pms.test/contract/reservations",
       propertyId: "GT-HB-01",

@@ -44,6 +44,29 @@ function waitlistReservation(): ReservationListItem {
 }
 
 describe("ReservationList", () => {
+  it('filters before paginating and resets for search, dates, status, clearing and property', () => {
+    const reservations = Array.from({ length: 60 }, (_, index) => reservation({ id: `RES-${index}`, guestName: index < 40 ? 'Grupo A' : 'Grupo B', status: index < 30 ? 'CONFIRMED' : 'PENDING' }));
+    const { rerender } = render(<ReservationList propertyId="GT-HB-01" reservations={reservations} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Página siguiente' }));
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'Grupo A' } });
+    expect(screen.getByText('1–25 de 40 reservas')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'RES-0' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Página siguiente' }));
+    fireEvent.change(screen.getByLabelText('Llegada desde'), { target: { value: '2026-08-28' } });
+    expect(screen.getByText('1–25 de 40 reservas')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Página siguiente' }));
+    fireEvent.change(screen.getByLabelText('Llegada hasta'), { target: { value: '2026-08-28' } });
+    expect(screen.getByText('1–25 de 40 reservas')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Página siguiente' }));
+    fireEvent.change(screen.getByLabelText('Filtrar por estado'), { target: { value: 'CONFIRMED' } });
+    expect(screen.getByText('1–25 de 30 reservas')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Página siguiente' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Limpiar filtros' }));
+    expect(screen.getByText('1–25 de 60 reservas')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Página siguiente' }));
+    rerender(<ReservationList propertyId="GT-HB-02" reservations={reservations.map(row => ({ ...row, propertyId: 'GT-HB-02' }))} />);
+    expect(screen.getByText('1–25 de 60 reservas')).toBeInTheDocument();
+  });
   it('combines accent-insensitive guest search with inclusive arrival dates and clears filters', () => {
     render(<ReservationList reservations={[reservation(), waitlistReservation()]} />);
     fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'maria lopez' } });
@@ -61,6 +84,8 @@ describe("ReservationList", () => {
   it("renders table headers and the reservation summary cells", () => {
     render(<ReservationList reservations={[reservation(), waitlistReservation()]} />);
 
+    expect(screen.getByRole('table', { name: 'Reservas de la propiedad' })).toHaveStyle({ minWidth: '940px' });
+    expect(screen.getByRole('region', { name: 'Lista de reservas de la propiedad' })).toBeInTheDocument();
     expect(screen.getByText("Reserva / Huésped")).toBeInTheDocument();
     expect(screen.getByText("Estadía / Canal")).toBeInTheDocument();
     expect(screen.getByText("Finanzas / Alerta")).toBeInTheDocument();
@@ -127,19 +152,22 @@ describe("ReservationList", () => {
   it("filters rows by status", () => {
     render(<ReservationList reservations={[reservation(), waitlistReservation()]} />);
 
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "WAITLIST" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Filtrar por estado" }), { target: { value: "WAITLIST" } });
 
     expect(screen.getByText("WAIT-0007")).toBeInTheDocument();
     expect(screen.queryByText("HB-2026-08421")).not.toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("1 reserva");
+    expect(screen.getByText("1–1 de 1 reservas")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
-    expect(screen.getByRole("status")).toHaveTextContent("2 reservas");
+    expect(screen.getByText("1–2 de 2 reservas")).toBeInTheDocument();
   });
 
   it("paginates a list larger than one page", () => {
     const reservations = Array.from({ length: 6 }, (_, index) => reservation({ id: `HB-2026-08${index + 1}`, guestName: `Huésped ${index + 1}` }));
     render(<ReservationList reservations={reservations} />);
 
+    expect(screen.getByLabelText('Filas por página')).toHaveValue('25');
+    expect(screen.getByText('1–6 de 6 reservas')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Filas por página'), { target: { value: '5' } });
     expect(screen.getByText("1–5 de 6 reservas")).toBeInTheDocument();
     expect(screen.getByText("Huésped 1")).toBeInTheDocument();
     expect(screen.queryByText("Huésped 6")).not.toBeInTheDocument();

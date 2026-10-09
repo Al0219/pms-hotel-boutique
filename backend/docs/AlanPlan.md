@@ -1,5 +1,25 @@
 # AlanPlan — Seguimiento Backend
 
+## Juan / integración local main PR149
+
+- **Estado:** COMPLETADA (integración Git local); usuario autoriza traer main
+  y resolver conflictos el
+  2026-10-08. Rama `fix/backend-public-booking-audit-h1-h4`, desde `9674151`;
+  main remoto verificado en `2e29426`. Sin push autorizado para esta integración.
+- **Alcance/resultado:** cambios Staff/Web de main incorporados al merge local;
+  único conflicto textual en AlanHandoff resuelto conservando ambos historiales.
+  Correcciones H1–H4 preservadas, sin modificar migraciones ni secretos.
+- **Validación:** Backend verify 860 PASS; Web 1698 PASS/284 archivos,
+  typecheck/lint/build sin mocks PASS en copias/contenedores aislados.
+- **Decisión aprobada:** usuario elige conservar el entorno AUTH-UNIFIED-01
+  APPROVED y puerto canónico3001 el 2026-10-08. Se preservan Compose/CI previos:
+  bind127.0.0.1:3001, mocks false, Property/perfil demo, OTP/email/SMTP y callback
+  Google/origen público3001. Schema y assertions de integración de configuración
+  PASS, sin arrancar el hotel ni modificar secretos. Cierre local autorizado.
+- **Evidencia:** backend/target/public-booking-main149-* ignorado; cinco documentos
+  untracked iniciales preservados. Detalle en el bloque propio de AlanHandoff;
+  QA temporal retirado. Integración local únicamente, sin despliegue ni push.
+
 ## Reserva pública — Juan / correcciones de auditoría H1–H4
 
 - **Estado:** COMPLETADA; Juan / BD3. QA manual PASS confirmado expresamente
@@ -246,7 +266,63 @@ se documenta su ejecución manual en la guía QA de la tarea.
 | Sesiones | Guest y Staff son contextos separados. |
 | Scope | `ALL_PROPERTIES` es el conjunto autorizado de la sesión. |
 
-## Reserva pública — A4: Security pre-J6 (entrega parcial)
+## Reserva pública — A4 post-J6: cierre (2026-10-08)
+
+- **Estado vigente:** COMPLETADA; cierre técnico PASS y QA manual post-J6 PASS
+  confirmado explícitamente por Alan el 2026-10-08. Aceptación y DoD A4 PASS;
+  la confirmación corresponde a A4, independiente del cierre propio de J6.
+- **QA manual final / evidencia:** stack local actual, fixture HB-GT-DEMO:
+  availability real → creación201; replay201 con respuesta idéntica y conteos
+  sin cambios; PostgreSQL confirma1 Reservation CONFIRMED +2 stays RESERVED
+  sin habitación +1 recibo. Reserva `495bbced-44b2-4de5-8873-2da31e79f5a9`,
+  código `TCUBZR9SBM`, total260000 minor GTQ. Staff anónimo401 y Swagger live
+  PASS: audiencia pública availability/bookings y respuestas201/400/404/409/
+  422/500 comprobadas. Alan aportó resultados de terminal y confirmó
+  «QA manual A4 post-J6: PASS». Sin tokens/cookies/secretos registrados.
+- **Owner/rama/base:** Alan / BD1; `qa/a4-public-booking-post-j6`, árbol inicial
+  limpio, HEAD/main/origin/main `aafdb7b` (PR140 integrado). A1-A3 y núcleo
+  J1-J5 disponibles; J6 COMPLETADA según su aceptación propia.
+- **Alcance autorizado:** validar únicamente availability pública real → booking,
+  anonimato exacto por método/path, vecinos/Staff protegidos, errores aprobados,
+  OpenAPI/Swagger live/generated y persistencia/replay. Sin defecto encontrado;
+  sin cambios de código, tests, producto, migraciones, dependencias ni Web.
+- **Pruebas ejecutadas:** nueve clases focalizadas de availability, J6/core,
+  recibos, Security y OpenAPI: `mvn -o -B --no-transfer-progress -Dtest=... test`
+  184 PASS. `mvn -o -B --no-transfer-progress verify` completo:832 PASS,
+  cero failures/errors/skipped, BUILD SUCCESS y JAR generado. Maven3.9.11,
+  Java21.0.9/PostgreSQL17.11 en Compose desechable sin puertos del host.
+  Avisos SpringDoc y agente JVM preexistentes; sin fallos pendientes.
+- **HTTP/SQL real:** JAR recién validado, catálogo demo existente aislado:
+  GET availability anónimo200 con6 ofertas → POST booking201 (STD×2/DLX×1,
+  dos noches,430000 minor GTQ). PostgreSQL confirma1 Reservation CONFIRMED,
+  3 stays RESERVED con UUIDs/fechas/tipos reales y roomId NULL,1 GuestProfile,
+  1 receipt y4 eventos de auditoría. Replay201 devuelve snapshot/referencia
+  simulada idénticos; todos los conteos permanecen iguales. ATS posterior
+  STD2/DLX3, sin consumo adicional en replay; no crea GuestAccount/Folio.
+- **Seguridad/errores:** smoke automatizado45 checks PASS sin JWT/cookies;
+  GET bookings y POST availability, PUT/PATCH/DELETE/HEAD/OPTIONS de ambos,
+  vecinos/trailing slash/Staff y /error directo probados401. Respuestas
+  públicas sin Set-Cookie. HTTP real400 INVALID_REQUEST/INVALID_DATE_RANGE,
+  404 PROPERTY_NOT_FOUND,409 PRICE_CHANGED/NO_AVAILABILITY/IDEMPOTENCY_KEY_REUSED
+  y500 BOOKING_FAILED, sin escrituras parciales.422 PAYMENT_DECLINED y ERROR
+  de gateway500 cubiertos por fixtures de integración existentes; sin selector
+  de fallos en runtime. No se altera la superficie Auth/BFF aprobada.
+- **OpenAPI:** live y generado coinciden en paths, schemas, security schemes
+  y tags; mappings reales sin exclusiones coinciden:42 operaciones/32 paths/
+  47 schemas/13 tags. Solo GET availability y POST bookings tienen audiencia
+  de negocio public, sin requisito de auth; booking documenta201/400/404/409/
+  422/500 y clave obligatoria. Swagger HTML/config200.
+- **Evidencia:** `target/a4-postj6-focused.log`, `a4-postj6-focused-reports/`,
+  `a4-postj6-verify.log`, `surefire-reports/`, `openapi-generated.json`,
+  `openapi-application-mappings.txt`, `a4-postj6-openapi-live.json` y
+  `a4-postj6-runtime-smoke.json/log` ignorados. Smoke sobre BD tmpfs aislada;
+  entornos QA retirados, stack/base del hotel conservados. No equivale a QA
+  manual ni visual de Alan. `git diff --check` PASS; solo estos dos docs modificados.
+- **Siguiente:** A4 cerrada; actualización exclusivamente documental, sin
+  repetir suites ni smoke. Sin cambios de código ni commit/push/merge;
+  no avanzar a otra tarea sin autorización.
+
+## Reserva pública — A4: Security pre-J6 (historial de entrega parcial)
 
 - **Estado:** parcial; tramo pre-J6 QA manual PASS, cierre post-J6 PENDIENTE.
 - **Owner/rama/base:** Alan / BD1; `feature/a4-public-booking-security-pre-j6`,
@@ -2575,3 +2651,112 @@ pendientes. Commit/push/merge requieren autorización explícita.
 En la validación original, el host tenía Java Runtime 25 sin `javac`. La validación reproducible de
 BE-001 se ejecuta con `maven:3.9.11-eclipse-temurin-21` y PostgreSQL 17 en
 Docker; el workflow Backend CI usa Temurin 21.
+
+
+### STAFF-RESERVATIONS-READ-01 — Integración Staff /reservas PostgreSQL
+
+- **Estado:** COMPLETADA (READY → EN_PROGRESO → EN_QA → COMPLETADA);
+  QA manual aplicable PASS confirmado por Alan, 2026-10-08.
+- **Owner/reviewers:** Alan integración; Juan BD3 y José UI Web, colaborativos.
+- **Rama/base:** `feature/staff-reservations-postgres` desde `bbfd1e7`; árbol limpio
+  al inicio. Sin commit/push/merge autorizados.
+- **Dependencias/DoR:** ReservationQueryService y scope SQL BD3, C2 aprobado,
+  Staff Auth/BFF/refresh reales y UI José existentes; solicitud autoriza lectura
+  y HTTP/OpenAPI faltante. Se conserva RESERVATION_MANAGE, PROPERTY explícito,
+  responsible GuestProfile separado de ocupantes; sin facultades financieras.
+- **Contrato/archivos:** [49](49_STAFF_RESERVATIONS_READ_CONTRACT.md), adapter Staff
+  sobre queries, dos GET/chain Staff/OpenAPI, BFF allowlist, DTO/mapper/service/hooks
+  y adaptación nullable de componentes existentes. Sin migrations/dependencias.
+- **Aceptación:** PASS; PostgreSQL real en listado y detalle, N stays/room nullable,
+  header histórico válido, aislamiento Guest/Staff/property y permisos actuales,
+  refresh acotado, ningún dato financiero/ocupación/política inventado.
+- **DoD:** PASS; focalizados y full verify Backend, Web tests/typecheck/lint/build
+  con mocks false, generated OpenAPI/mappings y diff PASS previos; QA manual
+  aplicable de Alan PASS con NEXT_PUBLIC_USE_MOCK_API=false. Caso sin permiso
+  NO EJECUTABLE manualmente por falta de fixture, con cobertura técnica existente;
+  ninguna regla vigente exige su ejecución manual para este cierre.
+- **Evidencia:** Backend focalizados 24 PASS y full verify 840 PASS, sin fallos/errores/skips;
+  Java21/PostgreSQL17 aislado. Web focalizados 232 PASS; full suite 1579/270 PASS
+  con `--maxWorkers=2`, typecheck/lint/build mock=false PASS y diff PASS. OpenAPI
+  generado 44 operaciones/34 paths/52 schemas/13 tags, sin exclusiones.
+- **Siguiente:** incremento cerrado conforme a [49](49_STAFF_RESERVATIONS_READ_CONTRACT.md);
+  no avanzar a otra tarea ni realizar commit/push/merge sin autorización.
+
+
+#### STAFF-RESERVATIONS-READ-01 — Corrección técnica de intercepción MSW
+
+- **Estado al entregar la corrección:** EN_QA; Alan reportó lectura correcta con mocks=false y una
+  incidencia con mocks=true. Según la decisión de cierre de abajo, esta última
+  es una incidencia técnica, no un FAIL del QA manual obligatorio.
+- **Autorización/alcance:** Alan solicita únicamente excluir GET list/detail BFF
+  de intercepción MSW. Contrato 49 y Backend/UI sin cambios en esta corrección.
+- **Entrega:** worker wrapper antes del script MSW generado + registro enable;
+  tests worker/service/workspace con ambos flags y regresión de mocks existentes.
+- **Evidencia:** focalizados 41/full 1596 PASS, typecheck/lint/builds ambos flags y
+  diff PASS; smoke Firefox ambos flags contra PostgreSQL PASS. Detalle en Handoff.
+- **Seguimiento:** QA manual aplicable mocks=false confirmado PASS y cierre
+  COMPLETADA registrado abajo; evidencia técnica de esta corrección conservada.
+
+#### STAFF-RESERVATIONS-READ-01 — Decisión de cierre QA, 2026-10-08
+
+- **Decisión aprobada:** el gate manual/E2E se ejecuta únicamente con
+  `NEXT_PUBLIC_USE_MOCK_API=false`. Mocks=true no es gate manual ni modo de
+  integración real de esta tarea; no declarar FAIL manual por su comportamiento.
+- **Cobertura técnica:** se conservan los tests de boundaries con ambos flags,
+  exclusión MSW y regresión de otros mocks; no cambia producto ni Backend.
+- **Limitación manual:** Staff autenticado sin RESERVATION_MANAGE sigue
+  **NO EJECUTABLE** por falta de fixture; esperado403, sin atribuir PASS manual.
+- **Estado vigente:** COMPLETADA tras QA manual aplicable mocks=false PASS
+  confirmado por Alan; cierre registrado abajo. Sin commit/push/merge.
+
+#### STAFF-RESERVATIONS-READ-01 — Cierre con QA manual aplicable PASS, 2026-10-08
+
+- **Estado/aceptación/DoD:** EN_QA → COMPLETADA; aceptación y DoD PASS. Alan
+  confirmó los nueve casos manuales de [49](49_STAFF_RESERVATIONS_READ_CONTRACT.md)
+  con NEXT_PUBLIC_USE_MOCK_API=false: lectura PostgreSQL/listado, detalle/stays,
+  property403, propertyId400, inexistente404, anónimo401, Guest401, refresh y
+  ausencia de datos/finanzas inventados. Mocks=true fuera del gate manual.
+- **Limitación conservada:** Staff autenticado sin RESERVATION_MANAGE:
+  NO EJECUTABLE manualmente por falta de fixture; esperado403, cobertura técnica
+  existente PASS, sin PASS manual atribuido ni fixtures/permisos modificados.
+  El DoD vigente permite cerrar con esta limitación explícita.
+- **Validación:** evidencia técnica previa Backend/Web/OpenAPI conservada;
+  cierre exclusivamente documental, git diff --check PASS. Sin suites nuevas.
+- **Siguiente:** incremento cerrado; cualquier trabajo adicional o publicación
+  requiere autorización independiente. Sin commit/push/merge.
+
+
+### Integración Staff Habitaciones/C-R-U — cierre Web, 2026-10-08
+
+- **Estado:** COMPLETADA; EN_QA → COMPLETADA tras QA manual real PASS confirmado
+  por Alan y autorización expresa de cierre de integración y ajustes asociados.
+  Se registra el incremento Web sobre contratos existentes, sin inventar ID de
+  backlog ni modificar estados Backend ya cerrados o la fila de Calendario.
+- **Owner/rama/base:** Alan integración/QA; UI WEB-3/José, revisión colaborativa
+  WEB-4 y owners Inventory/Reservations. `feature/staff-room-inventory-read`,
+  base `main 63279d7`; sin commit/push/merge.
+- **Dependencias/contratos:** BD2-007B/BD2-008/BD2-010 y Staff Reservations reales;
+  contratos [16](16_BD2_ROOM_TYPES_CRUD_CONTRACT_PROPOSAL.md),
+  [17](17_BD2_ROOMS_CRUD_CONTRACT.md), [49](49_STAFF_RESERVATIONS_READ_CONTRACT.md).
+  Staff Auth/PROPERTY y permisos vigentes conservados; Backend/HTTP y contratos
+  sin cambios en este incremento de integración Web.
+- **Alcance completado:** Inventory/RoomTypes PostgreSQL y stays Reservations por
+  roomId/null, BFF same-origin HttpOnly; crear Room/RoomType y editar code Room,
+  code/name RoomType; edición inline, tabla agrupada, sidebar, filtros compactos
+  y paginación compartida5/10/25/50/100 default25. Reinicio a página1 por tamaño,
+  filtros/fecha/propiedad; métricas y Sin asignar sin paginar. No se inventan
+  limpieza, ATS, piso, notas, fotos ni estados operativos.
+- **Validación:** evidencia previa Web416 PASS/70 archivos, focalizados
+  finales32 PASS/3 archivos, typecheck/lint/build mocks=false y diff-check PASS.
+  QA manual real PASS comunicado por Alan; no se atribuyen al agente nuevas
+  pruebas PostgreSQL ni resultados manuales individuales no informados.
+  Cierre documental: diff-check; sin repetir suites o modificar código funcional.
+- **Guías cerradas:** [58](../../frontend/pms-hotel-web/docs/58_STAFF_ROOMS_REAL_READ_QA.md),
+  [59](../../frontend/pms-hotel-web/docs/59_STAFF_SIDEBAR_PRESENTATION_QA.md),
+  [60](../../frontend/pms-hotel-web/docs/60_STAFF_INVENTORY_CRU_QA.md);
+  detalle y límites en la entrada vigente de AlanHandoff.
+- **DELETE:** bloqueado y excluido; falta contrato/operación canónica y política
+  de baja/retención aprobada. Este cierre no autoriza delete/archive/status.
+- **Siguiente incremento:** asignación física, no incluida ni iniciada aquí;
+  verificar DoR, contratos y decisiones antes de implementarla. No se declara
+  READY ni se modifica el siguiente trabajo de otros owners por este cierre.

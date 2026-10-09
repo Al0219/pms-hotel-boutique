@@ -20,7 +20,7 @@ export function useChangeRoomStatus(
       startDate: string | null;
       endDate: string | null;
     }) => {
-      if (!propertyId || !endpoint) {
+      if (!propertyId || !endpoint || endpoint.startsWith('/api/staff/')) {
         throw new Error("ROOM_STATUS_CHANGE_MUTATION_CONFIGURATION_REQUIRED");
       }
 

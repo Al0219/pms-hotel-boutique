@@ -1,14 +1,16 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, within } from "@testing-library/react";
+import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PrivateLayout from "./layout";
 import { AppRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { http, HttpResponse } from "msw";
 import { mockServer } from "@/data/mocks/server";
 const navigation = {replace:vi.fn(),push:vi.fn(),back:vi.fn(),forward:vi.fn(),refresh:vi.fn(),prefetch:vi.fn(),bfcacheId:"staff-layout"};
-vi.mock("next/navigation", () => ({ usePathname: () => "/dashboard" }));
+const route = vi.hoisted(() => ({ pathname: '/dashboard' }));
+vi.mock("next/navigation", () => ({ usePathname: () => route.pathname }));
 const clients: QueryClient[] = [];
-beforeEach(() => { localStorage.clear(); sessionStorage.clear(); vi.stubEnv("NEXT_PUBLIC_USE_MOCK_API", "true"); mockServer.use(http.get("*/api/auth/staff/session", () => HttpResponse.json({staffUserId:"staff",sessionId:"session",username:"gerencia.real",roleCode:"GERENCIA",permissions:["MULTI_PROPERTY_READ"],memberships:[]}))); });
+beforeEach(() => { route.pathname = '/dashboard'; localStorage.clear(); sessionStorage.clear(); vi.stubEnv("NEXT_PUBLIC_USE_MOCK_API", "false"); mockServer.use(http.get("*/api/auth/staff/session", () => HttpResponse.json({staffUserId:"staff",sessionId:"session",username:"gerencia.real",roleCode:"GERENCIA",permissions:["MULTI_PROPERTY_READ"],memberships:[]}))); });
 afterEach(() => { cleanup(); clients.splice(0).forEach(client => client.clear()); vi.unstubAllEnvs(); });
 function mount() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } }); clients.push(client);
@@ -25,7 +27,17 @@ describe("PrivateLayout", () => {
     expect(within(nav).getAllByRole("link")).toHaveLength(4);
     expect(screen.getAllByRole("main")).toHaveLength(1);
     expect(screen.getByText("Contenido Staff")).toBeInTheDocument();
-    expect(screen.getByText("Gerencia · Sesión Staff")).toBeInTheDocument();
+    expect(screen.getByText("Gerencia")).toBeInTheDocument();
+    const sidebar = screen.getByRole('complementary', { name: 'Private shell sidebar' });
+    expect(within(sidebar).getByText('PMS Staff')).toBeInTheDocument();
+    expect(within(sidebar).getByText('gerencia.real')).toBeInTheDocument();
+    expect(within(sidebar).getByText('Gerencia')).toBeInTheDocument();
+    expect(within(sidebar).getByLabelText('Propiedad')).toBeDisabled();
+    expect(within(sidebar).getByRole('button', { name: 'Cerrar sesión' })).toBeInTheDocument();
+    expect(screen.queryByRole('banner')).not.toBeInTheDocument();
+    expect(screen.getAllByText('gerencia.real')).toHaveLength(1);
+    expect(screen.getAllByLabelText('Propiedad')).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Cerrar sesión' })).toHaveLength(1);
   });
   it("exposes no links to unmounted Staff routes", async () => {
     mount();
@@ -39,5 +51,31 @@ describe("PrivateLayout", () => {
     expect(within(nav).queryByRole("link", { name: "Grupos / Eventos" })).not.toBeInTheDocument();
     expect(within(nav).queryByRole("link", { name: "Housekeeping" })).not.toBeInTheDocument();
     expect(screen.queryByRole("navigation", { name: "Mi sesión Staff" })).not.toBeInTheDocument();
+  });
+  it.each([
+    ['/dashboard', 'Panel'], ['/reservas', 'Reservas'], ['/reservas/res-real', 'Reservas'],
+    ['/calendario', 'Calendario'], ['/staff/habitaciones', 'Habitaciones'],
+  ])('keeps one active module and property selector on %s', async (pathname, label) => {
+    route.pathname = pathname;
+    mount();
+    const nav = await screen.findByRole('navigation', { name: 'Módulos Staff' });
+    expect(within(nav).getByRole('link', { name: label })).toHaveAttribute('aria-current', 'page');
+    expect(nav.querySelectorAll('[aria-current="page"]')).toHaveLength(1);
+    within(nav).getAllByRole('link').forEach(link => expect(link.querySelector('svg')).toHaveAttribute('aria-hidden', 'true'));
+    expect(screen.getByLabelText('Propiedad')).toBeInTheDocument();
+  });
+  it('closes the collapsible Staff menu with Escape and returns focus; a route click also closes it', async () => {
+    const user = userEvent.setup();
+    mount();
+    const toggle = await screen.findByRole('button', { name: 'Abrir menú Staff' });
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(toggle).toHaveAttribute('aria-controls', 'staff-navigation');
+    await user.keyboard('{Escape}');
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(toggle).toHaveFocus();
+    await user.click(toggle);
+    await user.click(screen.getByRole('link', { name: 'Calendario' }));
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
   });
 });

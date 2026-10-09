@@ -7,8 +7,10 @@ export interface Room {
   propertyId: string;
   number: string;
   floor: string | null;
-  status: RoomStatus;
+  status: RoomStatus | null;
+  readOnly?: boolean;
   roomTypeLabel: string;
+  roomTypeId?: string;
 }
 
 export function isRoomStatus(value: string): value is RoomStatus {

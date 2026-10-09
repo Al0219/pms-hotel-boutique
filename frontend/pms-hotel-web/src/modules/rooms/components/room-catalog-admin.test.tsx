@@ -2,6 +2,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resetStaffRoomCatalog, roomCatalogFixture, operationalRoomFixture } from '@/data/mocks/staff-room-catalog';
+import { http, HttpResponse } from 'msw';
+import { mockServer } from '@/data/mocks/server';
+import { inventoryPropertyId, staffInventoryFixture } from '@/test/staff-inventory-fixture';
 import { RoomCatalogAdmin } from './room-catalog-admin';
 
 beforeEach(() => { vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'true'); resetStaffRoomCatalog(); });
@@ -131,9 +134,20 @@ describe('Staff room catalog', () => {
     expect(within(screen.getByRole('table')).queryByRole('button', { name: /Editar/ })).not.toBeInTheDocument();
   });
 
-  it('does not expose the mock transport when the application uses the real backend', () => {
-    vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'false'); renderCatalog();
-    expect(screen.getByRole('status')).toHaveTextContent('cuando se conecte el catálogo');
+  it('keeps real catalog consultation available without management permission or provisional metadata', async () => {
+    const fixture = staffInventoryFixture();
+    mockServer.use(http.get('*/api/staff/rooms', () => HttpResponse.json(fixture.rooms)),
+      http.get('*/api/staff/room-types', () => HttpResponse.json(fixture.types)));
+    vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'false'); renderCatalog(inventoryPropertyId, false);
+    await screen.findByRole('heading', { name: 'Administrar habitaciones' });
+    expect(within(screen.getByRole('table')).getByText('Habitación 101')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Nueva habitación' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Editar/ })).not.toBeInTheDocument();
+
+    expect(screen.queryByRole('region', { name: 'Vista previa de la ficha pública' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Notas internas:/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Tipos de habitación' }));
+    expect(screen.getByText('Deluxe real')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Nuevo tipo' })).not.toBeInTheDocument();
   });
 });
