@@ -1,5 +1,37 @@
 # Staff: reservas e inventario para la presentación
 
+## Ampliación de inventario real — 2026-10-08
+
+[C/R/U real y UI compacta](60_STAFF_INVENTORY_CRU_QA.md) amplía el incremento58:
+crear Room/RoomType y editar código Room/código-nombre RoomType vía BFF Staff
+y endpoints Backend existentes. Guardado inline y creación compacta, con el
+permiso COMMERCIAL_MANAGE real. Reservas/Habitaciones comparten filtros/tablas
+y eliminan los encabezados solicitados. Mantiene EN_QA hasta QA manual de Alan;
+DELETE carece de contrato de baja/retención y no se simula. Los límites READ-ONLY
+de las secciones anteriores se refieren a la entrega58, conservada como histórica.
+
+## Shell compartido para presentación — 2026-10-08
+
+El [sidebar Staff compartido](59_STAFF_SIDEBAR_PRESENTATION_QA.md) concentra
+identidad, rol, selector de propiedad, navegación con iconos y cierre de sesión.
+Se retira el header horizontal en las cuatro pantallas del menú; el selector y
+el logout conservan su lógica. Estado **EN_QA**, pendiente QA manual real de Alan.
+Calendario mantiene su composición previa por variables de entorno; esta
+corrección de presentación no integra sus datos con PropertyContext.
+
+## Actualización de lectura real — 2026-10-08
+
+El incremento autorizado de [Habitaciones real, solo lectura](58_STAFF_ROOMS_REAL_READ_QA.md)
+conecta Rooms/RoomTypes Inventory y las N stays de Staff Reservations en modo
+`NEXT_PUBLIC_USE_MOCK_API=false`. Conserva las dos vistas existentes, con datos
+operativos desconocidos y mutaciones reales cerradas. Los avisos de transporte
+pendiente de Habitaciones descritos más abajo corresponden a la entrega anterior.
+Reservations ya tiene listado/detalle real según el contrato49; sus acciones
+provisionales y Calendario conservan sus propios límites. La implementación
+actual no acredita persistencia de fotos/notas/piso/estado operativo ni edición real.
+Estado del incremento: **EN_QA**; validación técnica PASS y QA manual real de Alan
+pendiente en la guía58. No se declara COMPLETADA ni se modifica el backlog.
+
 Para revisar estas pantallas sin levantar Backend, usar la
 [vista previa local Staff](54_STAFF_FRONTEND_PREVIEW.md), habilitada por un comando
 separado. El login integrado de BD1 y sus guards permanecen en el modo normal.

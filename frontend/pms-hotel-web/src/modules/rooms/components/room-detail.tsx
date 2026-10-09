@@ -35,7 +35,7 @@ export function RoomDetail({ room, propertyId, endpoint, occupancy, occupancyDat
     <div className={styles.detailGrid}>
       <section className={styles.detailCard} aria-labelledby="room-status-title">
         <h3 id="room-status-title">Estado de habitación</h3>
-        <StatusBadge variant={ROOM_STATUS_VARIANTS[room.status]}>{ROOM_STATUS_LABELS[room.status]}</StatusBadge>
+        <StatusBadge variant={room.status === null ? 'neutral' : ROOM_STATUS_VARIANTS[room.status]}>{room.status === null ? 'Estado operativo no disponible' : ROOM_STATUS_LABELS[room.status]}</StatusBadge>
         <p className={styles.note}>
           OOO (Fuera de orden) y OOS (Fuera de servicio) no eliminan la habitación del sistema.
         </p>
@@ -56,7 +56,7 @@ export function RoomDetail({ room, propertyId, endpoint, occupancy, occupancyDat
         <h3 id="room-type-title">Tipo de habitación</h3>
         <p>{room.roomTypeLabel}</p>
       </section>
-      {propertyId && endpoint ? (
+      {propertyId && endpoint && !room.readOnly && room.status !== null ? (
         <RoomStatusPanel room={room} propertyId={propertyId} endpoint={endpoint} />
       ) : null}
     </div>

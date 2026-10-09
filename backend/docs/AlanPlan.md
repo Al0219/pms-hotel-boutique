@@ -2666,3 +2666,39 @@ Docker; el workflow Backend CI usa Temurin 21.
   cierre exclusivamente documental, git diff --check PASS. Sin suites nuevas.
 - **Siguiente:** incremento cerrado; cualquier trabajo adicional o publicación
   requiere autorización independiente. Sin commit/push/merge.
+
+
+### Integración Staff Habitaciones/C-R-U — cierre Web, 2026-10-08
+
+- **Estado:** COMPLETADA; EN_QA → COMPLETADA tras QA manual real PASS confirmado
+  por Alan y autorización expresa de cierre de integración y ajustes asociados.
+  Se registra el incremento Web sobre contratos existentes, sin inventar ID de
+  backlog ni modificar estados Backend ya cerrados o la fila de Calendario.
+- **Owner/rama/base:** Alan integración/QA; UI WEB-3/José, revisión colaborativa
+  WEB-4 y owners Inventory/Reservations. `feature/staff-room-inventory-read`,
+  base `main 63279d7`; sin commit/push/merge.
+- **Dependencias/contratos:** BD2-007B/BD2-008/BD2-010 y Staff Reservations reales;
+  contratos [16](16_BD2_ROOM_TYPES_CRUD_CONTRACT_PROPOSAL.md),
+  [17](17_BD2_ROOMS_CRUD_CONTRACT.md), [49](49_STAFF_RESERVATIONS_READ_CONTRACT.md).
+  Staff Auth/PROPERTY y permisos vigentes conservados; Backend/HTTP y contratos
+  sin cambios en este incremento de integración Web.
+- **Alcance completado:** Inventory/RoomTypes PostgreSQL y stays Reservations por
+  roomId/null, BFF same-origin HttpOnly; crear Room/RoomType y editar code Room,
+  code/name RoomType; edición inline, tabla agrupada, sidebar, filtros compactos
+  y paginación compartida5/10/25/50/100 default25. Reinicio a página1 por tamaño,
+  filtros/fecha/propiedad; métricas y Sin asignar sin paginar. No se inventan
+  limpieza, ATS, piso, notas, fotos ni estados operativos.
+- **Validación:** evidencia previa Web416 PASS/70 archivos, focalizados
+  finales32 PASS/3 archivos, typecheck/lint/build mocks=false y diff-check PASS.
+  QA manual real PASS comunicado por Alan; no se atribuyen al agente nuevas
+  pruebas PostgreSQL ni resultados manuales individuales no informados.
+  Cierre documental: diff-check; sin repetir suites o modificar código funcional.
+- **Guías cerradas:** [58](../../frontend/pms-hotel-web/docs/58_STAFF_ROOMS_REAL_READ_QA.md),
+  [59](../../frontend/pms-hotel-web/docs/59_STAFF_SIDEBAR_PRESENTATION_QA.md),
+  [60](../../frontend/pms-hotel-web/docs/60_STAFF_INVENTORY_CRU_QA.md);
+  detalle y límites en la entrada vigente de AlanHandoff.
+- **DELETE:** bloqueado y excluido; falta contrato/operación canónica y política
+  de baja/retención aprobada. Este cierre no autoriza delete/archive/status.
+- **Siguiente incremento:** asignación física, no incluida ni iniciada aquí;
+  verificar DoR, contratos y decisiones antes de implementarla. No se declara
+  READY ni se modifica el siguiente trabajo de otros owners por este cierre.

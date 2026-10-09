@@ -1,0 +1,76 @@
+.page { max-width: 1280px; margin: 0 auto; padding: 0 var(--space-4) var(--space-4); min-width: 0; color: var(--color-text-primary); }
+.filters { display: grid; gap: 14px; background: var(--color-surface-card); border: 1px solid var(--color-border-default); border-radius: var(--radius-lg); padding: var(--space-6); box-shadow: var(--shadow-card); margin-bottom: var(--space-5); }
+.filterGrid { display: grid; grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)) 120px; gap: 14px; align-items: end; min-width: 0; }
+.filterGridExpanded { grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr)) 120px; }
+.filterActions { grid-column: -2 / -1; }
+.filterActions > button { width: 100%; }
+.filterColumn2 { grid-column: 2; }
+.filterColumn3 { grid-column: 3; }
+.supportActions { grid-column: 3 / 5; display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.viewControls { min-width: 0; }
+.viewControls > div { margin: 0; padding: 0; }
+.viewControls button { font-size: var(--font-size-caption); min-height: 46px; }
+.secondaryRail { display: grid; align-content: start; gap: var(--space-2); min-height: 64px; margin-bottom: var(--space-5); min-width: 0; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 14px; align-items: end; }
+.field, .searchField { display: grid; align-content: start; gap: var(--space-2); color: var(--color-text-secondary); font-size: var(--font-size-caption); font-weight: var(--font-weight-medium); min-width: 0; flex: 1 1 150px; }
+.searchField { flex: 2 1 230px; }
+.searchControl { position: relative; display: flex; align-items: center; }
+.searchControl svg { position: absolute; left: 13px; pointer-events: none; color: var(--color-text-secondary); }
+.field :is(input, select), .searchField input, .inlineEditor input { background: var(--color-surface-page); border: 1px solid var(--color-border-default); border-radius: var(--radius-sm); color: var(--color-text-primary); font: inherit; font-size: var(--font-size-label-md); min-height: 46px; height: 46px; line-height: var(--line-height-label-md); padding: 11px 12px; width: 100%; min-width: 0; box-sizing: border-box; }
+.searchControl input { padding-left: 40px; }
+:is(.field, .searchField) :is(input, select):focus, .inlineEditor input:focus { background: var(--color-surface-card); border-color: var(--color-brand-primary); }
+.page :is(input, select, button, a):focus-visible, .inlineEditor :is(input, button):focus-visible { outline: 3px solid var(--color-brand-accent); outline-offset: 3px; }
+.button, .inlineEditor button { background: var(--color-surface-card); border: 1px solid var(--color-border-default); border-radius: var(--radius-sm); color: var(--color-text-brand); cursor: pointer; font: inherit; font-size: var(--font-size-caption); padding: 10px 14px; min-height: 46px; flex: none; }
+.button:hover:not(:disabled), .inlineEditor button:hover:not(:disabled) { background: var(--color-brand-subtle); }
+.button:disabled, .inlineEditor button:disabled { cursor: default; opacity: .5; }
+.actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.tableRegion { min-width: 0; }
+.tableRegion > div[role="region"] { border-color: var(--color-border-default); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); }
+.tableRegion table thead th { background: var(--color-brand-subtle); color: var(--color-text-brand); font-size: var(--font-size-caption); letter-spacing: var(--letter-spacing-caption); padding: 12px 16px; white-space: nowrap; }
+.tableRegion table tbody td { height: 96px; box-sizing: border-box; padding: 12px 16px; border-color: var(--color-border-default); font-size: var(--font-size-label-md); line-height: var(--line-height-label-md); }
+.tableRegion table tbody tr:hover td, .tableRegion table tbody tr:focus-within td { background: var(--color-surface-page); }
+.group { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); overflow-wrap: anywhere; min-width: 120px; }
+.group small { color: var(--color-text-secondary); font-size: var(--font-size-caption); line-height: var(--line-height-caption); }
+.cellButton { border: 0; background: transparent; color: inherit; padding: 0; font: inherit; text-align: left; cursor: pointer; display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--space-2); }
+.cellButton[hidden] { display: none; }
+.cellButton:hover { color: var(--color-text-brand); }
+.editHint { color: var(--color-text-brand); font-size: var(--font-size-caption); text-decoration: underline; text-underline-offset: 3px; }
+.inlineEditor { display: grid; gap: var(--space-2); min-width: 180px; max-width: 320px; font-size: var(--font-size-caption); }
+.error { color: var(--color-system-error); font-size: var(--font-size-caption); margin: var(--space-2) 0 0; }
+.success { color: var(--color-system-success); font-size: var(--font-size-caption); }
+@media (max-width: 600px) { .page { padding: 0 0 var(--space-4); } .filters { padding: var(--space-4); } .toolbar { display: grid; grid-template-columns: minmax(0, 1fr); } .field, .searchField { width: 100%; } }
+
+.group strong { font-weight: var(--font-weight-semibold); }
+
+.listSurface { display: grid; gap: 0; min-width: 0; }
+.resultsFooter { min-height: 44px; align-items: center; display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; padding: 0 4px; margin-top: var(--space-4); }
+.resultsSummary { color: #68736b; font-size: 12px; margin: 0; }
+.scrollHint { display: none; color: #68736b; font-size: 12px; }
+@media (max-width: 1100px) { .scrollHint { display: block; } }
+@media (max-width: 600px) { .resultsFooter { align-items: flex-start; flex-direction: column; } }
+
+.listSurface :is(input, select, button, a):focus-visible { outline: 3px solid #6b7c62; outline-offset: 3px; }
+.reference { display: block; font-size: 13px; font-weight: 600; }
+.cellText { color: #354337; font-size: 13px; }
+.cellMuted, .tableRegion .cellMuted { color: #6f7a72; font-size: 12px; line-height: 1.7; margin: 0; }
+.paginationControls { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: center; min-width: 0; max-width: 100%; }
+.pageSizeField { display: flex; gap: var(--space-2); align-items: center; color: var(--color-text-secondary); font-size: var(--font-size-caption); }
+.pageSizeField select { height: 44px; min-width: 68px; border: 1px solid var(--color-border-default); border-radius: var(--radius-sm); background: var(--color-surface-card); color: var(--color-text-brand); padding: var(--space-2); font: inherit; }
+.pager { display: flex; flex-wrap: wrap; gap: 6px; }
+.pageButton { background: var(--color-surface-card); border: 1px solid var(--color-border-default); border-radius: var(--radius-sm); color: var(--color-text-brand); cursor: pointer; font: inherit; font-size: 13px; min-height: 44px; min-width: 44px; padding: 8px 12px; }
+.pageButton:disabled { cursor: default; opacity: .4; }
+.pageButton:not(:disabled):hover { background: var(--color-brand-subtle); }
+.pageButtonActive { background: var(--color-brand-primary); border-color: var(--color-brand-primary); color: var(--color-text-inverse); }
+.pageButtonActive:not(:disabled):hover { background: var(--color-brand-primary-hover); }
+.pageEllipsis { color: var(--color-text-secondary); align-self: center; padding: 0 2px; }
+@media (max-width: 1100px) {
+  .filterGrid, .filterGridExpanded { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .filterActions, .filterColumn2, .filterColumn3, .supportActions { grid-column: auto; }
+  .filterGrid .searchField { grid-column: 1 / -1; }
+  .viewControls { grid-column: 1 / -1; }
+}
+@media (max-width: 600px) {
+  .filterGrid, .filterGridExpanded { grid-template-columns: minmax(0, 1fr); }
+  .secondaryRail { min-height: 0; }
+  .secondaryRail:empty { display: none; }
+}

@@ -108,10 +108,10 @@ function waitlistPreviewMockReturn() {
 }
 
 describe("ReservationCenter", () => {
-  it('opens the new reservation route only when creation is permitted, including an empty center', () => {
+  it('keeps creation entry points removed, including an empty center with creation permission', () => {
     useReservationCenterMock.mockReturnValue({ data: { ...centerData(), reservations: [] }, error: null, isLoading: false, refetch: vi.fn() });
     const view = render(<ReservationCenter propertyId="GT-HB-01" endpoint="http://pms.test/contract/reservations" canCreate />);
-    expect(screen.getByRole('link', { name: '+ Nueva reserva' })).toHaveAttribute('href', '/reservas/nueva');
+    expect(screen.queryByRole('link', { name: '+ Nueva reserva' })).not.toBeInTheDocument();
     view.rerender(<ReservationCenter propertyId="GT-HB-01" endpoint="http://pms.test/contract/reservations" canCreate={false} />);
     expect(screen.queryByRole('link', { name: '+ Nueva reserva' })).not.toBeInTheDocument();
   });
@@ -161,7 +161,7 @@ describe("ReservationCenter", () => {
 
     render(<ReservationCenter propertyId="GT-HB-01" endpoint="http://pms.test/contract/reservations" />);
 
-    expect(screen.getByRole("heading", { name: "Centro de Reservas" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Centro de Reservas" })).not.toBeInTheDocument();
     expect(screen.getByText("Llegadas hoy")).toBeInTheDocument();
     expect(screen.getByText("18")).toBeInTheDocument();
     expect(screen.getByText("Salidas hoy")).toBeInTheDocument();
@@ -173,12 +173,15 @@ describe("ReservationCenter", () => {
     expect(screen.getByText("HB-2026-08421")).toBeInTheDocument();
   });
 
-  it("links to the staff calendar from the center header", () => {
+  it("removes the introductory header and upper navigation actions", () => {
     useReservationCenterMock.mockReturnValue({ data: centerData(), error: null, isLoading: false, refetch: vi.fn() });
 
     render(<ReservationCenter propertyId="GT-HB-01" endpoint="http://pms.test/contract/reservations" />);
 
-    expect(screen.getByRole("link", { name: "Ver calendario" })).toHaveAttribute("href", "/calendario");
+    expect(screen.queryByRole("link", { name: "Ver calendario" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Ver lista de espera" })).not.toBeInTheDocument();
+    expect(screen.queryByText("RECEPCIÓN · RESERVAS")).not.toBeInTheDocument();
+    expect(screen.queryByText("Encuentra una reserva")).not.toBeInTheDocument();
   });
 
   it("opens the waitlist conversion panel from a waitlist row", () => {
@@ -224,6 +227,6 @@ describe("ReservationCenter", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Mantener en waitlist" }));
     expect(screen.queryByRole("heading", { name: "Convertir a reserva" })).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Centro de Reservas" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Centro de Reservas" })).not.toBeInTheDocument();
   });
 });

@@ -1,10 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { DomainMappingError } from '@/lib/errors';
 import { staffReservationFixture } from '../staff-reservation.fixture';
-import { mapStaffReservationCenter, mapStaffReservationDetail } from './staff-reservation.mapper';
+import { mapStaffReservationCenter, mapStaffReservationDetail, mapStaffReservationStays } from './staff-reservation.mapper';
 import { filterStaffReservations } from '../model/reservation-search';
 
 describe('Staff real reservation mapping', () => {
+  it('exposes independent validated stay reads without losing dates, state or null rooms', () => {
+    const dto = staffReservationFixture();
+    dto.stays.push({ ...dto.stays[0], stayId: '66666666-6666-6666-6666-666666666666', arrival: '2026-11-05', departure: '2026-11-06',
+      status: 'IN_HOUSE', room: { roomId: '77777777-7777-7777-7777-777777777777', code: '101' } });
+    const stays = mapStaffReservationStays([dto]);
+    expect(stays).toHaveLength(2);
+    expect(stays[0]).toMatchObject({ confirmationCode: dto.confirmationCode, arrival: '2026-11-01', departure: '2026-11-03', roomId: null, travelState: 'RESERVED' });
+    expect(stays[1]).toMatchObject({ arrival: '2026-11-05', departure: '2026-11-06', roomId: '77777777-7777-7777-7777-777777777777', travelState: 'IN_HOUSE' });
+    expect(stays[0]).not.toHaveProperty('finance');
+    expect(() => mapStaffReservationStays([dto, { ...dto, reservationId: '99999999-9999-9999-9999-999999999999' }])).toThrow(DomainMappingError);
+    expect(mapStaffReservationStays([{ ...dto, stays: [] }])).toEqual([]);
+  });
   it('keeps responsibility separate from occupancy and leaves finance and policy unknown', () => {
     const dto = staffReservationFixture();
     const detail = mapStaffReservationDetail(dto);

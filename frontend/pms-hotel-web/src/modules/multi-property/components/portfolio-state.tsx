@@ -11,7 +11,7 @@ export function PortfolioState({ context, query, empty }: {
   empty: boolean;
 }) {
   if (!context.ready) return <p role="status">Cargando contexto…</p>;
-  if (!context.scope) return <p role="status">Selecciona una propiedad autorizada en el encabezado para continuar.</p>;
+  if (!context.scope) return <p role="status">Selecciona una propiedad autorizada en el menú Staff para continuar.</p>;
   if (query.fetchStatus === "paused") return <p role="status">Sin conexión. La consulta continuará al reconectar.</p>;
   if (query.isPending) return <p role="status">Cargando datos de las propiedades seleccionadas…</p>;
   if (query.isError) return <div role="alert"><p>No se pudieron cargar los datos de este contexto.</p><button className={styles.btnOutline} onClick={() => void query.refetch()}>Reintentar consulta</button></div>;

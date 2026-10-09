@@ -55,7 +55,10 @@ Vista frontend solicitada por José: `(public)/cuenta/reservas/vincular/page.tsx
 Header + main + Footer.
 
 ### Private
-Sidebar + StaffHeader + main.
+Sidebar + main. La identidad Staff, el rol, el selector de propiedad y el logout
+se concentran en el sidebar compartido; no hay StaffHeader horizontal
+(decisión de presentación autorizada, 2026-10-08). El menú conserva labels e
+iconos y se despliega en pantallas estrechas.
 
 ## page.tsx
 Debe ser delgado.

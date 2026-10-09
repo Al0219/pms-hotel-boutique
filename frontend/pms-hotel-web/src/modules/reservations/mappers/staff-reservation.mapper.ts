@@ -3,6 +3,7 @@ import { parseDateTime, parseDay, requiredText } from '@/lib/mapper';
 import type { StaffReservationDto } from '../dtos/staff-reservation.dto';
 import type { ReservationDetailData, ReservationStayDetail } from '../model/reservation-detail';
 import type { ReservationCenterData, ReservationListItem } from '../model/reservation-summary';
+import type { StaffReservationStayRead } from '../model/staff-reservation-stay-read';
 
 const invalid = () => { throw new DomainMappingError('INVALID_STAFF_RESERVATION'); };
 const text = (value: string) => typeof value === 'string' ? requiredText(value, 'INVALID_STAFF_RESERVATION_TEXT') : invalid();
@@ -75,4 +76,22 @@ export function mapStaffReservationCenter(dtos: StaffReservationDto[]): Reservat
   const reservations = dtos.map(listItem);
   if (new Set(reservations.map(r => r.id)).size !== reservations.length) invalid();
   return { readOnly: true, summary: null, alerts: [], reservations };
+}
+
+export function mapStaffReservationStays(dtos: StaffReservationDto[]): StaffReservationStayRead[] {
+  // Validate the complete list, including duplicate reservation identities and headers with no stays.
+  mapStaffReservationCenter(dtos);
+  const ids = new Set<string>();
+  return dtos.flatMap(dto => {
+    const detail = mapStaffReservationDetail(dto);
+    return detail.stays.map((stay, index) => {
+      if (ids.has(stay.id)) invalid();
+      ids.add(stay.id);
+      return { propertyId: detail.propertyId, reservationId: detail.id, stayId: stay.id,
+        confirmationCode: dto.confirmationCode,
+        reservationStatus: dto.status, roomId: stay.roomId, guestName: detail.guest.primaryName,
+        roomType: stay.roomType, arrival: dto.stays[index].arrival, departure: dto.stays[index].departure,
+        travelState: stay.travelState };
+    });
+  });
 }
