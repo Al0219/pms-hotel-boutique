@@ -4,7 +4,7 @@ import { useState, type ReactNode } from 'react';
 import { getPublicEnvironment } from '@/lib/env';
 import { useStaffSession } from '@/modules/auth';
 import { usePropertyScope } from '@/modules/properties';
-import { ReservationCenter, ReservationDetail, StaffNewReservation, useStaffReservationStays } from '@/modules/reservations';
+import { CalendarGantt, ReservationCenter, ReservationDetail, StaffNewReservation, useStaffReservationStays } from '@/modules/reservations';
 import { RoomBoard, RoomCatalogAdmin } from '@/modules/rooms';
 import styles from './staff-property-workspace.module.css';
 
@@ -62,4 +62,10 @@ function RoomsContent({ propertyId, sessionId, canManage, endpoint, propertyName
   return <div>
     {view === 'board' ? <RoomBoard viewControls={viewControls} propertyId={propertyId} sessionId={sessionId} propertyName={propertyName} timezone={timezone} endpoint={endpoint} occupancySource={mock ? undefined : stays} canManage={!mock && canManage} /> : <>{viewControls}<RoomCatalogAdmin propertyId={propertyId} sessionId={sessionId} canManage={canManage} /></>}
   </div>;
+}
+
+export function StaffCalendarWorkspace() {
+  return <StaffPropertyWorkspace>{(propertyId, sessionId) =>
+    <CalendarGantt key={`${sessionId}:${propertyId}`} propertyId={propertyId} sessionId={sessionId} />
+  }</StaffPropertyWorkspace>;
 }

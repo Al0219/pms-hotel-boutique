@@ -1,22 +1,18 @@
 import type { Room } from "@/modules/rooms";
 
-import type { ReservationListItem, ReservationStatus } from "../model/reservation-summary";
+import { DomainMappingError } from "@/lib/errors";
+import type { StaffReservationStayRead } from "../model/staff-reservation-stay-read";
 
 /** Días visibles del Gantt. Fijo en 14 para lectura Staff sin scroll horizontal excesivo. */
 export const GANTT_WINDOW_DAYS = 14;
 
-/** Estados que ocupan inventario físico en el Gantt. Canceladas y cerradas no pintan ocupación. */
-const OCCUPYING_STATES: ReadonlySet<ReservationStatus> = new Set([
-  "CONFIRMED",
-  "PENDING",
-  "NO_SHOW_PENDING",
-  "NO_SHOW",
-]);
-
 export interface GanttBooking {
   id: string;
   guestName: string;
-  status: ReservationStatus;
+  stayId: string;
+  confirmationCode: string;
+  status: StaffReservationStayRead["reservationStatus"];
+  travelState: StaffReservationStayRead["travelState"];
   /** Primer día visible de la estadía dentro de la ventana. */
   isStart: boolean;
   /** Último día visible de la estadía dentro de la ventana. */
@@ -40,9 +36,9 @@ export interface GanttRow {
 export interface GanttGrid {
   days: Date[];
   rows: GanttRow[];
-  /** Habitaciones físicas con estado ACTIVE. Base del cálculo de ocupación. */
-  sellableRooms: number;
-  /** Por día visible: habitaciones ocupadas (al menos una reserva que ocupa inventario). */
+  /** Inventario físico; no representa disponibilidad vendible ni limpieza. */
+  physicalRooms: number;
+  /** Por día visible: habitaciones con estadías RESERVED/IN_HOUSE de padre no cancelado. */
   occupiedPerDay: number[];
 }
 
@@ -66,37 +62,17 @@ export function buildDateWindow(start: Date, length: number = GANTT_WINDOW_DAYS)
   });
 }
 
-function overlapsWindow(stayStart: Date, stayEnd: Date, windowKeys: ReadonlySet<string>): boolean {
-  const cursor = startOfDay(stayStart);
-  const last = startOfDay(stayEnd);
-  while (cursor < last) {
-    if (windowKeys.has(toDayKey(cursor))) {
-      return true;
-    }
-    cursor.setDate(cursor.getDate() + 1);
-  }
-  return false;
-}
-
-/**
- * Construye la grilla del Gantt a partir de habitaciones físicas y reservas.
- * - La reserva se asigna a la habitación cuyo `number` coincide con `roomLabel`.
- * - Reservas activas sin habitación coincidente caen en la fila "Sin asignar".
- * - Solo estados que ocupan inventario pintan ocupación; el resto se informa sin ocupar.
- */
+/** Proyecta cada stay por roomId y fechas de calendario [arrival, departure). */
 export function buildGanttGrid(
   rooms: ReadonlyArray<Room>,
-  reservations: ReadonlyArray<ReservationListItem>,
+  stays: ReadonlyArray<StaffReservationStayRead>,
   days: ReadonlyArray<Date>,
+  propertyId: string,
 ): GanttGrid {
-  const windowKeys = new Set(days.map(toDayKey));
-  const byRoomNumber = new Map<string, Room>();
-  for (const room of rooms) {
-    if (!byRoomNumber.has(room.number)) {
-      byRoomNumber.set(room.number, room);
-    }
+  if (rooms.some(room => room.propertyId !== propertyId) || stays.some(stay => stay.propertyId !== propertyId)) {
+    throw new DomainMappingError("CALENDAR_PROPERTY_MISMATCH");
   }
-
+  const byRoomId = new Map(rooms.map(room => [room.id, room]));
   const cellsByRow = new Map<string, GanttCell[]>();
   const rowMeta = new Map<string, { label: string; detail: string | null; roomStatus: Room["status"] | null }>();
 
@@ -111,7 +87,7 @@ export function buildGanttGrid(
     return cellsByRow.get(key) as GanttCell[];
   };
 
-  for (const room of rooms) {
+  for (const room of [...rooms].sort((a, b) => a.number.localeCompare(b.number, "es", { numeric: true }))) {
     ensureRow(`room:${room.id}`, {
       label: room.number,
       detail: room.roomTypeLabel,
@@ -121,40 +97,25 @@ export function buildGanttGrid(
 
   const unassigned = ensureRow("unassigned", {
     label: "Sin asignar",
-    detail: "Reservas activas sin habitación coincidente",
+    detail: "Estadías sin habitación asignada",
     roomStatus: null,
   });
 
   const occupyingPerDay = new Map<string, Set<string>>();
 
-  for (const reservation of reservations) {
-    if (!reservation.stayStart || !reservation.stayEnd) continue;
-    if (!overlapsWindow(reservation.stayStart, reservation.stayEnd, windowKeys)) {
-      continue;
-    }
-
-    const room = reservation.roomLabel ? byRoomNumber.get(reservation.roomLabel) ?? null : null;
-    const cells = room ? ensureRow(`room:${room.id}`, {
-      label: room.number,
-      detail: room.roomTypeLabel,
-      roomStatus: room.status,
-    }) : unassigned;
-
-    const stayStartKey = toDayKey(startOfDay(reservation.stayStart));
-    const stayEndExclusiveKey = toDayKey(startOfDay(reservation.stayEnd));
-    const occupies = OCCUPYING_STATES.has(reservation.status);
-
-    const visibleCells = cells.filter(
-      (cell) => cell.dayKey >= stayStartKey && cell.dayKey < stayEndExclusiveKey,
-    );
-
+  for (const stay of stays) {
+    const room = stay.roomId === null ? null : byRoomId.get(stay.roomId);
+    if (stay.roomId !== null && !room) throw new DomainMappingError("CALENDAR_ROOM_NOT_FOUND");
+    const cells = room ? cellsByRow.get(`room:${room.id}`)! : unassigned;
+    const occupies = stay.reservationStatus !== "CANCELLED"
+      && (stay.travelState === "RESERVED" || stay.travelState === "IN_HOUSE");
+    const visibleCells = cells.filter(cell => cell.dayKey >= stay.arrival && cell.dayKey < stay.departure);
     visibleCells.forEach((cell, index) => {
       cell.bookings.push({
-        id: reservation.id,
-        guestName: reservation.guestName ?? "Responsable no registrado",
-        status: reservation.status,
-        isStart: index === 0,
-        isEnd: index === visibleCells.length - 1,
+        id: stay.reservationId, stayId: stay.stayId, confirmationCode: stay.confirmationCode,
+        guestName: stay.guestName ?? "Responsable no registrado",
+        status: stay.reservationStatus, travelState: stay.travelState,
+        isStart: index === 0, isEnd: index === visibleCells.length - 1,
       });
       if (occupies && room) {
         const occupied = occupyingPerDay.get(cell.dayKey) ?? new Set<string>();
@@ -172,8 +133,8 @@ export function buildGanttGrid(
     cells,
   }));
 
-  const sellableRooms = rooms.filter((room) => room.status === "ACTIVE").length;
+  const physicalRooms = rooms.length;
   const occupiedPerDay = days.map((day) => occupyingPerDay.get(toDayKey(day))?.size ?? 0);
 
-  return { days: [...days], rows, sellableRooms, occupiedPerDay };
+  return { days: [...days], rows, physicalRooms, occupiedPerDay };
 }

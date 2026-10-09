@@ -1,3 +1,27 @@
+## 2026-10-08 — Calendario Staff real: cierre con QA manual PASS
+
+- **Estado/aceptación/DoD:** EN_QA → COMPLETADA; PASS. Alan confirmó «QA manual
+  PASS» y autorizó el cierre documental. Resultado del owner, sin nueva ejecución
+  del agente ni resultados manuales HTTP/SQL individuales no informados.
+- **Owner/rama:** Alan integración/QA, UI WEB-3 y reviewer de dominio WEB-4;
+  `feature/staff-calendar-real`. Trabajo previo preservado; sin commit/push/merge.
+- **Alcance cerrado:** PropertyContext y lecturas reales Reservas/Habitaciones;
+  cada stay por roomId/fechas, habitación asignada o Sin asignar, asignaciones
+  actuales, recarga sin stale al cambiar property y enlaces a Reserva. Gantt/UI
+  conservados; orden ascendente natural por código y Sin asignar separado al final.
+  Sin limpieza/OOO/OOS/ATS/estados inventados ni cambios Backend/OpenAPI/contratos.
+- **Evidencia previa:** Web419 PASS/63 archivos, finales38 PASS/5 y ajuste de
+  orden22 PASS/3; typecheck/lint/build mocks=false y diff-check PASS. Conteos de
+  sus comprobaciones respectivas; suites no repetidas en este cierre documental.
+- **Documentación:** [Web62](../../frontend/pms-hotel-web/docs/62_STAFF_CALENDAR_REAL_QA.md)
+  COMPLETADA y referencia Web14 sincronizada; sección específica en AlanPlan.
+  Historial previo que excluía Calendario preservado; este incremento lo cierra
+  por separado. No edita XLSX ni cambia estados de otras tareas.
+- **Validación del cierre:** `git diff --check` PASS; contenidos no documentales
+  preexistentes intactos. No acredita CI remoto, merge ni publicación.
+- **Siguiente:** incremento cerrado; nuevo trabajo o publicación requieren
+  autorización independiente. Sin commit/push/merge.
+
 ## 2026-10-08 — Incremento Staff/Public: cierre con QA manual PASS
 
 - **Estado/aceptación/DoD:** EN_QA → COMPLETADA. Alan confirmó QA manual PASS

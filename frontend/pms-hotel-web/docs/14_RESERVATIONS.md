@@ -83,3 +83,12 @@ inicial de stay room=null, scoped, transaccional y auditada por Staff, con refre
 de detalle y Habitaciones. Estado **COMPLETADA** tras QA manual de asignación física
 PASS confirmado por Alan. La exclusión de asignación de la entrega READ-01 arriba
 queda histórica; no habilita sobrescritura/reasignación ni otras mutaciones.
+
+## Calendario Staff real — 2026-10-08
+
+Estado **COMPLETADA**; QA manual PASS confirmado por Alan el 2026-10-08.
+`/calendario` compone PropertyContext y lecturas reales existentes
+de Reservas/Habitaciones, proyectando cada stay por roomId/fechas con Sin asignar
+y navegación al detalle de su Reservation. Conserva Gantt/UI; asignación invalida
+la lectura compartida y cambiar property recarga sin grilla stale.
+[Alcance, evidencia técnica y guía QA manual](62_STAFF_CALENDAR_REAL_QA.md).

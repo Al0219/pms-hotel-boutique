@@ -2743,3 +2743,28 @@ Docker; el workflow Backend CI usa Temurin 21.
   en AlanHandoff y guías de QA; no implica integración en main o publicación.
 - **Siguiente:** publicación o nuevo incremento solo con autorización independiente.
   Sin commit/push/merge.
+
+
+### Calendario Staff real — cierre Web, 2026-10-08
+
+- **Estado/aceptación/DoD:** EN_QA → COMPLETADA; PASS. Alan confirmó QA manual
+  PASS y autorizó el cierre documental del incremento de integración Web.
+- **Owner/rama:** Alan integración/QA; UI WEB-3, reviewer de dominio WEB-4;
+  `feature/staff-calendar-real`. Sin commit/push/merge; cambios previos preservados.
+- **Dependencias/contratos:** Staff Auth/PROPERTY, Reservas/Habitaciones reales y
+  asignación inicial completados; contratos16/17/49/50 existentes. No nuevos
+  endpoints/estados ni cambios Backend/OpenAPI; no altera cierres Backend ni XLSX.
+- **Alcance:** Gantt existente con PropertyContext, cada ReservationStay por
+  roomId/fechas [arrival,departure), asignada o Sin asignar, navegación a Reserva,
+  recarga sin datos stale al cambiar property y refresco de asignaciones actuales.
+  Filas por código ascendente natural, Sin asignar separado al final; sin inventar
+  limpieza, OOO/OOS o disponibilidad vendible.
+- **Evidencia previa:** Web focalizados419/63 archivos y finales38/5 PASS;
+  ajuste de orden22/3 PASS; typecheck/lint/build mocks=false y diff-check PASS.
+  QA manual PASS del owner, sin atribuir ejecución nueva ni casos individuales
+  no informados. Cierre exclusivamente documental con diff-check; suites no repetidas.
+- **Guía:** [Web62](../../frontend/pms-hotel-web/docs/62_STAFF_CALENDAR_REAL_QA.md),
+  referencia Web14 sincronizada; AlanHandoff registra el cierre separado de los
+  incrementos previos que excluían Calendario.
+- **Siguiente:** incremento cerrado; publicación o nueva implementación solo con
+  autorización independiente. Sin commit/push/merge.
