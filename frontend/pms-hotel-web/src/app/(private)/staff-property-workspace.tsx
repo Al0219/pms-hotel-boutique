@@ -6,6 +6,7 @@ import { useStaffSession } from '@/modules/auth';
 import { usePropertyScope } from '@/modules/properties';
 import { CalendarGantt, ReservationCenter, ReservationDetail, StaffNewReservation, useStaffReservationStays } from '@/modules/reservations';
 import { RoomBoard, RoomCatalogAdmin } from '@/modules/rooms';
+import { StaffPanel } from '@/modules/staff-panel';
 import styles from './staff-property-workspace.module.css';
 
 function StaffPropertyWorkspace({ children }: { children: (propertyId: string, sessionId: string) => ReactNode }) {
@@ -67,5 +68,13 @@ function RoomsContent({ propertyId, sessionId, canManage, endpoint, propertyName
 export function StaffCalendarWorkspace() {
   return <StaffPropertyWorkspace>{(propertyId, sessionId) =>
     <CalendarGantt key={`${sessionId}:${propertyId}`} propertyId={propertyId} sessionId={sessionId} />
+  }</StaffPropertyWorkspace>;
+}
+
+export function StaffDashboardWorkspace() {
+  const session = useStaffSession();
+  return <StaffPropertyWorkspace>{(propertyId, sessionId) =>
+    <StaffPanel key={`${sessionId}:${propertyId}`} propertyId={propertyId} sessionId={sessionId}
+      propertyName={session.memberships.find(item => item.propertyId === propertyId && item.active)?.name ?? propertyId} />
   }</StaffPropertyWorkspace>;
 }

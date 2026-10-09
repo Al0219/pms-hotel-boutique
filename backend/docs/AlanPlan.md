@@ -2768,3 +2768,28 @@ Docker; el workflow Backend CI usa Temurin 21.
   incrementos previos que excluían Calendario.
 - **Siguiente:** incremento cerrado; publicación o nueva implementación solo con
   autorización independiente. Sin commit/push/merge.
+
+
+### Panel Staff real — cierre Web, 2026-10-08
+
+- **Estado/aceptación/DoD:** EN_QA → COMPLETADA; PASS. Alan confirmó «QA manual
+  PASS» y autorizó el cierre documental del incremento de integración Web.
+- **Owner/rama:** Alan integración/QA; composición Staff WEB-3, reviewer de dominio
+  WEB-4; `feature/staff-dashboard-real`. Sin commit/push/merge.
+- **Dependencias/contratos:** Staff Auth/PropertyContext y Reservas/Habitaciones
+  reales existentes; contratos16/17/49. Reutiliza lecturas BFF confirmadas, sin
+  nuevo endpoint ni cambios Backend/OpenAPI, permisos o estados de otras tareas.
+- **Alcance cerrado:** Panel para PROPERTY concreta; totales de reservas,
+  estadías y habitaciones físicas, recarga sin stale por sesión/property y
+  navegación a Reservas/Habitaciones/Calendario. Sin métricas sin fuente real.
+  Incluye limpieza del header autorizada, conservando KPIs y lógica de datos.
+- **Evidencia previa:** integración59 tests/6 archivos PASS, typecheck/lint/build
+  mocks=false y diff-check PASS; limpieza25 tests/2 archivos y diff-check PASS.
+  QA manual PASS confirmado por el owner; no se atribuye al agente una nueva
+  ejecución ni resultados individuales no informados. Cierre documental con
+  diff-check; código funcional preservado y suites no repetidas.
+- **Guía:** [Web63](../../frontend/pms-hotel-web/docs/63_STAFF_PANEL_REAL_QA.md)
+  COMPLETADA; cierre específico antepuesto en AlanHandoff. No edita XLSX ni
+  declara completada IMP-WEB-0906, cuyo dashboard consolidado tiene otro alcance.
+- **Siguiente:** incremento cerrado; nuevo trabajo o publicación requieren
+  autorización independiente. Sin commit/push/merge.

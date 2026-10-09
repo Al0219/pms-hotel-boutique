@@ -1,3 +1,28 @@
+## 2026-10-08 — Panel Staff real: cierre con QA manual PASS
+
+- **Estado/aceptación/DoD:** EN_QA → COMPLETADA; PASS. Alan confirmó «QA manual
+  PASS» y autorizó marcar el incremento COMPLETADA. Resultado del owner, sin
+  nueva ejecución del agente ni resultados manuales individuales no informados.
+- **Owner/rama:** Alan integración/QA; composición Staff WEB-3 y reviewer de
+  dominio WEB-4; `feature/staff-dashboard-real`. Trabajo previo preservado;
+  sin commit/push/merge.
+- **Alcance cerrado:** PropertyContext y lecturas reales Reservas/Habitaciones;
+  totales de reservas, estadías y habitaciones físicas para PROPERTY concreta,
+  cambio de propiedad sin stale y accesos a Reservas/Habitaciones/Calendario.
+  Limpieza autorizada del header incluida, sin cambiar KPIs/navegación/datos.
+  Contratos16/17/49 existentes; sin cambios Backend/OpenAPI/roles/permisos.
+- **Evidencia previa:** integración59 tests/6 archivos PASS; typecheck/lint/build
+  mocks=false y diff-check PASS. Limpieza25 tests/2 archivos y diff-check PASS.
+  Suites no repetidas en este cierre exclusivamente documental; no acredita
+  nueva validación PostgreSQL, CI remoto, merge ni publicación.
+- **Documentación:** [Web63](../../frontend/pms-hotel-web/docs/63_STAFF_PANEL_REAL_QA.md)
+  COMPLETADA y sección específica de AlanPlan. Historial previo conservado;
+  sin edición XLSX ni cambio de estados Backend o cierre de IMP-WEB-0906.
+- **Validación del cierre:** `git diff --check` PASS; contenidos no documentales
+  preexistentes intactos.
+- **Siguiente:** incremento cerrado; nuevo trabajo o publicación requieren
+  autorización independiente. Sin commit/push/merge.
+
 ## 2026-10-08 — Calendario Staff real: cierre con QA manual PASS
 
 - **Estado/aceptación/DoD:** EN_QA → COMPLETADA; PASS. Alan confirmó «QA manual
