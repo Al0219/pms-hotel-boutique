@@ -342,3 +342,23 @@ Documento generado en este incremento: **44 operaciones / 34 paths / 52 schemas 
 con RequestMappingHandlerMapping, auth/audience, parámetros, headers, respuestas,
 campos requeridos y nullability real de responsibleGuest/room. Baselines anteriores
 se mantienen como historia; evidencia final en AlanHandoff.
+
+## Asignación inicial Staff — 2026-10-08
+
+El [contrato50](50_STAFF_INITIAL_ROOM_ASSIGNMENT_CONTRACT.md) añade GET/PUT
+`/api/v1/reservations/{reservationId}/stays/{stayId}/room-assignment`, Staff
+RESERVATION_MANAGE y propertyId explícito, con esquemas
+StaffRoomAssignmentPreview/Candidate/Result y AssignRoomRequest. PUT documenta
+409, transacción/audit y bloqueo de cualquier asignación existente; 404/409
+ProblemDetail, JSON200 y Cache-Control private,no-store. No exclusiones nuevas.
+
+Documento generado contrastado con mappings y refs: **46 operaciones / 35 paths /
+56 schemas / 13 tags**. Tests estructurales verifican audiencia/auth, scope,
+respuestas y los campos del resultado específico (sin colisión con Auth Result).
+El gate manual/estado y evidencia final se registran en AlanHandoff/contrato50.
+
+Cierre del incremento de asignación inicial: **COMPLETADA**, QA manual de asignación
+física PASS confirmado por Alan el 2026-10-08. Se conserva la evidencia de OpenAPI
+anterior; en este cierre documental no se regeneró ni modificó el contrato.
+Estados operativos, availability pública y default Demo son correcciones Web y no
+añaden operaciones, schemas ni enums Backend al baseline.

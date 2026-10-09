@@ -1,3 +1,4 @@
+import type { ReservationOperationalStatus } from './reservation-operational-status';
 import type {
   ReservationFinancialSummary,
   ReservationStatus,
@@ -48,6 +49,8 @@ export interface ReservationDetailData {
   id: string;
   propertyId: string;
   status: ReservationStatus;
+  /** Derived display state; raw status remains the authority for commands. */
+  operationalStatus?: ReservationOperationalStatus;
   createdAt: Date;
   source: ReservationSource;
   policyLabel: string | null;

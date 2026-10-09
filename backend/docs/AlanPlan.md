@@ -1,5 +1,23 @@
 # AlanPlan — Seguimiento Backend
 
+## Juan / integración local main PR150–PR152
+
+- **Estado:** COMPLETADA (integración Git local); continuación autorizada de traer
+  main, desde merge local `85922a5` a `e354b6b` (PR150/PR152), en
+  `fix/backend-public-booking-audit-h1-h4`. Sin push ni despliegue solicitados.
+- **Alcance/resolución:** asignación física real y calendario de main importados;
+  conflicto Compose en Property ID resuelto conservando el entorno demo aprobado.
+  Compose/CI idénticos a `9674151`; .env.example aclara solo la configuración
+  del UUID demo. H1–H4, migraciones y secretos intactos; historiales preservados.
+- **Validación:** nuevo verify Backend868 PASS/BUILD SUCCESS/JAR; Web1783 PASS
+  y3 timeouts iniciales de5s. Los tres archivos repiten38 PASS con un worker,
+  mismo timeout y fuentes intactas:1786 casos verificados entre ambas ejecuciones.
+  Typecheck/lint/build mocks=false/UUID demo explícito PASS. QA en copias aisladas,
+  sin puertos ni BD del hotel. Detalle de resultados y límites en AlanHandoff.
+- **Evidencia/siguiente:** backend/target/public-booking-main152-* ignorado;
+  resultados completos retenidos; cierre del segundo merge local autorizado.
+  QA temporal retirado; cinco untracked iniciales excluidos. Sin despliegue ni push.
+
 ## Juan / integración local main PR149
 
 - **Estado:** COMPLETADA (integración Git local); usuario autoriza traer main
@@ -2760,3 +2778,69 @@ Docker; el workflow Backend CI usa Temurin 21.
 - **Siguiente incremento:** asignación física, no incluida ni iniciada aquí;
   verificar DoR, contratos y decisiones antes de implementarla. No se declara
   READY ni se modifica el siguiente trabajo de otros owners por este cierre.
+
+
+### Asignación inicial real de habitación Staff — 2026-10-08
+
+- **Estado:** COMPLETADA (READY → EN_PROGRESO → EN_QA → COMPLETADA);
+  QA manual de asignación física PASS confirmado por Alan el 2026-10-08 y cierre
+  documental autorizado del incremento actual.
+- **Owner/reviewers:** Alan integración/QA; Juan BD3, BD2 Inventory y José WEB-3/WEB-4, colaborativos.
+- **Rama/base:** feature/staff-room-assignment-real desde 2e29426; árbol inicial limpio.
+- **DoR/dependencias:** lectura Staff Reservations y Habitaciones COMPLETADAS;
+  Auth/BFF/RESERVATION_MANAGE/PROPERTY existentes. Reglas autorizadas y contrato
+  [50](50_STAFF_INITIAL_ROOM_ASSIGNMENT_CONTRACT.md); detalle IMP-WEB-0302 existente,
+  sin nueva fila/ID ni edición XLSX.
+- **Aceptación/alcance:** solo stay RESERVED/room=null, padre PENDING/CONFIRMED;
+  misma property/RoomType, [arrival,departure), sin OOO/OOS ni stays activos
+  superpuestos, sin sobrescritura, transacción/audit Staff, HTTP/OpenAPI/BFF/UI y
+  refresco detalle/Habitaciones. Sin cambios de tarifas, estados, ATS ni finanzas.
+- **Archivos:** adapter/controller/repository/security/OpenAPI Backend, BFF y
+  diálogo/service/hook de Reservas, pruebas focalizadas y contrato50.
+- **Aceptación técnica:** PASS; tests de concurrencia, rollback/audit Staff,
+  room=null, scope/tipo, OOO/OOS, fechas exclusivas, BFF/refresh y refresco UI.
+- **Evidencia:** Backend focalizados29 y ./mvnw verify848 PASS sin exclusiones,
+  Java21/PostgreSQL17 desechable; Web focalizados395/62 y full1720/288 PASS con
+  --maxWorkers=2; typecheck/lint/build mocks=false y diff-check PASS; OpenAPI
+  46 operaciones/35 paths/56 schemas/13 tags, contrastado con mappings/refs.
+- **DoD:** aceptación y comprobaciones técnicas PASS; QA manual de asignación
+  física PASS confirmado por el owner. La confirmación se distingue de los tests,
+  sin atribuir resultados manuales individuales a variantes sin fixtures.
+  Corrección de aislamiento de fixtures committed de tests, sin alterar audit
+  append-only; verify final PASS. Sin migraciones/dependencias ni datos reales alterados.
+- **Cierre conjunto del incremento actual:** Alan confirmó también QA manual PASS
+  de estados operativos ([Web61](../../frontend/pms-hotel-web/docs/61_STAFF_RESERVATION_OPERATIONAL_STATUS_QA.md)),
+  regresión availability pública ([Web36](../../frontend/pms-hotel-web/docs/36_PUBLIC_AVAILABILITY_RESULTS.md))
+  y Hotel Boutique Demo por defecto ([Web34](../../frontend/pms-hotel-web/docs/34_PRIVATE_09_FRONTEND.md));
+  estas correcciones Web quedan COMPLETADAS en sus guías. No modifican contratos/
+  enums/persistencia Backend ni estados de otras tareas de este plan.
+- **Validación del cierre:** documentación/contratos coherentes y diff-check;
+  sin cambios funcionales ni repetición de suites. Evidencia previa conservada
+  en AlanHandoff y guías de QA; no implica integración en main o publicación.
+- **Siguiente:** publicación o nuevo incremento solo con autorización independiente.
+  Sin commit/push/merge.
+
+
+### Calendario Staff real — cierre Web, 2026-10-08
+
+- **Estado/aceptación/DoD:** EN_QA → COMPLETADA; PASS. Alan confirmó QA manual
+  PASS y autorizó el cierre documental del incremento de integración Web.
+- **Owner/rama:** Alan integración/QA; UI WEB-3, reviewer de dominio WEB-4;
+  `feature/staff-calendar-real`. Sin commit/push/merge; cambios previos preservados.
+- **Dependencias/contratos:** Staff Auth/PROPERTY, Reservas/Habitaciones reales y
+  asignación inicial completados; contratos16/17/49/50 existentes. No nuevos
+  endpoints/estados ni cambios Backend/OpenAPI; no altera cierres Backend ni XLSX.
+- **Alcance:** Gantt existente con PropertyContext, cada ReservationStay por
+  roomId/fechas [arrival,departure), asignada o Sin asignar, navegación a Reserva,
+  recarga sin datos stale al cambiar property y refresco de asignaciones actuales.
+  Filas por código ascendente natural, Sin asignar separado al final; sin inventar
+  limpieza, OOO/OOS o disponibilidad vendible.
+- **Evidencia previa:** Web focalizados419/63 archivos y finales38/5 PASS;
+  ajuste de orden22/3 PASS; typecheck/lint/build mocks=false y diff-check PASS.
+  QA manual PASS del owner, sin atribuir ejecución nueva ni casos individuales
+  no informados. Cierre exclusivamente documental con diff-check; suites no repetidas.
+- **Guía:** [Web62](../../frontend/pms-hotel-web/docs/62_STAFF_CALENDAR_REAL_QA.md),
+  referencia Web14 sincronizada; AlanHandoff registra el cierre separado de los
+  incrementos previos que excluían Calendario.
+- **Siguiente:** incremento cerrado; publicación o nueva implementación solo con
+  autorización independiente. Sin commit/push/merge.

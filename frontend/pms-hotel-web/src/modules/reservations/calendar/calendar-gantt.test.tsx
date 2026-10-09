@@ -3,16 +3,17 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { HttpNetworkError } from "@/lib/http/errors";
 
+import { toDayKey } from "./calendar-gantt-model";
 import { CalendarGantt } from "./calendar-gantt";
 
 afterEach(() => cleanup());
 
-const { useReservationCenterMock, useRoomsMock } = vi.hoisted(() => ({
-  useReservationCenterMock: vi.fn(),
+const { useStaysMock, useRoomsMock } = vi.hoisted(() => ({
+  useStaysMock: vi.fn(),
   useRoomsMock: vi.fn(),
 }));
 
-vi.mock("../hooks/use-reservation-center", () => ({ useReservationCenter: useReservationCenterMock }));
+vi.mock("../hooks/use-staff-reservation-stays", () => ({ useStaffReservationStays: useStaysMock }));
 vi.mock("@/modules/rooms", () => ({ useRooms: useRoomsMock }));
 
 function room(overrides = {}) {
@@ -32,29 +33,16 @@ function reservation(overrides = {}) {
   const start = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
   const end = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 4);
   return {
-    id: "HB-2026-08421",
-    propertyId: "GT-HB-01",
-    guestName: "María López",
-    sourceLabel: "Viajes Maya",
-    sourceReference: null,
-    roomLabel: "203",
-    stayStart: start,
-    stayEnd: end,
-    nights: 3,
-    adults: 2,
-    roomCount: 1,
-    currency: "GTQ",
-    finance: { totalAmount: 3920, paidAmount: 2400, financeState: "BALANCE" },
-    alertText: null,
-    status: "CONFIRMED",
-    statusDetail: null,
-    ...overrides,
+    reservationId: "HB-2026-08421", stayId: "stay-1", confirmationCode: "HB-08421",
+    propertyId: "GT-HB-01", guestName: "María López", roomId: "RM-203",
+    roomType: "Deluxe", arrival: toDayKey(start), departure: toDayKey(end),
+    reservationStatus: "CONFIRMED", travelState: "RESERVED", ...overrides,
   };
 }
 
 function mockSuccess() {
-  useReservationCenterMock.mockReturnValue({
-    data: { reservations: [reservation()] },
+  useStaysMock.mockReturnValue({
+    data: [reservation()],
     error: null,
     isLoading: false,
     refetch: vi.fn(),
@@ -67,7 +55,7 @@ function mockSuccess() {
   });
 }
 
-const PROPS = { propertyId: "GT-HB-01", reservationsEndpoint: "http://pms.test/reservations", roomsEndpoint: "http://pms.test/rooms" };
+const PROPS = { propertyId: "GT-HB-01", sessionId: "staff" };
 
 describe("CalendarGantt", () => {
   it("renders rooms, booking bars linking to the reservation detail and the occupancy footer", () => {
@@ -97,7 +85,7 @@ describe("CalendarGantt", () => {
   });
 
   it("shows loading while any source is loading", () => {
-    useReservationCenterMock.mockReturnValue({ data: undefined, error: null, isLoading: true, refetch: vi.fn() });
+    useStaysMock.mockReturnValue({ data: undefined, error: null, isLoading: true, refetch: vi.fn() });
     useRoomsMock.mockReturnValue({ data: [room()], error: null, isLoading: false, refetch: vi.fn() });
     render(<CalendarGantt {...PROPS} />);
 
@@ -107,7 +95,7 @@ describe("CalendarGantt", () => {
   it("shows an offline message and retries both sources on error", () => {
     const refetchCenter = vi.fn();
     const refetchRooms = vi.fn();
-    useReservationCenterMock.mockReturnValue({ data: undefined, error: new HttpNetworkError(), isLoading: false, refetch: refetchCenter });
+    useStaysMock.mockReturnValue({ data: undefined, error: new HttpNetworkError(), isLoading: false, refetch: refetchCenter });
     useRoomsMock.mockReturnValue({ data: undefined, error: null, isLoading: false, refetch: refetchRooms });
     render(<CalendarGantt {...PROPS} />);
 
@@ -118,11 +106,43 @@ describe("CalendarGantt", () => {
     expect(refetchRooms).toHaveBeenCalledTimes(1);
   });
 
-  it("requires the staff property scope before querying", () => {
-    useReservationCenterMock.mockReturnValue({ data: undefined, error: null, isLoading: false, refetch: vi.fn() });
-    useRoomsMock.mockReturnValue({ data: undefined, error: null, isLoading: false, refetch: vi.fn() });
-    render(<CalendarGantt reservationsEndpoint="http://pms.test/reservations" roomsEndpoint="http://pms.test/rooms" />);
-
-    expect(screen.getByText(/scope de propiedad autorizado/)).toBeInTheDocument();
+  it("uses scoped real reads and hides cached data while refreshing", () => {
+    mockSuccess();
+    useStaysMock.mockReturnValue({ data: [reservation()], error: null, isLoading: false, fetchStatus: 'fetching' });
+    render(<CalendarGantt {...PROPS} />);
+    expect(useStaysMock).toHaveBeenCalledWith('GT-HB-01', 'staff');
+    expect(useRoomsMock).toHaveBeenCalledWith('GT-HB-01', '/api/staff/rooms', 'staff');
+    expect(screen.getByText('Cargando calendario…')).toBeInTheDocument();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
   });
+  it('shows N stays and their actual states, including unassigned', () => {
+    mockSuccess();
+    useStaysMock.mockReturnValue({ data: [reservation(), reservation({ stayId: 'stay-2', roomId: null, travelState: 'IN_HOUSE' })], error: null, isLoading: false });
+    render(<CalendarGantt {...PROPS} />);
+    expect(screen.getAllByRole('link', { name: /María López/ })).toHaveLength(2);
+    expect(screen.getByText('Sin asignar')).toBeInTheDocument();
+    expect(screen.getByText('En estancia')).toBeInTheDocument();
+  });
+  it('shows a recoverable error for unknown rooms or stale scope', () => {
+    mockSuccess();
+    useStaysMock.mockReturnValue({ data: [reservation({ roomId: 'missing' })], error: null, isLoading: false, refetch: vi.fn() });
+    const view = render(<CalendarGantt {...PROPS} />);
+    expect(screen.getByRole('alert')).toHaveTextContent('No se pudo cargar el calendario.');
+    mockSuccess();
+    view.rerender(<CalendarGantt propertyId="other-property" sessionId="staff" />);
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+  });
+});
+
+it('shows empty inventory without losing unassigned stays when inventory is empty', () => {
+  mockSuccess();
+  useRoomsMock.mockReturnValue({ data: [], error: null, isLoading: false });
+  useStaysMock.mockReturnValue({ data: [], error: null, isLoading: false });
+  const view = render(<CalendarGantt {...PROPS} />);
+  expect(screen.getByText('No hay habitaciones para esta propiedad.')).toBeInTheDocument();
+  useStaysMock.mockReturnValue({ data: [reservation({ roomId: null })], error: null, isLoading: false });
+  view.rerender(<CalendarGantt {...PROPS} />);
+  expect(screen.getByRole('link', { name: /María López/ })).toBeInTheDocument();
+  expect(screen.getByText('Sin asignar')).toBeInTheDocument();
 });

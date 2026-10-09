@@ -1,4 +1,4 @@
-/** PROVISIONAL MSW contract for initial physical assignment, not a Backend API. */
+/** Confirmed initial assignment contract; legacy MSW uses the same presentation fields. */
 export interface RoomAssignmentPreviewDto {
   property_id: string;
   reservation_id: string;

@@ -1,5 +1,12 @@
 # Staff — Asignación inicial de habitación física
 
+Estado vigente del incremento real: **COMPLETADA**; Alan confirmó QA manual
+PASS de asignación física y estados operativos el 2026-10-08 y autorizó el cierre.
+Contrato y evidencia en [Backend50](../../../backend/docs/50_STAFF_INITIAL_ROOM_ASSIGNMENT_CONTRACT.md)
+y [QA61](61_STAFF_RESERVATION_OPERATIONAL_STATUS_QA.md). Las secciones iniciales
+conservan el escenario frontend histórico; el contrato real y su límite sin
+sobrescritura/reasignación se describen en «Incremento real autorizado por Alan».
+
 Incremento frontend autorizado por José en Reservation Detail (IMP-WEB-0302,
 WEB-3/reviewer WEB-4, dependencia IMP-WEB-0301). La fila del XLSX requiere N stays
 distinguibles, detalle y pruebas RTL/visual; no tiene una fila específica de
@@ -102,3 +109,24 @@ Referencias: [Staff core](52_PRIVATE_STAFF_CORE.md), [Nueva reserva](53_PRIVATE_
 
 Esta validación acredita el escenario frontend, no integración transaccional real.
 Sin commit/push de este incremento.
+
+## Incremento real autorizado por Alan — 2026-10-08
+
+El detalle real se conecta ahora al [contrato Backend50](../../../backend/docs/50_STAFF_INITIAL_ROOM_ASSIGNMENT_CONTRACT.md).
+Usa BFF con ambos flags y candidatos PostgreSQL; transacción/audit Staff y
+RESERVATION_MANAGE/property se validan en Backend. El escenario MSW descrito arriba
+permanece aislado para tests históricos; su replay no define el PUT real, que
+rechaza cualquier stay ya asignada con409. Se refrescan detalle/listado y la
+consulta real de stays usada por Habitaciones. Estado **COMPLETADA**; QA manual
+de asignación física PASS confirmado por Alan el 2026-10-08. No XLSX ni ID nuevos,
+sin Room Move/extension adicionales. Cierre documental, sin repetir tests ni
+modificar código; sin commit/push/merge.
+
+## Badges operativos derivados — 2026-10-08
+
+La lectura real aplica [la proyección de estados visibles](61_STAFF_RESERVATION_OPERATIONAL_STATUS_QA.md)
+en listado/detalle y filtro. Asignación parcial de padre CONFIRMED conserva
+Confirmada; completar stays RESERVED elegibles muestra Asignada después del
+refresco real, sin cambiar Reservation.status ni travelState. Padre PENDING
+continúa Pendiente. Los estados de comando/Backend permanecen intactos; asignación
+y estados operativos quedan COMPLETADAS tras QA manual PASS confirmado por Alan.

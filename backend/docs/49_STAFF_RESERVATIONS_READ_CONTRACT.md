@@ -159,3 +159,19 @@ modifica fixtures ni permisos.
 Pruebas automatizadas/entorno/resultados: [AlanHandoff](AlanHandoff.md), entrada
 STAFF-RESERVATIONS-READ-01. OpenAPI generado y mappings se verifican juntos;
 no hay migraciones ni dependencias añadidas.
+
+## Extensión autorizada de asignación inicial — 2026-10-08
+
+El incremento [50](50_STAFF_INITIAL_ROOM_ASSIGNMENT_CONTRACT.md) añade GET/PUT
+scoped sobre una stay room=null, con validación transaccional y auditoría Staff.
+Las exclusiones de escritura de la entrega49 anterior quedan conservadas como
+historial de esa entrega; en el detalle real se habilita únicamente asignación
+inicial con RESERVATION_MANAGE. Lecturas/DTO49 conservan su forma; el room asignado
+se obtiene al refrescar detalle y proyección de Habitaciones. No habilita otras
+mutaciones ni facultades financieras.
+
+Estado de la extensión50: **COMPLETADA**, tras QA manual de asignación física PASS
+confirmado por Alan el 2026-10-08. Los badges/filtros operativos son una proyección
+Web de Reservation + stays según [QA61](../../frontend/pms-hotel-web/docs/61_STAFF_RESERVATION_OPERATIONAL_STATUS_QA.md),
+también cerrada con QA manual PASS; no añaden enums, campos HTTP ni estados
+persistidos a este contrato. Este cierre no cambia las lecturas ni su QA histórico.

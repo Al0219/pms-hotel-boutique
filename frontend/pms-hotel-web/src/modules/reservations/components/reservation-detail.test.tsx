@@ -213,7 +213,7 @@ describe("ReservationDetail", () => {
       <ReservationDetail propertyId="GT-HB-01" endpoint="http://pms.test/contract/reservations" reservationId="HB-2026-08421" />,
     );
 
-    expect(screen.getByText("No-show")).toBeInTheDocument();
+    expect(screen.getByText("No show")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Cancelar reserva" })).not.toBeInTheDocument();
   });
 

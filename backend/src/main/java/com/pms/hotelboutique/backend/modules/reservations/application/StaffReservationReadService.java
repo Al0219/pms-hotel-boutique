@@ -48,7 +48,7 @@ public class StaffReservationReadService {
         return project(scope, queries.getReservation(scope, reservationId));
     }
 
-    private AuthorizedPropertyScope authorize(StaffPrincipal principal, UUID propertyId) {
+    AuthorizedPropertyScope authorize(StaffPrincipal principal, UUID propertyId) {
         if (principal == null) throw new StaffAuthenticationException();
         var snapshot = authorization.resolve(sessions.getActivePrincipal(principal).staffUserId());
         if (!snapshot.hasPermission("RESERVATION_MANAGE")) throw new AccessDeniedException("Reservation access denied");

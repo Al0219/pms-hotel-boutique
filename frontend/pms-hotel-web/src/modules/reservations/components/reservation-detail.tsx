@@ -8,24 +8,18 @@ import { RoomMove, StayExtension } from "@/modules/stays";
 
 import { useReservationDetail } from "../hooks/use-reservation-detail";
 import type { ReservationDetailData, ReservationStayDetail, StayTravelState } from "../model/reservation-detail";
-import type { ReservationStatus } from "../model/reservation-summary";
+import { reservationStatusLabels, visibleReservationStatus, type ReservationVisibleStatus } from '../model/reservation-operational-status';
 import { ReservationCancellation } from "./reservation-cancellation";
 import { ReservationNoShow } from "./reservation-no-show";
 import { RoomAssignment } from './room-assignment';
 
 import styles from "./reservation-detail.module.css";
 
-const STATUS_LABELS: Record<ReservationStatus, string> = {
-  CONFIRMED: "Confirmada",
-  PENDING: "Pendiente",
-  WAITLIST: "Waitlist",
-  NO_SHOW_PENDING: "No-show pendiente",
-  NO_SHOW: "No-show",
-  CANCELLED: "Cancelada",
-};
-
-const STATUS_BADGE: Record<ReservationStatus, string> = {
+const STATUS_BADGE: Record<ReservationVisibleStatus, string> = {
   CONFIRMED: styles.statusConfirmed,
+  ASSIGNED: styles.statusWaitlist,
+  IN_HOUSE: styles.statusWaitlist,
+  COMPLETED: styles.statusConfirmed,
   PENDING: styles.statusPending,
   WAITLIST: styles.statusWaitlist,
   NO_SHOW_PENDING: styles.statusNoShow,
@@ -183,8 +177,10 @@ export function ReservationDetail({ propertyId, endpoint, reservationId, session
     return <section className={styles.page} role="status"><h1>{title}</h1><p>No se encontró la reserva solicitada.</p></section>;
   }
 
+  const visibleStatus = visibleReservationStatus(detail);
   const singleRoom = detail.stays.length === 1;
   const reference = detail.source.reference ? ` · ${detail.source.reference}` : "";
+  const assignable = detail.status === "CONFIRMED" || detail.status === "PENDING";
   const cancellable = !detail.readOnly && (detail.status === "CONFIRMED" || detail.status === "PENDING");
   const noShowPending = !detail.readOnly && detail.status === "NO_SHOW_PENDING";
 
@@ -195,7 +191,7 @@ export function ReservationDetail({ propertyId, endpoint, reservationId, session
         <div className={styles.titleBlock}>
           <h1 ref={heading} tabIndex={-1}>{detail.confirmationCode ? `Reserva ${detail.confirmationCode}` : title}</h1>
           <p className={styles.subtitle}>
-            <span className={`${styles.badge} ${STATUS_BADGE[detail.status]}`}>{STATUS_LABELS[detail.status]}</span>
+            <span className={`${styles.badge} ${STATUS_BADGE[visibleStatus]}`}>{reservationStatusLabels[visibleStatus]}</span>
           </p>
           <p className={styles.origin}>Origen: {detail.source.label ?? "No registrado"}{reference} · Creada {formatLongDate(detail.createdAt)}</p>
           {cancellable ? (
@@ -222,7 +218,7 @@ export function ReservationDetail({ propertyId, endpoint, reservationId, session
       </header>
       {assignmentMessage && <p className={styles.assignmentNotice} role="status">{assignmentMessage}</p>}
       {assigning && sessionId && canManage && <RoomAssignment key={assigning} propertyId={propertyId} reservationId={reservationId}
-        stayId={assigning} sessionId={sessionId} allowed={canManage} onClose={() => setAssigning(null)}
+        real={detail.readOnly} stayId={assigning} sessionId={sessionId} allowed={canManage} onClose={() => setAssigning(null)}
         onAssigned={result => { setAssigning(null); setAssignmentMessage(`Habitación ${result.roomNumber} asignada a la estadía. Estado y tarifa conservados.`);
           queueMicrotask(() => heading.current?.focus()); }} />}
 
@@ -287,10 +283,10 @@ export function ReservationDetail({ propertyId, endpoint, reservationId, session
               <dt>{singleRoom ? "Habitación" : "Habitaciones"}</dt>
               <dd>
                 {detail.stays.length === 0 ? <p>Sin estadías registradas.</p> : <StayBlock stay={detail.stays[0]} singleRoom={singleRoom} onRoomMove={detail.readOnly ? undefined : () => setMovingRoom(detail.stays[0].id)} onExtend={detail.readOnly ? undefined : () => setExtending(detail.stays[0].id)}
-                  onAssign={canManage && sessionId && cancellable ? () => setAssigning(detail.stays[0].id) : undefined} />}
+                  onAssign={canManage && sessionId && assignable ? () => setAssigning(detail.stays[0].id) : undefined} />}
                 {detail.stays.slice(1).map((stay) => (
                   <StayBlock key={stay.id} stay={stay} singleRoom={false} onRoomMove={detail.readOnly ? undefined : () => setMovingRoom(stay.id)} onExtend={detail.readOnly ? undefined : () => setExtending(stay.id)}
-                    onAssign={canManage && sessionId && cancellable ? () => setAssigning(stay.id) : undefined} />
+                    onAssign={canManage && sessionId && assignable ? () => setAssigning(stay.id) : undefined} />
                 ))}
               </dd>
             </div>

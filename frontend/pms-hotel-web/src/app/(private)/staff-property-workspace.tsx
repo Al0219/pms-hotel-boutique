@@ -4,7 +4,7 @@ import { useState, type ReactNode } from 'react';
 import { getPublicEnvironment } from '@/lib/env';
 import { useStaffSession } from '@/modules/auth';
 import { usePropertyScope } from '@/modules/properties';
-import { ReservationCenter, ReservationDetail, StaffNewReservation, useStaffReservationStays } from '@/modules/reservations';
+import { CalendarGantt, ReservationCenter, ReservationDetail, StaffNewReservation, useStaffReservationStays } from '@/modules/reservations';
 import { RoomBoard, RoomCatalogAdmin } from '@/modules/rooms';
 import styles from './staff-property-workspace.module.css';
 
@@ -18,9 +18,11 @@ function StaffPropertyWorkspace({ children }: { children: (propertyId: string, s
 
 /** Staff reads always use the authenticated same-origin BFF, independent of data mocks. */
 export function StaffReservationsWorkspace({ reservationId, endpoint }: { reservationId?: string; endpoint?: string }) {
+  const session = useStaffSession();
+  const canAssign = session.permissions.includes('RESERVATION_MANAGE');
   const resource = endpoint ?? '/api/staff/reservations';
   return <StaffPropertyWorkspace>{(propertyId, sessionId) => reservationId
-    ? <ReservationDetail key={`${sessionId}:${propertyId}:${reservationId}`} reservationId={reservationId} propertyId={propertyId} endpoint={resource} sessionId={sessionId} canManage={false} />
+    ? <ReservationDetail key={`${sessionId}:${propertyId}:${reservationId}`} reservationId={reservationId} propertyId={propertyId} endpoint={resource} sessionId={sessionId} canManage={canAssign} />
     : <ReservationCenter key={`${sessionId}:${propertyId}`} propertyId={propertyId} endpoint={resource} canCreate={false} />}</StaffPropertyWorkspace>;
 }
 
@@ -60,4 +62,10 @@ function RoomsContent({ propertyId, sessionId, canManage, endpoint, propertyName
   return <div>
     {view === 'board' ? <RoomBoard viewControls={viewControls} propertyId={propertyId} sessionId={sessionId} propertyName={propertyName} timezone={timezone} endpoint={endpoint} occupancySource={mock ? undefined : stays} canManage={!mock && canManage} /> : <>{viewControls}<RoomCatalogAdmin propertyId={propertyId} sessionId={sessionId} canManage={canManage} /></>}
   </div>;
+}
+
+export function StaffCalendarWorkspace() {
+  return <StaffPropertyWorkspace>{(propertyId, sessionId) =>
+    <CalendarGantt key={`${sessionId}:${propertyId}`} propertyId={propertyId} sessionId={sessionId} />
+  }</StaffPropertyWorkspace>;
 }
