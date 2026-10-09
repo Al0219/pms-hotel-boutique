@@ -1,3 +1,97 @@
+## 2026-10-08 — Incremento Staff/Public: cierre con QA manual PASS
+
+- **Estado/aceptación/DoD:** EN_QA → COMPLETADA. Alan confirmó QA manual PASS
+  de los cuatro alcances y autorizó su cierre documental. Resultados del owner,
+  no una nueva ejecución del agente ni resultados manuales HTTP/SQL individuales.
+- **Rama:** `feature/staff-room-assignment-real`; cambios previos preservados,
+  sin commit/push/merge. Cierre exclusivamente documental, sin código funcional,
+  migraciones, secretos, dependencias ni reconstrucción/despliegue.
+
+| Alcance cerrado | QA manual confirmado por Alan | Contrato/QA vigente |
+| --- | --- | --- |
+| Asignación física inicial Staff | PASS | [Backend50](50_STAFF_INITIAL_ROOM_ASSIGNMENT_CONTRACT.md), [Web55](../../frontend/pms-hotel-web/docs/55_STAFF_INITIAL_ROOM_ASSIGNMENT.md) |
+| Estados operativos de Reservas | PASS | [Web61](../../frontend/pms-hotel-web/docs/61_STAFF_RESERVATION_OPERATIONAL_STATUS_QA.md) |
+| Availability pública y catálogo | PASS | [Web36](../../frontend/pms-hotel-web/docs/36_PUBLIC_AVAILABILITY_RESULTS.md), regresión de configuración del 2026-10-08 |
+| Hotel Boutique Demo por defecto Staff | PASS | [Web34](../../frontend/pms-hotel-web/docs/34_PRIVATE_09_FRONTEND.md), default autorizado del 2026-10-08 |
+
+- **Evidencia técnica previa:** asignación Backend focalizados29/verify848 PASS,
+  Web focalizados395/62/full1720/288 PASS; estados operativos Web380/61 y
+  full1752/290 PASS; availability Web588/79 PASS y build Docker/smoke real con
+  6 ofertas/cards; default Staff78/9 PASS, typecheck/ESLint focalizado PASS.
+  Typecheck/lint/build/diff-check aplicables PASS según cada guía. OpenAPI de
+  asignación46 operaciones/35 paths/56 schemas/13 tags con mappings/refs validados.
+  Conteos de sus entregas respectivas, no una suite conjunta reejecutada al cierre.
+- **Contratos y límites:** asignación solo stay elegible room=null, misma property/
+  RoomType, [arrival,departure), bloqueo OOO/OOS/stays activos superpuestos,
+  transacción/audit Staff y refresco detalle/Habitaciones; sin overwrite/reasignación.
+  Badges/filtros derivados sin enums ni estados persistidos ficticios. Availability
+  conserva payload Backend válido y booking; corrección de configuración Web.
+  Default Demo solo desde memberships activas, fallback a primera autorizada,
+  cambio manual disponible y scope previo retirado al cambiar sesión.
+- **Documentación:** contrato50, referencias49/OpenAPI39, guías Web14/34/36/55/61
+  y sección correspondiente de AlanPlan actualizados. Historial EN_QA preservado;
+  casos sin fixtures manuales conservan sus límites, sin nuevos PASS individuales.
+  Sin edición XLSX ni cierre de tareas ajenas, Room Move/extensión/DELETE o Calendario.
+- **Validación del cierre:** `git diff --check` PASS; comparación de archivos no
+  documentales confirma que el código/configuración/tests previos quedan intactos.
+  Suites y OpenAPI no repetidos; este cierre no acredita CI, merge o publicación.
+- **Siguiente:** publicación o nuevo incremento requieren autorización independiente.
+
+## 2026-10-08 — Asignación inicial real Staff: entrega EN_QA
+
+- **Estado:** EN_QA; aceptación técnica PASS, QA manual/visual Alan pendiente.
+  Owner integración/QA Alan; revisión colaborativa Juan BD3/BD2 Inventory/José.
+- **Rama/base:** feature/staff-room-assignment-real desde 2e29426, árbol inicial
+  limpio. Sin commit/push/merge; sin migraciones, secretos ni dependencias nuevas.
+- **Contrato:** [50](50_STAFF_INITIAL_ROOM_ASSIGNMENT_CONTRACT.md), autorización
+  expresa de Alan. Staff activo + RESERVATION_MANAGE actual + PROPERTY explícito;
+  Guest aislado. GET candidatas/PUT inicial HTTP/OpenAPI/BFF y detalle existentes.
+- **Entrega:** solo stay RESERVED/room=null de padre PENDING/CONFIRMED; misma
+  property/RoomType, [arrival,departure), bloqueos OOO/OOS no liberados y stays
+  RESERVED/IN_HOUSE superpuestos excluidos. Locks stay/Room, revalidación al guardar,
+  transacción con audit append-only STAFF/staffUserId/property/before/after/reason/
+  correlation/time. Toda asignación existente →409, sin overwrite/reasignación.
+  BFF Origin/allowlist/no-store/refresh401 acotado; worker excluye GET/PUT reales.
+  UI refresca detalle/listado y consulta real de stays para Habitaciones; N stays
+  independientes y fechas/estado/tarifa/ATS/finanzas preservados.
+- **Backend:** Docker Compose proyecto desechable pms-assignment-test,
+  Java21/PostgreSQL17; `./mvnw -B --no-transfer-progress
+  -Dtest=StaffReservationReadIntegrationTests,OpenApiContractIntegrationTests test`
+  **29 PASS**; `./mvnw -B --no-transfer-progress verify` **848 PASS**, 0 fallos/
+  errores/skips, sin exclusiones. Pruebas HTTP/SQL/audit/concurrencia/rollback;
+  OpenAPI generado **46 operaciones/35 paths/56 schemas/13 tags**, mappings y refs
+  consistentes, campos/errores/nullability/auth/scope del nuevo contrato cubiertos.
+- **Web:** `npm run test -- src/modules/reservations src/modules/rooms
+  src/app/api/staff/reservations 'src/app/(private)/staff-property-workspace.test.tsx'
+  src/data/mocks/worker-boundary.test.ts --maxWorkers=2` **395 PASS/62 archivos**;
+  `npm run test -- --maxWorkers=2` **1720 PASS/288 archivos**. Recorrido RTL con
+  mocks=false verifica PUT → detalle + proyección real de Habitaciones y N stays;
+  BFF/refresh/worker/permisos y mocks históricos cubiertos. `npm run typecheck`,
+  `npm run lint`, `NEXT_PUBLIC_USE_MOCK_API=false npm run build`, diff-check PASS.
+- **Corrección de validación:** primera suite Backend detectó reservas fixtures
+  committed de tests de concurrencia/rollback que afectaban conteos globales de
+  tres tests booking. AfterEach limpia solo esas reservas/stays; conserva audit
+  append-only. Base desechable recreada; focalizados y verify finales PASS.
+  Contenedores/volúmenes de prueba retirados; stack/base de aplicación intactos.
+  next-env generado por build restaurado a su contenido original.
+- **Límites:** tests no acreditan QA manual ni despliegue del stack real. Métodos
+  internos históricos BD3 y futuros escritores OOO/OOS deben coordinar locks al
+  integrarse; no se expone una API operativa/reasignación adicional aquí.
+- **Siguiente:** Alan ejecuta la matriz manual del contrato50 con
+  NEXT_PUBLIC_USE_MOCK_API=false sobre reserva persistida y confirma PASS.
+  Mantener EN_QA; sin commit/push/merge ni avance a otro incremento.
+
+## 2026-10-08 — Asignación inicial real Staff: inicio autorizado
+
+- **Estado:** READY → EN_PROGRESO. Owner Alan; revisión colaborativa Juan/BD2/José.
+- **Rama/base:** feature/staff-room-assignment-real / 2e29426; árbol inicial limpio.
+- **Contrato:** [50](50_STAFF_INITIAL_ROOM_ASSIGNMENT_CONTRACT.md), reglas expresas
+  de Alan; RESERVATION_MANAGE/PROPERTY existentes. Sin ampliar roles ni permisos.
+- **Alcance:** candidatos/PUT real transaccional y auditado, BFF/UI de detalle,
+  sin sobrescritura, refresco detalle/Habitaciones; sin migraciones/dependencias.
+- **Siguiente:** pruebas Backend/Web/OpenAPI y entrega EN_QA; manual pendiente,
+  sin commit/push/merge.
+
 # AlanHandoff — Seguimiento Backend
 
 ## 2026-10-08 — Integración Staff Habitaciones/C-R-U: cierre con QA manual real PASS

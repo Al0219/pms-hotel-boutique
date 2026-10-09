@@ -2702,3 +2702,44 @@ Docker; el workflow Backend CI usa Temurin 21.
 - **Siguiente incremento:** asignación física, no incluida ni iniciada aquí;
   verificar DoR, contratos y decisiones antes de implementarla. No se declara
   READY ni se modifica el siguiente trabajo de otros owners por este cierre.
+
+
+### Asignación inicial real de habitación Staff — 2026-10-08
+
+- **Estado:** COMPLETADA (READY → EN_PROGRESO → EN_QA → COMPLETADA);
+  QA manual de asignación física PASS confirmado por Alan el 2026-10-08 y cierre
+  documental autorizado del incremento actual.
+- **Owner/reviewers:** Alan integración/QA; Juan BD3, BD2 Inventory y José WEB-3/WEB-4, colaborativos.
+- **Rama/base:** feature/staff-room-assignment-real desde 2e29426; árbol inicial limpio.
+- **DoR/dependencias:** lectura Staff Reservations y Habitaciones COMPLETADAS;
+  Auth/BFF/RESERVATION_MANAGE/PROPERTY existentes. Reglas autorizadas y contrato
+  [50](50_STAFF_INITIAL_ROOM_ASSIGNMENT_CONTRACT.md); detalle IMP-WEB-0302 existente,
+  sin nueva fila/ID ni edición XLSX.
+- **Aceptación/alcance:** solo stay RESERVED/room=null, padre PENDING/CONFIRMED;
+  misma property/RoomType, [arrival,departure), sin OOO/OOS ni stays activos
+  superpuestos, sin sobrescritura, transacción/audit Staff, HTTP/OpenAPI/BFF/UI y
+  refresco detalle/Habitaciones. Sin cambios de tarifas, estados, ATS ni finanzas.
+- **Archivos:** adapter/controller/repository/security/OpenAPI Backend, BFF y
+  diálogo/service/hook de Reservas, pruebas focalizadas y contrato50.
+- **Aceptación técnica:** PASS; tests de concurrencia, rollback/audit Staff,
+  room=null, scope/tipo, OOO/OOS, fechas exclusivas, BFF/refresh y refresco UI.
+- **Evidencia:** Backend focalizados29 y ./mvnw verify848 PASS sin exclusiones,
+  Java21/PostgreSQL17 desechable; Web focalizados395/62 y full1720/288 PASS con
+  --maxWorkers=2; typecheck/lint/build mocks=false y diff-check PASS; OpenAPI
+  46 operaciones/35 paths/56 schemas/13 tags, contrastado con mappings/refs.
+- **DoD:** aceptación y comprobaciones técnicas PASS; QA manual de asignación
+  física PASS confirmado por el owner. La confirmación se distingue de los tests,
+  sin atribuir resultados manuales individuales a variantes sin fixtures.
+  Corrección de aislamiento de fixtures committed de tests, sin alterar audit
+  append-only; verify final PASS. Sin migraciones/dependencias ni datos reales alterados.
+- **Cierre conjunto del incremento actual:** Alan confirmó también QA manual PASS
+  de estados operativos ([Web61](../../frontend/pms-hotel-web/docs/61_STAFF_RESERVATION_OPERATIONAL_STATUS_QA.md)),
+  regresión availability pública ([Web36](../../frontend/pms-hotel-web/docs/36_PUBLIC_AVAILABILITY_RESULTS.md))
+  y Hotel Boutique Demo por defecto ([Web34](../../frontend/pms-hotel-web/docs/34_PRIVATE_09_FRONTEND.md));
+  estas correcciones Web quedan COMPLETADAS en sus guías. No modifican contratos/
+  enums/persistencia Backend ni estados de otras tareas de este plan.
+- **Validación del cierre:** documentación/contratos coherentes y diff-check;
+  sin cambios funcionales ni repetición de suites. Evidencia previa conservada
+  en AlanHandoff y guías de QA; no implica integración en main o publicación.
+- **Siguiente:** publicación o nuevo incremento solo con autorización independiente.
+  Sin commit/push/merge.

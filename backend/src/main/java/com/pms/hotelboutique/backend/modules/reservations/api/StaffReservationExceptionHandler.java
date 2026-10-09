@@ -11,6 +11,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 @RestControllerAdvice(assignableTypes = StaffReservationController.class)
 public class StaffReservationExceptionHandler extends ResponseEntityExceptionHandler {
+    @ExceptionHandler(com.pms.hotelboutique.backend.modules.reservations.application.StaffRoomAssignmentService.Conflict.class)
+    ProblemDetail conflict() { return problem(HttpStatus.CONFLICT, "Room assignment conflict"); }
     @ExceptionHandler(ReservationQueryException.class)
     ProblemDetail missing() { return problem(HttpStatus.NOT_FOUND, "Reservation not found"); }
     @ExceptionHandler(IllegalArgumentException.class)

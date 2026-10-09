@@ -65,3 +65,10 @@ it('enables contracted real management with COMMERCIAL_MANAGE and keeps real sou
   fireEvent.click(screen.getByRole('button', { name: 'Administrar inventario' }));
   expect(mocks.catalog).toHaveBeenCalledWith(expect.objectContaining({ canManage: true }));
 });
+
+it.each(['true', 'false'])('enables real initial assignment with permission and mocks=%s', flag => {
+  vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', flag);
+  mocks.session.mockReturnValue({ ...sessionFixture, permissions: ['RESERVATION_MANAGE'] });
+  render(<StaffReservationsWorkspace reservationId="real-reservation" />);
+  expect(mocks.detail).toHaveBeenCalledWith(expect.objectContaining({ canManage: true, endpoint: '/api/staff/reservations' }));
+});

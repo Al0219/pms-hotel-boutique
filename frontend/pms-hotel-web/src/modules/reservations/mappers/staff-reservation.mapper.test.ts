@@ -60,3 +60,16 @@ describe('Staff real reservation mapping', () => {
     expect(() => mapStaffReservationCenter([dto, dto])).toThrow(DomainMappingError);
   });
 });
+
+describe('operational projection stays separate from the real read contract', () => {
+  it('keeps raw status/IDs and DTO immutable while sharing list and detail projection', () => {
+    const dto = staffReservationFixture();
+    dto.stays[0].room = { roomId: '77777777-7777-7777-7777-777777777777', code: '203' };
+    const before = structuredClone(dto);
+    expect(mapStaffReservationDetail(dto)).toMatchObject({ status: 'CONFIRMED', operationalStatus: 'ASSIGNED', id: dto.reservationId });
+    expect(mapStaffReservationCenter([dto]).reservations[0]).toMatchObject({ status: 'CONFIRMED', operationalStatus: 'ASSIGNED' });
+    expect(dto).toEqual(before); expect(dto).not.toHaveProperty('operationalStatus');
+    dto.stays = [];
+    expect(mapStaffReservationDetail(dto).operationalStatus).toBe('CONFIRMED');
+  });
+});

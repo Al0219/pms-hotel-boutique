@@ -15,8 +15,13 @@ export function restoreStaffBffSession(): Promise<{ refreshed: boolean }> {
   return refreshInFlight;
 }
 
-export async function staffBffRead<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const options: HttpRequestOptions = { path: bffUrl(path), signal, withAuth: false };
+export function staffBffRead<T>(path: string, signal?: AbortSignal): Promise<T> {
+  return staffBffRequest<T>(path, { signal });
+}
+
+export async function staffBffRequest<T>(path: string, init: Omit<HttpRequestOptions, 'path' | 'withAuth'> = {}): Promise<T> {
+  const { signal } = init;
+  const options: HttpRequestOptions = { ...init, path: bffUrl(path), withAuth: false };
   try { return await httpRequest<T>(options); }
   catch (error) {
     if (signal?.aborted || !(error instanceof HttpStatusError) || error.status !== 401) throw error;

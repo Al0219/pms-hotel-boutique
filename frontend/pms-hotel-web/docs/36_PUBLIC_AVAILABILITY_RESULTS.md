@@ -369,3 +369,67 @@ simulado Backend, persistencia Reservation/ReservationStay, confirmationCode e
 idempotencia booking. El QA PASS termina antes de crear o confirmar una reserva.
 Este cierre sustituye los estados EN_QA registrados durante las rondas anteriores;
 su historial y evidencia se conservan.
+
+## Regresión de configuración Web Docker — 2026-10-08
+
+Estado vigente: **COMPLETADA**; QA manual de availability pública PASS confirmado
+por Alan el 2026-10-08 y cierre documental autorizado. Corrección técnica localizada,
+sin modificar Backend, DTO, mapper,
+contrato, booking, asignación Staff ni estados operativos previos.
+
+Reproducción sobre HB-GT-DEMO y [2026-11-01,2026-11-03), rooms=1:
+Backend8081 y BFF3001 devolvían200 con las mismas **6 ofertas** válidas
+(CLASSIC/DLX/KING/STD/SUITE/TWIN). Sin embargo, Firefox aislado no emitía ninguna
+consulta desde el hook y mostraba el error de disponibilidad, filtros vacíos y
+cero cards en Inicio y `/habitaciones`. El GET manual llevaba propertyId explícito;
+la búsqueda del navegador dependía de NEXT_PUBLIC_PROPERTY_ID ausente del build.
+
+Causa: Dockerfile ya aceptaba ese ARG y el hook/service lo requerían, pero
+compose.yaml no lo pasaba. La pérdida ocurría en la configuración previa a
+Response→DTO: el service lanzaba503 local por configuración faltante antes de
+fetch. Los datos no se descartaban en el mapper ni en el catálogo.
+
+Corrección mínima: propagar NEXT_PUBLIC_PROPERTY_ID desde Compose al build Web;
+.env.example documenta el campo obligatorio y elimina la afirmación incorrecta
+de que Compose elegía implícitamente la propiedad demo. En el .env local ignorado
+se configuró exclusivamente esa variable pública con HB-GT-DEMO.id comprobado por
+SQL read-only, 3032709f-a48b-300b-b860-1110bc6f1f13. Sin default UUID en producto,
+sin lookup global/fallback mock, sin modificar credenciales ni datos Backend.
+Cambiar esta variable requiere recompilar Web; no basta reiniciar una imagen vieja.
+
+Evidencia técnica:
+
+- `docker compose config --format json`, proyectando solo args públicos: flagfalse
+  y propertyId correcto presentes en web.build.args.
+- Regresión RTL agrega200 con seis ofertas y traza Response/DTO→mapper→hook
+  (`status=success`, roomTypes.length=6, UUIDs, capacity=null y totalMinor intactos)
+  →catálogo6→Inicio6. Conserva el test de configuración ausente y ofertas vacías.
+- `npm run test -- src/modules/availability src/modules/booking src/modules/checkout
+  src/modules/reservations src/app/api/v1/public/availability/route.test.ts
+  --maxWorkers=2`: **588 PASS / 79 archivos**, incluidas regresiones booking,
+  asignación real y estados operativos. No se reejecuta Backend, no afectado.
+- `npm run typecheck`, `npm run lint`, `docker compose build web` y diff-check PASS;
+  el build Docker ejecuta next build con mocks=false y property configurada.
+- Firefox anónimo en Web temporal3002 contra Backend real: GET200 y6 cards en
+  catálogo e Inicio, worker=null, sin creación de reservas/pagos ni mutaciones Staff.
+  Smoke técnico distinto del QA manual del owner; al entregar esa evidencia se
+  conservaba EN_QA, sustituido por el cierre confirmado en esta sección.
+
+Guía de QA manual: en el stack que incluya la imagen corregida, abrir Inicio y
+`/habitaciones?checkIn=2026-11-01&checkOut=2026-11-03&adults=2&children=0&roomsCount=1`;
+comprobar cards/UUIDs/stock/precios contra el response, detalle y selección/revisión.
+El stock puede cambiar por bookings reales: no fijar6 como regla de negocio.
+Sin commit/push/merge ni migraciones/dependencias.
+
+Aplicación local de la corrección: `docker compose up -d --no-deps web` reutilizó
+la imagen validada, sin recrear Backend/PostgreSQL. Segundo smoke Firefox en
+localhost:3001 PASS: consulta desde el hook GET200 y **6 cards en catálogo / 6 en
+Inicio**, sin worker mock. Contenedor temporal3002 retirado. Estado al entregar
+ese smoke: EN_QA para QA manual del owner, conservado como histórico.
+
+Cierre confirmado por Alan: **QA manual availability pública PASS → COMPLETADA**.
+La confirmación no añade conteos/fixtures ni resultados manuales individuales;
+se mantiene el contrato válido y la corrección mínima de configuración, sin
+modificar booking, asignación Staff o estados operativos. En este cierre solo
+documentación y diff-check, sin reconstrucción/despliegue ni suites repetidas.
+Sin commit/push/merge; este cierre no altera otros incrementos Backend.

@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { AvailabilitySearch, AvailabilityResults } from "@/modules/multi-property";
-import { PropertyProvider } from "@/modules/properties";
+import { PropertyProvider, PropertySwitcher } from "@/modules/properties";
 vi.hoisted(() => { vi.resetModules(); });
 // This provisional domain permission is not part of the Backend Staff contract.
 // Isolate presentation coverage; PrivateLayout tests prove BFF does not grant it.
@@ -36,9 +36,12 @@ describe("provisional comparison presentation (no authentication)",()=>{
     expect(navigation.push).toHaveBeenCalledWith("/multi-property/disponibilidad/resultados?start=2026-09-12&end=2026-09-14&roomType=King");
   });
   it("filters comparison by scope, room type and dates", async () => {
-    sessionStorage.setItem("pms:private-09:scope:staff-current", "ALL_PROPERTIES");
-    mount(<AvailabilityResults criteria={{ startDate: "2026-09-12", endDate: "2026-09-14", roomType: "King" }} />);
-    const table = await screen.findByRole("region", { name: "Disponibilidad por propiedad y fecha" });
+    const user = userEvent.setup();
+    mount(<><PropertySwitcher /><AvailabilityResults criteria={{ startDate: "2026-09-12", endDate: "2026-09-14", roomType: "King" }} /></>);
+    await screen.findByRole("region", { name: "Disponibilidad por propiedad y fecha" });
+    await user.selectOptions(screen.getByLabelText("Propiedad"), "ALL_PROPERTIES");
+    await waitFor(() => expect(screen.getByRole("region", { name: "Disponibilidad por propiedad y fecha" })).toHaveTextContent("Patio King"));
+    const table = screen.getByRole("region", { name: "Disponibilidad por propiedad y fecha" });
     expect(table).toHaveTextContent("Deluxe King"); expect(table).toHaveTextContent("Patio King");
     expect(table).not.toHaveTextContent("Standard Twin");
     expect(table).toHaveTextContent("America/Guatemala");

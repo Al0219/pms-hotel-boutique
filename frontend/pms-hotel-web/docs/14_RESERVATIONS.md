@@ -64,3 +64,22 @@ El gate manual/E2E de esta lectura usa únicamente
 manual ni modo de integración real; se conservan los tests técnicos de boundaries.
 El caso manual de Staff autenticado sin RESERVATION_MANAGE permanece
 NO EJECUTABLE por falta de fixture, sin atribuir PASS ni FAIL manual.
+
+## Estados operativos visibles — 2026-10-08
+
+[Guía y precedencia de presentación](61_STAFF_RESERVATION_OPERATIONAL_STATUS_QA.md).
+Listado/detalle y filtro real muestran Pendiente, Confirmada, Asignada, En estancia,
+Completada, No show y Cancelada desde Reservation + stays validadas. Conservan
+status real del padre y estados de las stays para comandos; no modifica enums,
+contratos Backend, BFF ni persistencia. Estado **COMPLETADA**; QA manual de estados
+operativos PASS confirmado por Alan el 2026-10-08. Cierre documental autorizado,
+sin modificar código funcional ni backlog.
+
+## Asignación física real — cierre 2026-10-08
+
+El [contrato Backend50](../../../backend/docs/50_STAFF_INITIAL_ROOM_ASSIGNMENT_CONTRACT.md)
+y [guía Web55](55_STAFF_INITIAL_ROOM_ASSIGNMENT.md) habilitan únicamente asignación
+inicial de stay room=null, scoped, transaccional y auditada por Staff, con refresco
+de detalle y Habitaciones. Estado **COMPLETADA** tras QA manual de asignación física
+PASS confirmado por Alan. La exclusión de asignación de la entrega READ-01 arriba
+queda histórica; no habilita sobrescritura/reasignación ni otras mutaciones.

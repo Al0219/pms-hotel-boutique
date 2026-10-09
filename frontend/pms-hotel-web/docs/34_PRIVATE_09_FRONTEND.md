@@ -14,8 +14,8 @@ No es una API Backend, autorización real ni contrato confirmado de WEB-4. El tr
 
 - Identidad: identificador local de sesión, nombre ficticio, role_id existente y memberships con property_id, nombre, timezone, currency y ACTIVE/INACTIVE. No contiene credenciales ni tokens.
 - La sesión activa y logout proceden del estado de Security de Private 07; los permisos proceden de su catálogo de roles. Cambiar de propiedad no cambia el rol. Cerrar sesión Staff no cierra Guest.
-- Solo memberships ACTIVE llegan al selector. ALL_PROPERTIES exige MULTI_PROPERTY_READ y declara exactamente el conjunto autorizado. Una preferencia persistida inválida exige selección explícita, nunca fallback global.
-- La preferencia de contexto se conserva en sessionStorage, por sesión ficticia, y se revalida contra memberships y permisos. No es una credencial. Un fallo del almacenamiento conserva el cambio durante la visita y muestra feedback.
+- Solo memberships ACTIVE llegan al selector. ALL_PROPERTIES exige MULTI_PROPERTY_READ y declara exactamente el conjunto autorizado. La selección se revalida contra memberships y permisos; nunca se hace fallback global.
+- Actualización autorizada del 2026-10-08: al iniciar sesión o recargar, el contexto usa Hotel Boutique Demo (código `HB-GT-DEMO`) si está entre las memberships activas de Staff; de lo contrario usa la primera activa en el orden de la sesión. Sin memberships activas no hay scope. La selección manual se conserva durante la visita y se refleja en sessionStorage por sesión, pero no se restaura al recargar. Una selección revocada se sustituye por el mismo default autorizado. No es una credencial ni usa la configuración pública para autorizar Staff. Un fallo del almacenamiento conserva el cambio durante la visita y muestra feedback.
 - Datos de dashboard: property_id, moneda, fecha de snapshot, room-nights vendidos/disponibles y revenue neto. Las métricas por propiedad preceden al consolidado; ADR/RevPAR/ocupación se ponderan por sus denominadores, sin promediar porcentajes. Diferentes monedas o fechas no se suman. Denominadores cero muestran ausencia de base.
 - Snapshot existente: 08 sep 2026, GT-HB-01: 82/100 y GTQ 92,250; GT-HB-03: 76/100 y GTQ 101,800. Consolidado: 158/200, 79%, GTQ 194,050. No es información en tiempo real.
 - Búsqueda: entrada/salida, texto de RoomType y contexto autorizado explícito. La demo limita la forma a 31 noches; no es una regla del hotel. Fechas y texto se conservan en URL y al volver a editar. Los ejemplos existentes cubren las noches del 12 y 13 sep 2026. Otras fechas sin fixture devuelven vacío; no se fabrica disponibilidad.
@@ -46,6 +46,31 @@ Con NEXT_PUBLIC_USE_MOCK_API=true, visitar `/multi-property` o `/dashboard`. Sel
 Escenarios locales de carga de datos: en DevTools, guardar `pms:private-09:scenario` con valor `error`, `empty` o `loading` en localStorage y recargar. Eliminar esa clave restaura success; `loading` añade 3 segundos. No son opciones del producto ni afectan a otros módulos.
 
 Las pruebas automatizadas cubren matrices de autorización frontend, memberships inactivas/vacías, rol sin global, scope guardado inválido, métricas ponderadas y monedas distintas, cobertura ATS, búsqueda, errores/retry/offline, cache por contexto, persistencia y logout compartido. Evidencia final de lint/typecheck/tests/build se registra al cerrar la corrección.
+
+### Default Staff autorizado — 2026-10-08
+
+Estado **COMPLETADA**; QA manual de Hotel Boutique Demo por defecto PASS confirmado por Alan el 2026-10-08, con cierre documental autorizado. Cambio localizado en `properties`, sin cambios de contratos Backend. La selección manual y ALL_PROPERTIES conservan su validación previa; al refrescar la sesión se conserva una selección aún autorizada. Al cambiar de sesión se retira el scope previo antes de inicializar el nuevo. Las consultas de Reservas/Habitaciones siguen usando exclusivamente el scope autorizado. La confirmación del owner no es una nueva ejecución del agente ni altera el estado del backlog histórico de Private 09.
+
+QA manual reproducible:
+
+1. Iniciar sesión con Staff que tenga Hotel Boutique Demo autorizada: el selector debe mostrar Demo aunque no sea la primera membership. Revisar Reservas/Habitaciones y que sus requests lleven su propertyId.
+2. Cambiar manualmente a otra propiedad autorizada: el selector y los datos deben cambiar normalmente. Recargar: debe volver a Demo.
+3. Con Staff sin Demo, iniciar sesión y recargar: debe usar la primera membership activa; no debe ofrecer propiedades inactivas. Sin memberships activas, no debe consultar datos operativos.
+4. Guardar un valor inválido en la clave `pms:private-09:scope:<sessionId>` de sessionStorage y recargar: debe sustituirlo por el default autorizado. No deben salir consultas con el valor inválido ni con ALL_PROPERTIES automáticamente.
+5. Cambiar a ALL_PROPERTIES cuando exista MULTI_PROPERTY_READ: mantiene el conjunto autorizado. Sin ese permiso, la opción no aparece. Guest mantiene su sesión independiente.
+
+Validación automatizada: **78 pruebas PASS en 9 archivos** (modelo/provider de propiedades, sesión Staff, shell/workspaces, Private 09 y comparación). Las expectativas antiguas de restauración de sessionStorage se actualizaron al default autorizado; la comparación global se selecciona explícitamente. Typecheck, ESLint de los archivos afectados y `git diff --check`: PASS.
+
+Cierre: documentación y diff-check; sin cambios funcionales, suites repetidas ni commit/push/merge. La selección inicial usa exclusivamente memberships activas, nunca una property pública o no autorizada. Nuevas implementaciones/publicación requieren autorización independiente.
+
+Desde `frontend/pms-hotel-web`:
+
+```bash
+npm run test -- src/modules/properties src/modules/auth/components/staff-session-provider.test.tsx 'src/app/(private)/staff-shell-scope.test.tsx' 'src/app/(private)/staff-property-workspace.test.tsx' 'src/app/(private)/layout.test.tsx' src/test/private-09-domain.test.ts src/test/private-09.test.tsx src/test/comparison-presentation.test.tsx --maxWorkers=2
+npm run typecheck
+npx eslint src/modules/properties 'src/app/(private)/staff-shell-scope.test.tsx' src/test/private-09.test.tsx src/test/comparison-presentation.test.tsx --max-warnings=0
+git diff --check
+```
 
 ### Evidencia de ejecución — 2026-09-25
 

@@ -49,6 +49,7 @@ services:
       args:
         NEXT_PUBLIC_USE_MOCK_API: ${NEXT_PUBLIC_USE_MOCK_API:-true}
         NEXT_PUBLIC_API_BASE_URL: /api
+        NEXT_PUBLIC_PROPERTY_ID: ${NEXT_PUBLIC_PROPERTY_ID:-}
     environment:
       HOSTNAME: 0.0.0.0
       PORT: "3000"

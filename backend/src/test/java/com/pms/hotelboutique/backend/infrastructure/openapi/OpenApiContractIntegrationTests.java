@@ -452,6 +452,27 @@ class OpenApiContractIntegrationTests {
     }
 
     @Test
+    void initialAssignmentDocumentsScopedTransactionalCommandAndCandidateSchemas() throws Exception {
+        var doc = document();
+        String route = "/api/v1/reservations/{reservationId}/stays/{stayId}/room-assignment";
+        for (String method : List.of("get", "put")) {
+            var op = operation(doc, route, method);
+            assertEquals("staff", op.path("x-audience").asText());
+            assertTrue(op.path("security").get(0).has("bearerAuth"));
+            assertTrue(op.path("description").asText().contains("RESERVATION_MANAGE"));
+            assertTrue(parameter(op, "propertyId").path("required").asBoolean());
+            for (String code : List.of("200", "400", "401", "403", "404")) assertTrue(op.path("responses").has(code));
+            assertTrue(op.path("responses").path("200").path("headers").has("Cache-Control"));
+        }
+        assertSuccessSchema(operation(doc, route, "get"), "200", "StaffRoomAssignmentPreview");
+        assertSuccessSchema(operation(doc, route, "put"), "200", "StaffRoomAssignmentResult");
+        assertTrue(operation(doc, route, "put").path("responses").has("409"));
+        var schemas = doc.path("components").path("schemas");
+        assertEquals(Set.of("property_id", "reservation_id", "stay_id", "room_id", "number"), strings(schemas.path("StaffRoomAssignmentResult").path("required")));
+        assertEquals(Set.of("string", "null"), strings(schemas.path("StaffRoomAssignmentPreview").path("properties").path("reason").path("type")));
+    }
+
+    @Test
     void staffReservationsDocumentReadOnlyScopeAndNullableRealData() throws Exception {
         var doc = document();
         for (String route : List.of("/api/v1/reservations", "/api/v1/reservations/{reservationId}")) {
