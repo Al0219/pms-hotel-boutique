@@ -8,6 +8,7 @@ import com.pms.hotelboutique.backend.modules.reservations.application.*;
 import com.pms.hotelboutique.backend.modules.reservations.domain.PublicBookingReceipt;
 import com.pms.hotelboutique.backend.modules.reservations.domain.Reservation;
 import com.pms.hotelboutique.backend.modules.reservations.domain.ReservationStay;
+import com.pms.hotelboutique.backend.modules.reservations.infrastructure.persistence.PublicBookingPropertyEligibilityRepository;
 import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -31,6 +32,7 @@ class PublicBookingServiceTests {
     private PublicBookingValidationService validation;
     private PublicBookingReceiptService receipts;
     private PublicAvailabilityCatalogRepository catalog;
+    private PublicBookingPropertyEligibilityRepository eligibility;
     private InventoryAdmissionPort admission;
     private PaymentGatewayPort payments;
     private PublicBookingMappingService mapping;
@@ -47,6 +49,7 @@ class PublicBookingServiceTests {
         validation = mock(PublicBookingValidationService.class);
         receipts = mock(PublicBookingReceiptService.class);
         catalog = mock(PublicAvailabilityCatalogRepository.class);
+        eligibility = mock(PublicBookingPropertyEligibilityRepository.class);
         admission = mock(InventoryAdmissionPort.class);
         payments = mock(PaymentGatewayPort.class);
         mapping = mock(PublicBookingMappingService.class);
@@ -55,11 +58,13 @@ class PublicBookingServiceTests {
         entities = mock(EntityManager.class);
         json = spy(new ObjectMapper());
         type = new RoomType(TYPE, PROPERTY, "STD", "Standard", Instant.now());
-        service = new PublicBookingServiceImpl(validation, receipts, catalog, new DemoRatePolicy(), admission,
+        service = new PublicBookingServiceImpl(validation, receipts, catalog, eligibility, new DemoRatePolicy(), admission,
                 payments, mapping, booking, reservations, entities, json);
         when(validation.validateAndHash(eq(KEY), any())).thenReturn(HASH);
         when(catalog.findProperty(PROPERTY)).thenReturn(Optional.of(property(Property.Status.ACTIVE, "GTQ")));
         when(catalog.findRoomTypes(PROPERTY)).thenReturn(List.of(type));
+        when(eligibility.lock(PROPERTY)).thenReturn(Optional.of(
+                new PublicBookingPropertyEligibilityRepository.Eligibility("ACTIVE", "GTQ")));
         when(receipts.execute(any(), any())).thenAnswer(call -> {
             var input = (PublicBookingReceiptRequest) call.getArgument(0);
             var result = ((Supplier<PublicBookingReceiptResult>) call.getArgument(1)).get();
@@ -94,12 +99,13 @@ class PublicBookingServiceTests {
         assertEquals("APPROVED", result.payment().status());
         assertEquals(REFERENCE, result.payment().reference());
         assertEquals(1, result.stays().size());
-        var order = inOrder(validation, receipts, catalog, admission, entities, payments, mapping, booking, reservations);
+        var order = inOrder(validation, receipts, catalog, admission, eligibility, entities, payments, mapping, booking, reservations);
         order.verify(validation).validateAndHash(KEY, input);
         order.verify(receipts).execute(eq(new PublicBookingReceiptRequest(KEY, HASH)), any());
         order.verify(catalog).findProperty(PROPERTY);
         order.verify(catalog).findRoomTypes(PROPERTY);
         order.verify(admission).admit(eq(PROPERTY), eq(List.of(new InventoryDemand(TYPE, new StayDateRange(ARRIVAL, DEPARTURE), 1))), any());
+        order.verify(eligibility).lock(PROPERTY);
         order.verify(entities).refresh(type);
         order.verify(payments).pay(new PaymentRequest(130000L, "GTQ"));
         order.verify(mapping).map(input);
@@ -133,6 +139,24 @@ class PublicBookingServiceTests {
     }
 
     @Test
+    void propertyMustStillBeActiveAfterWaitingForInventory() {
+        when(eligibility.lock(PROPERTY)).thenReturn(Optional.of(
+                new PublicBookingPropertyEligibilityRepository.Eligibility("INACTIVE", "GTQ")));
+        var error = assertThrows(PublicBookingValidationException.class,
+                () -> service.book(KEY, request(1, 130000L, "DEMO_STANDARD")));
+        assertEquals(PublicBookingValidationException.Code.PROPERTY_NOT_FOUND, error.code());
+        verifyNoInteractions(payments, mapping, booking, reservations);
+    }
+
+    @Test
+    void currentPropertyCurrencyIsCheckedUnderTheSharedLockBeforePayment() {
+        when(eligibility.lock(PROPERTY)).thenReturn(Optional.of(
+                new PublicBookingPropertyEligibilityRepository.Eligibility("ACTIVE", "USD")));
+        failure(request(1, 130000L, "DEMO_STANDARD"), PublicBookingException.Code.BOOKING_FAILED);
+        verifyNoInteractions(payments, mapping, booking, reservations);
+    }
+
+    @Test
     void noAvailabilityNeverRunsThePaymentOrPersistenceCallback() {
         doThrow(new InventoryExhaustedException()).when(admission).admit(any(), anyList(), any());
         failure(request(1, 130000L, "DEMO_STANDARD"), PublicBookingException.Code.NO_AVAILABILITY);
@@ -160,9 +184,9 @@ class PublicBookingServiceTests {
         var receipt = new PublicBookingReceipt(KEY, HASH, PublicBookingReceipt.Status.COMPLETED, RESERVATION,
                 original.confirmationCode(), REFERENCE, json.writeValueAsString(original), now, now);
         doReturn(receipt).when(receipts).execute(any(), any());
-        clearInvocations(catalog, admission, entities, payments, mapping, booking, reservations);
+        clearInvocations(catalog, eligibility, admission, entities, payments, mapping, booking, reservations);
         assertEquals(original, service.book(KEY, request(1, 130000L, "DEMO_STANDARD")));
-        verifyNoInteractions(catalog, admission, entities, payments, mapping, booking, reservations);
+        verifyNoInteractions(catalog, eligibility, admission, entities, payments, mapping, booking, reservations);
     }
 
     @Test

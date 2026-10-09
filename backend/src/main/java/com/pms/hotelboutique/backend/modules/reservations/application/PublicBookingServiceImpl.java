@@ -9,6 +9,7 @@ import com.pms.hotelboutique.backend.modules.inventory.domain.Property;
 import com.pms.hotelboutique.backend.modules.inventory.domain.RoomType;
 import com.pms.hotelboutique.backend.modules.inventory.infrastructure.persistence.PublicAvailabilityCatalogRepository;
 import com.pms.hotelboutique.backend.modules.reservations.domain.Reservation;
+import com.pms.hotelboutique.backend.modules.reservations.infrastructure.persistence.PublicBookingPropertyEligibilityRepository;
 import jakarta.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ public class PublicBookingServiceImpl implements PublicBookingService {
     private final PublicBookingValidationService validation;
     private final PublicBookingReceiptService receipts;
     private final PublicAvailabilityCatalogRepository catalog;
+    private final PublicBookingPropertyEligibilityRepository eligibility;
     private final DemoRatePolicy rates;
     private final InventoryAdmissionPort admission;
     private final PaymentGatewayPort payments;
@@ -38,12 +40,14 @@ public class PublicBookingServiceImpl implements PublicBookingService {
     private final ObjectMapper json;
 
     public PublicBookingServiceImpl(PublicBookingValidationService validation, PublicBookingReceiptService receipts,
-            PublicAvailabilityCatalogRepository catalog, DemoRatePolicy rates, InventoryAdmissionPort admission,
+            PublicAvailabilityCatalogRepository catalog, PublicBookingPropertyEligibilityRepository eligibility,
+            DemoRatePolicy rates, InventoryAdmissionPort admission,
             PaymentGatewayPort payments, PublicBookingMappingService mapping, ReservationBookingService booking,
             ReservationService reservations, EntityManager entities, ObjectMapper json) {
         this.validation = validation;
         this.receipts = receipts;
         this.catalog = catalog;
+        this.eligibility = eligibility;
         this.rates = rates;
         this.admission = admission;
         this.payments = payments;
@@ -88,6 +92,14 @@ public class PublicBookingServiceImpl implements PublicBookingService {
         requireRatePlans(request, types);
         var demand = demand(request);
         return admission.admit(request.propertyId(), demand, () -> {
+            var currentProperty = eligibility.lock(request.propertyId())
+                    .orElseThrow(() -> new PublicBookingValidationException(PROPERTY_NOT_FOUND));
+            if (!Property.Status.ACTIVE.name().equals(currentProperty.status())) {
+                throw new PublicBookingValidationException(PROPERTY_NOT_FOUND);
+            }
+            if (!rates.currency().getCurrencyCode().equals(currentProperty.currency())) {
+                throw new PublicBookingException(BOOKING_FAILED);
+            }
             // Admission locks the real RoomType rows. Refresh prices after waiting for
             // those locks, so a concurrent code change cannot charge a stale demo price.
             var refreshed = new HashSet<UUID>();

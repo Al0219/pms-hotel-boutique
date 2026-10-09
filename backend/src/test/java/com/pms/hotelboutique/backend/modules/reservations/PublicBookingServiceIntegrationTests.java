@@ -318,6 +318,107 @@ class PublicBookingServiceIntegrationTests {
     }
 
     @Test
+    void deactivationWhileWaitingForInventoryAbortsBeforePaymentAndWrites() throws Exception {
+        var before = counts();
+        var locked = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var pid = new AtomicInteger();
+        String inputKey = key();
+        try (var workers = Executors.newFixedThreadPool(2)) {
+            var holder = workers.submit(() -> transaction().executeWithoutResult(status -> {
+                jdbc.queryForObject("SELECT id FROM room_types WHERE id=? FOR UPDATE", UUID.class, standard);
+                locked.countDown();
+                await(release);
+            }));
+            try {
+                assertTrue(locked.await(20, TimeUnit.SECONDS));
+                var pending = workers.submit(() -> transaction().execute(status -> {
+                    pid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                    return service.book(inputKey, request(1));
+                }));
+                assertTrue(waitForLock(pid, true));
+                jdbc.update("UPDATE properties SET status='INACTIVE' WHERE id=?", property);
+                release.countDown();
+                holder.get(20, TimeUnit.SECONDS);
+                var failure = assertThrows(ExecutionException.class, () -> pending.get(20, TimeUnit.SECONDS));
+                var error = assertInstanceOf(PublicBookingValidationException.class, failure.getCause());
+                assertEquals(PublicBookingValidationException.Code.PROPERTY_NOT_FOUND, error.code());
+            } finally { release.countDown(); }
+        }
+        assertEquals(before, counts());
+        assertTrue(receipts.find(inputKey).isEmpty());
+        verifyNoInteractions(payments);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void propertyUpdateWaitsForExteriorBookingCommitOrRollback(boolean rollback) throws Exception {
+        var before = counts();
+        var prepared = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var writerPid = new AtomicInteger();
+        String inputKey = key();
+        PublicBookingView result;
+        try (var workers = Executors.newFixedThreadPool(2)) {
+            var first = workers.submit(() -> transaction().execute(status -> {
+                var response = service.book(inputKey, request(1));
+                prepared.countDown();
+                await(release);
+                if (rollback) { status.setRollbackOnly(); }
+                return response;
+            }));
+            try {
+                assertTrue(prepared.await(20, TimeUnit.SECONDS));
+                var writer = workers.submit(() -> transaction().execute(status -> {
+                    writerPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                    return jdbc.update("UPDATE properties SET status='INACTIVE' WHERE id=?", property);
+                }));
+                assertTrue(waitForLock(writerPid, true));
+                assertFalse(writer.isDone());
+                assertEquals("ACTIVE", jdbc.queryForObject("SELECT status FROM properties WHERE id=?", String.class, property));
+                release.countDown();
+                result = first.get(20, TimeUnit.SECONDS);
+                assertEquals(1, writer.get(20, TimeUnit.SECONDS));
+            } finally { release.countDown(); }
+        }
+        assertEquals("INACTIVE", jdbc.queryForObject("SELECT status FROM properties WHERE id=?", String.class, property));
+        if (rollback) {
+            assertEquals(before, counts());
+            assertTrue(receipts.find(inputKey).isEmpty());
+        } else {
+            assertPersisted(result, 1);
+            assertEquals(result, service.book(inputKey, request(1)));
+        }
+        verify(payments, times(1)).pay(any());
+    }
+
+    @Test
+    void sharedPropertyLockAllowsDifferentRoomTypesToBookConcurrently() throws Exception {
+        var prepared = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        try (var workers = Executors.newFixedThreadPool(2)) {
+            var first = workers.submit(() -> transaction().execute(status -> {
+                var response = service.book(key(), request(1));
+                prepared.countDown();
+                await(release);
+                return response;
+            }));
+            try {
+                assertTrue(prepared.await(20, TimeUnit.SECONDS));
+                var second = workers.submit(() -> service.book(key(),
+                        request(List.of(stay(deluxe, "DEMO_DELUXE", 1)), 170000L, "Otra")));
+                var other = second.get(20, TimeUnit.SECONDS);
+                assertFalse(first.isDone());
+                release.countDown();
+                assertNotEquals(first.get(20, TimeUnit.SECONDS).reservationId(), other.reservationId());
+            } finally { release.countDown(); }
+        }
+        assertEquals(2, propertyCount("reservations"));
+        assertEquals(2, propertyCount("reservation_stays"));
+        verify(payments, times(2)).pay(any());
+    }
+
+    @Test
     void concurrentIdenticalKeyWaitsThenReplaysWithoutAnotherPayment() throws Exception { concurrent(false, false, false); }
     @Test
     void concurrentChangedPayloadWaitsThenConflictsWithoutAnotherPayment() throws Exception { concurrent(false, true, false); }
