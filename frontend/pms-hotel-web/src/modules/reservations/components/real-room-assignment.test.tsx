@@ -5,6 +5,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mockServer } from '@/data/mocks/server';
 import { staffReservationFixture } from '../staff-reservation.fixture';
 import { useStaffReservationStays } from '../hooks/use-staff-reservation-stays';
+import { staffInventoryFixture } from '@/test/staff-inventory-fixture';
+import { CalendarGantt } from '../calendar/calendar-gantt';
+import { toDayKey } from '../calendar/calendar-gantt-model';
 import { ReservationDetail } from './reservation-detail';
 
 afterEach(() => { cleanup(); vi.unstubAllEnvs(); });
@@ -12,12 +15,17 @@ describe('real detail assignment journey', () => {
   it('assigns one of N stays through BFF and refreshes detail plus the real Rooms read projection', async () => {
     vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'false');
     const dto = staffReservationFixture(), first = dto.stays[0];
+    const today = new Date(), departure = new Date(today); departure.setDate(today.getDate() + 2);
+    first.arrival = toDayKey(today); first.departure = toDayKey(departure);
+    const inventory = staffInventoryFixture(); inventory.rooms[0].code = '203'; inventory.rooms[1].code = '204';
     const second = { ...structuredClone(first), stayId: '66666666-6666-6666-6666-666666666666' };
     dto.stays.push(second);
     const roomId = '77777777-7777-7777-7777-777777777777';
     const root = `http://localhost:3000/api/staff/reservations`;
     let commands = 0;
     mockServer.use(
+      http.get('http://localhost:3000/api/staff/rooms', () => HttpResponse.json(inventory.rooms)),
+      http.get('http://localhost:3000/api/staff/room-types', () => HttpResponse.json(inventory.types)),
       http.get(`${root}/${dto.reservationId}`, () => HttpResponse.json(dto)),
       http.get(root, () => HttpResponse.json([dto])),
       http.get(`${root}/${dto.reservationId}/stays/${first.stayId}/room-assignment`, () => HttpResponse.json({
@@ -37,7 +45,10 @@ describe('real detail assignment journey', () => {
       return <output aria-label="Estadías de Habitaciones">{stays.data?.map(stay => stay.roomId ?? 'sin-room').join(',')}</output>;
     }
     render(<QueryClientProvider client={client}><ReservationDetail propertyId={dto.propertyId} reservationId={dto.reservationId}
-      endpoint="/api/staff/reservations" sessionId="staff" canManage /><RoomsProjection /></QueryClientProvider>);
+      endpoint="/api/staff/reservations" sessionId="staff" canManage /><RoomsProjection /><CalendarGantt propertyId={dto.propertyId} sessionId="staff" /></QueryClientProvider>);
+    const calendar = () => within(screen.getByRole('table', { name: /Gantt de ocupación/ }));
+    const calendarRow = (label: string) => within(calendar().getAllByRole('row').find(row => within(row).queryByRole('rowheader', { name: new RegExp(`^${label}`) }))!);
+    await waitFor(() => expect(calendarRow('Sin asignar').getAllByRole('link', { name: /Real Responsible/ })).toHaveLength(2));
     expect(await screen.findAllByRole('button', { name: 'Asignar habitación' })).toHaveLength(2);
     fireEvent.click(within(screen.getByRole('group', { name: `Estadía ${first.stayId}` })).getByRole('button', { name: 'Asignar habitación' }));
     fireEvent.click(await screen.findByRole('radio', { name: /Habitación 203/ }));
@@ -48,6 +59,8 @@ describe('real detail assignment journey', () => {
     expect(screen.getAllByRole('button', { name: 'Asignar habitación' })).toHaveLength(1);
     await waitFor(() => expect(screen.getByLabelText('Estadías de Habitaciones')).toHaveTextContent(roomId));
     expect(screen.getByText('Confirmada', { selector: 'span' })).toBeInTheDocument();
+    await waitFor(() => expect(calendarRow('203').getByRole('link', { name: /Real Responsible/ })).toBeInTheDocument());
+    expect(calendarRow('Sin asignar').getAllByRole('link', { name: /Real Responsible/ })).toHaveLength(1);
     expect(second.room).toBeNull(); expect(dto.status).toBe('CONFIRMED'); expect(first.status).toBe('RESERVED'); expect(commands).toBe(1);
     const secondRoomId = '88888888-8888-8888-8888-888888888888';
     mockServer.use(
@@ -70,6 +83,8 @@ describe('real detail assignment journey', () => {
     expect(screen.queryByRole('button', { name: 'Asignar habitación' })).not.toBeInTheDocument();
     await waitFor(() => expect(screen.getByLabelText('Estadías de Habitaciones')).toHaveTextContent(secondRoomId));
     expect(dto.status).toBe('CONFIRMED'); expect(dto.stays.map(stay => stay.status)).toEqual(['RESERVED', 'RESERVED']);
+    await waitFor(() => expect(calendarRow('204').getByRole('link', { name: /Real Responsible/ })).toBeInTheDocument());
+    expect(calendarRow('Sin asignar').queryByRole('link')).not.toBeInTheDocument();
     expect(commands).toBe(2);
     client.clear();
   });

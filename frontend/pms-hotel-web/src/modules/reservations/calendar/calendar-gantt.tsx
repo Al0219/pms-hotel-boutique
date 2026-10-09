@@ -6,8 +6,8 @@ import { useMemo, useState } from "react";
 import { HttpNetworkError } from "@/lib/http/errors";
 import { useRooms } from "@/modules/rooms";
 
-import { useReservationCenter } from "../hooks/use-reservation-center";
-import type { ReservationStatus } from "../model/reservation-summary";
+import { useStaffReservationStays } from "../hooks/use-staff-reservation-stays";
+import type { StaffReservationStayRead } from "../model/staff-reservation-stay-read";
 import {
   buildDateWindow,
   buildGanttGrid,
@@ -16,31 +16,26 @@ import {
 
 import styles from "./calendar-gantt.module.css";
 
-const STATUS_BADGE: Record<ReservationStatus, string> = {
+const STATUS_BADGE: Record<StaffReservationStayRead["reservationStatus"], string> = {
   CONFIRMED: styles.bookingConfirmed,
   PENDING: styles.bookingPending,
-  WAITLIST: styles.bookingWaitlist,
-  NO_SHOW_PENDING: styles.bookingNoShow,
-  NO_SHOW: styles.bookingNoShow,
   CANCELLED: styles.bookingCancelled,
 };
 
-const STATUS_LABELS: Record<ReservationStatus, string> = {
+const STATUS_LABELS: Record<StaffReservationStayRead["reservationStatus"], string> = {
   CONFIRMED: "Confirmada",
   PENDING: "Pendiente",
-  WAITLIST: "Waitlist",
-  NO_SHOW_PENDING: "No-show pendiente",
-  NO_SHOW: "No-show",
   CANCELLED: "Cancelada",
 };
 
+const STAY_LABELS: Record<StaffReservationStayRead["travelState"], string> = {
+  RESERVED: "Reservada", IN_HOUSE: "En estancia", CHECKED_OUT: "Completada",
+  CANCELLED: "Cancelada", NO_SHOW: "No show",
+};
+
 interface CalendarGanttProps {
-  /** Must be resolved from the authorized staff session by the app composition layer. */
-  propertyId?: string;
-  /** Must be supplied only after Backend approves the provisional Reservation Center contract. */
-  reservationsEndpoint?: string;
-  /** Must be supplied only after Backend approves the provisional Rooms contract. */
-  roomsEndpoint?: string;
+  propertyId: string;
+  sessionId: string;
 }
 
 function formatDayHeader(date: Date): { day: string; weekday: string } {
@@ -49,44 +44,36 @@ function formatDayHeader(date: Date): { day: string; weekday: string } {
   return { day, weekday };
 }
 
-function occupancyLabel(occupied: number, sellable: number): string {
-  if (sellable === 0) {
+function occupancyLabel(occupied: number, physical: number): string {
+  if (physical === 0) {
     return "—";
   }
-  const percent = Math.round((occupied / sellable) * 100);
-  return `${occupied}/${sellable} · ${percent}%`;
+  const percent = Math.round((occupied / physical) * 100);
+  return `${occupied}/${physical} · ${percent}%`;
 }
 
-export function CalendarGantt({ propertyId, reservationsEndpoint, roomsEndpoint }: Readonly<CalendarGanttProps>) {
+export function CalendarGantt({ propertyId, sessionId }: Readonly<CalendarGanttProps>) {
   const [windowStart, setWindowStart] = useState(() => {
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth(), today.getDate());
   });
 
-  const centerQuery = useReservationCenter(propertyId, reservationsEndpoint);
-  const roomsQuery = useRooms(propertyId, roomsEndpoint);
+  const staysQuery = useStaffReservationStays(propertyId, sessionId);
+  const roomsQuery = useRooms(propertyId, "/api/staff/rooms", sessionId);
 
   const days = useMemo(() => buildDateWindow(windowStart, GANTT_WINDOW_DAYS), [windowStart]);
-  const grid = useMemo(() => {
-    if (!centerQuery.data || !roomsQuery.data) {
-      return null;
-    }
-    return buildGanttGrid(roomsQuery.data, centerQuery.data.reservations, days);
-  }, [centerQuery.data, roomsQuery.data, days]);
+  const projection = useMemo(() => {
+    if (!staysQuery.data || !roomsQuery.data) return { grid: null, error: null };
+    try { return { grid: buildGanttGrid(roomsQuery.data, staysQuery.data, days, propertyId), error: null }; }
+    catch (error) { return { grid: null, error }; }
+  }, [staysQuery.data, roomsQuery.data, days, propertyId]);
+  const grid = projection.grid;
 
-  if (!propertyId) {
-    return <section className={styles.page} role="status"><h1>Calendario</h1><p>La sesión debe proporcionar un scope de propiedad autorizado antes de consultar el calendario.</p></section>;
-  }
-
-  if (!reservationsEndpoint || !roomsEndpoint) {
-    return <section className={styles.page} role="status"><h1>Calendario</h1><p>El calendario estará disponible al confirmar los contratos API con Backend.</p></section>;
-  }
-
-  if (centerQuery.isLoading || roomsQuery.isLoading) {
+  if (staysQuery.isLoading || roomsQuery.isLoading || staysQuery.fetchStatus === "fetching" || roomsQuery.fetchStatus === "fetching") {
     return <section className={styles.page} aria-busy="true"><h1>Calendario</h1><p>Cargando calendario…</p></section>;
   }
 
-  const error = centerQuery.error ?? roomsQuery.error;
+  const error = staysQuery.error ?? roomsQuery.error ?? projection.error;
   if (error) {
     const message = error instanceof HttpNetworkError
       ? "Sin conexión. No se pudo cargar el calendario."
@@ -99,7 +86,7 @@ export function CalendarGantt({ propertyId, reservationsEndpoint, roomsEndpoint 
           className={styles.retryButton}
           type="button"
           onClick={() => {
-            void centerQuery.refetch();
+            void staysQuery.refetch();
             void roomsQuery.refetch();
           }}
         >
@@ -109,7 +96,7 @@ export function CalendarGantt({ propertyId, reservationsEndpoint, roomsEndpoint 
     );
   }
 
-  if (!grid || grid.rows.length === 0) {
+  if (!grid || (grid.physicalRooms === 0 && grid.rows.every(row => row.cells.every(cell => cell.bookings.length === 0)))) {
     return <section className={styles.page}><h1>Calendario</h1><p>No hay habitaciones para esta propiedad.</p></section>;
   }
 
@@ -133,7 +120,7 @@ export function CalendarGantt({ propertyId, reservationsEndpoint, roomsEndpoint 
         <div className={styles.titleBlock}>
           <h1>Calendario</h1>
           <p className={styles.subtitle}>
-            Ocupación por habitación del {firstDay.day} al {lastDay.day} · {grid.sellableRooms} habitaciones vendibles.
+            Ocupación por habitación del {firstDay.day} al {lastDay.day} · {grid.physicalRooms} habitaciones físicas.
           </p>
         </div>
         <div className={styles.headerActions} role="group" aria-label="Navegación temporal">
@@ -152,7 +139,7 @@ export function CalendarGantt({ propertyId, reservationsEndpoint, roomsEndpoint 
       <div className={styles.gridScroll}>
         <table className={styles.grid}>
           <caption className={styles.caption}>
-            Gantt de ocupación: habitaciones en filas y días en columnas. Cada reserva enlaza a su detalle.
+            Gantt de ocupación: habitaciones en filas y días en columnas. Cada estadía enlaza a su detalle.
           </caption>
           <thead>
             <tr>
@@ -182,12 +169,12 @@ export function CalendarGantt({ propertyId, reservationsEndpoint, roomsEndpoint 
                   <td key={cell.dayKey} className={styles.dayCell}>
                     {cell.bookings.map((booking) => (
                       <Link
-                        key={booking.id}
-                        className={`${styles.booking} ${STATUS_BADGE[booking.status]}`}
+                        key={booking.stayId}
+                        className={`${styles.booking} ${booking.status === "CANCELLED" || booking.travelState === "CANCELLED" ? styles.bookingCancelled : booking.travelState === "NO_SHOW" ? styles.bookingNoShow : STATUS_BADGE[booking.status]}`}
                         href={`/reservas/${encodeURIComponent(booking.id)}`}
-                        title={`${booking.id} · ${booking.guestName} · ${STATUS_LABELS[booking.status]}`}
+                        title={`${booking.confirmationCode} · ${booking.guestName} · Reserva ${STATUS_LABELS[booking.status]} · Estadía ${STAY_LABELS[booking.travelState]} · ${row.label}`}
                       >
-                        {booking.isStart ? booking.guestName : "···"}
+                        {booking.isStart ? <>{booking.guestName}<br /><small>{STAY_LABELS[booking.travelState]}</small></> : "···"}
                       </Link>
                     ))}
                   </td>
@@ -200,7 +187,7 @@ export function CalendarGantt({ propertyId, reservationsEndpoint, roomsEndpoint 
               </th>
               {grid.occupiedPerDay.map((occupied, index) => (
                 <td key={grid.days[index].toISOString()} className={styles.occupancyCell}>
-                  {occupancyLabel(occupied, grid.sellableRooms)}
+                  {occupancyLabel(occupied, grid.physicalRooms)}
                 </td>
               ))}
             </tr>

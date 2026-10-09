@@ -2,9 +2,9 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { StaffSession } from '@/modules/auth';
 import type { ReactNode } from 'react';
-import { StaffReservationsWorkspace, StaffRoomsWorkspace } from './staff-property-workspace';
+import { StaffCalendarWorkspace, StaffReservationsWorkspace, StaffRoomsWorkspace } from './staff-property-workspace';
 
-const mocks = vi.hoisted(() => ({ scope: vi.fn(), session: vi.fn(), center: vi.fn(), detail: vi.fn(), board: vi.fn(), catalog: vi.fn(), stays: vi.fn() }));
+const mocks = vi.hoisted(() => ({ scope: vi.fn(), session: vi.fn(), center: vi.fn(), detail: vi.fn(), board: vi.fn(), catalog: vi.fn(), stays: vi.fn(), calendar: vi.fn() }));
 const sessionFixture: StaffSession = {
   id: 'staff-1', userName: 'QA Staff', roleId: 'gerencia', roleName: 'Gerencia', permissions: [],
   memberships: [{ propertyId: 'GT-HB-01', propertyCode: 'GT-HB-01', name: 'Hotel Boutique',
@@ -12,7 +12,7 @@ const sessionFixture: StaffSession = {
 };
 vi.mock('@/modules/properties', () => ({ usePropertyScope: mocks.scope }));
 vi.mock('@/modules/auth', () => ({ useStaffSession: mocks.session }));
-vi.mock('@/modules/reservations', () => ({ useStaffReservationStays: mocks.stays, ReservationCenter: (props: unknown) => { mocks.center(props); return <p>Reservas del hotel</p>; }, ReservationDetail: (props: unknown) => { mocks.detail(props); return <p>Detalle de reserva</p>; } }));
+vi.mock('@/modules/reservations', () => ({ useStaffReservationStays: mocks.stays, CalendarGantt: (props: unknown) => { mocks.calendar(props); return <p>Calendario del hotel</p>; }, ReservationCenter: (props: unknown) => { mocks.center(props); return <p>Reservas del hotel</p>; }, ReservationDetail: (props: unknown) => { mocks.detail(props); return <p>Detalle de reserva</p>; } }));
 vi.mock('@/modules/rooms', () => ({ RoomBoard: (props: { viewControls?: ReactNode }) => { mocks.board(props); return <>{props.viewControls}<p>Tablero del hotel</p></>; }, RoomCatalogAdmin: (props: unknown) => { mocks.catalog(props); return <p>Catálogo del hotel</p>; } }));
 beforeEach(() => {
   vi.clearAllMocks(); mocks.stays.mockReturnValue({ data: [], isSuccess: true, isError: false, isFetching: false, error: null, refetch: vi.fn() }); vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'true');
@@ -71,4 +71,26 @@ it.each(['true', 'false'])('enables real initial assignment with permission and 
   mocks.session.mockReturnValue({ ...sessionFixture, permissions: ['RESERVATION_MANAGE'] });
   render(<StaffReservationsWorkspace reservationId="real-reservation" />);
   expect(mocks.detail).toHaveBeenCalledWith(expect.objectContaining({ canManage: true, endpoint: '/api/staff/reservations' }));
+});
+
+it.each(['true', 'false'])('composes calendar from PropertyContext and Staff session with mocks=%s', flag => {
+  vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', flag);
+  vi.stubEnv('NEXT_PUBLIC_PROPERTY_ID', 'env-must-be-ignored');
+  const view = render(<StaffCalendarWorkspace />);
+  expect(mocks.calendar).toHaveBeenLastCalledWith(expect.objectContaining({ propertyId: 'GT-HB-01', sessionId: 'staff-1' }));
+  mocks.scope.mockReturnValue({ ready: true, scope: { kind: 'PROPERTY', propertyIds: ['GT-HB-03'] } });
+  view.rerender(<StaffCalendarWorkspace />);
+  expect(mocks.calendar).toHaveBeenLastCalledWith(expect.objectContaining({ propertyId: 'GT-HB-03', sessionId: 'staff-1' }));
+});
+it.each([null, { kind: 'ALL_PROPERTIES', propertyIds: ['GT-HB-01', 'GT-HB-03'] }])('does not mount calendar without specific scope', scope => {
+  mocks.scope.mockReturnValue({ ready: true, scope });
+  render(<StaffCalendarWorkspace />);
+  expect(mocks.calendar).not.toHaveBeenCalled();
+  expect(screen.getByRole('heading', { name: 'Selecciona una propiedad' })).toBeInTheDocument();
+});
+it('waits for the authorized property before mounting calendar', () => {
+  mocks.scope.mockReturnValue({ ready: false, scope: null });
+  render(<StaffCalendarWorkspace />);
+  expect(mocks.calendar).not.toHaveBeenCalled();
+  expect(screen.getByRole('status')).toHaveTextContent('Preparando');
 });
