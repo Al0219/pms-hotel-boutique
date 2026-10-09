@@ -1,3 +1,22 @@
+## Juan / publicación de correcciones H1–H4 vía PR (2026-10-08)
+
+- **Autorización:** usuario solicita actualizar la rama, publicarla y entregar
+  sus cambios en main mediante PR; autoriza comandos/decisiones recomendadas,
+  con prohibición de editar código sin nueva autorización. Rama vigente
+  `fix/backend-public-booking-audit-h1-h4`, desde `d01a707`.
+- **Nueva base:** main `a0f62d0` (PR153 Panel Staff real). Único conflicto en
+  este documento resuelto conservando ambos historiales. Backend src íntegro
+  respecto a `d01a707`; Web idéntico a main. Sin edición manual de código,
+  tests, migraciones ni secretos. Compose/CI conservan entorno aprobado3001.
+- **Evidencia reutilizada:** Backend868 PASS/BUILD SUCCESS y QA manual H1–H4
+  previamente confirmado. Web de la nueva base: CI `37883662077` success,
+  exactamente las mismas fuentes/lockfile. Backend/Stack CI de main también
+  success; no sustituye el CI propio del PR que se verificará antes de fusionar.
+- **Proceso/siguiente:** finalizar este merge documental, push de la rama,
+  crear PR y revisar sus checks. Reglas efectivas de main exigen PR,0 approvals
+  obligatorios y prohíben force-push/deletion; sin bypass de políticas.
+  Cinco documentos untracked iniciales quedan excluidos y preservados.
+
 ## Juan / integración local main PR150–PR152 (2026-10-08)
 
 - **Autorización/base:** continuación de traer la última main a la rama local
@@ -26,6 +45,30 @@
   Contenedores QA retirados; volumen original y caché conservados.
   Cierre del segundo merge local autorizado; sin despliegue ni push.
   Cinco documentos untracked iniciales excluidos de los commits y conservados.
+## 2026-10-08 — Panel Staff real: cierre con QA manual PASS
+
+- **Estado/aceptación/DoD:** EN_QA → COMPLETADA; PASS. Alan confirmó «QA manual
+  PASS» y autorizó marcar el incremento COMPLETADA. Resultado del owner, sin
+  nueva ejecución del agente ni resultados manuales individuales no informados.
+- **Owner/rama:** Alan integración/QA; composición Staff WEB-3 y reviewer de
+  dominio WEB-4; `feature/staff-dashboard-real`. Trabajo previo preservado;
+  sin commit/push/merge.
+- **Alcance cerrado:** PropertyContext y lecturas reales Reservas/Habitaciones;
+  totales de reservas, estadías y habitaciones físicas para PROPERTY concreta,
+  cambio de propiedad sin stale y accesos a Reservas/Habitaciones/Calendario.
+  Limpieza autorizada del header incluida, sin cambiar KPIs/navegación/datos.
+  Contratos16/17/49 existentes; sin cambios Backend/OpenAPI/roles/permisos.
+- **Evidencia previa:** integración59 tests/6 archivos PASS; typecheck/lint/build
+  mocks=false y diff-check PASS. Limpieza25 tests/2 archivos y diff-check PASS.
+  Suites no repetidas en este cierre exclusivamente documental; no acredita
+  nueva validación PostgreSQL, CI remoto, merge ni publicación.
+- **Documentación:** [Web63](../../frontend/pms-hotel-web/docs/63_STAFF_PANEL_REAL_QA.md)
+  COMPLETADA y sección específica de AlanPlan. Historial previo conservado;
+  sin edición XLSX ni cambio de estados Backend o cierre de IMP-WEB-0906.
+- **Validación del cierre:** `git diff --check` PASS; contenidos no documentales
+  preexistentes intactos.
+- **Siguiente:** incremento cerrado; nuevo trabajo o publicación requieren
+  autorización independiente. Sin commit/push/merge.
 
 ## 2026-10-08 — Calendario Staff real: cierre con QA manual PASS
 

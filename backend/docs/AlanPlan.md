@@ -1,5 +1,19 @@
 # AlanPlan — Seguimiento Backend
 
+## Juan / publicación de correcciones H1–H4 vía PR
+
+- **Estado:** EN PUBLICACIÓN; usuario autoriza actualizar rama, push, PR y
+  entrega a main, sin edición de código. Desde `d01a707` a nueva base `a0f62d0`
+  (PR153), rama `fix/backend-public-booking-audit-h1-h4`.
+- **Resolución:** único conflicto documental en AlanHandoff resuelto con ambos
+  historiales; Backend src intacto y Web idéntico a main. Configuración local
+  aprobada3001/demo/SMTP preservada; migraciones, tests y secretos intactos.
+- **Validación:** Backend868 PASS/QA manual H1–H4 previo; Web CI de main153
+  success sobre fuentes idénticas. Verificar CI propio del PR antes de fusionar.
+- **Siguiente:** cerrar merge local, push, PR y fusión mediante política de main
+  (PR obligatorio, sin approvals obligatorios/force-push). Cinco untracked excluidos.
+  No nueva tarea funcional ni edición manual de código autorizada.
+
 ## Juan / integración local main PR150–PR152
 
 - **Estado:** COMPLETADA (integración Git local); continuación autorizada de traer
@@ -2843,4 +2857,29 @@ Docker; el workflow Backend CI usa Temurin 21.
   referencia Web14 sincronizada; AlanHandoff registra el cierre separado de los
   incrementos previos que excluían Calendario.
 - **Siguiente:** incremento cerrado; publicación o nueva implementación solo con
+  autorización independiente. Sin commit/push/merge.
+
+
+### Panel Staff real — cierre Web, 2026-10-08
+
+- **Estado/aceptación/DoD:** EN_QA → COMPLETADA; PASS. Alan confirmó «QA manual
+  PASS» y autorizó el cierre documental del incremento de integración Web.
+- **Owner/rama:** Alan integración/QA; composición Staff WEB-3, reviewer de dominio
+  WEB-4; `feature/staff-dashboard-real`. Sin commit/push/merge.
+- **Dependencias/contratos:** Staff Auth/PropertyContext y Reservas/Habitaciones
+  reales existentes; contratos16/17/49. Reutiliza lecturas BFF confirmadas, sin
+  nuevo endpoint ni cambios Backend/OpenAPI, permisos o estados de otras tareas.
+- **Alcance cerrado:** Panel para PROPERTY concreta; totales de reservas,
+  estadías y habitaciones físicas, recarga sin stale por sesión/property y
+  navegación a Reservas/Habitaciones/Calendario. Sin métricas sin fuente real.
+  Incluye limpieza del header autorizada, conservando KPIs y lógica de datos.
+- **Evidencia previa:** integración59 tests/6 archivos PASS, typecheck/lint/build
+  mocks=false y diff-check PASS; limpieza25 tests/2 archivos y diff-check PASS.
+  QA manual PASS confirmado por el owner; no se atribuye al agente una nueva
+  ejecución ni resultados individuales no informados. Cierre documental con
+  diff-check; código funcional preservado y suites no repetidas.
+- **Guía:** [Web63](../../frontend/pms-hotel-web/docs/63_STAFF_PANEL_REAL_QA.md)
+  COMPLETADA; cierre específico antepuesto en AlanHandoff. No edita XLSX ni
+  declara completada IMP-WEB-0906, cuyo dashboard consolidado tiene otro alcance.
+- **Siguiente:** incremento cerrado; nuevo trabajo o publicación requieren
   autorización independiente. Sin commit/push/merge.
