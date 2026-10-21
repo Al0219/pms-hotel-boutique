@@ -119,9 +119,6 @@ class DailyOnBooksServiceIntegrationTests {
     void deniesMissingRevokedAndUnprivilegedStaffBeforeReading() {
         assertThrows(StaffAuthenticationException.class,
                 () -> reports.forProperty(null, property, FIRST, FIRST));
-        var reception = staff("RECEPCION", property);
-        assertThrows(AccessDeniedException.class,
-                () -> reports.forProperty(reception, property, FIRST, FIRST));
         var auditor = staff("AUDITOR", property);
         assertThrows(AccessDeniedException.class,
                 () -> reports.forAllAuthorizedProperties(auditor, FIRST, FIRST));
@@ -217,6 +214,12 @@ class DailyOnBooksServiceIntegrationTests {
         var reception = staff("RECEPCION", property);
         mvc.perform(get(route).param("from", "2035-01-01").param("to", "2035-01-01")
                 .param("propertyId", property.toString()).header("Authorization", bearer(reception)))
+                .andExpect(status().isOk());
+        mvc.perform(get(route).param("from", "2035-01-01").param("to", "2035-01-01")
+                .param("propertyId", otherProperty.toString()).header("Authorization", bearer(reception)))
+                .andExpect(status().isForbidden());
+        mvc.perform(get(route).param("from", "2035-01-01").param("to", "2035-01-01")
+                .param("scope", "ALL_PROPERTIES").header("Authorization", bearer(reception)))
                 .andExpect(status().isForbidden());
         mvc.perform(get(route).param("from", "2035-01-01").param("to", "2035-01-01")
                 .param("propertyId", UUID.randomUUID().toString()).header("Authorization", bearer(manager)))

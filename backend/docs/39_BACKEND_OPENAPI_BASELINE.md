@@ -154,7 +154,7 @@ Las respuestas listadas son contractuales, no un catálogo de fallos inesperados
 | POST | `/api/v1/properties/{propertyId}/rooms` | Bearer Staff | COMMERCIAL_MANAGE; PROPERTY | `CreateRoomRequest` → `RoomView` | 201, 400, 401, 403, 404, 409 |
 | GET | `/api/v1/properties/{propertyId}/rooms/{roomId}` | Bearer Staff | Staff activo; PROPERTY | `—` → `RoomView` | 200, 400, 401, 403, 404 |
 | PATCH | `/api/v1/properties/{propertyId}/rooms/{roomId}` | Bearer Staff | COMMERCIAL_MANAGE; PROPERTY | `PatchRoomRequest` → `RoomView` | 200, 400, 401, 403, 404, 409 |
-| GET | `/api/v1/reports/on-books/daily` | Bearer Staff | COMMERCIAL_MANAGE; PROPERTY o ALL_PROPERTIES + MULTI_PROPERTY_READ | `—` → `DailyOnBooksResponse` | 200, 400, 401, 403 |
+| GET | `/api/v1/reports/on-books/daily` | Bearer Staff | RESERVATION_MANAGE o COMMERCIAL_MANAGE; PROPERTY o ALL_PROPERTIES + MULTI_PROPERTY_READ | `—` → `DailyOnBooksResponse` | 200, 400, 401, 403 |
 | POST | `/api/v1/staff-auth/refresh` | Cookie Staff refresh | Sin permiso funcional adicional; sin property scope de entrada | `—` → `StaffAuthResponse` | 200, 401 |
 | DELETE | `/api/v1/staff-auth/session` | Bearer Staff | Sin permiso funcional adicional; sin property scope de entrada | `—` → `—` | 204, 401 |
 | GET | `/api/v1/staff-auth/session` | Bearer Staff | Sin permiso funcional adicional; sin property scope de entrada | `—` → `StaffSessionResponse` | 200, 401 |

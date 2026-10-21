@@ -2,7 +2,14 @@
 
 **Estado:** APPROVED para Backend por el usuario (2026-10-04), con las
 precisiones incorporadas abajo. La revisión de semántica con BD2/BD3 y la
-validación del BFF por el owner Web siguen pendientes antes de integración.
+revisión del BFF por el owner Web siguen como seguimiento colaborativo. El BFF
+Web está integrado en el PR #155 y tuvo QA manual PASS el 2026-10-20.
+
+**Ampliación de acceso aprobada por el usuario (2026-10-20):** la lectura
+on-books acepta `RESERVATION_MANAGE` o `COMMERCIAL_MANAGE`. RECEPCION puede
+consultar una property autorizada con su permiso de reservaciones, sin recibir
+`COMMERCIAL_MANAGE` ni capacidades de escritura comercial. `ALL_PROPERTIES`
+sigue exigiendo `MULTI_PROPERTY_READ`. No cambia el DTO ni la métrica.
 
 ## Ruta Backend
 
@@ -15,7 +22,7 @@ GET /api/v1/reports/on-books/daily?from=2035-01-01&to=2035-01-03&scope=ALL_PROPE
 exactamente uno de `propertyId` o `scope=ALL_PROPERTIES`; no hay scope global
 implícito. Rango máximo: 366 noches. Máximo de filas solicitadas:
 50 000 (`número de properties autorizadas × noches inclusivas`). El segundo modo requiere
-`MULTI_PROPERTY_READ` además de `COMMERCIAL_MANAGE`; ambos exigen sesión Staff
+`MULTI_PROPERTY_READ` además de `RESERVATION_MANAGE` o `COMMERCIAL_MANAGE`; ambos exigen sesión Staff
 activa. Una propiedad fuera de la sesión recibe 403 indistinguible de un UUID
 inexistente no autorizado. Guest o ausencia/token inválido reciben 401. Filtros
 inválidos o rango excesivo reciben 400 antes de ejecutar SQL del reporte.
@@ -64,17 +71,17 @@ identidad de huéspedes, precios ni ingresos. Llegadas y
 salidas quedan fuera de la primera ruta mientras BD3 confirma su semántica.
 Respuesta: `Cache-Control: private, no-store`.
 
-## BFF Web propuesto
+## BFF Web integrado
 
-El consumidor Web privado expondría, sujeto a validación del owner Web,
+El consumidor Web privado expone
 `GET /api/v1/private/reports/on-books/daily` con los mismos filtros y cookies
 Staff `HttpOnly`. El BFF transforma la sesión Staff a Bearer interno, nunca
 serializa tokens al navegador y conserva la semántica HTTP del Backend
 (`400/401/403/200`) con errores públicos estables, sin detalles internos.
-Debe usar `Cache-Control: private, no-store` y lectura dinámica sin caché de
-Next.js. Su dueño Web debe aprobar naming/DTO/Mapper; esta tarea solo crea
-la ruta Backend. Android requiere contrato de transporte propio si consume el
-reporte; no se copia la cookie Web.
+Usa `Cache-Control: private, no-store` y lectura dinámica sin caché de Next.js.
+La revisión de naming/DTO/Mapper por el owner Web sigue como seguimiento;
+el incremento Backend original solo creó su ruta. Android requiere contrato de
+transporte propio si consume el reporte; no se copia la cookie Web.
 
 ## Persistencia, scope y pruebas exigidas
 

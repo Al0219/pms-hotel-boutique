@@ -28,9 +28,21 @@ May consume intentional public APIs from: revenue, availability, properties, per
 
 ## MUST NOT
 
-- Implement a feature, API contract, DTO, mapper, service, hook, or UI in this Structure Freeze.
 - Deep-import another module's internals.
 - Redefine business semantics owned by another module.
+
+## Current integration
+
+`IMP-WEB-0908` uses the approved BE-010B daily on-books report through the
+same-origin Staff BFF. `/reportes` accepts explicit dates and authorized
+property scope. The former property KPI dashboard remains a provisional mock
+and is not exported as the module's public UI.
+
+The V3 Reporting catalog lists Operation, Finance, Compliance and Commercial
+for authorized Staff. Only the daily on-books operation report executes against
+Backend. `RESERVATION_MANAGE` or `COMMERCIAL_MANAGE` grants this read; other
+categories and export/scheduling remain explicitly pending. No sample financial
+metrics are presented as live data.
 
 ## Expected internal structure
 

@@ -54,4 +54,24 @@
 .savedList div { display: flex; gap: var(--space-2); }
 .page button:focus-visible { outline: 3px solid var(--color-brand-accent); outline-offset: 2px; }
 .page > button { min-height: 24px; padding: var(--space-2) var(--space-3); }
-@media (max-width: 720px) { .page { padding: var(--space-6) var(--space-4); } .kpiGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.tableScroll { overflow-x: auto; margin-top: var(--space-4); }
+.reportTable { border-collapse: collapse; min-width: 780px; width: 100%; }
+.reportTable caption { font-weight: var(--font-weight-semibold); margin-bottom: var(--space-3); text-align: left; }
+.reportTable th, .reportTable td { border-bottom: 1px solid var(--color-border-default); padding: var(--space-3); text-align: left; }
+.categoryGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); margin-top: var(--space-6); }
+.categoryCard, .catalogPanel { background: var(--color-surface-card); border: 1px solid var(--color-border-default); border-radius: var(--radius-md); padding: var(--space-5); }
+.categoryCard { min-height: 150px; display: flex; flex-direction: column; align-items: flex-start; }
+.categoryCard h2, .catalogPanel h2 { font-size: var(--font-size-h3); margin: 0 0 var(--space-3); }
+.categoryCard p, .catalogPanel p { color: var(--color-text-secondary); margin: 0 0 var(--space-4); }
+.catalogPanel { margin-top: var(--space-6); }
+.secondaryGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+.secondaryGrid .catalogPanel { margin-top: var(--space-4); }
+.primaryButton, .backButton, .textButton { border: 1px solid var(--color-border-default); border-radius: var(--radius-sm); cursor: pointer; font: inherit; min-height: 40px; padding: var(--space-2) var(--space-3); }
+.primaryButton { background: var(--color-brand-primary); border-color: var(--color-brand-primary); color: var(--color-text-inverse); }
+.primaryButton:hover { background: var(--color-brand-primary-hover); }
+.backButton { background: var(--color-surface-card); margin-bottom: var(--space-5); }
+.textButton { background: transparent; border: 0; color: var(--color-text-brand); margin-top: auto; padding-left: 0; }
+.textButton:hover { text-decoration: underline; }
+.pendingBadge { background: var(--color-surface-subtle); border-radius: var(--radius-sm); color: var(--color-text-secondary); font-size: var(--font-size-caption); margin-top: auto; padding: var(--space-2); }
+.reportTable tbody tr:hover { background: var(--color-brand-subtle); }
+@media (max-width: 720px) { .page { padding: var(--space-6) var(--space-4); } .kpiGrid, .categoryGrid, .secondaryGrid { grid-template-columns: 1fr; } }

@@ -44,7 +44,7 @@ public class DailyOnBooksController {
     @GetMapping("/api/v1/reports/on-books/daily")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Read current daily on-books rooms",
-            description = "Requires Staff COMMERCIAL_MANAGE; ALL_PROPERTIES additionally requires "
+            description = "Requires Staff COMMERCIAL_MANAGE or RESERVATION_MANAGE; ALL_PROPERTIES additionally requires "
                     + "MULTI_PROPERTY_READ. from/to are inclusive property-local stay dates. "
                     + "Results reflect current system state, not historical as-of or realized occupancy. "
                     + "Máximo 366 noches y 50000 filas (propiedades autorizadas × noches). "

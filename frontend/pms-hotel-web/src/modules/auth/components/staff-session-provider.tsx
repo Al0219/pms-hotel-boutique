@@ -40,7 +40,7 @@ async function clearStaffCaches(client: QueryClient, sessionKey: typeof staffSes
   await client.cancelQueries({ queryKey: sessionKey });
   client.setQueryData(sessionKey, null);
   // Dashboard/calendar caches are Staff-owned; Guest/public queries stay intact.
-  for (const key of ["private-09", "reservations", "rooms", "staff-room-catalog", "staff-reservation-quotes", "staff-room-assignment", "staff-room-occupancy"]) {
+  for (const key of ["private-09", "reservations", "reports", "rooms", "staff-room-catalog", "staff-reservation-quotes", "staff-room-assignment", "staff-room-occupancy"]) {
     await client.cancelQueries({ queryKey: [key] });
     client.removeQueries({ queryKey: [key] });
   }
