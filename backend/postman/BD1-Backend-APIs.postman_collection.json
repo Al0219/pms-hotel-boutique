@@ -991,7 +991,7 @@
     },
     {
       "name": "Staff — reportes On-books diario",
-      "description": "Usar JWT Staff vigente con COMMERCIAL_MANAGE. Para ALL_PROPERTIES también requiere MULTI_PROPERTY_READ. No guardar tokens reales al exportar.",
+      "description": "Usar JWT Staff vigente con RESERVATION_MANAGE o COMMERCIAL_MANAGE. Para ALL_PROPERTIES también requiere MULTI_PROPERTY_READ. No guardar tokens reales al exportar.",
       "item": [
         {
           "name": "GET On-books diario — property",

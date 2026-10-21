@@ -60,6 +60,13 @@
 .mainColumn { min-width: 0; }
 .main { min-width: 0; padding: var(--space-4); }
 
+.reportsShell .sidebar { background: var(--color-surface-dark); border-color: var(--color-surface-dark); color: var(--color-text-inverse); }
+.reportsShell .role, .reportsShell .propertyContext, .reportsShell .property p { color: var(--color-brand-soft); }
+.reportsShell .navLink { color: var(--color-text-inverse); }
+.reportsShell .navLink:hover, .reportsShell .navLink[aria-current="page"] { background: var(--color-brand-primary); }
+.reportsShell .logout { border-color: var(--color-brand-primary-strong); }
+.reportsShell .mainColumn { background: var(--color-surface-page); }
+
 @media (max-width: 900px) {
   .shell { grid-template-columns: minmax(0, 1fr); }
   .sidebar { position: static; height: auto; overflow-y: visible; border-right: 0; border-bottom: 1px solid var(--color-border-default); gap: var(--space-3); }

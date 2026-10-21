@@ -4,5 +4,4 @@
  * Do not expose DTOs, mappers or service internals without an approved reason.
  */
 
-export { ReportsDashboard } from "./components/reports-dashboard";
-export type { PropertyReport, PropertyReportSummary } from "./model/property-report";
+export { ReportsCatalog } from "./components/reports-catalog";

@@ -319,6 +319,7 @@ class OpenApiContractIntegrationTests {
         assertEquals("ALL_PROPERTIES", parameter(report, "scope").path("schema").path("enum").get(0).asText());
         assertTrue(report.path("description").asText().contains("366"));
         assertTrue(report.path("description").asText().contains("50000"));
+        assertTrue(report.path("description").asText().contains("RESERVATION_MANAGE"));
         assertFalse(parameterNames(report).contains("cursor"));
         var available = operation(doc, "/api/v1/properties/{propertyId}/availability", "get");
         assertEquals(Set.of("propertyId", "roomTypeId", "arrival", "departure"), parameterNames(available));

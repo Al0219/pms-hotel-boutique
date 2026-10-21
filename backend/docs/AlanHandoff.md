@@ -3624,3 +3624,23 @@ El siguiente módulo operativo puede consumir C2 desde el BFF y debe aplicar
 `PROPERTY`/`ALL_PROPERTIES` mediante el scope Backend. El CRUD auditado de
 usuarios, roles y memberships continúa fuera de BE-005 y deberá revocar
 sesiones al modificar el acceso.
+
+## On-books diario — ampliación de lectura para RECEPCION (2026-10-20)
+
+- **Estado:** COMPLETADA (2026-10-20). El usuario aprobó el catálogo Figma con on-books real y
+  acceso de RECEPCION a categorías; para esta lectura aprobó usar el permiso
+  existente `RESERVATION_MANAGE` sin conceder `COMMERCIAL_MANAGE`.
+- **Cambio:** autorización Backend del GET on-books acepta cualquiera de esos
+  dos permisos; scope de propiedad y `MULTI_PROPERTY_READ` siguen vigentes.
+  Contrato, OpenAPI, Postman y guía QA actualizados; sin migraciones.
+- **Pruebas:** Docker PostgreSQL aislado, 10 pruebas on-books + 15 OpenAPI,
+  cero fallos y BUILD SUCCESS. La property propia de RECEPCION devuelve 200;
+  property ajena y ALL_PROPERTIES sin permiso devuelven 403.
+- **QA integrado:** Docker Backend/Web/PostgreSQL healthy. Sesión RECEPCION
+  mostró Reportes; consulta Web de Hotel Boutique Demo para 2026-10-20 devolvió
+  24 disponibles, 3 on-books, 0 OOO y 12.50%, coherentes entre tarjetas y tabla.
+  Web lint/typecheck/build PASS y suite completa 301 archivos/1827 pruebas PASS.
+- **QA manual:** el usuario revisó la pantalla integrada y confirmó PASS el
+  2026-10-20. No se declara completado ningún otro reporte o KPI.
+- **Siguiente:** publicación solo con autorización independiente; sin
+  commit/push/merge.

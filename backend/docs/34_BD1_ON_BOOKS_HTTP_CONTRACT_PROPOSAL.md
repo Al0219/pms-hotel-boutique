@@ -4,6 +4,12 @@
 precisiones incorporadas abajo. La revisión de semántica con BD2/BD3 y la
 validación del BFF por el owner Web siguen pendientes antes de integración.
 
+**Ampliación de acceso aprobada por el usuario (2026-10-20):** la lectura
+on-books acepta `RESERVATION_MANAGE` o `COMMERCIAL_MANAGE`. RECEPCION puede
+consultar una property autorizada con su permiso de reservaciones, sin recibir
+`COMMERCIAL_MANAGE` ni capacidades de escritura comercial. `ALL_PROPERTIES`
+sigue exigiendo `MULTI_PROPERTY_READ`. No cambia el DTO ni la métrica.
+
 ## Ruta Backend
 
 ```text
@@ -15,7 +21,7 @@ GET /api/v1/reports/on-books/daily?from=2035-01-01&to=2035-01-03&scope=ALL_PROPE
 exactamente uno de `propertyId` o `scope=ALL_PROPERTIES`; no hay scope global
 implícito. Rango máximo: 366 noches. Máximo de filas solicitadas:
 50 000 (`número de properties autorizadas × noches inclusivas`). El segundo modo requiere
-`MULTI_PROPERTY_READ` además de `COMMERCIAL_MANAGE`; ambos exigen sesión Staff
+`MULTI_PROPERTY_READ` además de `RESERVATION_MANAGE` o `COMMERCIAL_MANAGE`; ambos exigen sesión Staff
 activa. Una propiedad fuera de la sesión recibe 403 indistinguible de un UUID
 inexistente no autorizado. Guest o ausencia/token inválido reciben 401. Filtros
 inválidos o rango excesivo reciben 400 antes de ejecutar SQL del reporte.

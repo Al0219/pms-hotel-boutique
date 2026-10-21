@@ -2518,6 +2518,22 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
   comparten elegibilidad ReservationStay y OOO/OOS; las revisiones BD2/BD3 y Web
   pueden aportar correcciones concretas, pero no bloquean el cierre Backend.
 
+#### Ampliación de lectura on-books para RECEPCION (2026-10-20)
+
+- **Estado:** COMPLETADA (2026-10-20); cambio solicitado para el catálogo Reporting V3.
+- **Decisión aprobada:** `RESERVATION_MANAGE` o `COMMERCIAL_MANAGE` habilita solo
+  `GET /api/v1/reports/on-books/daily`; no se concede escritura comercial.
+  `ALL_PROPERTIES` conserva `MULTI_PROPERTY_READ` y el scope Backend sigue siendo
+  la autoridad. No hay cambios de migración, DTO, métrica ni otros reportes.
+- **Evidencia:** 25 pruebas PostgreSQL/MockMvc y OpenAPI PASS (10 on-books,
+  15 contrato); stack Docker healthy y consulta Web real con sesión RECEPCION
+  para la property propia: 24 disponibles, 3 on-books, 0 OOO y 12.50% el
+  2026-10-20. Property ajena/ALL_PROPERTIES `403` probadas en integración.
+- **QA manual:** el usuario revisó la pantalla integrada y confirmó PASS el
+  2026-10-20. La autorización Backend y el scope están validados con tests.
+- **Siguiente:** publicación solo con autorización independiente; sin
+  commit/push/merge.
+
 ### BE-011 — MFA local Staff
 
 - **Estado:** BE-011A PENDIENTE; BE-011B PENDIENTE.
