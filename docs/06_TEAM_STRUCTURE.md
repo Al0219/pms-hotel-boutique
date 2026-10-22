@@ -207,6 +207,10 @@ por el usuario después de la revisión del área privada. Contrato específico:
 `feature/staff-housekeeping-real`. Juan aporta revisión del dominio operativo y
 Alan de seguridad/scope/BFF. Se reutilizan sus servicios y contratos existentes;
 esto no reasigna otros módulos ni autoriza comenzar el siguiente incremento.
+La ampliación aprobada en contrato52 agrega consulta de limpieza en Habitaciones,
+advertencia de preasignación y guard del checkIn interno; José integra con los
+servicios existentes de Juan y los contratos de seguridad de Alan, sin reasignar
+el resto del lifecycle de Reservas ni la administración de permisos.
 El reparto siguiente conserva su vigencia fuera de este alcance.
 
 El usuario confirma que José deja la implementación Backend y pasa al Frontend.

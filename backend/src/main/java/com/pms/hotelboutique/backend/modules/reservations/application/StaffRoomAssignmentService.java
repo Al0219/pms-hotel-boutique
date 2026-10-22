@@ -21,11 +21,14 @@ public class StaffRoomAssignmentService {
     private final OutOfOrderRepository blocks;
     private final AuditService audit;
     private final ObjectMapper json;
+    private final com.pms.hotelboutique.backend.modules.operations.infrastructure.persistence.HkRoomStateRepository cleaning;
 
     public StaffRoomAssignmentService(StaffReservationReadService reads, ReservationStayRepository stays,
-            RoomRepository rooms, RoomTypeRepository types, OutOfOrderRepository blocks, AuditService audit, ObjectMapper json) {
+            RoomRepository rooms, RoomTypeRepository types, OutOfOrderRepository blocks, AuditService audit, ObjectMapper json,
+            com.pms.hotelboutique.backend.modules.operations.infrastructure.persistence.HkRoomStateRepository cleaning) {
         this.reads = reads; this.stays = stays; this.rooms = rooms; this.types = types;
         this.blocks = blocks; this.audit = audit; this.json = json;
+        this.cleaning = cleaning;
     }
 
     @Transactional(readOnly = true)
@@ -34,11 +37,20 @@ public class StaffRoomAssignmentService {
         var stay = target(scope, reservation, stayId, false);
         boolean eligible = eligible(stay);
         var type = types.findByIdInScope(scope, stay.getRoomTypeId()).orElseThrow(() -> new ReservationQueryException("Stay not found"));
+        var cleaningByRoom = cleaning.findByPropertyIdIn(scope.propertyIds()).stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        com.pms.hotelboutique.backend.modules.operations.domain.HkRoomState::getRoomId,
+                        com.pms.hotelboutique.backend.modules.operations.domain.HkRoomState::getStatus));
         var candidates = eligible ? rooms.findAllInScope(scope).stream()
                 .filter(r -> r.getRoomTypeId().equals(stay.getRoomTypeId()))
                 .filter(r -> available(scope, stay, r))
                 .sorted(Comparator.comparing(Room::getCode).thenComparing(Room::getId))
-                .map(r -> new Candidate(r.getId(), r.getCode(), null, "ACTIVE", true, null)).toList() : List.<Candidate>of();
+                .map(r -> {
+                    var status = cleaningByRoom.get(r.getId());
+                    boolean inspected = status == com.pms.hotelboutique.backend.modules.operations.domain.HkRoomState.Status.INSPECTED;
+                    return new Candidate(r.getId(), r.getCode(), null, "ACTIVE", true, null, status, inspected,
+                            inspected ? null : "Limpieza pendiente de inspección. Puedes preasignar; no entregar al huésped hasta que esté inspeccionada.");
+                }).toList() : List.<Candidate>of();
         return new Preview(property, reservation, stayId, stay.getArrival(), stay.getDeparture(), type.getId(),
                 type.getName(), eligible, eligible ? null : "La estadía ya está asignada o no admite asignación inicial.", candidates);
     }
@@ -78,7 +90,11 @@ public class StaffRoomAssignmentService {
     @io.swagger.v3.oas.annotations.media.Schema(name = "StaffRoomAssignmentCandidate")
     public record Candidate(UUID room_id, String number, @io.swagger.v3.oas.annotations.media.Schema(types = {"string", "null"}) String floor,
             @io.swagger.v3.oas.annotations.media.Schema(allowableValues = {"ACTIVE"}, description = "No unreleased OOO/OOS overlapping the stay") String operational_status,
-            boolean selectable, @io.swagger.v3.oas.annotations.media.Schema(types = {"string", "null"}) String reason) { }
+            boolean selectable, @io.swagger.v3.oas.annotations.media.Schema(types = {"string", "null"}) String reason,
+            @io.swagger.v3.oas.annotations.media.Schema(types = {"string", "null"}, description = "Current cleaning status; null means no tracking. Not a forecast for arrival.")
+            com.pms.hotelboutique.backend.modules.operations.domain.HkRoomState.Status housekeeping_status,
+            @io.swagger.v3.oas.annotations.media.Schema(description = "Current cleaning readiness only. True iff INSPECTED; check-in revalidates under lock.") boolean ready_for_check_in,
+            @io.swagger.v3.oas.annotations.media.Schema(types = {"string", "null"}) String warning) { }
     @io.swagger.v3.oas.annotations.media.Schema(name = "StaffRoomAssignmentPreview")
     public record Preview(UUID property_id, UUID reservation_id, UUID stay_id, LocalDate arrival, LocalDate departure,
             UUID room_type_id, String room_type, boolean can_assign, @io.swagger.v3.oas.annotations.media.Schema(types = {"string", "null"}) String reason, List<Candidate> rooms) { }

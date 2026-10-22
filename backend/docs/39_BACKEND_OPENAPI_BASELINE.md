@@ -365,6 +365,12 @@ añaden operaciones, schemas ni enums Backend al baseline.
 
 ## Incremento Housekeeping Staff — 2026-10-21
 
+Ampliación [contrato52](52_ROOM_READINESS_CONTRACT.md): GET list/detail admite
+OPERATIONS_MANAGE o RESERVATION_MANAGE; escrituras solo OPERATIONS_MANAGE.
+StaffRoomAssignmentCandidate agrega housekeeping_status nullable con enum que
+incluye JSON null, ready_for_check_in y warning. No nuevas operaciones HTTP:
+el bloqueo de entrega se aplica al servicio checkIn interno existente.
+
 Contrato [51](51_STAFF_HOUSEKEEPING_CONTRACT.md) aprobado. Añade cinco operaciones
 del controller StaffHousekeepingController: GET colección/detalle, POST tracking,
 PUT status y PUT dnd bajo `/api/v1/properties/{propertyId}/housekeeping/rooms`.

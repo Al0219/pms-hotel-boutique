@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.*;
 @SecurityRequirement(name = "bearerAuth")
 @ApiResponse(responseCode = "400", description = "Invalid UUID, unknown query/body or invalid field", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 @ApiResponse(responseCode = "401", description = "Active Staff session required; Guest is rejected", content = @Content)
-@ApiResponse(responseCode = "403", description = "OPERATIONS_MANAGE or property membership missing", content = @Content)
+@ApiResponse(responseCode = "403", description = "Required permission or property membership missing; reads accept OPERATIONS_MANAGE or RESERVATION_MANAGE, writes only OPERATIONS_MANAGE", content = @Content)
 @ApiResponse(responseCode = "200", description = "Authorized persisted Housekeeping state", headers = @Header(name = "Cache-Control", description = "private, no-store", schema = @Schema(type = "string")))
 public class StaffHousekeepingController {
     private final StaffHousekeepingService service;
@@ -38,13 +38,14 @@ public class StaffHousekeepingController {
 
     @GetMapping
     @Operation(operationId = "listStaffHousekeeping", summary = "Housekeeping board for one authorized property",
-            description = "OPERATIONS_MANAGE and live PROPERTY scope. Unpaginated physical rooms; untracked status/DND/date are null. GET never creates tracking or changes inventory.")
+            description = "OPERATIONS_MANAGE or RESERVATION_MANAGE and live PROPERTY scope. Unpaginated physical rooms; untracked status/DND/date are null. GET never creates tracking or changes inventory. Reception can consult cleaning without managing it.")
     public Board list(HttpServletRequest request, @PathVariable @Parameter(schema = @Schema(type = "string", format = "uuid")) String propertyId,
             @Parameter(hidden = true) @AuthenticationPrincipal StaffPrincipal principal) {
         noQuery(request); return service.list(principal, id(propertyId));
     }
     @GetMapping("/{roomId}")
-    @Operation(operationId = "getStaffHousekeepingRoom", summary = "Read one physical room and its optional cleaning state")
+    @Operation(operationId = "getStaffHousekeepingRoom", summary = "Read one physical room and its optional cleaning state",
+            description = "OPERATIONS_MANAGE or RESERVATION_MANAGE with live PROPERTY scope; read-only cleaning consultation.")
     @ApiResponse(responseCode = "404", description = "Room absent from the authorized property", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     public RoomState detail(HttpServletRequest request, @PathVariable @Parameter(schema = @Schema(type = "string", format = "uuid")) String propertyId, @PathVariable @Parameter(schema = @Schema(type = "string", format = "uuid")) String roomId,
             @Parameter(hidden = true) @AuthenticationPrincipal StaffPrincipal principal) {

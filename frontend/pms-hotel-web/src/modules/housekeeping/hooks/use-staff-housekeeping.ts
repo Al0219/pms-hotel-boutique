@@ -5,14 +5,21 @@ import { mapStaffHousekeepingBoard, mapStaffHousekeepingRoom } from '../mappers/
 import { readStaffHousekeeping, changeStaffHousekeeping } from '../service/staff-housekeeping.service';
 import type { HousekeepingChange } from '../model/staff-housekeeping';
 
+/** Read-only composition port for Reception's room board; no mutation capability. */
+export function useStaffHousekeepingRooms(propertyId: string, sessionId: string, enabled = true) {
+  return useQuery({ queryKey: ['staff-housekeeping', sessionId, propertyId],
+    enabled: enabled && !!propertyId && !!sessionId, retry: false, staleTime: 0,
+    refetchInterval: 30_000, refetchOnWindowFocus: 'always',
+    queryFn: async ({ signal }) => mapStaffHousekeepingBoard(await readStaffHousekeeping(propertyId, signal), propertyId) });
+}
+
 export function useStaffHousekeeping(propertyId: string, sessionId: string) {
   const client = useQueryClient();
   const pending = useRef<AbortController | null>(null);
   const active = useRef(false);
   useEffect(() => { active.current = true; return () => { active.current = false; pending.current?.abort(); }; }, [propertyId, sessionId]);
   const key = ['staff-housekeeping', sessionId, propertyId];
-  const query = useQuery({ queryKey: key, enabled: !!propertyId && !!sessionId, retry: false,
-    queryFn: async ({ signal }) => mapStaffHousekeepingBoard(await readStaffHousekeeping(propertyId, signal), propertyId) });
+  const query = useStaffHousekeepingRooms(propertyId, sessionId);
   const mutation = useMutation({ retry: false,
     mutationFn: async (change: HousekeepingChange) => {
       const controller = new AbortController(); pending.current = controller;
@@ -22,7 +29,10 @@ export function useStaffHousekeeping(propertyId: string, sessionId: string) {
         return mapStaffHousekeepingRoom(dto, propertyId, change.room.roomId);
       } finally { if (pending.current === controller) pending.current = null; }
     },
-    onSuccess: async () => { if (active.current) await client.invalidateQueries({ queryKey: key, exact: true }); },
+    onSuccess: async () => { if (active.current) await Promise.all([
+      client.invalidateQueries({ queryKey: key, exact: true }),
+      client.invalidateQueries({ queryKey: ['staff-room-assignment', sessionId, propertyId] }),
+    ]); },
   });
   return { query, mutation };
 }

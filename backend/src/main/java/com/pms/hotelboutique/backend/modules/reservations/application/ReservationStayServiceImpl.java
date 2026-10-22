@@ -25,14 +25,17 @@ public class ReservationStayServiceImpl implements ReservationStayService {
     private final ReservationGuestRepository occupants;
     private final ReservationRepository reservations;
     private final GuestProfileRepository profiles;
+    private final com.pms.hotelboutique.backend.modules.operations.application.RoomReadinessService readiness;
 
     public ReservationStayServiceImpl(ReservationStayRepository stays,
             ReservationGuestRepository occupants, ReservationRepository reservations,
-            GuestProfileRepository profiles) {
+            GuestProfileRepository profiles,
+            com.pms.hotelboutique.backend.modules.operations.application.RoomReadinessService readiness) {
         this.stays = stays;
         this.occupants = occupants;
         this.reservations = reservations;
         this.profiles = profiles;
+        this.readiness = readiness;
     }
 
     @Override
@@ -70,7 +73,16 @@ public class ReservationStayServiceImpl implements ReservationStayService {
 
     @Override
     public ReservationStayView checkIn(UUID stayId) {
-        return transition(stayId, "check in", (stay, now) -> stay.checkIn(now));
+        if (stayId == null) throw new ReservationStayException("stay id is required");
+        var stay = stays.lockById(stayId).orElseThrow(() -> new ReservationStayException("reservation stay not found"));
+        try {
+            readiness.requireInspected(stay.getPropertyId(), stay.getRoomId());
+            stay.checkIn(Instant.now());
+        } catch (com.pms.hotelboutique.backend.modules.operations.application.HousekeepingException
+                | IllegalStateException | IllegalArgumentException error) {
+            throw new ReservationStayException("cannot check in: " + error.getMessage(), error);
+        }
+        return view(stay);
     }
 
     @Override

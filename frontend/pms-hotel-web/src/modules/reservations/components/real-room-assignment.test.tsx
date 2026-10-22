@@ -31,7 +31,8 @@ describe('real detail assignment journey', () => {
       http.get(`${root}/${dto.reservationId}/stays/${first.stayId}/room-assignment`, () => HttpResponse.json({
         property_id: dto.propertyId, reservation_id: dto.reservationId, stay_id: first.stayId, arrival: first.arrival, departure: first.departure,
         room_type_id: first.roomType.roomTypeId, room_type: first.roomType.name, can_assign: first.room === null, reason: null,
-        rooms: first.room ? [] : [{ room_id: roomId, number: '203', floor: null, operational_status: 'ACTIVE', selectable: true, reason: null }],
+        rooms: first.room ? [] : [{ room_id: roomId, number: '203', floor: null, operational_status: 'ACTIVE', selectable: true, reason: null,
+          housekeeping_status: 'DIRTY', ready_for_check_in: false, warning: 'Puedes preasignar; no entregar sin inspección.' }],
       })),
       http.put(`${root}/${dto.reservationId}/stays/${first.stayId}/room-assignment`, async ({ request }) => {
         expect(await request.json()).toEqual({ room_id: roomId }); commands++;
@@ -52,6 +53,8 @@ describe('real detail assignment journey', () => {
     expect(await screen.findAllByRole('button', { name: 'Asignar habitación' })).toHaveLength(2);
     fireEvent.click(within(screen.getByRole('group', { name: `Estadía ${first.stayId}` })).getByRole('button', { name: 'Asignar habitación' }));
     fireEvent.click(await screen.findByRole('radio', { name: /Habitación 203/ }));
+    expect(within(screen.getByRole('dialog')).getByText('Limpieza: Sucia')).toBeInTheDocument();
+    expect(within(screen.getByRole('dialog')).getByText('Puedes preasignar; no entregar sin inspección.')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar asignación' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(screen.getByText(/Habitación 203 asignada a la estadía/)).toBeInTheDocument();

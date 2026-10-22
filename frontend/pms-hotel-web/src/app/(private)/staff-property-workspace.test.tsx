@@ -11,6 +11,7 @@ const sessionFixture: StaffSession = {
     timezone: 'America/Guatemala', currency: 'GTQ', active: true }],
 };
 vi.mock('@/modules/properties', () => ({ usePropertyScope: mocks.scope }));
+vi.mock('@/modules/housekeeping', () => ({ useStaffHousekeepingRooms: () => ({ isSuccess: false, isError: false, isFetching: false, refetch: vi.fn() }) }));
 vi.mock('@/modules/auth', () => ({ useStaffSession: mocks.session }));
 vi.mock('@/modules/reservations', () => ({ useStaffReservationStays: mocks.stays, CalendarGantt: (props: unknown) => { mocks.calendar(props); return <p>Calendario del hotel</p>; }, ReservationCenter: (props: unknown) => { mocks.center(props); return <p>Reservas del hotel</p>; }, ReservationDetail: (props: unknown) => { mocks.detail(props); return <p>Detalle de reserva</p>; } }));
 vi.mock('@/modules/rooms', () => ({ RoomBoard: (props: { viewControls?: ReactNode }) => { mocks.board(props); return <>{props.viewControls}<p>Tablero del hotel</p></>; }, RoomCatalogAdmin: (props: unknown) => { mocks.catalog(props); return <p>Catálogo del hotel</p>; } }));

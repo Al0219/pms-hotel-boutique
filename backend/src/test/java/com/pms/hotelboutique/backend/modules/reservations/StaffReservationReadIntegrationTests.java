@@ -173,7 +173,10 @@ class StaffReservationReadIntegrationTests {
     void initialAssignmentPersistsAuditsAndNeverOverwritesEvenOnRetry() throws Exception {
         UUID stay = firstStay(), room = insertRoom(property, type);
         mvc.perform(get(assignmentRoute(stay)).param("propertyId", property.toString()).header("Authorization", bearer(reception)))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.rooms[0].room_id").value(room.toString()));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.rooms[0].room_id").value(room.toString()))
+                .andExpect(jsonPath("$.rooms[0].housekeeping_status").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.rooms[0].ready_for_check_in").value(false))
+                .andExpect(jsonPath("$.rooms[0].warning").isNotEmpty());
         mvc.perform(assign(stay, room)).andExpect(status().isOk()).andExpect(jsonPath("$.room_id").value(room.toString()));
         entityManager.flush(); entityManager.clear();
         mvc.perform(get(ROUTE + "/" + reservation).param("propertyId", property.toString()).header("Authorization", bearer(reception)))
@@ -182,6 +185,18 @@ class StaffReservationReadIntegrationTests {
         mvc.perform(assign(stay, room)).andExpect(status().isConflict());
         mvc.perform(assign(stay, insertRoom(property, type))).andExpect(status().isConflict());
         assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM reservation_audit_events WHERE entity_id=?", Integer.class, stay));
+    }
+
+    @Test void dirtyRoomCanBePreassignedWithWarningWithoutCheckingIn() throws Exception {
+        UUID stay = firstStay(), room = insertRoom(property, type);
+        jdbc.update("INSERT INTO hk_room_states(id,property_id,room_id,status,dnd,created_at,updated_at) VALUES (?,?,?,'DIRTY',false,now(),now())", UUID.randomUUID(), property, room);
+        mvc.perform(get(assignmentRoute(stay)).param("propertyId", property.toString()).header("Authorization", bearer(reception)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.rooms[0].housekeeping_status").value("DIRTY"))
+                .andExpect(jsonPath("$.rooms[0].ready_for_check_in").value(false)).andExpect(jsonPath("$.rooms[0].selectable").value(true))
+                .andExpect(jsonPath("$.rooms[0].warning").isNotEmpty());
+        mvc.perform(assign(stay, room)).andExpect(status().isOk());
+        assertEquals("RESERVED", jdbc.queryForObject("SELECT status FROM reservation_stays WHERE id=?", String.class, stay));
+        assertEquals("DIRTY", jdbc.queryForObject("SELECT status FROM hk_room_states WHERE room_id=?", String.class, room));
     }
 
     @Test

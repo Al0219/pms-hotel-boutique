@@ -125,7 +125,7 @@ class StaffHousekeepingIntegrationTests {
         String guest = guestJwt.issue(new GuestPrincipal(UUID.randomUUID(), UUID.randomUUID(), "guest@example.test"), Instant.now());
         for (String credential : new String[]{"invalid", guest})
             mvc.perform(get(route(property)).header("Authorization", "Bearer " + credential)).andExpect(status().isUnauthorized());
-        for (String role : new String[]{"RECEPCION", "AUDITOR"}) {
+        for (String role : new String[]{"AUDITOR"}) {
             var denied = staff(role, property);
             mvc.perform(get(route(property)).header("Authorization", token(denied))).andExpect(status().isForbidden());
             mvc.perform(post(roomRoute()+"/tracking").header("Authorization", token(denied)).contentType("application/json").content("{}"))
@@ -138,6 +138,24 @@ class StaffHousekeepingIntegrationTests {
         jdbc.update("UPDATE auth_sessions SET status='REVOKED',revoked_at=now() WHERE id=?", operator.sessionId());
         entities.clear();
         mvc.perform(get(route(property)).header("Authorization", token(operator))).andExpect(status().isUnauthorized());
+    }
+    @Test void receptionCanReadCleaningButCannotTrackChangeStatusOrDnd() throws Exception {
+        var reception = staff("RECEPCION", property);
+        var current = track();
+        mvc.perform(get(route(property)).header("Authorization", token(reception))).andExpect(status().isOk());
+        mvc.perform(get(roomRoute()).header("Authorization", token(reception))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("DIRTY"));
+        mvc.perform(post(roomRoute()+"/tracking").header("Authorization", token(reception)).contentType("application/json").content("{}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(put(roomRoute()+"/status").header("Authorization", token(reception)).contentType("application/json")
+                .content(json.writeValueAsString(statusBody(current, "CLEAN", null)))).andExpect(status().isForbidden());
+        mvc.perform(put(roomRoute()+"/dnd").header("Authorization", token(reception)).contentType("application/json")
+                .content(json.writeValueAsString(Map.of("expectedUpdatedAt", current.path("updatedAt").asText(), "dnd", true))))
+                .andExpect(status().isForbidden());
+        assertEquals(1, events());
+        mvc.perform(get(route(other)).header("Authorization", token(reception))).andExpect(status().isForbidden());
+        jdbc.update("DELETE FROM role_permissions WHERE role_code='RECEPCION' AND permission_code='RESERVATION_MANAGE'");
+        mvc.perform(get(route(property)).header("Authorization", token(reception))).andExpect(status().isForbidden());
     }
     @Test void rejectsUnauthorizedPropertyAndForeignRoomBeforeWriting() throws Exception {
         mvc.perform(get(route(other)).header("Authorization", token(operator))).andExpect(status().isForbidden());

@@ -8,7 +8,8 @@ const stayId = '33333333-3333-3333-3333-333333333333', room = '44444444-4444-444
 const context = { params: Promise.resolve({ reservationId, stayId }) };
 const scope = { property_id: property, reservation_id: reservationId, stay_id: stayId };
 const preview = { ...scope, arrival: '2035-01-01', departure: '2035-01-03', room_type_id: room, room_type: 'Deluxe', can_assign: true, reason: null,
-  rooms: [{ room_id: room, number: '203', floor: null, operational_status: 'ACTIVE', selectable: true, reason: null }] };
+  rooms: [{ room_id: room, number: '203', floor: null, operational_status: 'ACTIVE', selectable: true, reason: null,
+    housekeeping_status: 'DIRTY', ready_for_check_in: false, warning: 'Pendiente de inspección; solo preasignación.' }] };
 function request(method = 'GET', cookie = 'pms_staff_access=synthetic-staff; pms_guest_access=synthetic-guest', origin = 'http://localhost:3001', body: unknown = { room_id: room }) {
   return new NextRequest(`http://localhost:3001/api/staff/reservations/${reservationId}/stays/${stayId}/room-assignment?propertyId=${property}`, {
     method, headers: { cookie, origin, 'content-type': 'application/json' }, ...(method === 'PUT' ? { body: JSON.stringify(body) } : {}),
@@ -17,6 +18,16 @@ function request(method = 'GET', cookie = 'pms_staff_access=synthetic-staff; pms
 beforeEach(() => { mocks.backend.mockReset(); vi.stubEnv('PMS_WEB_PUBLIC_URL', 'http://localhost:3001'); });
 afterEach(() => vi.unstubAllEnvs());
 describe('real assignment BFF', () => {
+  it('rejects missing and inconsistent cleaning readiness without trusting a green flag', async () => {
+    for (const state of [undefined, 'CLEAN', 'INVALID']) {
+      mocks.backend.mockResolvedValueOnce(Response.json({ ...preview, rooms: [{ ...preview.rooms[0], housekeeping_status: state, ready_for_check_in: true }] }));
+      expect((await GET(request(), context)).status).toBe(503);
+    }
+    mocks.backend.mockResolvedValueOnce(Response.json({ ...preview, rooms: [{ ...preview.rooms[0], housekeeping_status: 'INSPECTED', ready_for_check_in: true, warning: null }] }));
+    const response = await GET(request(), context);
+    expect(response.status).toBe(200);
+    expect((await response.json()).rooms[0].ready_for_check_in).toBe(true);
+  });
   it('uses only Staff credentials and fixed paths, allowlists preview and command responses', async () => {
     mocks.backend.mockResolvedValueOnce(Response.json({ ...preview, private: 'hidden' }));
     const response = await GET(request(), context);

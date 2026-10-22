@@ -1,5 +1,10 @@
 # Housekeeping Staff — integración real y QA
 
+Ampliación posterior: [Web65](65_ROOM_READINESS_QA.md)/contrato52 habilita lectura
+de limpieza para Recepción desde Habitaciones. Los casos403 de lectura descritos
+abajo son evidencia histórica del incremento51, no la política actual ampliada.
+Escrituras y página de gestión HK conservan OPERATIONS_MANAGE.
+
 Estado: COMPLETADA; validación técnica PASS y QA manual PASS confirmado por
 José el 2026-10-21. Se conservan los permisos aprobados; commit y push autorizados,
 sin merge a main ni atribución de checks remotos.

@@ -45,6 +45,11 @@ pagos ni asignaciones físicas.
 
 ## Acceso propuesto
 
+Ampliación aprobada posterior: [contrato52](52_ROOM_READINESS_CONTRACT.md)
+habilita GET a RESERVATION_MANAGE para consulta en Habitaciones; las escrituras
+y la página de gestión conservan OPERATIONS_MANAGE. La matriz siguiente describe
+la primera entrega, previa a esa ampliación de lectura.
+
 Lecturas y escrituras requieren sesión **Staff** activa y permiso existente
 `OPERATIONS_MANAGE`. Según C2, lo poseen SUPER_ADMIN, GERENCIA y OPERACIONES.
 RECEPCION, AUDITOR y Guest no obtienen acceso por conveniencia de navegación.
