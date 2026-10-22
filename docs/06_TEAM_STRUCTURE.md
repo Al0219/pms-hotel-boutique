@@ -213,6 +213,11 @@ servicios existentes de Juan y los contratos de seguridad de Alan, sin reasignar
 el resto del lifecycle de Reservas ni la administración de permisos.
 El reparto siguiente conserva su vigencia fuera de este alcance.
 
+Ampliación autorizada el2026-10-22: contrato Backend53 conecta el servicio interno
+de checkout con limpieza DIRTY y auditoría; José integra con Reservas/HK existentes
+en feature/staff-checkout-housekeeping. No incluye HTTP/UI de checkout ni cierre
+financiero y no reasigna el resto del lifecycle.
+
 El usuario confirma que José deja la implementación Backend y pasa al Frontend.
 Alan / BD1 y Juan / BD3 continúan el Backend, incluidos los pendientes de BD2.
 El reparto específico de esos pendientes debe acordarse entre ambos; documento

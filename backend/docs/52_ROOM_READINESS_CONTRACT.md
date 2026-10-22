@@ -1,5 +1,9 @@
 # Limpieza visible para Recepción y preparación de entrega
 
+Ampliación posterior aprobada: [contrato53](53_CHECKOUT_HOUSEKEEPING_CONTRACT.md)
+integra checkout interno → DIRTY. Los límites siguientes describen el incremento52;
+no atribuyen al sistema una API/UI Staff de check-in o checkout.
+
 Estado: APPROVED, implementación COMPLETADA; validación técnica y QA manual
 propio PASS, confirmado expresamente por José. José aprobó separar preasignación
 de entrega/check-in el 2026-10-21. Incremento posterior a Housekeeping51; owner

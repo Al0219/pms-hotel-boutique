@@ -1,5 +1,15 @@
 # Limpieza en Habitaciones y preparación para entrega
 
+Incremento posterior EN_QA: contrato Backend53 conecta el checkout interno
+con DIRTY y motivo visible por las lecturas actuales. No agrega botón ni endpoint
+de checkout; su prueba de la transición es PostgreSQL/servicio real. El cierre
+manual del incremento52 descrito debajo permanece histórico y no cubre53.
+Backend verify905 PASS/BUILD SUCCESS, incluidos16 casos nuevos; hubo un timeout
+Swagger20s en la primera suite y la repetición íntegra pasó sin cambiar pruebas
+ni límites. No se ha desplegado este servicio en3001 ni añadido HTTP/BFF/UI.
+El QA visual histórico no se atribuye al nuevo checkout; contrato y QA manual
+del siguiente flujo Staff por acordar con José.
+
 Estado: COMPLETADA; validación técnica y QA manual propio de José PASS,
 confirmado expresamente por el usuario para este incremento.
 Owner José frontend/backend. Decisión aprobada 2026-10-21,
