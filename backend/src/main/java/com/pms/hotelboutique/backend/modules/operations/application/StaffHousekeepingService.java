@@ -43,7 +43,7 @@ public class StaffHousekeepingService {
 
     @Transactional(readOnly = true)
     public Board list(StaffPrincipal principal, UUID propertyId) {
-        var access = access(principal, propertyId);
+        var access = access(principal, propertyId, false);
         var roomTypes = types.findAllInScope(access.scope()).stream()
                 .collect(Collectors.toMap(RoomType::getId, RoomType::getName));
         var tracked = states.findByPropertyIdIn(access.scope().propertyIds()).stream()
@@ -56,7 +56,7 @@ public class StaffHousekeepingService {
 
     @Transactional(readOnly = true)
     public RoomState detail(StaffPrincipal principal, UUID propertyId, UUID roomId) {
-        var access = access(principal, propertyId);
+        var access = access(principal, propertyId, false);
         var room = rooms.findByIdInScope(access.scope(), roomId).orElseThrow(NotFound::new);
         return view(room, typeName(access, room), states.findByPropertyIdAndRoomId(propertyId, roomId).orElse(null));
     }
@@ -110,10 +110,14 @@ public class StaffHousekeepingService {
     }
 
     private Access access(StaffPrincipal principal, UUID propertyId) {
+        return access(principal, propertyId, true);
+    }
+    private Access access(StaffPrincipal principal, UUID propertyId, boolean write) {
         if (principal == null) throw new StaffAuthenticationException();
         var active = sessions.getActivePrincipal(principal);
         var snapshot = authorization.resolve(active.staffUserId());
-        if (!snapshot.hasPermission("OPERATIONS_MANAGE")) throw new AccessDeniedException("Housekeeping permission required");
+        if (!snapshot.hasPermission("OPERATIONS_MANAGE") && (write || !snapshot.hasPermission("RESERVATION_MANAGE")))
+            throw new AccessDeniedException("Housekeeping permission required");
         return new Access(active.staffUserId(), scopes.resolveProperty(snapshot, propertyId));
     }
     private Room lock(Access access, UUID propertyId, UUID roomId) {

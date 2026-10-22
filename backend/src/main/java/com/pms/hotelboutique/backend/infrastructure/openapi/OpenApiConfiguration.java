@@ -102,6 +102,14 @@ public class OpenApiConfiguration {
             status.setEnum(java.util.Arrays.asList("DIRTY", "CLEAN", "INSPECTED", null));
             status.setDescription("Cleaning state; null for an untracked physical room.");
             room.getProperties().put("status", status);
+            var candidate = api.getComponents().getSchemas().get("StaffRoomAssignmentCandidate");
+            if (candidate != null) {
+                Schema<Object> cleaning = new Schema<>();
+                cleaning.setTypes(Set.of("string", "null"));
+                cleaning.setEnum(java.util.Arrays.asList("DIRTY", "CLEAN", "INSPECTED", null));
+                cleaning.setDescription("Current cleaning, not arrival forecast; null means no tracking.");
+                candidate.getProperties().put("housekeeping_status", cleaning);
+            }
         };
     }
 }

@@ -1,5 +1,10 @@
 # Staff Habitaciones — lectura real para la presentación
 
+Ampliación aprobada: [Web65](65_ROOM_READINESS_QA.md)/Backend52 incorpora limpieza
+desde el puerto de consulta HK, sin cambiar el DTO físico de Rooms. Recepción
+consulta la limpieza sin modificarla; ocupación y estado operativo son independientes.
+El QA manual histórico siguiente no se atribuye a la nueva ampliación.
+
 Estado vigente: **COMPLETADA**; QA manual real **PASS** confirmado por Alan
 el 2026-10-08. Base `main 63279d7`, rama
 `feature/staff-room-inventory-read`. Incremento autorizado por Alan el 2026-10-08;

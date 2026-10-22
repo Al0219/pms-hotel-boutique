@@ -3,6 +3,10 @@
 Owner: WEB-3.
 
 ## Housekeeping
+
+Integración limpieza/entrega: [Web65](65_ROOM_READINESS_QA.md) y contrato Backend52.
+Recepción consulta limpieza en Habitaciones; no modifica HK. Preasignación no
+equivale a entrega/check-in, que requiere inspección actual en Backend.
 Lifecycle:
 DIRTY -> CLEAN -> INSPECTED
 

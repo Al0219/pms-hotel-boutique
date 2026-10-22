@@ -104,6 +104,34 @@
 - **Ajuste SMTP aprobado:** EmailSender admite smtp/resend por PMS_EMAIL_PROVIDER; SMTP requiere configuración completa al arrancar, AUTH+STARTTLS obligatorio, timeouts y errores sanitizados. Resend/default intacto. Backend verify743 PASS; Docker SMTP seleccionado/healthy; sin envíos reales automatizados.
 - **Siguiente:** incremento cerrado tras QA manual PASS; cualquier publicación o trabajo adicional requiere autorización independiente. Sin commit/push/merge; Staff intacto.
 
+## Limpieza para Recepción y preparación de entrega — 2026-10-21
+
+- **Estado:** COMPLETADA; validación técnica y QA manual propio PASS,
+  confirmado expresamente por José para este incremento.
+  José aprueba separar preasignación de check-in según
+  [contrato52](52_ROOM_READINESS_CONTRACT.md). Owner José frontend/backend;
+  coordinación Juan/Alan. No se reasignan otros módulos ni se modifica XLSX.
+- **DoR/alcance:** contrato50 y Housekeeping51 existentes; lectura por
+  RESERVATION_MANAGE para Habitaciones, escritura HK conserva OPERATIONS_MANAGE;
+  preview con limpieza/advertencia, checkIn interno solo con Room INSPECTED,
+  bloqueo compartido y relectura. No API/UI de check-in nueva, ATS o migraciones.
+- **DoD:** seguridad/property scope, preasignación sin entrega, bloqueos y
+  concurrencia con limpieza; Backend verify/OpenAPI, Web/BFF/UI/typecheck/lint/build.
+  QA manual de este incremento confirmado, separado del PASS previo HK.
+- **Validación:** ./mvnw -B verify final887 PASS/BUILD SUCCESS, sin omitidas,
+  Java21/PG17 aislados, ejecución secuencial12:24. Web143 casos verificados entre
+  suite/repetición30 PASS con límite local30s; control HEAD también excede5s.
+  Build/typecheck/lint PASS; tests/CI/configuración originales conservados.
+  Chrome real3001:22 PASS, sin JS/5xx ni overflow móvil. Cuentas/datos/migraciones
+  conservados;2 eventos DND esperados, un recibo QA sin duplicación.
+- **Entorno/límites:** Docker Backend/Web actualizado, PG original intacto.
+  npm ci normal falló por red ETIMEDOUT; imagen local Web construida con caché
+  del mismo package/lock, comparados byte a byte, mediante override temporal.
+  Sin editar Dockerfiles/Compose/dependencias/secretos. Detalle y límites Web65.
+- **Siguiente:** José autoriza commit/push en `feature/staff-housekeeping-real`.
+  Continuar en el módulo con los próximos ajustes que indique; sin merge ni
+  nueva funcionalidad definida en este cierre. No se atribuyen checks de GitHub.
+
 ## Housekeeping Staff real — implementación (2026-10-21)
 
 - **Estado:** COMPLETADA; validación técnica y QA manual PASS. José confirmó

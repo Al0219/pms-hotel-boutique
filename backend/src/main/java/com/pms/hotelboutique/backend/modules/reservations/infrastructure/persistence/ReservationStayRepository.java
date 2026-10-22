@@ -12,6 +12,11 @@ import org.springframework.data.repository.query.Param;
 
 public interface ReservationStayRepository extends JpaRepository<ReservationStay, UUID> {
 
+    /** Internal lifecycle guard; public commands authorize scope before reaching a stay. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select s from ReservationStay s where s.id = :id")
+    Optional<ReservationStay> lockById(@Param("id") UUID id);
+
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             select s from ReservationStay s join Property p on s.propertyId = p.id

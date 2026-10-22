@@ -1,5 +1,8 @@
 # Asignación inicial real de habitación — Staff
 
+Ampliación aprobada: [contrato52](52_ROOM_READINESS_CONTRACT.md) distingue
+preasignación de entrega y agrega limpieza/advertencia a las candidatas.
+
 Estado: **COMPLETADA**; QA manual de asignación física PASS confirmado por Alan
 el 2026-10-08, con cierre documental autorizado. Incremento autorizado expresamente por Alan el 2026-10-08:
 asignar desde detalle de Reserva, solo room=null, misma propiedad/RoomType,

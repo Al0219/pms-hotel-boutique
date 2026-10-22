@@ -19,15 +19,18 @@ public class HousekeepingServiceImpl implements HousekeepingService {
 
     private final HkRoomStateRepository states;
     private final AuditService audit;
+    private final RoomReadinessService readiness;
 
-    public HousekeepingServiceImpl(HkRoomStateRepository states, AuditService audit) {
+    public HousekeepingServiceImpl(HkRoomStateRepository states, AuditService audit, RoomReadinessService readiness) {
         this.states = states;
         this.audit = audit;
+        this.readiness = readiness;
     }
 
     @Override
     public HkRoomView trackRoom(UUID propertyId, UUID roomId, UUID actorId) {
         requireIds(propertyId, roomId);
+        readiness.lockRoom(propertyId, roomId);
         return HkRoomView.from(states.findByPropertyIdAndRoomId(propertyId, roomId)
                 .orElseGet(() -> states.save(new HkRoomState(UUID.randomUUID(), propertyId, roomId,
                         Instant.now()))));
@@ -36,7 +39,9 @@ public class HousekeepingServiceImpl implements HousekeepingService {
     @Override
     @Transactional(readOnly = true)
     public HkRoomView statusOf(UUID propertyId, UUID roomId) {
-        return HkRoomView.from(existing(propertyId, roomId));
+        requireIds(propertyId, roomId);
+        return HkRoomView.from(states.findByPropertyIdAndRoomId(propertyId, roomId)
+                .orElseThrow(() -> new HousekeepingException("room is not tracked")));
     }
 
     @Override
@@ -121,6 +126,7 @@ public class HousekeepingServiceImpl implements HousekeepingService {
 
     private HkRoomState existing(UUID propertyId, UUID roomId) {
         requireIds(propertyId, roomId);
+        readiness.lockRoom(propertyId, roomId);
         return states.findByPropertyIdAndRoomId(propertyId, roomId)
                 .orElseThrow(() -> new HousekeepingException("room is not tracked"));
     }

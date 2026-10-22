@@ -102,6 +102,11 @@ class PromotionRewardIntegrationTests {
                 SEED_PROPERTY, null, "GTQ", "WEB_DIRECTA", null, null));
         var stay = stays.addStay(new CreateStayCommand(reservation.id(), roomType, null,
                 LocalDate.parse("2026-11-01"), LocalDate.parse("2026-11-03")));
+        UUID room = UUID.randomUUID();
+        jdbc.update("INSERT INTO rooms(id,property_id,room_type_id,code) VALUES (?,?,?,?)", room, SEED_PROPERTY, roomType, room.toString());
+        jdbc.update("INSERT INTO hk_room_states(id,property_id,room_id,status,dnd,created_at,updated_at) VALUES (?,?,?,'INSPECTED',false,now(),now())",
+                UUID.randomUUID(), SEED_PROPERTY, room);
+        stays.assignRoom(stay.id(), room);
         stays.checkIn(stay.id());
         return stays.checkOut(stay.id()).id();
     }

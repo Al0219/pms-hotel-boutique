@@ -20,6 +20,10 @@ beforeEach(() => {
   reservation.stays.push({ ...reservation.stays[0], stayId: '66666666-6666-6666-6666-666666666666',
     room: { roomId: inventory.rooms[0].id, code: 'unrelated-display-code' } });
   mockServer.use(
+    http.get('*/api/staff/housekeeping/rooms', () => HttpResponse.json({ propertyId: inventoryPropertyId, rooms: inventory.rooms.map(room => ({
+      propertyId: inventoryPropertyId, roomId: room.id, roomCode: room.code, roomTypeId: room.roomTypeId,
+      roomTypeName: 'Deluxe real', tracked: true, status: 'DIRTY', dnd: false, updatedAt: '2026-10-21T12:00:00Z',
+    })) })),
     http.get('*/api/staff/rooms', ({ request }) => { reads.push(request.url); return HttpResponse.json(inventory.rooms); }),
     http.get('*/api/staff/room-types', ({ request }) => { reads.push(request.url); return HttpResponse.json(inventory.types); }),
     http.get('*/api/staff/reservations', ({ request }) => { reads.push(request.url); return failReservations
@@ -46,7 +50,8 @@ describe('Staff Rooms real composition', () => {
     expect(screen.queryByRole('button', { name: /Poner fuera|Liberar a activa|Asignar habitación/ })).not.toBeInTheDocument();
     expect(screen.getAllByText('Estado operativo no disponible').length).toBeGreaterThan(0);
     const table = screen.getByRole('table', { name: 'Habitaciones del hotel' });
-    expect(within(table).getAllByRole('columnheader').map(th => th.textContent)).toEqual(['Identidad', 'Contexto', 'Relación', 'Estado']);
+    expect(within(table).getAllByRole('columnheader').map(th => th.textContent)).toEqual(['Identidad', 'Contexto', 'Relación', 'Limpieza actual', 'Estado']);
+    await waitFor(() => expect(within(table).getAllByText('Sucia').length).toBeGreaterThan(0));
     expect(within(table).getByText('REAL-BOOKING')).toBeInTheDocument();
     expect(within(table).getByText('2026-11-01')).toBeInTheDocument();
     expect(within(table).getByText('2026-11-03')).toBeInTheDocument();

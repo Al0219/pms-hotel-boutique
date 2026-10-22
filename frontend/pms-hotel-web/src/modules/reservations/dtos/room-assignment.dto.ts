@@ -16,6 +16,10 @@ export interface RoomAssignmentPreviewDto {
     operational_status: 'ACTIVE' | 'OOO' | 'OOS';
     selectable: boolean;
     reason: string | null;
+    /** Contract52; absent only in legacy frontend fixtures. */
+    housekeeping_status?: 'DIRTY' | 'CLEAN' | 'INSPECTED' | null;
+    ready_for_check_in?: boolean;
+    warning?: string | null;
   }[];
 }
 export interface RoomAssignmentResultDto {

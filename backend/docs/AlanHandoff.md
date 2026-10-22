@@ -1,3 +1,36 @@
+## Limpieza y entrega — cierre manual y publicación autorizada (2026-10-21)
+
+- **Estado:** COMPLETADA; QA técnico y manual propio PASS. José confirma
+  expresamente su QA de este incremento y autoriza commit/push en la misma rama.
+  José aprobó preasignar con aviso sin entregar una
+  habitación no inspeccionada; contrato52. Base publicada HK3186d92, misma rama.
+- **Entrega:** consulta de limpieza para Recepción desde Habitaciones sin acceso
+  de gestión HK; preview informa limpieza actual y aviso. CheckIn interno exige
+  Room asignada/INSPECTED, con bloqueo Room compartido por escritores HK.
+- **Límites:** no nuevo endpoint/botón check-in, no automatismo check-out→DIRTY,
+  sin cambios ATS, migraciones, roles globales ni secretos. Fixture Comercial
+  de check-in se adapta a la regla aprobada, sin alterar su lógica funcional.
+- **Backend final:** ./mvnw -B verify887 PASS,0 failures/errors/skipped,
+  BUILD SUCCESS y JAR,12:24 min, Java21/PostgreSQL17 aislados, sin builds/Chrome
+  simultáneos. Primera ejecución:3 fallos por fixture propia ya corregidos;
+  segunda:796 PASS y exit137 durante builds, no éxito. Logs/reports separados
+  en backend/target/readiness-*; no modificar assertions de BD3 ni excluir casos.
+- **Web:**143 casos verificados:135 PASS/8 timeouts5s; control HEAD también falla
+  por tiempo. Los6 archivos afectados repiten30 PASS con30s solo en runner local,
+  sin cambios a tests/timeouts/CI del repo. Build/typecheck/lint PASS.
+- **Integrado3001:**22 comprobaciones Chrome PASS,0 JS/5xx y sin overflow390px.
+  Recepción lee limpieza y filtra; tracking/status/DND403. Reserva/asignación
+  existentes conservadas, ATS intacto. SQL conserva2 propiedades/24 rooms/6 tipos,
+  2 reservas/2 stays/1 GuestAccount/2 StaffUsers/28 migraciones/2 HK;1 recibo QA.
+  HK audit10→12 por DND on/off Admin. Chrome QA cerrado; stack habitual saludable.
+- **Docker:** imagen Backend canónica y Web compilada con dependencias cacheadas
+  del mismo package/lock, comparación byte a byte PASS. npm ci normal falló por
+  conectividad ETIMEDOUT; override/Dockerfile temporal fuera del repo, sin cambiar
+  fuente/configuración/dependencias/credenciales. Cold build requiere red npm.
+- **Siguiente:** publicar en `feature/staff-housekeeping-real` y continuar
+  puliendo este módulo según los ajustes que indique José. Sin merge ni nuevas
+  funcionalidades definidas en este cierre. CI remoto no ejecutado.
+
 ## Housekeeping — cierre manual y publicación autorizada (2026-10-21)
 
 - **Estado:** EN_QA → COMPLETADA. José confirmó que probó Housekeeping y está

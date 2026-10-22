@@ -37,7 +37,7 @@ public class StaffReservationController {
 
     @GetMapping("/{reservationId}/stays/{stayId}/room-assignment")
     @Operation(operationId = "previewStaffRoomAssignment", summary = "Available physical rooms for an unassigned stay",
-            description = "Staff RESERVATION_MANAGE with live PROPERTY scope. Same authorized property and RoomType; exclusive departure; excludes overlapping RESERVED/IN_HOUSE and unreleased OOO/OOS.")
+            description = "Staff RESERVATION_MANAGE with live PROPERTY scope. Same authorized property and RoomType; exclusive departure; excludes overlapping RESERVED/IN_HOUSE and unreleased OOO/OOS. Includes current cleaning status/readiness and warnings. Preassignment is allowed before inspection; it does not check in or authorize handing over the room.")
     @ApiResponse(responseCode = "200", description = "Available candidates", content = @Content(mediaType = "application/json", schema = @Schema(implementation = com.pms.hotelboutique.backend.modules.reservations.application.StaffRoomAssignmentService.Preview.class)),
             headers = @Header(name = "Cache-Control", schema = @Schema(type = "string"), description = "private, no-store"))
     @ApiResponse(responseCode = "404", description = "Reservation or stay outside requested property", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
