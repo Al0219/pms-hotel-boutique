@@ -1,3 +1,31 @@
+## Housekeeping — motivo de rechazo y foco (2026-10-22)
+
+- **Estado:** COMPLETADA; validación técnica y QA manual propio PASS, confirmado
+  expresamente por José el 2026-10-22. Autoriza commit/push en la misma rama.
+- **Causa:** Modal reenfocaba al cambiar el callback inline, incluso por cada
+  letra; el motivo persistía en audit pero no formaba parte del DTO de lectura.
+- **Cambio:** foco inicial separado del listener; pausa de polling/foco mientras
+  se confirma. Motivo vigente DIRTY desde auditoría existente con property scope,
+  proyectado como cleaningReason y visible en detalle; DND no lo reemplaza.
+- **Validación:** Web84 pruebas/18 archivos PASS con el límite original;
+  typecheck/lint PASS. Backend verify focalizado41 PASS/BUILD SUCCESS, Java21/PG17:
+  StaffHousekeepingIntegrationTests, HousekeepingServiceIntegrationTests,
+  RoomReadinessIntegrationTests y OpenApiContractIntegrationTests. Se reprodujo
+  antes del arreglo la pérdida de foco y el guardado accidental al escribir espacios.
+  Regresión de composición Habitaciones:4 PASS/1 timeout5s inicial; archivo íntegro
+  repetido5 PASS con límite30s solo en CLI local. Sin cambios de timeout/CI/tests.
+  Build producción Backend/Web PASS, dependencias Web cacheadas del mismo lock
+  mediante override temporal ya validado; no cambios Dockerfile/Compose/lockfile.
+- **Integrado3001:**7 comprobaciones Chrome PASS: escritura continua con espacios
+  y tildes, foco conservado más de30s, cancelar sin cambios, motivo existente en
+  detalle tras recargar y móvil390px sin overflow; sin excepciones JS ni5xx.
+  SQL antes/después:2 properties/24 rooms/2 reservas/5 estados HK/25 eventos audit,
+  iguales. No se guardó un rechazo nuevo ni se reescribió historia. Tres
+  contenedores saludables; PostgreSQL original intacto. Temporales fuera del repo.
+- **Siguiente:** publicar este ajuste en `feature/staff-housekeeping-real`.
+  Próximo alcance por acordar con José; sin merge ni funcionalidad adicional
+  autorizados en este cierre. No se atribuyen checks remotos de GitHub.
+
 ## Limpieza y entrega — cierre manual y publicación autorizada (2026-10-21)
 
 - **Estado:** COMPLETADA; QA técnico y manual propio PASS. José confirma

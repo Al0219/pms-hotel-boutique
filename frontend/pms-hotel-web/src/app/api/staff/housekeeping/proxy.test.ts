@@ -4,7 +4,7 @@ const backend = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/bff/staff-auth', () => ({backendStaffRequest:backend,staffAccessCookie:'pms_staff_access'}));
 import { proxyHousekeeping } from './proxy';
 const propertyId='22222222-2222-4222-8222-222222222222',roomId='33333333-3333-4333-8333-333333333333';
-const room={propertyId,roomId,roomCode:'101',roomTypeId:'44444444-4444-4444-8444-444444444444',roomTypeName:'Deluxe',tracked:true,status:'DIRTY',dnd:false,updatedAt:'2035-01-01T12:00:00.123456Z'};
+const room={propertyId,roomId,roomCode:'101',roomTypeId:'44444444-4444-4444-8444-444444444444',roomTypeName:'Deluxe',tracked:true,status:'DIRTY',dnd:false,updatedAt:'2035-01-01T12:00:00.123456Z',cleaningReason:'Baño sin limpiar'};
 function request(method='GET',body?:unknown,params=`propertyId=${propertyId}`,extra:Record<string,string>={}) {
   return new NextRequest(`http://localhost:3001/api/staff/housekeeping/rooms?${params}`,{method,headers:{cookie:'pms_staff_access=staff-secret; pms_guest_access=guest-secret',origin:'http://localhost:3001','content-type':'application/json',...extra},...(body!==undefined ? {body:JSON.stringify(body)}:{})});
 }
@@ -30,7 +30,7 @@ it('protects write origin and rejects forged actor and duplicate scopes',async (
 it('forwards tracking and preserves timestamp precision in mutations',async () => {
   backend.mockResolvedValueOnce(Response.json(room));expect((await proxyHousekeeping(request('POST',{}),roomId,'tracking')).status).toBe(200);
   const body={expectedStatus:'DIRTY',expectedUpdatedAt:room.updatedAt,toStatus:'CLEAN',reason:null};
-  backend.mockResolvedValueOnce(Response.json({...room,status:'CLEAN'}));
+  backend.mockResolvedValueOnce(Response.json({...room,status:'CLEAN',cleaningReason:null}));
   expect((await proxyHousekeeping(request('PUT',body),roomId,'status')).status).toBe(200);
   expect(JSON.parse(backend.mock.calls[1][1].body)).toEqual(body);
 });

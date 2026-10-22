@@ -6,20 +6,20 @@ import { readStaffHousekeeping, changeStaffHousekeeping } from '../service/staff
 import type { HousekeepingChange } from '../model/staff-housekeeping';
 
 /** Read-only composition port for Reception's room board; no mutation capability. */
-export function useStaffHousekeepingRooms(propertyId: string, sessionId: string, enabled = true) {
+export function useStaffHousekeepingRooms(propertyId: string, sessionId: string, enabled = true, autoRefresh = true) {
   return useQuery({ queryKey: ['staff-housekeeping', sessionId, propertyId],
     enabled: enabled && !!propertyId && !!sessionId, retry: false, staleTime: 0,
-    refetchInterval: 30_000, refetchOnWindowFocus: 'always',
+    refetchInterval: autoRefresh ? 30_000 : false, refetchOnWindowFocus: autoRefresh ? 'always' : false,
     queryFn: async ({ signal }) => mapStaffHousekeepingBoard(await readStaffHousekeeping(propertyId, signal), propertyId) });
 }
 
-export function useStaffHousekeeping(propertyId: string, sessionId: string) {
+export function useStaffHousekeeping(propertyId: string, sessionId: string, editing = false) {
   const client = useQueryClient();
   const pending = useRef<AbortController | null>(null);
   const active = useRef(false);
   useEffect(() => { active.current = true; return () => { active.current = false; pending.current?.abort(); }; }, [propertyId, sessionId]);
   const key = ['staff-housekeeping', sessionId, propertyId];
-  const query = useStaffHousekeepingRooms(propertyId, sessionId);
+  const query = useStaffHousekeepingRooms(propertyId, sessionId, true, !editing);
   const mutation = useMutation({ retry: false,
     mutationFn: async (change: HousekeepingChange) => {
       const controller = new AbortController(); pending.current = controller;

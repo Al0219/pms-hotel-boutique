@@ -84,6 +84,16 @@ class OpenApiContractIntegrationTests {
     }
 
     @Test
+    void housekeepingDocumentsPersistedCleaningReasonWithoutExposingAuditHistory() throws Exception {
+        var schema = document().path("components").path("schemas").path("StaffHousekeepingRoom");
+        assertTrue(strings(schema.path("required")).contains("cleaningReason"));
+        var reason = schema.path("properties").path("cleaningReason");
+        assertEquals(Set.of("string", "null"), strings(reason.path("type")));
+        assertTrue(reason.path("description").asText().contains("append-only audit"));
+        assertFalse(schema.path("properties").has("auditEvents"));
+    }
+
+    @Test
     void guestAccountSummaryDocumentsOwnIdentityAndOptionalRealDataOnly() throws Exception {
         var doc = document();
         var op = operation(doc, "/api/v1/guest-auth/account/summary", "get");

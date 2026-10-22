@@ -45,6 +45,11 @@ export function Modal({ title, children, footer, busy = false, onClose, initialF
 
     const focusTarget = initialFocusRef?.current ?? dialog.querySelector<HTMLElement>(FOCUSABLE_SELECTOR) ?? dialog;
     focusTarget.focus();
+  }, [initialFocusRef]);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -79,7 +84,7 @@ export function Modal({ title, children, footer, busy = false, onClose, initialF
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [busy, onClose, initialFocusRef]);
+  }, [busy, onClose]);
 
   return (
     <div

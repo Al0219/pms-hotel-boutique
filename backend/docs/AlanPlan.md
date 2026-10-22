@@ -106,6 +106,19 @@
 
 ## Limpieza para Recepción y preparación de entrega — 2026-10-21
 
+Corrección posterior autorizada por José (2026-10-22), **COMPLETADA**: conservar foco
+al escribir el motivo de rechazo y mostrarlo en la descripción HK tras guardar
+y recargar. `cleaningReason` nullable derivado de auditoría por propiedad/estado,
+sin migraciones, cambios de permisos ni historial editable. Pausar refetch
+automático durante confirmación; conservar versión/conflictos. Web84 PASS,
+typecheck/lint PASS; verify focalizado Backend41 PASS, incluido OpenAPI y
+concurrencia. Composición Habitaciones5 PASS al repetir con30s CLI tras1 timeout5s
+local, sin tocar configuración/tests. Build Backend/Web PASS; Chrome real3001
+7 PASS, sin JS/5xx ni overflow móvil. Estados/motivos/auditoría existentes
+conservados, contenedores saludables. José confirmó QA manual PASS de este ajuste
+y autorizó commit/push en `feature/staff-housekeeping-real`. Próximo alcance por
+acordar; sin merge ni funcionalidad adicional autorizados en este cierre.
+
 - **Estado:** COMPLETADA; validación técnica y QA manual propio PASS,
   confirmado expresamente por José para este incremento.
   José aprueba separar preasignación de check-in según

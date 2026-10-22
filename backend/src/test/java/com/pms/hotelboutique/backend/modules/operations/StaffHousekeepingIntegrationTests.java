@@ -75,6 +75,7 @@ class StaffHousekeepingIntegrationTests {
         assertTrue(board.path("rooms").get(0).path("status").isNull());
         assertTrue(board.path("rooms").get(0).path("dnd").isNull());
         assertTrue(board.path("rooms").get(0).path("updatedAt").isNull());
+        assertTrue(board.path("rooms").get(0).path("cleaningReason").isNull());
         result(get(roomRoute()).header("Authorization", token(operator)));
         assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM hk_room_states WHERE property_id=?", Integer.class, property));
         assertEquals(0, events());
@@ -85,13 +86,37 @@ class StaffHousekeepingIntegrationTests {
         assertEquals(dirty, track()); assertEquals(1, events());
         var clean = result(write("status", statusBody(dirty, "CLEAN", null)));
         var inspected = result(write("status", statusBody(clean, "INSPECTED", null)));
-        result(write("status", statusBody(inspected, "DIRTY", "Polvo en la mesa")));
+        var rejected = result(write("status", statusBody(inspected, "DIRTY", "Polvo en la mesa")));
+        assertEquals("Polvo en la mesa", rejected.path("cleaningReason").asText());
         entities.flush(); entities.clear();
         var persisted = result(get(roomRoute()).header("Authorization", token(operator)));
         assertEquals("DIRTY", persisted.path("status").asText()); assertEquals(4, events());
+        assertEquals("Polvo en la mesa", persisted.path("cleaningReason").asText());
+        var listed = result(get(route(property)).header("Authorization", token(operator)));
+        assertEquals("Polvo en la mesa", listed.path("rooms").get(0).path("cleaningReason").asText());
         assertEquals(operator.staffUserId(), jdbc.queryForObject("SELECT updated_by FROM hk_room_states WHERE property_id=? AND room_id=?", UUID.class, property, room));
         assertEquals(4, jdbc.queryForObject("SELECT count(*) FROM reservation_audit_events WHERE property_id=? AND actor_type='STAFF' AND actor_id=?", Integer.class, property, operator.staffUserId()));
         assertEquals("Polvo en la mesa", jdbc.queryForObject("SELECT reason FROM reservation_audit_events WHERE property_id=? AND action='HK_INSPECTION_REJECTED'", String.class, property));
+    }
+    @Test void currentReasonSurvivesDndButClearsOnCleanAndUsesLatestRework() throws Exception {
+        var dirty = track();
+        assertTrue(dirty.path("cleaningReason").isNull());
+        var clean = result(write("status", statusBody(dirty, "CLEAN", null)));
+        var rework = result(write("status", statusBody(clean, "DIRTY", "Revisar baño")));
+        var on = result(write("dnd", Map.of("expectedUpdatedAt", rework.path("updatedAt").asText(), "dnd", true)));
+        assertEquals("Revisar baño", on.path("cleaningReason").asText());
+        clean = result(write("status", statusBody(on, "CLEAN", null)));
+        assertTrue(clean.path("cleaningReason").isNull());
+        var inspected = result(write("status", statusBody(clean, "INSPECTED", null)));
+        assertTrue(inspected.path("cleaningReason").isNull());
+        var rejected = result(write("status", statusBody(inspected, "DIRTY", "  Polvo en escritorio  ")));
+        assertEquals("Polvo en escritorio", rejected.path("cleaningReason").asText());
+        entities.flush(); entities.clear();
+        var reception = staff("RECEPCION", property);
+        var listed = result(get(route(property)).header("Authorization", token(reception)));
+        assertEquals("Polvo en escritorio", listed.path("rooms").get(0).path("cleaningReason").asText());
+        assertEquals(2, jdbc.queryForObject("SELECT count(*) FROM reservation_audit_events WHERE property_id=? AND reason IN ('Revisar baño','Polvo en escritorio')", Integer.class, property));
+        mvc.perform(get(route(other)).header("Authorization", token(reception))).andExpect(status().isForbidden());
     }
     @Test void cleanReworkKeepsMandatoryReasonAndInvalidCommandsHaveNoSideEffects() throws Exception {
         var dirty = track();

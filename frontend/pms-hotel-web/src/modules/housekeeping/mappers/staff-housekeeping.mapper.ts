@@ -15,14 +15,16 @@ export function mapStaffHousekeepingRoom(value: unknown, propertyId: string, roo
   const r = object(value), id = uuid(r.roomId);
   if (uuid(r.propertyId) !== propertyId.toLowerCase() || (roomId && id !== roomId.toLowerCase()) || typeof r.tracked !== 'boolean') invalid();
   const common = { roomId: id, propertyId: uuid(r.propertyId), roomCode: text(r.roomCode), roomTypeId: uuid(r.roomTypeId), roomTypeName: text(r.roomTypeName) };
+  const cleaningReason = r.cleaningReason === null ? null : text(r.cleaningReason);
+  if (cleaningReason !== null && (!r.tracked || r.status !== 'DIRTY')) invalid();
   if (!r.tracked) {
     if (r.status !== null || r.dnd !== null || r.updatedAt !== null) invalid();
-    return { ...common, tracked: false, status: null, dnd: null, updatedAt: null };
+    return { ...common, tracked: false, status: null, dnd: null, updatedAt: null, cleaningReason: null };
   }
   if (typeof r.status !== 'string' || !isRoomCleaningStatus(r.status) || typeof r.dnd !== 'boolean'
     || typeof r.updatedAt !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z$/.test(r.updatedAt)
     || !Number.isFinite(Date.parse(r.updatedAt))) invalid();
-  return { ...common, tracked: true, status: r.status, dnd: r.dnd, updatedAt: r.updatedAt };
+  return { ...common, tracked: true, status: r.status, dnd: r.dnd, updatedAt: r.updatedAt, cleaningReason };
 }
 export function mapStaffHousekeepingBoard(value: unknown, propertyId: string): StaffHousekeepingBoard {
   const data = object(value);

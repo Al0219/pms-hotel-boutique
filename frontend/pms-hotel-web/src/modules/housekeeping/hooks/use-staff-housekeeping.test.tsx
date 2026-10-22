@@ -6,7 +6,7 @@ const transport=vi.hoisted(() => ({read:vi.fn(),change:vi.fn()}));
 vi.mock('../service/staff-housekeeping.service',() => ({readStaffHousekeeping:transport.read,changeStaffHousekeeping:transport.change}));
 import { useStaffHousekeeping } from './use-staff-housekeeping';
 const propertyId='22222222-2222-4222-8222-222222222222';
-const room={propertyId,roomId:'33333333-3333-4333-8333-333333333333',roomCode:'101',roomTypeId:'44444444-4444-4444-8444-444444444444',roomTypeName:'Deluxe',tracked:true,status:'CLEAN' as const,dnd:false,updatedAt:'2035-01-01T12:00:00.123456Z'};
+const room={propertyId,roomId:'33333333-3333-4333-8333-333333333333',roomCode:'101',roomTypeId:'44444444-4444-4444-8444-444444444444',roomTypeName:'Deluxe',tracked:true,status:'CLEAN' as const,dnd:false,updatedAt:'2035-01-01T12:00:00.123456Z',cleaningReason:null};
 function setup() {
   const client=new QueryClient({defaultOptions:{queries:{retry:false},mutations:{retry:false}}});
   const wrapper=({children}:{children:ReactNode}) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;

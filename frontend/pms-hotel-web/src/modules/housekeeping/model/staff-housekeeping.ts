@@ -5,6 +5,7 @@ export interface StaffHousekeepingRoom {
   tracked: boolean; status: RoomCleaningStatus | null; dnd: boolean | null;
   /** Keep PostgreSQL precision: this exact UTC value is the concurrency token. */
   updatedAt: string | null;
+  cleaningReason: string | null;
 }
 export interface StaffHousekeepingBoard { propertyId: string; rooms: StaffHousekeepingRoom[] }
 export type HousekeepingChange = { room: StaffHousekeepingRoom } & (

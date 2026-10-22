@@ -6,6 +6,7 @@ import com.pms.hotelboutique.backend.modules.inventory.infrastructure.persistenc
 import com.pms.hotelboutique.backend.modules.inventory.infrastructure.persistence.RoomTypeRepository;
 import com.pms.hotelboutique.backend.modules.operations.domain.HkRoomState;
 import com.pms.hotelboutique.backend.modules.operations.infrastructure.persistence.HkRoomStateRepository;
+import com.pms.hotelboutique.backend.modules.operations.infrastructure.persistence.HousekeepingReasonRepository;
 import com.pms.hotelboutique.backend.modules.reservations.application.AuditService;
 import com.pms.hotelboutique.backend.modules.reservations.domain.ReservationAuditEvent;
 import com.pms.hotelboutique.backend.modules.securityauth.application.*;
@@ -32,13 +33,16 @@ public class StaffHousekeepingService {
     private final HousekeepingService housekeeping;
     private final AuditService audit;
     private final EntityManager entities;
+    private final HousekeepingReasonRepository reasons;
 
     public StaffHousekeepingService(StaffAuthService sessions, StaffAuthorizationService authorization,
             PropertyScopeResolver scopes, RoomRepository rooms, RoomTypeRepository types,
-            HkRoomStateRepository states, HousekeepingService housekeeping, AuditService audit, EntityManager entities) {
+            HkRoomStateRepository states, HousekeepingService housekeeping, AuditService audit, EntityManager entities,
+            HousekeepingReasonRepository reasons) {
         this.sessions = sessions; this.authorization = authorization; this.scopes = scopes;
         this.rooms = rooms; this.types = types; this.states = states; this.housekeeping = housekeeping;
         this.audit = audit; this.entities = entities;
+        this.reasons = reasons;
     }
 
     @Transactional(readOnly = true)
@@ -48,9 +52,10 @@ public class StaffHousekeepingService {
                 .collect(Collectors.toMap(RoomType::getId, RoomType::getName));
         var tracked = states.findByPropertyIdIn(access.scope().propertyIds()).stream()
                 .collect(Collectors.toMap(HkRoomState::getRoomId, Function.identity()));
+        var cleaningReasons = cleaningReasons(propertyId, tracked.values());
         var result = rooms.findAllInScope(access.scope()).stream()
                 .sorted(Comparator.comparing(Room::getCode).thenComparing(Room::getId))
-                .map(room -> view(room, roomTypes.get(room.getRoomTypeId()), tracked.get(room.getId()))).toList();
+                .map(room -> view(room, roomTypes.get(room.getRoomTypeId()), tracked.get(room.getId()), cleaningReasons)).toList();
         return new Board(propertyId, result);
     }
 
@@ -137,11 +142,25 @@ public class StaffHousekeepingService {
         entities.flush(); entities.refresh(state);
         return view(room, typeName(access, room), state);
     }
-    private static RoomState view(Room room, String type, HkRoomState state) {
+    private Map<UUID, String> cleaningReasons(UUID propertyId, Collection<HkRoomState> tracked) {
+        var ids = tracked.stream().filter(state -> state.getStatus() == HkRoomState.Status.DIRTY)
+                .map(HkRoomState::getId).toList();
+        if (ids.isEmpty()) return Map.of();
+        var result = new HashMap<UUID, String>();
+        for (var entry : reasons.latestCleaningReasons(propertyId, ids)) {
+            if (entry.getReason() != null && !entry.getReason().isBlank())
+                result.put(entry.getStateId(), entry.getReason());
+        }
+        return result;
+    }
+    private RoomState view(Room room, String type, HkRoomState state) {
+        return view(room, type, state, state == null ? Map.of() : cleaningReasons(room.getPropertyId(), List.of(state)));
+    }
+    private static RoomState view(Room room, String type, HkRoomState state, Map<UUID, String> reasons) {
         if (type == null) throw new NotFound();
         return new RoomState(room.getId(), room.getPropertyId(), room.getCode(), room.getRoomTypeId(), type,
                 state != null, state == null ? null : state.getStatus(), state == null ? null : state.isDnd(),
-                state == null ? null : state.getUpdatedAt());
+                state == null ? null : state.getUpdatedAt(), state == null ? null : reasons.get(state.getId()));
     }
     private record Access(UUID actor, AuthorizedPropertyScope scope) { }
     public static class NotFound extends RuntimeException { }
@@ -157,7 +176,8 @@ public class StaffHousekeepingService {
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean tracked,
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED, types = {"string", "null"}, allowableValues = {"DIRTY", "CLEAN", "INSPECTED"}) HkRoomState.Status status,
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED, types = {"boolean", "null"}) Boolean dnd,
-            @Schema(requiredMode = Schema.RequiredMode.REQUIRED, types = {"string", "null"}, format = "date-time") Instant updatedAt) { }
+            @Schema(requiredMode = Schema.RequiredMode.REQUIRED, types = {"string", "null"}, format = "date-time") Instant updatedAt,
+            @Schema(requiredMode = Schema.RequiredMode.REQUIRED, types = {"string", "null"}, description = "Current return-to-cleaning reason from append-only audit; null unless DIRTY with a recorded reason.") String cleaningReason) { }
     @Schema(name = "StaffHousekeepingBoard")
     public record Board(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID propertyId,
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<RoomState> rooms) { }
