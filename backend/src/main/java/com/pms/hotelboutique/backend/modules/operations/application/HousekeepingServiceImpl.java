@@ -5,6 +5,7 @@ import com.pms.hotelboutique.backend.modules.operations.infrastructure.persisten
 import com.pms.hotelboutique.backend.modules.reservations.application.AuditService;
 import com.pms.hotelboutique.backend.modules.reservations.domain.ReservationAuditEvent;
 import com.pms.hotelboutique.backend.modules.securityauth.application.AuthorizedPropertyScope;
+import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -20,11 +21,14 @@ public class HousekeepingServiceImpl implements HousekeepingService {
     private final HkRoomStateRepository states;
     private final AuditService audit;
     private final RoomReadinessService readiness;
+    private final EntityManager entities;
 
-    public HousekeepingServiceImpl(HkRoomStateRepository states, AuditService audit, RoomReadinessService readiness) {
+    public HousekeepingServiceImpl(HkRoomStateRepository states, AuditService audit, RoomReadinessService readiness,
+            EntityManager entities) {
         this.states = states;
         this.audit = audit;
         this.readiness = readiness;
+        this.entities = entities;
     }
 
     @Override
@@ -58,6 +62,28 @@ public class HousekeepingServiceImpl implements HousekeepingService {
     public HkRoomView markDirty(UUID propertyId, UUID roomId, String reason, UUID actorId) {
         if (reason == null || reason.isBlank()) throw new HousekeepingException("reason is required");
         return transition(propertyId, roomId, actorId, "HK_SOILED", reason.trim(), (state, now) -> state.markDirty(now));
+    }
+
+    @Override
+    public HkRoomView markDirtyAfterCheckout(UUID propertyId, UUID roomId, UUID stayId) {
+        if (stayId == null) throw new HousekeepingException("stay id is required");
+        readiness.lockRoom(propertyId, roomId);
+        var current = states.findByPropertyIdAndRoomId(propertyId, roomId);
+        HkRoomState state;
+        HkRoomState.Status before = null;
+        if (current.isPresent()) {
+            state = current.get();
+            // A transaction may have cached HK before waiting for the shared Room lock.
+            entities.refresh(state);
+            before = state.getStatus();
+        } else {
+            state = states.save(new HkRoomState(UUID.randomUUID(), propertyId, roomId, Instant.now()));
+        }
+        state.markDirty(Instant.now());
+        state.recordActor(null);
+        record(state, "HK_SOILED", before,
+                "Salida del huésped: habitación pendiente de limpieza.", null, stayId);
+        return HkRoomView.from(state);
     }
 
     @Override
@@ -133,13 +159,18 @@ public class HousekeepingServiceImpl implements HousekeepingService {
 
     private void record(HkRoomState state, String action, HkRoomState.Status before, String reason,
             UUID actorId) {
+        record(state, action, before, reason, actorId, null);
+    }
+
+    private void record(HkRoomState state, String action, HkRoomState.Status before, String reason,
+            UUID actorId, UUID correlationId) {
         ReservationAuditEvent.ActorType type = actorId == null
                 ? ReservationAuditEvent.ActorType.SYSTEM
                 : ReservationAuditEvent.ActorType.STAFF;
         audit.record(new AuditService.RecordAuditCommand(type, actorId, action, "HK_ROOM_STATE",
                 state.getId(), state.getPropertyId(),
                 before == null ? null : "{\"status\":\"" + before + "\"}",
-                "{\"status\":\"" + state.getStatus() + "\"}", reason, null));
+                "{\"status\":\"" + state.getStatus() + "\"}", reason, correlationId));
     }
 
     private static java.util.Set<UUID> authorizedIds(AuthorizedPropertyScope scope) {

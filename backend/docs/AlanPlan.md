@@ -1,5 +1,26 @@
 # AlanPlan — Seguimiento Backend
 
+## Checkout → limpieza — 2026-10-22
+
+- **Estado:** EN_QA; integración autorizada por José según contrato53; QA manual propio pendiente.
+- **Owner/base:** José; coordinación Juan/Alan. Nueva rama
+  `feature/staff-checkout-housekeeping` desde `0d4affd`; árbol igual a main1c0eccd.
+- **DoR/alcance:** servicios checkout/HK existentes; estancia IN_HOUSE y Room
+  asignada → CHECKED_OUT + DIRTY + audit atómicos, con locks/relectura. Conservar
+  DND, otras stays y reglas ATS; idempotencia de efectos por transición válida.
+  Compatibilidad sin Room histórica; no migraciones, HTTP/BFF/UI ni cierre de folio.
+- **Aceptación/DoD:** contrato53; pruebas PostgreSQL, rollback/concurrencia,
+  disponibilidad y lecturas HK, verify completo Java21/PG17; QA manual del usuario.
+- **Validación:** ./mvnw -B verify905 PASS/BUILD SUCCESS,0 omitidas, Java21/PG17
+  aislados,17:13 min. Incluye16 casos nuevos de rollback/concurrencia/DND/ATS y
+  reservas futuras. Primera ejecución:904 PASS/1 timeout Swagger20s; repetición
+  completa PASS con las mismas fuentes/pruebas/límites. Evidencia separada en target.
+- **Publicación:** José autoriza commit/push el 2026-10-22; EN_QA se conserva
+  hasta su QA manual PASS. Sin merge ni checks remotos atribuidos.
+- **Siguiente:** preparar y acordar contrato HTTP/BFF/UI de check-in/checkout
+  Staff, autorizado por José. No implementar nuevas APIs/botones antes de acordarlo.
+  Entorno habitual3001 conservado; QA manual de este servicio aún pendiente.
+
 ## Juan / publicación de correcciones H1–H4 vía PR
 
 - **Estado:** EN PUBLICACIÓN; usuario autoriza actualizar rama, push, PR y

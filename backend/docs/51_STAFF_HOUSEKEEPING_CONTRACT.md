@@ -1,5 +1,9 @@
 # Housekeeping Staff — primera integración real
 
+Ampliación posterior: [contrato53](53_CHECKOUT_HOUSEKEEPING_CONTRACT.md) conecta
+checkout interno con DIRTY y motivo auditado; tracking automático solo al confirmar
+esa salida, no por GET ni por abrir la página. Sin endpoint/UI checkout nuevos.
+
 Estado: **APPROVED**, contrato y matriz de acceso aprobados por José el
 2026-10-21 al confirmar continuar con la implementación de frontend y backend
 después de revisar esta propuesta. Implementación COMPLETADA; validación técnica

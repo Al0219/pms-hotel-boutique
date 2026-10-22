@@ -4,6 +4,11 @@ Owner: WEB-3.
 
 ## Housekeeping
 
+Contrato Backend53 agrega checkout interno → DIRTY, transaccional y auditado.
+Housekeeping y Habitaciones consumen su estado/motivo mediante las lecturas ya
+integradas. No existe todavía checkout HTTP/UI Staff confirmado; no simularlo
+con estado local ni presentar la preasignación como inicio/salida de la estancia.
+
 Integración limpieza/entrega: [Web65](65_ROOM_READINESS_QA.md) y contrato Backend52.
 Recepción consulta limpieza en Habitaciones; no modifica HK. Preasignación no
 equivale a entrega/check-in, que requiere inspección actual en Backend.

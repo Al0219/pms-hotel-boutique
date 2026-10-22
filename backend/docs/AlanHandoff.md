@@ -1,3 +1,50 @@
+## Checkout → limpieza — publicación autorizada (2026-10-22)
+
+- José autoriza commit/push de `feature/staff-checkout-housekeeping` y después
+  acordar el contrato Staff de check-in/checkout. No autoriza merge ni implementar
+  sus nuevas APIs/BFF/UI antes de acordar las reglas pendientes.
+- Estado EN_QA: la autorización de Git no sustituye QA manual PASS. Se conserva
+  la evidencia técnica anterior: verify905 PASS,0 failures/errors/skipped,
+  sin nuevas ejecuciones ni checks remotos atribuidos. Diff/alcance revisados.
+- Entorno habitual3001 sin actualizar; siguiente paso: propuesta contractual
+  separada de la implementación interna publicada.
+
+## Checkout → limpieza — entrega técnica EN_QA (2026-10-22)
+
+- **Estado:** EN_QA, QA manual propio pendiente. Rama
+  feature/staff-checkout-housekeeping, base0d4affd; contrato53 aprobado para
+  integrar el servicio interno, sin HTTP/BFF/UI de checkout autorizados.
+- **Cambio:** checkOut bloquea stay y Room, confirma CHECKED_OUT + DIRTY y dos
+  eventos SYSTEM correlacionados en una transacción; rollback completo si audit
+  falla. Reutiliza HK y cleaningReason; crea seguimiento al salir si faltaba,
+  conserva DND y otras stays. Caso histórico sin Room no inventa asignación.
+- **Pruebas finales:** ./mvnw -B verify905 PASS/BUILD SUCCESS/JAR,0 omitidas,
+  Java21/PostgreSQL17 aislados,17:13 min.16 casos nuevos: concurrencia/reintento,
+  rollback, caché JPA y DND, creación de seguimiento, ATS y futura preasignación.
+  Regresiones de reservas/finanzas/inventario/operaciones/auth/OpenAPI PASS.
+- **Primera ejecución:**905 casos,904 PASS y1 timeout en Swagger de
+  PublicBookingHttpIntegrationTests:153. Init19,95s contra20s. Repetición íntegra
+  con PG nuevo y caché de compilación:905 PASS; HTTP62 PASS, Swagger9,84s.
+  Sin modificar prueba/timeout/configuración/CI ni omitir casos. Logs/reports de
+  ambas ejecuciones separados en backend/target/checkout-hk-* ignorado.
+- **Conservación:** no migraciones, dependencias, rutas, permisos, cobros ni
+  frontend funcional nuevos. No se hacen checkouts en la base del usuario ni
+  se actualiza el stack habitual3001. Pruebas/temporales exclusivamente aislados.
+- **Siguiente:** revisión/QA manual de José y acordar contrato Staff si desea
+  operarlo desde pantalla. No afirmar que ya existen botones de entrada/salida.
+  Sin commit/push/merge; no checks remotos atribuidos. La entrada siguiente es histórica.
+
+## Checkout → limpieza — inicio (2026-10-22)
+
+- **Estado:** EN_PROGRESO. José autoriza continuar con la integración propuesta.
+- **Rama/base:** feature/staff-checkout-housekeeping desde0d4affd; main1c0eccd
+  contiene los PR157–159 y su árbol coincide. Rama anterior publicada intacta.
+- **Contrato/alcance:**53, servicio interno checkOut existente; checkout/HK/audit
+  en una transacción, Room→DIRTY, motivo legible, concurrencia y efectos únicos.
+  Reutilizar HousekeepingService y proyección actual; no HTTP/UI/folio nuevos.
+- **Siguiente:** implementación y QA automatizado; luego QA manual de José.
+  Sin commit/push/merge autorizados ni cambios al entorno/datos del usuario.
+
 ## Housekeeping — motivo de rechazo y foco (2026-10-22)
 
 - **Estado:** COMPLETADA; validación técnica y QA manual propio PASS, confirmado
