@@ -1,5 +1,41 @@
 # Housekeeping Staff — integración real y QA
 
+## Corrección de motivo y foco — 2026-10-22
+
+Estado del ajuste: COMPLETADA; José confirmó QA manual propio PASS y autorizó
+commit/push el 2026-10-22. El cierre anterior se
+conserva como histórico. José solicita poder escribir seguido sin perder foco
+y mostrar el motivo guardado en la descripción de la habitación. El Modal separa
+el enfoque inicial de los listeners; polling/foco automáticos se pausan durante
+la confirmación, conservando el token de concurrencia y el manejo de409.
+La lectura real/BFF proyecta `cleaningReason` desde auditoría existente, visible
+en el detalle mientras DIRTY. Recargar o cambiar DND no pierde el motivo;
+marcar limpia lo retira de la descripción vigente, sin borrar la auditoría.
+QA: rechazar INSPECTED escribiendo una frase con espacios sin volver a hacer clic;
+confirmar, ver motivo en detalle, recargar y contrastar; limpiar y comprobar que
+ya no figura como causa vigente. Sin nuevos permisos ni datos locales simulados.
+
+Evidencia automatizada del ajuste: Web84 PASS/18 archivos con timeout original;
+typecheck y lint PASS. Backend verify focalizado41 PASS/BUILD SUCCESS con
+Java21/PostgreSQL17, cubriendo ciclo de motivos/DND/lecturas tras limpiar el
+contexto JPA, permisos/property scope, concurrencia y OpenAPI nullable requerido.
+La prueba de escritura continua falló antes del arreglo (solo primera letra y
+guardado accidental al escribir un espacio). El QA manual de José se confirma
+separadamente; no se atribuye una ejecución completa nueva de887 casos a este ajuste.
+Regresión adicional de composición Habitaciones:4 PASS/1 timeout5s en la primera
+ejecución local; repetición del archivo completo5 PASS con --testTimeout=30000
+solo en CLI. No se cambia la configuración del repo ni se omiten assertions.
+Build producción Backend/Web PASS; Web usa la imagen local de dependencias del
+mismo package/lock, comprobados byte a byte por override temporal fuera del repo.
+Chrome real3001:7 comprobaciones PASS, cero excepciones JS/5xx. Escritura letra
+a letra con espacios/tildes mantiene foco y valor más de30s; cancelar conserva
+estados/versiones/motivos. Motivo existente visible en detalle tras recargar;
+móvil390px sin overflow. No se guardaron nuevos rechazos sobre habitaciones del
+usuario. SQL antes/después conserva2 propiedades/24 rooms/2 reservas/5 estados HK
+y25 eventos audit. Backend/Web/PostgreSQL saludables; volumen original intacto.
+Artefactos en temporal pms-hk-reason-qa y backend/target ignorado. Commit/push
+autorizados en la misma rama; sin merge ni atribución de checks remotos.
+
 Ampliación posterior: [Web65](65_ROOM_READINESS_QA.md)/contrato52 habilita lectura
 de limpieza para Recepción desde Habitaciones. Los casos403 de lectura descritos
 abajo son evidencia histórica del incremento51, no la política actual ampliada.

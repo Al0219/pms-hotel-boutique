@@ -26,6 +26,8 @@
 .page :is(button,input,select,textarea):focus-visible { outline:3px solid #9eb391; outline-offset:3px; }.pagination { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:20px; font-size:12px; }
 .alert { background:#fff3ef; border:1px solid #edc9bd; border-radius:14px; padding:18px; margin:16px 0; color:#793c32; }.success { padding:14px 18px; background:#edf5eb; color:#34563a; border-radius:12px; }
 .reason { display:grid; gap:8px; margin-top:18px; font-size:14px; }.reason small { color:#657068; text-align:right; }
+.cleaningReason { margin-top:20px; padding:16px; border:1px solid #e5d7b9; background:#faf7ef; border-radius:12px; }
+.cleaningReason h3 { margin:0 0 8px; color:#725a32; }.cleaningReason p { margin:0; font-size:14px; line-height:1.6; white-space:pre-wrap; overflow-wrap:anywhere; }
 @media (max-width:1000px) { .metrics { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 @media (max-width:760px) { .layout { grid-template-columns:1fr; }.detail { position:static; }.header { align-items:start; flex-direction:column; }.metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }.metric { padding:16px; }.panel { padding:18px; } }
 @media (prefers-reduced-motion:reduce) { .primary,.secondary { transition:none; } }

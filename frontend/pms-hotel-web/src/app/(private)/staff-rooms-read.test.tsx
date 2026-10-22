@@ -22,7 +22,7 @@ beforeEach(() => {
   mockServer.use(
     http.get('*/api/staff/housekeeping/rooms', () => HttpResponse.json({ propertyId: inventoryPropertyId, rooms: inventory.rooms.map(room => ({
       propertyId: inventoryPropertyId, roomId: room.id, roomCode: room.code, roomTypeId: room.roomTypeId,
-      roomTypeName: 'Deluxe real', tracked: true, status: 'DIRTY', dnd: false, updatedAt: '2026-10-21T12:00:00Z',
+      roomTypeName: 'Deluxe real', tracked: true, status: 'DIRTY', dnd: false, updatedAt: '2026-10-21T12:00:00Z', cleaningReason: null,
     })) })),
     http.get('*/api/staff/rooms', ({ request }) => { reads.push(request.url); return HttpResponse.json(inventory.rooms); }),
     http.get('*/api/staff/room-types', ({ request }) => { reads.push(request.url); return HttpResponse.json(inventory.types); }),

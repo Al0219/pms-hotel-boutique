@@ -3,7 +3,7 @@ const http=vi.hoisted(() => ({read:vi.fn(),write:vi.fn()}));
 vi.mock('@/lib/http/staff-bff',() => ({staffBffRead:http.read,staffBffRequest:http.write}));
 import { changeStaffHousekeeping, readStaffHousekeeping } from './staff-housekeeping.service';
 const propertyId='22222222-2222-4222-8222-222222222222';
-const room={propertyId,roomId:'33333333-3333-4333-8333-333333333333',roomCode:'101',roomTypeId:'44444444-4444-4444-8444-444444444444',roomTypeName:'Deluxe',tracked:true,status:'CLEAN' as const,dnd:false,updatedAt:'2035-01-01T12:00:00.123456Z'};
+const room={propertyId,roomId:'33333333-3333-4333-8333-333333333333',roomCode:'101',roomTypeId:'44444444-4444-4444-8444-444444444444',roomTypeName:'Deluxe',tracked:true,status:'CLEAN' as const,dnd:false,updatedAt:'2035-01-01T12:00:00.123456Z',cleaningReason:null};
 afterEach(() => vi.clearAllMocks());
 it('uses real same-origin Staff transport independent of general mocks',() => {
   readStaffHousekeeping(propertyId);

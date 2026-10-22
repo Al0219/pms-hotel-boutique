@@ -365,6 +365,11 @@ añaden operaciones, schemas ni enums Backend al baseline.
 
 ## Incremento Housekeeping Staff — 2026-10-21
 
+Corrección solicitada 2026-10-22: StaffHousekeepingRoom agrega `cleaningReason`,
+string/null requerido, derivado de auditoría existente para DIRTY. Null si no hay
+motivo vigente; mismo scope/permisos, sin endpoint ni historial nuevo. Cobertura
+OpenApiContractIntegrationTests y StaffHousekeepingIntegrationTests.
+
 Ampliación [contrato52](52_ROOM_READINESS_CONTRACT.md): GET list/detail admite
 OPERATIONS_MANAGE o RESERVATION_MANAGE; escrituras solo OPERATIONS_MANAGE.
 StaffRoomAssignmentCandidate agrega housekeeping_status nullable con enum que

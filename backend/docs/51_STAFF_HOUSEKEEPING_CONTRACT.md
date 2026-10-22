@@ -76,7 +76,13 @@ UUIDs obligatorios; parámetros/body desconocidos se rechazan.
 
 GET colección: `{propertyId, rooms: [...]}`. Cada fila/detalle contiene
 `roomId`, `propertyId`, `roomCode`, `roomTypeId`, `roomTypeName`, `tracked`,
-`status`, `dnd`, `updatedAt`. IDs UUID y timestamps ISO-8601 UTC.
+`status`, `dnd`, `updatedAt`, `cleaningReason`. IDs UUID y timestamps ISO-8601 UTC.
+Ampliación solicitada por José el 2026-10-22: `cleaningReason` es string nullable,
+motivo vigente de devolución a limpieza cuando el estado es DIRTY; se lee de la
+última transición de limpieza en la auditoría existente de esa property/estado HK.
+Sin motivo registrado, sin seguimiento, CLEAN o INSPECTED devuelve null. DND no
+reemplaza ese motivo. GET y respuestas de escritura lo incluyen; no se expone el
+historial completo ni se modifica/borran eventos. Sin migraciones nuevas.
 Colección sin paginación inicial, consistente con el catálogo físico actual;
 filtros y paginación de presentación en frontend.
 
