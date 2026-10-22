@@ -36,3 +36,14 @@ Destino ocupado.
 
 ## Messaging
 Operaciones no responde directamente huésped.
+
+## Housekeeping real — primera entrega, 2026-10-21
+
+Contrato [Backend51](../../../backend/docs/51_STAFF_HOUSEKEEPING_CONTRACT.md)
+aprobado por José para integrar frontend y backend. `/housekeeping` usa sesión
+Staff, OPERATIONS_MANAGE y PROPERTY explícito. GET no inicia seguimiento ni
+inventa limpieza; el alta explícita inicia DIRTY. DND conserva el ciclo base y
+no añade una prohibición automática de limpiar en este incremento aprobado.
+No se declaran integrados Turndown/Pickup, discrepancias, automatismos de
+recepción ni mantenimiento. Guía y estado:
+[64_STAFF_HOUSEKEEPING_REAL_QA.md](64_STAFF_HOUSEKEEPING_REAL_QA.md).

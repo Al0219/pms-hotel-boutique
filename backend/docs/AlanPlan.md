@@ -104,6 +104,43 @@
 - **Ajuste SMTP aprobado:** EmailSender admite smtp/resend por PMS_EMAIL_PROVIDER; SMTP requiere configuración completa al arrancar, AUTH+STARTTLS obligatorio, timeouts y errores sanitizados. Resend/default intacto. Backend verify743 PASS; Docker SMTP seleccionado/healthy; sin envíos reales automatizados.
 - **Siguiente:** incremento cerrado tras QA manual PASS; cualquier publicación o trabajo adicional requiere autorización independiente. Sin commit/push/merge; Staff intacto.
 
+## Housekeeping Staff real — implementación (2026-10-21)
+
+- **Estado:** COMPLETADA; validación técnica y QA manual PASS. José confirmó
+  que probó el módulo y que está bien el 2026-10-21. José aprobó el
+  [contrato51](51_STAFF_HOUSEKEEPING_CONTRACT.md) y confirmó implementar frontend
+  y backend después de revisar la propuesta.
+- **Owner/rama:** José, frontend y backend; `feature/staff-housekeeping-real`,
+  base main `8e1abbe`. Coordinación de dominio Juan y seguridad/BFF Alan.
+- **DoR:** servicios/tablas HK y Staff/C2 existentes; HTTP,
+  matriz OPERATIONS_MANAGE y alcance de primera entrega aprobados. Filas históricas
+  IMP-WEB-0501/0502 de operaciones inspeccionadas, sin editar XLSX ni inferir READY.
+- **Alcance implementado:** tablero por PROPERTY, seguimiento explícito, ciclo de
+  limpieza, motivo, DND, audit y concurrencia; sin discrepancias ni otros módulos.
+- **Aceptación/DoD:** casos de persistencia/seguridad/concurrencia, OpenAPI,
+  BFF/UI y regresión descritos en contrato51; QA manual del usuario antes del cierre.
+- **Validación:** Backend verify879 PASS y, tras ajuste final OpenAPI, verify
+  focalizado26 PASS. Web1862 PASS/1 timeout inicial de checkout; archivo afectado
+  repetido íntegro25 PASS con el mismo límite5s:1863 casos verificados entre
+  ambas ejecuciones. Build/typecheck/lint PASS. Navegador/API/PostgreSQL aislados:
+  9 comprobaciones PASS, persistencia y6 eventos auditados sin duplicar el replay.
+  Detalle y límites de ejecución en Web64/AlanHandoff; CI remoto no ejecutado.
+- **QA local3001 posterior:** Docker Backend/Web reconstruido, PostgreSQL original
+  conservado y los3 servicios saludables. Reserva Guest real con pago SIMULATED,
+  ATS-1 y consulta/asignación por Recepción; Habitaciones/Calendario/on-books PASS.
+  Bloqueo Admin resuelto tras autorización expresa de José: cuenta local creada
+  por bootstrap existente, sin cambiar Recepción ni guardar credenciales en archivos.
+  Contenedor temporal retirado;1 membership/1 evento de creación. Recorrido final
+  integrado17 PASS, cero excepciones JS/5xx; HK persistido en201 INSPECTED/DNDfalse,
+  5 eventos con actor correcto y ATS intacto. Sin duplicar reserva/recibo de QA.
+- **Cierre/publicación:** José confirma conservar los permisos implementados y
+  autoriza commit y push de `feature/staff-housekeeping-real`. Recepción no recibe
+  acceso adicional; se conserva OPERATIONS_MANAGE según C2/contrato51, sin
+  restringir ni ampliar globalmente otros roles. No se autoriza merge a main.
+- **Siguiente:** publicar el incremento y revisar el siguiente alcance privado
+  antes de implementarlo. Sin migraciones ni secretos versionados; los checks
+  del PR se comprobarán en GitHub y no se atribuyen a la validación local.
+
 ## Propósito
 
 Este archivo conserva el trabajo de Alan (BD1) y el seguimiento de BD2. Sustituye el uso

@@ -4,6 +4,9 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
   if (
     url.origin === self.location.origin && (
+      (event.request.method === 'GET' && /^\/api\/staff\/housekeeping\/rooms(?:\/[^/]+)?\/?$/.test(url.pathname)) ||
+      (event.request.method === 'POST' && /^\/api\/staff\/housekeeping\/rooms\/[^/]+\/tracking\/?$/.test(url.pathname)) ||
+      (event.request.method === 'PUT' && /^\/api\/staff\/housekeeping\/rooms\/[^/]+\/(?:status|dnd)\/?$/.test(url.pathname)) ||
       (['GET', 'PUT'].includes(event.request.method) && /^\/api\/staff\/reservations\/[^/]+\/stays\/[^/]+\/room-assignment\/?$/.test(url.pathname)) ||
       (event.request.method === 'GET' && /^\/api\/staff\/(?:reservations(?:\/[^/]+)?|rooms|room-types)\/?$/.test(url.pathname)) ||
       (event.request.method === 'POST' && /^\/api\/staff\/(?:rooms|room-types)\/?$/.test(url.pathname)) ||

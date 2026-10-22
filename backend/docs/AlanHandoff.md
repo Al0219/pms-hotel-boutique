@@ -1,3 +1,104 @@
+## Housekeeping — cierre manual y publicación autorizada (2026-10-21)
+
+- **Estado:** EN_QA → COMPLETADA. José confirmó que probó Housekeeping y está
+  bien; autoriza commit y push de `feature/staff-housekeeping-real`.
+- **Permisos:** conservar la implementación aprobada con OPERATIONS_MANAGE y
+  property scope. No se añade acceso de Recepción ni se modifica la matriz
+  global de roles. Superadmin probado; Gerencia/Operaciones conservan el acceso
+  previsto en C2. No se interpreta la confirmación como un nuevo permiso.
+- **Evidencia:** Backend verify879 PASS y verify final focalizado26 PASS;
+  Web1863 casos verificados entre la suite y la repetición del archivo con
+  timeout, build/typecheck/lint PASS. QA integrado3001:17 comprobaciones PASS.
+  Se reutiliza esta evidencia sin atribuir nuevas ejecuciones ni CI remoto.
+- **Siguiente:** commit/push de esta rama y revisión del próximo alcance privado.
+  No merge ni cambios funcionales adicionales en este cierre; base y datos
+  locales conservados. Los registros EN_QA siguientes son históricos.
+
+## Housekeeping — actualización local3001 y QA integrado (2026-10-21)
+
+- **Estado:** EN_QA. José autorizó reconstruir el entorno habitual y probar
+  el flujo integrado con cuentas existentes. No autorizó publicación ni merge.
+- **Despliegue local:** imágenes Backend/Web reconstruidas con Dockerfiles
+  existentes; mocks=false y puerto3001. Compose up --no-build --wait PASS;
+  Backend/Web/PostgreSQL saludables. Mismo contenedor/volumen PostgreSQL;
+  copia pg_dump previa guardada fuera del repo. Preview aislada3101 detenida.
+- **QA real positivo:** Inicio/catálogo/detalle/checkout Guest/confirmación;
+  pago SIMULATED y ATS disminuye exactamente1. Recepción accede por formulario,
+  encuentra la reserva pública y asigna habitación física; Habitaciones muestra
+  la ocupación reservada para la fecha elegida; Calendario y reporte on-books
+  consultan datos reales. Logout vuelve a Inicio. Recepción→HK403, sin ampliar permisos.
+- **Conservación:**24 Rooms/6 RoomTypes/2 Properties/28 migraciones y cuentas
+  previas conservadas. QA añadió1 Reservation,1 Stay,1 GuestProfile y1 recibo;
+  no GuestAccount nueva ni reservas duplicadas al repetir verificaciones.
+- **Bloqueo de cuenta resuelto:** José autorizó expresamente crear qa_staff
+  local mediante StaffBootstrapConfiguration. Contenedor one-off con la imagen
+  existente, sin reiniciar el stack ni modificar .env/Compose. Cuenta SUPER_ADMIN
+  ACTIVE,1 membership y1 STAFF_BOOTSTRAP_CREATED; contraseña codificada por el
+  PasswordEncoder existente. Contenedor temporal retirado y eliminado tras el alta;
+  valores de bootstrap usados solo en ese proceso, sin credenciales versionadas.
+  Recepción conserva su rol; StaffUsers pasa de1 a2 por el alta autorizada.
+- **QA integrado final:**17 comprobaciones PASS en navegador contra3001, cero
+  excepciones JS/5xx. Incluye login Superadmin por formulario, PROPERTY concreta,
+  seguimiento/limpieza/inspección, DND independiente, reload y logout/guard.
+  Habitación201 final INSPECTED/DNDfalse,5 eventos HK con actor Admin esperado.
+  ATS no cambia por limpieza/DND. Se reutilizó la reserva QA existente:2 reservas
+  totales y1 recibo de QA, sin nuevas cuentas Guest ni reservas duplicadas.
+  Creación/ATS-1 constan en ejecución anterior. Scripts/resultados/recibo/captura/
+  backup en temporal pms-housekeeping-local3001-qa, fuera del repo.
+- **Siguiente:** usuario prueba el entorno3001 y confirma QA manual antes de
+  COMPLETADA. Autorizar el QA/alta no se interpreta como PASS manual ni publicación.
+  Sin cambios funcionales adicionales, migraciones, secretos versionados,
+  commit, push ni merge.
+
+## Housekeeping Staff real — implementación y validación (2026-10-21)
+
+- **Estado:** EN_QA; José aprobó contrato51 y su implementación frontend y
+  backend. Rama `feature/staff-housekeeping-real`, base main `8e1abbe`.
+- **Entrega:** cinco operaciones Staff/BFF por PROPERTY, tablero con filtros y
+  detalle, seguimiento explícito, ciclo de limpieza con motivo y DND independiente.
+  Reutiliza HousekeepingService, tablas y permisos C2; no agrega migraciones.
+- **Seguridad:** sesión Staff vigente, OPERATIONS_MANAGE y scope antes de consultar;
+  actor del servidor, auditoría atómica, bloqueo de Room y versión UTC exacta.
+  Conflicto/replay devuelve409; sin retries ciegos ni cambios a inventario/reservas.
+- **Backend:** `./mvnw -B verify`, 879 pruebas PASS/BUILD SUCCESS. Después del último
+  ajuste de nulabilidad de OpenAPI, verify focalizado de
+  StaffHousekeepingIntegrationTests y OpenApiContractIntegrationTests:26 PASS.
+  No se atribuyen los879 a esa segunda invocación. Java21/PostgreSQL17 aislado;
+  logs, reports, OpenAPI y JAR en backend/target/housekeeping-* ignorados.
+- **Web:** suite306 archivos/1863 casos:1862 PASS y1 timeout5s en checkout existente;
+  archivo repetido íntegro25 PASS, mismo timeout y fuentes intactas. Todos los
+  casos verificados entre dos ejecuciones, sin atribuir1863 PASS a una sola.
+  Build producción (mocks=false), typecheck y lint PASS. Sin cambiar CI/tests
+  para ocultar errores. La ejecución Windows anterior fue interrumpida por
+  lentitud y la primera Linux paralela tuvo timeouts; no se cuentan como PASS.
+- **Navegador/BD:** Chrome contra BFF/API/PG reales aislados:9 comprobaciones PASS,
+  escritorio/móvil sin overflow, reload, ciclo/motivo/DND, replay409, logout y
+  Recepción denegada; sin excepciones JS. Habitación101 final DIRTY/DNDfalse;
+  6 eventos HK con actor Staff esperado, sin evento adicional por replay.
+  Capturas/logs/resultados en el directorio temporal pms-housekeeping-browser-qa.
+  Primer intento previo a health UP devolvió503 sin escrituras; repetido tras UP.
+- **Siguiente/límites:** QA manual del usuario según Web64; no COMPLETADA aún.
+  El stack habitual3001 y su BD se conservaron sin reconstruir/modificar;
+  preview aislada3101 con datos desechables. No se atribuye CI remoto, publicación
+  ni PASS manual. Sin migraciones, dependencias nuevas, secretos, commit o push.
+
+## Housekeeping Staff real — contrato preparado (2026-10-21)
+
+- José autoriza frontend y backend del módulo. Rama aislada
+  `feature/staff-housekeeping-real`, main `8e1abbe`; working tree inicial limpio.
+- Inspección: HousekeepingService/HkRoomState, ciclo DIRTY/CLEAN/INSPECTED y DND,
+  actor/audit existentes; UI provisional y pms.test. No existe contrato HTTP
+  aprobado; la matriz de permisos operativos sigue propuesta para Housekeeping.
+- Contrato51 PROPOSED: rutas/DTO/BFF, OPERATIONS_MANAGE, PROPERTY, actor de sesión,
+  seguimiento explícito, transiciones/motivo, DND, concurrencia y pruebas.
+  Sin duplicar servicios ni asumir que Sin seguimiento es un estado persistido.
+- Evidencia: baseline Web `npm run test -- src/modules/housekeeping
+  --maxWorkers=1 --reporter=dot`, 11 archivos/40 pruebas PASS; enlaces del
+  contrato y `git diff --check` PASS. No se atribuye validación HTTP/Backend
+  ni QA manual a una integración todavía no implementada.
+- Siguiente: aprobar contrato y ejecutar el incremento. No hay cambios Java/UI,
+  migraciones, secretos, commit, push ni merge.
+
 ## Juan / publicación de correcciones H1–H4 vía PR (2026-10-08)
 
 - **Autorización:** usuario solicita actualizar la rama, publicarla y entregar
