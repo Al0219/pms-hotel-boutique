@@ -83,10 +83,25 @@ public class OpenApiConfiguration {
             } else if (handler.getBeanType().equals(PublicAvailabilityController.class)) {
                 operation.addExtension("x-audience", "public");
                 operation.setSecurity(List.of());
-            } else if (packageName.contains(".modules.inventory.") || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.reservations.api.StaffReservationController.class)) {
+            } else if (packageName.contains(".modules.inventory.") || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.reservations.api.StaffReservationController.class)
+                    || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.operations.api.StaffHousekeepingController.class)) {
                 operation.addExtension("x-audience", "staff");
             }
             return operation;
+        };
+    }
+
+    @Bean
+    OpenApiCustomizer staffHousekeepingNullability() {
+        return api -> {
+            var room = api.getComponents().getSchemas().get("StaffHousekeepingRoom");
+            if (room == null) return;
+            // A nullable type alone is insufficient: enum must also permit JSON null.
+            Schema<Object> status = new Schema<>();
+            status.setTypes(Set.of("string", "null"));
+            status.setEnum(java.util.Arrays.asList("DIRTY", "CLEAN", "INSPECTED", null));
+            status.setDescription("Cleaning state; null for an untracked physical room.");
+            room.getProperties().put("status", status);
         };
     }
 }

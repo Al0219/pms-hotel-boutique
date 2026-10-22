@@ -23,6 +23,8 @@ public interface HousekeepingService {
 
     HkRoomView markDirty(UUID propertyId, UUID roomId, UUID actorId);
 
+    HkRoomView markDirty(UUID propertyId, UUID roomId, String reason, UUID actorId);
+
     HkRoomView inspect(UUID propertyId, UUID roomId, UUID actorId);
 
     HkRoomView rejectInspection(UUID propertyId, UUID roomId, String reason, UUID actorId);

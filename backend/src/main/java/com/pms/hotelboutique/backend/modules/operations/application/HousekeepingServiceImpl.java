@@ -50,6 +50,12 @@ public class HousekeepingServiceImpl implements HousekeepingService {
     }
 
     @Override
+    public HkRoomView markDirty(UUID propertyId, UUID roomId, String reason, UUID actorId) {
+        if (reason == null || reason.isBlank()) throw new HousekeepingException("reason is required");
+        return transition(propertyId, roomId, actorId, "HK_SOILED", reason.trim(), (state, now) -> state.markDirty(now));
+    }
+
+    @Override
     public HkRoomView inspect(UUID propertyId, UUID roomId, UUID actorId) {
         return transition(propertyId, roomId, actorId, "HK_INSPECTED", (state, now) -> state.inspect(now));
     }
@@ -78,7 +84,11 @@ public class HousekeepingServiceImpl implements HousekeepingService {
         state.setDnd(dnd, Instant.now());
         state.recordActor(actorId);
         if (before != dnd) {
-            record(state, "HK_DND_CHANGED", null, dnd ? "DND on" : "DND off", actorId);
+            audit.record(new AuditService.RecordAuditCommand(actorId == null
+                    ? ReservationAuditEvent.ActorType.SYSTEM : ReservationAuditEvent.ActorType.STAFF,
+                    actorId, "HK_DND_CHANGED", "HK_ROOM_STATE", state.getId(), propertyId,
+                    "{\"dnd\":" + before + "}", "{\"dnd\":" + dnd + "}",
+                    dnd ? "DND on" : "DND off", null));
         }
         return HkRoomView.from(state);
     }
@@ -92,6 +102,11 @@ public class HousekeepingServiceImpl implements HousekeepingService {
 
     private HkRoomView transition(UUID propertyId, UUID roomId, UUID actorId, String action,
             HkTransition transition) {
+        return transition(propertyId, roomId, actorId, action, null, transition);
+    }
+
+    private HkRoomView transition(UUID propertyId, UUID roomId, UUID actorId, String action,
+            String reason, HkTransition transition) {
         HkRoomState state = existing(propertyId, roomId);
         HkRoomState.Status before = state.getStatus();
         try {
@@ -100,7 +115,7 @@ public class HousekeepingServiceImpl implements HousekeepingService {
             throw new HousekeepingException(e.getMessage(), e);
         }
         state.recordActor(actorId);
-        record(state, action, before, null, actorId);
+        record(state, action, before, reason, actorId);
         return HkRoomView.from(state);
     }
 

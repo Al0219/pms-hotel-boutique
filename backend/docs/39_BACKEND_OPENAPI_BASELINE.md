@@ -362,3 +362,17 @@ física PASS confirmado por Alan el 2026-10-08. Se conserva la evidencia de Open
 anterior; en este cierre documental no se regeneró ni modificó el contrato.
 Estados operativos, availability pública y default Demo son correcciones Web y no
 añaden operaciones, schemas ni enums Backend al baseline.
+
+## Incremento Housekeeping Staff — 2026-10-21
+
+Contrato [51](51_STAFF_HOUSEKEEPING_CONTRACT.md) aprobado. Añade cinco operaciones
+del controller StaffHousekeepingController: GET colección/detalle, POST tracking,
+PUT status y PUT dnd bajo `/api/v1/properties/{propertyId}/housekeeping/rooms`.
+Audiencia staff y bearerAuth, OPERATIONS_MANAGE y PROPERTY revalidados; parámetros
+UUID, cuerpos JSON cerrados y errores400/401/403/404/409 según operación.
+Schemas StaffHousekeepingBoard/StaffHousekeepingRoom y requests específicos;
+estado/DND/fecha nulos en habitaciones sin seguimiento. El enum nullable de
+status incluye JSON null, no solo type:null. UTC y token exacto de concurrencia;
+respuestas private,no-store. Ninguna exclusión nueva. Cobertura por pruebas
+estructurales globales y StaffHousekeepingIntegrationTests; evidencia/estado
+final se registran en AlanHandoff y la guía Web64.

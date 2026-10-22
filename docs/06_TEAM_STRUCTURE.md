@@ -199,6 +199,16 @@ Cambio significativo:
 
 ## Reparto vigente — 2026-10-03
 
+### Ampliación autorizada — 2026-10-21
+
+José asume la integración **frontend y backend de Housekeeping**, autorizada
+por el usuario después de la revisión del área privada. Contrato específico:
+`backend/docs/51_STAFF_HOUSEKEEPING_CONTRACT.md`; rama
+`feature/staff-housekeeping-real`. Juan aporta revisión del dominio operativo y
+Alan de seguridad/scope/BFF. Se reutilizan sus servicios y contratos existentes;
+esto no reasigna otros módulos ni autoriza comenzar el siguiente incremento.
+El reparto siguiente conserva su vigencia fuera de este alcance.
+
 El usuario confirma que José deja la implementación Backend y pasa al Frontend.
 Alan / BD1 y Juan / BD3 continúan el Backend, incluidos los pendientes de BD2.
 El reparto específico de esos pendientes debe acordarse entre ambos; documento

@@ -5,6 +5,8 @@
  */
 
 export { HousekeepingBoard } from "./components/housekeeping-board";
+export { StaffHousekeepingPage } from './components/staff-housekeeping-page';
+export { mapStaffHousekeepingBoard, mapStaffHousekeepingRoom } from './mappers/staff-housekeeping.mapper';
 export type { HousekeepingDiscrepancy, DiscrepancyKind } from "./model/housekeeping-discrepancy";
 export type { RoomCleaning, RoomCleaningStatus } from "./model/room-cleaning";
 export type { CleaningTransitionResult, DiscrepancyResolution } from "./model/room-cleaning-transition";
