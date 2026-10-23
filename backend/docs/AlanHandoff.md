@@ -1,3 +1,43 @@
+## Asignación Staff — bloqueo de DIRTY y validación Web (2026-10-23)
+
+José aprueba bloquear la preasignación de Room DIRTY y destacar el motivo en
+Reservas. Revisión de contratos50/52 y decisión aprobada; rama
+`fix/staff-room-assignment-dirty-guard` desde c4e5109. Origin/main aa831b8 tiene
+el mismo árbol de base; no merge/rebase. QA manual PASS confirmado por José;
+estado EN_QA hasta terminar el gate Web general. Commit/push autorizados.
+
+Backend conserva la candidata DIRTY con selectable=false/reason; PUT relee estado
+escalar después del lock Room compartido con HK y devuelve409 sin asignación ni
+audit parcial. CLEAN/sin seguimiento conservan preasignación; INSPECTED sigue
+siendo obligatorio para check-in. BFF/mapper y UI preservan el motivo, destacado
+en rojo con texto explícito. No nuevas APIs, permisos, migraciones o dependencias.
+
+./mvnw -B verify BUILD SUCCESS: 950 pruebas/107 reportes, 0 fallos/errores/omitidas,
+Java21.0.9/PostgreSQL17.11 aislados. Incluye 19 pruebas Staff de lectura/asignación,
+preview obsoleta y escritor HK concurrente con snapshot JPA previo; OpenAPI17 PASS.
+Java no cambió después de ese verify. JAR SHA256:
+0ef0c18ee95029b90b78a8ee529a1880cb32cbfbabcdbb5320b08f4b0aabee9c.
+
+Web: 22/22 focalizadas PASS en la ejecución inicial; última repetición 21/22 y
+recorrido real 0/1 por timeout5s de los casos N stays. Ambos fallan también en
+HEAD c4e5109 (baseline5/7), sin relación con un rechazo DIRTY. Casos nuevos PASS.
+Comparación adicional: el carrito original agota5s en una copia exacta de
+origin/main aa831b8 y en la rama. Gate Web general no aprobado; mantener EN_QA.
+Los resultados de barridos con experimentos temporales no certifican el árbol
+final: se restauran todos los cambios públicos, de formato y de tests ajenos.
+Solo queda la corrección DIRTY y espera/consulta semántica del calendario de su
+recorrido existente, preservando todas las assertions y límites. Sin exclusiones,
+tests deshabilitados o cambios al workflow. Evidencia fuera de Git.
+Últimos lint/typecheck Linux PASS sobre el árbol final.
+
+Se conservan contenedores, imágenes y PostgreSQL habituales del hotel3001; QA
+aislado, sin datos sintéticos en esa base. Build Web Linux anterior PASS vigente:
+no cambios de runtime posteriores. Dependencias verificadas contra package/lock,
+sin cambios a Docker/Compose. Publicación autorizada; PR/checks GitHub pendientes.
+Web/Backend restaurados con sus mismas imágenes; tres servicios saludables,
+Inicio/Reservas HTTP200 y checksum del JAR activo idéntico al verify950.
+La aprobación manual no se atribuye a casos individuales ni cierra el QA separado53.
+
 ## Check-in/checkout Staff — QA manual aprobado y publicación (2026-10-22)
 
 José confirma QA manual PASS y autoriza commit/push del Backend54 y la Web

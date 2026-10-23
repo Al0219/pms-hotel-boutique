@@ -8,6 +8,8 @@
 .room small { display: block; line-height: 1.5; margin-top: 4px; }
 .selected { border-color: #5a6b5d; background: #f4f6f4; box-shadow: 0 0 0 1px #5a6b5d; }
 .blocked { background: #f6f6f3; cursor: default; color: #737971; }
+.blockedReason { color: #9f1239; font-weight: 600; }
+.warning { color: #854d0e; }
 .badge { background: #e8ece7; border-radius: 8px; padding: 4px 6px; font-size: 11px; white-space: nowrap; }
 .primary, .secondary { border-radius: 12px; min-height: 44px; padding: 10px 16px; font: inherit; cursor: pointer; }
 .primary { background: #5a6b5d; border: 1px solid #5a6b5d; color: white; }

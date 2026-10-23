@@ -14,6 +14,7 @@ import tools.jackson.databind.ObjectMapper;
 @Service
 @Transactional
 public class StaffRoomAssignmentService {
+    private static final String DIRTY_REASON = "Habitación sucia: debe limpiarse antes de asignarla a una reserva.";
     private final StaffReservationReadService reads;
     private final ReservationStayRepository stays;
     private final RoomRepository rooms;
@@ -48,8 +49,10 @@ public class StaffRoomAssignmentService {
                 .map(r -> {
                     var status = cleaningByRoom.get(r.getId());
                     boolean inspected = status == com.pms.hotelboutique.backend.modules.operations.domain.HkRoomState.Status.INSPECTED;
-                    return new Candidate(r.getId(), r.getCode(), null, "ACTIVE", true, null, status, inspected,
-                            inspected ? null : "Limpieza pendiente de inspección. Puedes preasignar; no entregar al huésped hasta que esté inspeccionada.");
+                    boolean dirty = status == com.pms.hotelboutique.backend.modules.operations.domain.HkRoomState.Status.DIRTY;
+                    return new Candidate(r.getId(), r.getCode(), null, "ACTIVE", !dirty, dirty ? DIRTY_REASON : null, status, inspected,
+                            inspected ? null : dirty ? "Requiere limpieza antes de asignar e inspección antes del check-in."
+                                    : "Limpieza pendiente de inspección. Puedes preasignar; no entregar al huésped hasta que esté inspeccionada.");
                 }).toList() : List.<Candidate>of();
         return new Preview(property, reservation, stayId, stay.getArrival(), stay.getDeparture(), type.getId(),
                 type.getName(), eligible, eligible ? null : "La estadía ya está asignada o no admite asignación inicial.", candidates);
@@ -62,6 +65,9 @@ public class StaffRoomAssignmentService {
         // Shared physical-room lock serializes competing assignment commands.
         var room = rooms.lockInProperty(scope, property, roomId).orElseThrow(() -> new ReservationQueryException("Room not found"));
         if (!room.getRoomTypeId().equals(stay.getRoomTypeId()) || !available(scope, stay, room)) throw new Conflict();
+        // Scalar query sees the committed cleaning status after waiting for the shared Room lock.
+        if (cleaning.findStatusByPropertyIdAndRoomId(property, roomId).orElse(null)
+                == com.pms.hotelboutique.backend.modules.operations.domain.HkRoomState.Status.DIRTY) throw new Conflict();
         stay.assignRoom(roomId, Instant.now());
         audit.record(new AuditService.RecordAuditCommand(ReservationAuditEvent.ActorType.STAFF,
                 principal.staffUserId(), "RESERVATION_STAY_ROOM_ASSIGNED", "RESERVATION_STAY", stayId, property,
@@ -90,7 +96,8 @@ public class StaffRoomAssignmentService {
     @io.swagger.v3.oas.annotations.media.Schema(name = "StaffRoomAssignmentCandidate")
     public record Candidate(UUID room_id, String number, @io.swagger.v3.oas.annotations.media.Schema(types = {"string", "null"}) String floor,
             @io.swagger.v3.oas.annotations.media.Schema(allowableValues = {"ACTIVE"}, description = "No unreleased OOO/OOS overlapping the stay") String operational_status,
-            boolean selectable, @io.swagger.v3.oas.annotations.media.Schema(types = {"string", "null"}) String reason,
+            @io.swagger.v3.oas.annotations.media.Schema(description = "False for DIRTY rooms, which remain visible with a blocking reason.") boolean selectable,
+            @io.swagger.v3.oas.annotations.media.Schema(types = {"string", "null"}, description = "Blocking assignment reason; non-empty for DIRTY rooms.") String reason,
             @io.swagger.v3.oas.annotations.media.Schema(types = {"string", "null"}, description = "Current cleaning status; null means no tracking. Not a forecast for arrival.")
             com.pms.hotelboutique.backend.modules.operations.domain.HkRoomState.Status housekeeping_status,
             @io.swagger.v3.oas.annotations.media.Schema(description = "Current cleaning readiness only. True iff INSPECTED; check-in revalidates under lock.") boolean ready_for_check_in,

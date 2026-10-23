@@ -8,6 +8,7 @@ import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
+import java.util.concurrent.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +35,8 @@ class StaffReservationReadIntegrationTests {
     @Autowired StaffJwtService jwt;
     @Autowired GuestJwtService guestJwt;
     @Autowired EntityManager entityManager;
+    @Autowired com.pms.hotelboutique.backend.modules.operations.application.HousekeepingService housekeeping;
+    @Autowired com.pms.hotelboutique.backend.modules.operations.infrastructure.persistence.HkRoomStateRepository cleaning;
     private UUID property, otherProperty, reservation, type;
     private StaffPrincipal reception;
 
@@ -187,16 +190,83 @@ class StaffReservationReadIntegrationTests {
         assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM reservation_audit_events WHERE entity_id=?", Integer.class, stay));
     }
 
-    @Test void dirtyRoomCanBePreassignedWithWarningWithoutCheckingIn() throws Exception {
+    @Test void dirtyRoomRemainsVisibleButCannotBeAssignedOrAudited() throws Exception {
         UUID stay = firstStay(), room = insertRoom(property, type);
         jdbc.update("INSERT INTO hk_room_states(id,property_id,room_id,status,dnd,created_at,updated_at) VALUES (?,?,?,'DIRTY',false,now(),now())", UUID.randomUUID(), property, room);
         mvc.perform(get(assignmentRoute(stay)).param("propertyId", property.toString()).header("Authorization", bearer(reception)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.rooms[0].housekeeping_status").value("DIRTY"))
-                .andExpect(jsonPath("$.rooms[0].ready_for_check_in").value(false)).andExpect(jsonPath("$.rooms[0].selectable").value(true))
+                .andExpect(jsonPath("$.rooms[0].ready_for_check_in").value(false)).andExpect(jsonPath("$.rooms[0].selectable").value(false))
+                .andExpect(jsonPath("$.rooms[0].reason").value(org.hamcrest.Matchers.containsString("Habitación sucia")))
                 .andExpect(jsonPath("$.rooms[0].warning").isNotEmpty());
-        mvc.perform(assign(stay, room)).andExpect(status().isOk());
+        mvc.perform(assign(stay, room)).andExpect(status().isConflict());
+        assertNull(jdbc.queryForObject("SELECT room_id FROM reservation_stays WHERE id=?", UUID.class, stay));
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM reservation_audit_events WHERE entity_id=?", Integer.class, stay));
         assertEquals("RESERVED", jdbc.queryForObject("SELECT status FROM reservation_stays WHERE id=?", String.class, stay));
         assertEquals("DIRTY", jdbc.queryForObject("SELECT status FROM hk_room_states WHERE room_id=?", String.class, room));
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"CLEAN", "INSPECTED"})
+    void nonDirtyRoomCanBeAssignedWithoutChangingCleaningOrCheckingIn(String status) throws Exception {
+        UUID stay = firstStay(), room = insertRoom(property, type);
+        jdbc.update("INSERT INTO hk_room_states(id,property_id,room_id,status,dnd,created_at,updated_at) VALUES (?,?,?,?,true,now(),now())", UUID.randomUUID(), property, room, status);
+        mvc.perform(get(assignmentRoute(stay)).param("propertyId", property.toString()).header("Authorization", bearer(reception)))
+                .andExpect(jsonPath("$.rooms[0].selectable").value(true))
+                .andExpect(jsonPath("$.rooms[0].reason").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.rooms[0].ready_for_check_in").value(status.equals("INSPECTED")));
+        mvc.perform(assign(stay, room)).andExpect(status().isOk());
+        assertEquals("RESERVED", jdbc.queryForObject("SELECT status FROM reservation_stays WHERE id=?", String.class, stay));
+        assertEquals(status, jdbc.queryForObject("SELECT status FROM hk_room_states WHERE room_id=?", String.class, room));
+        assertEquals(true, jdbc.queryForObject("SELECT dnd FROM hk_room_states WHERE room_id=?", Boolean.class, room));
+    }
+
+    @Test void revalidatesDirtyRoomAfterAnEarlierSelectablePreview() throws Exception {
+        UUID stay = firstStay(), room = insertRoom(property, type);
+        jdbc.update("INSERT INTO hk_room_states(id,property_id,room_id,status,dnd,created_at,updated_at) VALUES (?,?,?,'CLEAN',false,now(),now())", UUID.randomUUID(), property, room);
+        mvc.perform(get(assignmentRoute(stay)).param("propertyId", property.toString()).header("Authorization", bearer(reception)))
+                .andExpect(jsonPath("$.rooms[0].selectable").value(true));
+        jdbc.update("UPDATE hk_room_states SET status='DIRTY' WHERE room_id=?", room);
+        mvc.perform(assign(stay, room)).andExpect(status().isConflict());
+        assertNull(jdbc.queryForObject("SELECT room_id FROM reservation_stays WHERE id=?", UUID.class, stay));
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM reservation_audit_events WHERE entity_id=?", Integer.class, stay));
+    }
+
+    @Test
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
+    void assignmentWaitsForHousekeepingAndRejectsTheStaleCleanSnapshot() throws Exception {
+        UUID stay = firstStay(), room = insertRoom(property, type);
+        jdbc.update("INSERT INTO hk_room_states(id,property_id,room_id,status,dnd,created_at,updated_at) VALUES (?,?,?,'CLEAN',false,now(),now())", UUID.randomUUID(), property, room);
+        var loaded = new CountDownLatch(1); var writerHolding = new CountDownLatch(1);
+        var attempt = new CountDownLatch(1); var release = new CountDownLatch(1);
+        var pool = Executors.newFixedThreadPool(2);
+        try {
+            var assignment = pool.submit(() -> {
+                try {
+                    new org.springframework.transaction.support.TransactionTemplate(transactionManager).executeWithoutResult(tx -> {
+                        assertEquals("CLEAN", cleaning.findByPropertyIdAndRoomId(property, room).orElseThrow().getStatus().name());
+                        loaded.countDown(); await(writerHolding); attempt.countDown();
+                        assignmentService.assign(reception, property, reservation, stay, room);
+                    });
+                    return true;
+                } catch (com.pms.hotelboutique.backend.modules.reservations.application.StaffRoomAssignmentService.Conflict expected) { return false; }
+            });
+            var writer = pool.submit(() -> new org.springframework.transaction.support.TransactionTemplate(transactionManager).executeWithoutResult(tx -> {
+                await(loaded); housekeeping.markDirty(property, room, "Cleaning issue before assignment", null);
+                entityManager.flush(); writerHolding.countDown(); await(release);
+            }));
+            assertTrue(attempt.await(20, TimeUnit.SECONDS));
+            assertThrows(TimeoutException.class, () -> assignment.get(250, TimeUnit.MILLISECONDS));
+            release.countDown(); writer.get(20, TimeUnit.SECONDS);
+            assertFalse(assignment.get(20, TimeUnit.SECONDS));
+            assertNull(jdbc.queryForObject("SELECT room_id FROM reservation_stays WHERE id=?", UUID.class, stay));
+            assertEquals("DIRTY", jdbc.queryForObject("SELECT status FROM hk_room_states WHERE room_id=?", String.class, room));
+            assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM reservation_audit_events WHERE entity_id=?", Integer.class, stay));
+        } finally { release.countDown(); pool.shutdownNow(); assertTrue(pool.awaitTermination(20, TimeUnit.SECONDS)); }
+    }
+
+    private static void await(CountDownLatch latch) {
+        try { assertTrue(latch.await(20, TimeUnit.SECONDS)); }
+        catch (InterruptedException error) { Thread.currentThread().interrupt(); throw new AssertionError(error); }
     }
 
     @Test

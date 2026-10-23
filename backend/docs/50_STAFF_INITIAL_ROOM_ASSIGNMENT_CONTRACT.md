@@ -2,6 +2,15 @@
 
 Ampliación aprobada: [contrato52](52_ROOM_READINESS_CONTRACT.md) distingue
 preasignación de entrega y agrega limpieza/advertencia a las candidatas.
+Revisión aprobada por José el 2026-10-23: una Room DIRTY se muestra con
+`selectable=false` y motivo, pero no puede asignarse, tampoco para fechas futuras.
+El PUT relee la limpieza después de bloquear Room y devuelve409 sin asignación
+ni auditoría de asignación si está DIRTY. No cambia asignaciones existentes,
+ATS ni la exigencia INSPECTED para check-in. Implementación de esta revisión
+EN_QA; verify Backend950 PASS, casos nuevos Web PASS y build PASS.
+QA manual de esta revisión PASS confirmado por José; gate Web general pendiente
+por timeouts de recorridos previos reproducidos en la base. Evidencia y límites
+en AlanHandoff. El cierre histórico siguiente corresponde al contrato anterior.
 
 Estado: **COMPLETADA**; QA manual de asignación física PASS confirmado por Alan
 el 2026-10-08, con cierre documental autorizado. Incremento autorizado expresamente por Alan el 2026-10-08:
@@ -29,9 +38,12 @@ PUT cuerpo exacto `{ "room_id": "UUID de habitación candidata" }`.
 200 `{property_id,reservation_id,stay_id,room_id,number}`.
 GET200 `{property_id,reservation_id,stay_id,arrival,departure,room_type_id,
 room_type,can_assign,reason,rooms}`; cada room contiene
-`{room_id,number,floor:null,operational_status:"ACTIVE",selectable:true,reason:null}`.
-Las candidatas incluyen solo habitaciones disponibles, de la misma property y
-RoomType. floor no tiene fuente y permanece null. ACTIVE aquí expresa ausencia
+`{room_id,number,floor:null,operational_status:"ACTIVE",selectable,reason}`,
+además de los campos de limpieza de contrato52. DIRTY implica selectable=false
+y reason no vacío; las demás candidatas mantienen selectable=true y reason=null.
+Las candidatas incluyen solo habitaciones sin conflicto físico, de la misma
+property y RoomType; la limpieza puede impedir su selección. floor no tiene
+fuente y permanece null. ACTIVE aquí expresa ausencia
 de bloqueo durante ese período, no limpieza, ocupación actual ni estado persistido
 nuevo. Lista vacía válida. Stay no elegible: can_assign=false, reason y rooms=[].
 El esquema generado usa nombres StaffRoomAssignmentPreview/Candidate/Result
@@ -44,7 +56,7 @@ de finanzas/fechas/tarifas/estados. No consume ATS una segunda vez.
 Errores:400 parámetros/cuerpo inválidos o extras;401 Staff ausente/inválido/revocado
 (incluido Guest);403 permiso/property no autorizado;404 stay fuera de reserva,
 reserva/stay/room fuera de property o inexistentes;409 stay no elegible, asignado,
-tipo distinto, habitación ocupada o OOO/OOS superpuesto. Sin PII ni errores upstream
+tipo distinto, habitación ocupada, DIRTY u OOO/OOS superpuesto. Sin PII ni errores upstream
 en respuestas BFF. Todas las respuestas BFF y datos Backend private,no-store.
 
 ## Consistencia, concurrencia e historial
@@ -53,6 +65,9 @@ Un comando transaccional bloquea la stay y después la Room con PESSIMISTIC_WRIT
 Revalida después del lock de Room: ninguna stay RESERVED/IN_HOUSE de padre no
 CANCELLED con arrival < departure solicitada y departure > arrival solicitada.
 También excluye registros OOO **y OOS**, no liberados, con el mismo solapamiento.
+Después del lock se consulta el estado escalar de limpieza de property/Room,
+sin confiar en la preview ni en una entidad JPA cacheada. Los escritores HK usan
+el mismo lock Room; si ganan el bloqueo y dejan DIRTY, se rechaza la asignación.
 Una salida exactamente en la llegada siguiente se permite; bloqueos liberados o
 fuera del período no impiden asignación. Consultar ATS no certifica Room física.
 
@@ -75,6 +90,21 @@ detalle para verificar estado. La regla room=null de este incremento sustituye
 el replay de éxito del escenario mock, que permanece aislado en tests históricos.
 
 ## Web y guía de QA manual
+
+### Revisión DIRTY — guía de QA (2026-10-23)
+
+José confirma que funciona y aprueba QA manual PASS de esta revisión. No se
+atribuye ejecución individual de cada escenario siguiente; gate Web general pendiente.
+
+1. Abrir Asignar habitación en una estadía sin Room. Una candidata sucia sin
+   otros conflictos debe seguir visible, radio deshabilitado y motivo rojo
+   «No asignable: Habitación sucia…». Si todas están sucias, no se puede confirmar.
+2. Cambiarla a CLEAN desde Housekeeping y refrescar candidatas: se permite
+   preasignar, conservando advertencia de inspección. No equivale a check-in.
+3. Abrir la preview mientras está CLEAN y marcarla DIRTY en otra sesión antes
+   de confirmar: PUT409, sin asignación ni audit de asignación, preview actualizada.
+4. Confirmar regresión con INSPECTED/sin seguimiento, permiso/scope y otras stays.
+   No modificar asignaciones existentes ni tratar la limpieza como ocupación/ATS.
 
 El detalle real usa BFF con ambos valores del flag mock; el worker excluye GET/PUT
 reales antes de MSW. Mantiene Service → DTO → Mapper → Domain → Hook → UI.

@@ -1,5 +1,36 @@
 # AlanPlan — Seguimiento Backend
 
+## Asignación Staff — rechazar habitaciones sucias (2026-10-23)
+
+- **Estado:** EN_QA; QA manual PASS confirmado por José. Gate Web general no
+  aprobado; no se declara CI PASS. Rama `fix/staff-room-assignment-dirty-guard`,
+  base c4e5109; origin/main aa831b8 tiene el mismo árbol, sin merge/rebase.
+  Owner José; coordinación colaborativa Juan/Alan, sin cambios de permisos.
+- **Alcance:** contratos50/52 y decisión aprobada; DIRTY visible/no seleccionable,
+  relectura escalar bajo lock Room al asignar y motivo rojo en Reservas. BFF/mapper
+  estrictos; CLEAN/sin seguimiento conservan preasignación, check-in exige
+  INSPECTED. Sin cambios a ATS, asignaciones históricas, migraciones o dependencias.
+- **Backend:** ./mvnw -B verify BUILD SUCCESS, 950 pruebas/107 reportes, sin fallos,
+  errores u omitidas, Java21/PostgreSQL17 aislados. Incluye 19 pruebas de
+  lectura/asignación con concurrencia HK y 17 OpenAPI. Código Java sin cambios
+  posteriores a esa validación.
+- **Web:** ejecución anterior 22/22 PASS; última repetición 21/22 y recorrido real
+  0/1 por timeout5s de los dos casos N stays ya reproducidos en HEAD c4e5109.
+  Nuevos casos DIRTY PASS. El carrito original también agota5s en una copia
+  exacta de origin/main aa831b8 y en la rama. No certificar la suite general.
+  Experimentos públicos/de rendimiento restaurados; se conserva solo el alcance
+  DIRTY y sincronización/consulta de filas del calendario en su prueba existente.
+  Sin quitar assertions, aumentar límites, excluir tests o modificar CI.
+- **Checks finales:** lint/typecheck Linux PASS. Build Web anterior PASS vigente
+  sobre el mismo código de runtime; QA manual del cambio PASS.
+- **Entorno:** QA aislado, sin datos de prueba en PostgreSQL del hotel. Se conservan
+  los contenedores habituales y la imagen/JAR ya validados; no cambios de runtime
+  posteriores al build PASS. Evidencia temporal fuera de Git.
+  Restaurados los tres servicios saludables en3001; Inicio/Reservas HTTP200.
+- **Siguiente:** revisar PR/checks de GitHub; commit/push expresamente autorizados
+  por José. El gate Web pendiente conserva EN_QA; sin merge.
+  No se atribuyen escenarios manuales individuales no enumerados.
+
 ## Check-in/checkout Staff — QA manual aprobado y publicación (2026-10-22)
 
 - José confirma QA manual PASS del incremento y autoriza commit/push en

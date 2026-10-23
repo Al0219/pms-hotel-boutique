@@ -476,6 +476,8 @@ class OpenApiContractIntegrationTests {
             assertTrue(op.path("responses").path("200").path("headers").has("Cache-Control"));
         }
         assertSuccessSchema(operation(doc, route, "get"), "200", "StaffRoomAssignmentPreview");
+        assertTrue(operation(doc, route, "get").path("description").asText().contains("DIRTY rooms remain visible but are not selectable"));
+        assertTrue(operation(doc, route, "put").path("description").asText().contains("rejecting DIRTY rooms"));
         assertSuccessSchema(operation(doc, route, "put"), "200", "StaffRoomAssignmentResult");
         assertTrue(operation(doc, route, "put").path("responses").has("409"));
         var schemas = doc.path("components").path("schemas");

@@ -1,5 +1,12 @@
 # 39 — Baseline OpenAPI/Swagger Backend
 
+## Revisión de asignación por limpieza (2026-10-23)
+
+Contratos50/52: candidata DIRTY visible con selectable=false y reason no vacío;
+PUT409 si la limpieza actual es DIRTY después del lock Room. OpenAPI describe
+esta condición en GET/PUT y esquema Candidate, sin nuevas rutas ni campos.
+Validación del incremento en AlanHandoff.
+
 ## Evolución Staff lifecycle (2026-10-22)
 
 [Contrato54](54_STAFF_STAY_LIFECYCLE_CONTRACT.md) agrega POST

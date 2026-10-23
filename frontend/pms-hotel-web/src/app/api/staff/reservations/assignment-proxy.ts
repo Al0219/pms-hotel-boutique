@@ -55,14 +55,17 @@ export async function proxyRoomAssignment(request: NextRequest, reservationId: s
     const ids = new Set<string>();
     const rooms = r.rooms.map(value => {
       const room = object(value), id = uuid(room.room_id);
-      if (!r.can_assign || room.operational_status !== 'ACTIVE' || room.selectable !== true || ids.has(id)) throw new Error('INVALID_CANDIDATE');
+      if (!r.can_assign || room.operational_status !== 'ACTIVE' || typeof room.selectable !== 'boolean' || ids.has(id)) throw new Error('INVALID_CANDIDATE');
       if (!(room.housekeeping_status === null || ['DIRTY', 'CLEAN', 'INSPECTED'].includes(String(room.housekeeping_status)))
         || typeof room.ready_for_check_in !== 'boolean' || room.ready_for_check_in !== (room.housekeeping_status === 'INSPECTED'))
         throw new Error('INVALID_CLEANING');
       if (room.ready_for_check_in && room.warning !== null) throw new Error('INVALID_CLEANING_WARNING');
+      const dirty = room.housekeeping_status === 'DIRTY';
+      if (room.selectable !== !dirty || (!dirty && room.reason !== null)) throw new Error('INVALID_CANDIDATE');
+      const reason = dirty ? text(room.reason) : null;
       const warning = room.ready_for_check_in ? null : text(room.warning);
       ids.add(id);
-      return { room_id: id, number: text(room.number), floor: null, operational_status: 'ACTIVE', selectable: true, reason: null,
+      return { room_id: id, number: text(room.number), floor: null, operational_status: 'ACTIVE', selectable: room.selectable, reason,
         housekeeping_status: room.housekeeping_status, ready_for_check_in: room.ready_for_check_in, warning };
     });
     return NextResponse.json({ ...scope, arrival: r.arrival, departure: r.departure, room_type_id: uuid(r.room_type_id),

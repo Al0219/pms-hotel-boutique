@@ -435,3 +435,17 @@ Un checkout rechazado conserva la estancia y su limpieza; uno válido no cobra,
 devuelve dinero ni cierra folios. El PSP real deja de ser dependencia de este
 incremento, sin eliminar el control financiero ni las reglas de seguridad/scope.
 Esta decisión no implementa las APIs ni modifica el estado QA de otros incrementos.
+
+### Asignación Staff — bloqueo por habitación sucia
+
+**Fecha:** 2026-10-23. **Status:** APPROVED por José mediante solicitud explícita.
+Sustituye únicamente la regla de contrato52 que permitía preasignar una Room
+DIRTY. La candidata sigue visible con motivo destacado y no seleccionable;
+Backend rechaza la asignación si el estado actual es DIRTY, incluso para fechas
+futuras. Revalida bajo el lock Room compartido con Housekeeping, sin confiar en
+la preview ni en caché JPA. No genera asignación ni su audit si se rechaza.
+
+CLEAN y ausencia de seguimiento conservan las reglas previas de preasignación;
+INSPECTED sigue siendo obligatorio para check-in. No cambia ATS, OOO/OOS,
+permisos, propiedad, estados de reserva ni asignaciones previamente guardadas.
+Contrato y QA de esta revisión en contratos Backend50/52 y AlanPlan/AlanHandoff.
