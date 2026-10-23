@@ -33,6 +33,45 @@ beforeEach(() => { vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'true'); resetRoomAssi
 afterEach(() => { cleanup(); clients.splice(0).forEach(client => client.clear()); vi.unstubAllEnvs(); resetRoomAssignments(); resetStaffCreatedReservations(); resetStaffRoomCatalog(); });
 
 describe('Staff initial room assignment UI', () => {
+  it('keeps dirty rooms visible with the blocking reason and only permits a clean candidate', async () => {
+    const input = { propertyId, reservationId: 'qa-reservation', stayId: 'qa-stay', sessionId: 'staff-qa', allowed: true, onClose: vi.fn(), onAssigned: vi.fn() };
+    const reason = 'Habitación sucia: debe limpiarse antes de asignarla a una reserva.';
+    mockServer.use(http.get(path, () => HttpResponse.json({
+      property_id: propertyId, reservation_id: input.reservationId, stay_id: input.stayId,
+      arrival: '2026-11-10', departure: '2026-11-12', room_type_id: 'type', room_type: 'Estándar', can_assign: true, reason: null,
+      rooms: [{ room_id: 'ROOM-101', number: '101', floor: null, operational_status: 'ACTIVE', selectable: false, reason,
+        housekeeping_status: 'DIRTY', ready_for_check_in: false, warning: 'Requiere limpieza antes de asignar.' },
+      { room_id: 'ROOM-102', number: '102', floor: null, operational_status: 'ACTIVE', selectable: true, reason: null,
+        housekeeping_status: 'CLEAN', ready_for_check_in: false, warning: 'Pendiente de inspección para check-in.' }],
+    })), http.put(path, async ({ request }) => {
+      expect(await request.json()).toEqual({ room_id: 'ROOM-102' });
+      return HttpResponse.json({ property_id: propertyId, reservation_id: input.reservationId, stay_id: input.stayId, room_id: 'ROOM-102', number: '102' });
+    }));
+    mount(<RoomAssignment {...input} />);
+    expect(await screen.findByRole('radio', { name: /Habitación 101/ })).toBeDisabled();
+    expect(screen.getByText(`No asignable: ${reason}`)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Confirmar asignación' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('radio', { name: /Habitación 102/ }));
+    expect(screen.getByRole('button', { name: 'Confirmar asignación' })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar asignación' }));
+    await waitFor(() => expect(input.onAssigned).toHaveBeenCalledWith(expect.objectContaining({ roomId: 'ROOM-102' })));
+  });
+
+  it('keeps confirmation disabled when all rooms are dirty', async () => {
+    const input = { propertyId, reservationId: 'qa-reservation', stayId: 'qa-stay', sessionId: 'staff-qa', allowed: true, onClose: vi.fn(), onAssigned: vi.fn() };
+    mockServer.use(http.get(path, () => HttpResponse.json({
+      property_id: propertyId, reservation_id: input.reservationId, stay_id: input.stayId,
+      arrival: '2026-11-10', departure: '2026-11-12', room_type_id: 'type', room_type: 'Estándar', can_assign: true, reason: null,
+      rooms: [{ room_id: 'ROOM-101', number: '101', floor: null, operational_status: 'ACTIVE', selectable: false,
+        reason: 'Habitación sucia: requiere limpieza.', housekeeping_status: 'DIRTY', ready_for_check_in: false, warning: 'Pendiente de limpieza.' }],
+    })));
+    mount(<RoomAssignment {...input} />);
+    expect(await screen.findByRole('radio', { name: /Habitación 101/ })).toBeDisabled();
+    expect(screen.getByText('No hay habitaciones que cumplan las condiciones de asignación para estas fechas.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Confirmar asignación' })).toBeDisabled();
+    expect(input.onAssigned).not.toHaveBeenCalled();
+  });
+
   it('assigns N stays separately and updates the detail without confirming the pending reservation', async () => {
     const detail = await booking(2);
     mount(<ReservationDetail propertyId={propertyId} endpoint={endpoint} reservationId={detail.reservation_id} sessionId="staff-qa" canManage />);

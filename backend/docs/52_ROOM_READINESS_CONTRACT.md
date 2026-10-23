@@ -2,23 +2,30 @@
 
 Ampliación posterior aprobada: [contrato53](53_CHECKOUT_HOUSEKEEPING_CONTRACT.md)
 integra checkout interno → DIRTY. Los límites siguientes describen el incremento52;
-no atribuyen al sistema una API/UI Staff de check-in o checkout.
+el contrato54 incorpora después API/UI Staff de check-in y checkout.
+Revisión aprobada por José el 2026-10-23: DIRTY bloquea también la preasignación
+de contrato50, con motivo visible destacado. Sustituye la autorización anterior
+de preasignar habitaciones sucias; implementación de la revisión EN_QA. Backend
+verify950 PASS, casos nuevos Web PASS y build PASS; QA manual nuevo PASS
+confirmado por José. Gate Web general pendiente por timeouts de recorridos
+previos reproducidos en la base, según evidencia y límites en AlanHandoff.
 
 Estado: APPROVED, implementación COMPLETADA; validación técnica y QA manual
-propio PASS, confirmado expresamente por José. José aprobó separar preasignación
+propio PASS del incremento original, confirmado expresamente por José. José aprobó separar preasignación
 de entrega/check-in el 2026-10-21. Incremento posterior a Housekeeping51; owner
 José frontend/backend, coordinación Juan Reservas y Alan seguridad/BFF.
 
 ## Decisión y límites
 
 - Asignar Room a una stay RESERVED sigue siendo una preasignación, no entrega
-  ni check-in. Puede hacerse para una reserva futura aunque hoy esté DIRTY,
-  CLEAN o sin seguimiento, con advertencia. No se pronostica limpieza futura.
+  ni check-in. DIRTY bloquea asignar incluso para una reserva futura. CLEAN o sin
+  seguimiento mantienen la preasignación con advertencia de inspección pendiente.
+  No se pronostica limpieza futura ni se modifica una asignación ya existente.
 - Entregar mediante el servicio checkIn exige Room asignada y seguimiento
   INSPECTED actual de esa misma propiedad. DIRTY, CLEAN y ausencia de seguimiento
   rechazan la transición sin cambiar la stay. DND no sustituye la limpieza.
-- La UI actual no ofrece check-in real; se protege el servicio interno existente,
-  sin inventar una API ni un botón de entrega. Preasignar hoy tampoco hace check-in.
+- La entrega se valida por el servicio existente y la frontera Staff de contrato54.
+  Preasignar hoy tampoco hace check-in.
 - Ocupación, limpieza y ACTIVE/OOO/OOS siguen independientes. No altera ATS,
   tarifas, reservas públicas ni genera limpieza automática tras check-out.
 
@@ -32,8 +39,9 @@ globalmente ni se otorga permiso de escritura a Recepción.
 
 La preview de contrato50 agrega a cada candidata `housekeeping_status`
 (DIRTY/CLEAN/INSPECTED/null), `ready_for_check_in` (true solo INSPECTED) y
-`warning` (texto si no está lista, null si inspeccionada). La selección permanece
-regida por tipo, scope, conflictos y OOO/OOS existentes. Ninguna preview autoriza
+`warning` (texto si no está lista, null si inspeccionada). DIRTY se conserva en la
+lista con selectable=false y reason no vacío. La selección también conserva
+tipo, scope, conflictos y OOO/OOS existentes. Ninguna preview autoriza
 un check-in posterior: siempre se relee la limpieza al ejecutar checkIn.
 
 Tablero: columna/filtro de limpieza actual, sin seguimiento distinto de lectura
@@ -43,12 +51,14 @@ La preview y el BFF validan/proyectan los nuevos campos; errores saneados/no-sto
 
 ## Consistencia y QA
 
-Check-in bloquea stay y Room antes de leer la condición; los escritores HK usan
+Asignación y check-in bloquean stay y Room antes de leer la condición; los escritores HK usan
 el mismo bloqueo Room. Se valida el estado vigente después de esperar el lock,
 incluido cuando el contexto JPA había leído antes. Sin migraciones ni dependencias.
 
 Probar Recepción GET200/POST-PUT403, scope/permisos vigentes, tablero/filtros,
-error/refetch sin verde falso, candidata DIRTY preasignable con aviso,
+error/refetch sin verde falso, candidata DIRTY visible/deshabilitada con motivo,
+PUT DIRTY409 sin asignación/audit y relectura tras preview o espera del lock,
 checkIn sin Room/sin seguimiento/DIRTY/CLEAN rechazado, INSPECTED permitido,
 relectura y concurrencia con limpieza. Regresión HK, Reservas, Comercial y
-OpenAPI; typecheck/lint/build Web. QA manual PASS de José confirmado para este incremento.
+OpenAPI; typecheck/lint/build Web. José confirma QA manual PASS de la revisión del
+2026-10-23, separado del PASS histórico del incremento original. Gate Web general pendiente.
