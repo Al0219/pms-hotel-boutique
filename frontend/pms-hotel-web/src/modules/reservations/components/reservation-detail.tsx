@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import Link from 'next/link';
 
 import { HttpNetworkError } from "@/lib/http/errors";
@@ -12,6 +12,8 @@ import { reservationStatusLabels, visibleReservationStatus, type ReservationVisi
 import { ReservationCancellation } from "./reservation-cancellation";
 import { ReservationNoShow } from "./reservation-no-show";
 import { RoomAssignment } from './room-assignment';
+import { StayLifecycleActions } from './stay-lifecycle-actions';
+import { staffReservationsEndpoint } from '../service/staff-reservation-read.service';
 
 import styles from "./reservation-detail.module.css";
 
@@ -92,7 +94,8 @@ function StayBlock({
   onRoomMove,
   onExtend,
   onAssign,
-}: Readonly<{ stay: ReservationStayDetail; singleRoom: boolean; onRoomMove?: () => void; onExtend?: () => void; onAssign?: () => void }>) {
+  lifecycle,
+}: Readonly<{ stay: ReservationStayDetail; singleRoom: boolean; onRoomMove?: () => void; onExtend?: () => void; onAssign?: () => void; lifecycle?: ReactNode }>) {
   const moveable = stay.roomId !== null && onRoomMove !== undefined && ACTIVE_TRAVEL_STATES.has(stay.travelState);
   const extensible = onExtend !== undefined && ACTIVE_TRAVEL_STATES.has(stay.travelState);
 
@@ -117,6 +120,7 @@ function StayBlock({
         </button>
       ) : null}
       </div>
+      {lifecycle}
     </div>
   );
 }
@@ -183,6 +187,9 @@ export function ReservationDetail({ propertyId, endpoint, reservationId, session
   const assignable = detail.status === "CONFIRMED" || detail.status === "PENDING";
   const cancellable = !detail.readOnly && (detail.status === "CONFIRMED" || detail.status === "PENDING");
   const noShowPending = !detail.readOnly && detail.status === "NO_SHOW_PENDING";
+  const lifecycle = (stay: ReservationStayDetail) => endpoint === staffReservationsEndpoint && canManage && sessionId && stay.updatedAt
+    ? <StayLifecycleActions key={`${sessionId}:${propertyId}:${reservationId}:${stay.id}`} propertyId={propertyId}
+      reservationId={reservationId} sessionId={sessionId} stay={stay} reservationConfirmed={detail.status === 'CONFIRMED'} /> : undefined;
 
   return (
     <div className={styles.page}>
@@ -283,10 +290,10 @@ export function ReservationDetail({ propertyId, endpoint, reservationId, session
               <dt>{singleRoom ? "Habitación" : "Habitaciones"}</dt>
               <dd>
                 {detail.stays.length === 0 ? <p>Sin estadías registradas.</p> : <StayBlock stay={detail.stays[0]} singleRoom={singleRoom} onRoomMove={detail.readOnly ? undefined : () => setMovingRoom(detail.stays[0].id)} onExtend={detail.readOnly ? undefined : () => setExtending(detail.stays[0].id)}
-                  onAssign={canManage && sessionId && assignable ? () => setAssigning(detail.stays[0].id) : undefined} />}
+                  lifecycle={lifecycle(detail.stays[0])} onAssign={canManage && sessionId && assignable ? () => setAssigning(detail.stays[0].id) : undefined} />}
                 {detail.stays.slice(1).map((stay) => (
                   <StayBlock key={stay.id} stay={stay} singleRoom={false} onRoomMove={detail.readOnly ? undefined : () => setMovingRoom(stay.id)} onExtend={detail.readOnly ? undefined : () => setExtending(stay.id)}
-                    onAssign={canManage && sessionId && assignable ? () => setAssigning(stay.id) : undefined} />
+                    lifecycle={lifecycle(stay)} onAssign={canManage && sessionId && assignable ? () => setAssigning(stay.id) : undefined} />
                 ))}
               </dd>
             </div>

@@ -4,6 +4,7 @@ import { staffReservationFixture } from '../staff-reservation.fixture';
 import { mapStaffReservationCenter, mapStaffReservationDetail } from '../mappers/staff-reservation.mapper';
 import { ReservationCenter } from './reservation-center';
 import { ReservationDetail } from './reservation-detail';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const mocks = vi.hoisted(() => ({ list: vi.fn(), detail: vi.fn() }));
 vi.mock('../hooks/use-reservation-center', () => ({ useReservationCenter: mocks.list }));
@@ -27,7 +28,7 @@ describe('existing Staff UI with real read data', () => {
   });
   it('shows real stays and responsibility while hiding unsupported details and mutations', () => {
     const dto = staffReservationFixture();
-    render(<ReservationDetail propertyId={dto.propertyId} reservationId={dto.reservationId} endpoint="/api/staff/reservations" sessionId="staff" canManage />);
+    render(<QueryClientProvider client={new QueryClient()}><ReservationDetail propertyId={dto.propertyId} reservationId={dto.reservationId} endpoint="/api/staff/reservations" sessionId="staff" canManage /></QueryClientProvider>);
     expect(screen.getByRole('heading', { name: `Reserva ${dto.confirmationCode}` })).toBeInTheDocument();
     expect(screen.getByText(dto.reservationId)).toBeInTheDocument();
     expect(screen.getByText('Responsable de la reserva')).toBeInTheDocument();

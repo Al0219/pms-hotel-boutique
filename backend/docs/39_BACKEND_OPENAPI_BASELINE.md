@@ -1,5 +1,20 @@
 # 39 — Baseline OpenAPI/Swagger Backend
 
+## Evolución Staff lifecycle (2026-10-22)
+
+[Contrato54](54_STAFF_STAY_LIFECYCLE_CONTRACT.md) agrega POST
+`/api/v1/reservations/{reservationId}/stays/{stayId}/check-in` y `/check-out`, con
+PROPERTY explícito, Bearer Staff/RESERVATION_MANAGE e Idempotency-Key. Request
+StaffStayLifecycleRequest, respuesta StaffStayLifecycleResult, errores ProblemDetail
+con code seguro para409. GET Staff agrega updatedAt por stay, sin datos financieros.
+OpenApiContractIntegrationTests valida estos contratos y la paridad completa con
+mappings; no se agregan exclusiones. Documento generado real:53 operaciones,
+42 paths,63 schemas y13 tags. OpenAPI17 PASS y verify completo946 PASS, sin
+failures/errors/skipped, BUILD SUCCESS/JAR. Primer full detectó content-type */*
+en el nuevo200; se corrigieron anotaciones a application/json y problem+json,
+conservando la prueba. Evidencia y límites en AlanHandoff; integración BFF/UI y
+QA manual aprobado en [Web66](../../frontend/pms-hotel-web/docs/66_STAFF_STAY_LIFECYCLE_QA.md).
+
 **Incremento:** BE-005-OPENAPI-01. **Fecha:** 2026-10-05.
 **Rama/base:** `chore/backend-openapi-contract-baseline`, HEAD `8cb2811`;
 árbol limpio al iniciar. Mantenimiento autorizado por el usuario; estado EN_QA

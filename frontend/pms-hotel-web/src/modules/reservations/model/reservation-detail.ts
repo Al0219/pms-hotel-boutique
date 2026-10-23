@@ -16,6 +16,8 @@ export interface ReservationStayDetail {
   checkOut: Date;
   nights: number;
   travelState: StayTravelState;
+  /** Exact Backend concurrency token; absent for the separate legacy/mock contract. */
+  updatedAt?: string;
 }
 
 export interface ReservationGuestSummary {

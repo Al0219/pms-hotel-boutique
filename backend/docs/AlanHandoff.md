@@ -1,3 +1,151 @@
+## Check-in/checkout Staff — QA manual aprobado y publicación (2026-10-22)
+
+José confirma QA manual PASS y autoriza commit/push del Backend54 y la Web
+dependiente en `feature/staff-stay-lifecycle-web`, sin merge a main. Esta entrada
+actualiza los pendientes de QA manual/publicación de las entregas siguientes;
+no cierra retroactivamente el QA separado del contrato53 ni certifica escenarios
+individuales no detallados por José. Backend946 y lint/typecheck/build Web PASS
+siguen vigentes. Gate Web general y checks de GitHub pendientes; conservar los
+timeouts de baseline y React418 público documentados, sin declarar CI PASS.
+
+## Check-in/checkout Staff — entrega Web para QA (2026-10-22)
+
+- **Estado:** EN_PROGRESO; funcionalidad implementada/validada, cierre general y
+  QA manual de José pendientes. Rama feature/staff-stay-lifecycle-web, conserva
+  Backend EN_QA; sin commit/push/merge ni cambios de migraciones/dependencias.
+- **Entrega:** botones por stay en el detalle real, confirmación accesible,
+  expectativas congeladas al abrir, versión sin redondear, cookie Staff/Origin,
+  propiedad explícita y códigos409 saneados. No habilita acciones provisionales.
+  Reintento incierto conserva clave/cuerpo, incluso cerrando y reabriendo diálogo
+  mientras siga montado. Refresca reserva/lista/stays, asignación, ocupación y HK.
+- **Validación:** lint/typecheck/build PASS.50 archivos Web340/341 PASS,52 nuevas
+  PASS; timeout5s del listado reproduce en HEAD9abea00 (10/11 PASS). Timeout público
+  también reproduce en HEAD. Suites generales interrumpidas y no certificadas;
+  fixtures QueryClientProvider propios corregidos, assertions/límites intactos.
+  Backend946 PASS previo vigente, sin repetir Java para atribuirlo a la UI.
+- **Real:**17 comprobaciones funcionales en PostgreSQL aislado,0 respuestas5xx,
+  móvil390px. Corte deliberado de respuesta de checkout y recuperación idempotente;
+  un cargo/pago/entrada/salida en SQL, Room DIRTY conservando DND, fechas/cargos y
+  ATS correcto. Navegador global PARTIAL por React418 en Inicio con fechas/query,
+  reproducido en versión anterior y nueva; reporte FAIL original conservado.
+- **Entorno:**3001 actualizado tras recrear Backend/Web; verificación SHA256 del
+  JAR igual al946 PASS, ruta nueva sin sesión401, disponibilidad200/6 ofertas y3
+  servicios saludables. Hotel conserva2 properties/24 rooms/2 reservas/2 stays;
+  ninguna reserva o limpieza de QA en su base. Configuración/volumen preservados.
+  Contenedores/redes temporales retirados; volumen aislado de QA detenido.
+- **Siguiente:** QA manual propio en3001 con reserva pública nueva para hoy y Room
+  inspeccionada; gate Web general pendiente por timeouts previos. Web66 detalla
+  pasos/evidencia. No afirmar COMPLETADA ni CI PASS; reservas sin folio no verifican
+  saldo cero. Temporal pms-stay-lifecycle-web-qa fuera de Git conserva evidencia.
+
+## Check-in/checkout Staff — inicio Web (2026-10-22)
+
+José autoriza conectar BFF/botones del contrato54. Nueva rama
+feature/staff-stay-lifecycle-web desde9abea00 conserva el Backend EN_QA sin
+publicar; no merge/rebase ni cambios al XLSX. Alcance por ReservationStay,
+RESERVATION_MANAGE/property explícita, timestamp sin redondear, reintento con la
+misma clave/cuerpo, confirmación accesible y refresco de lecturas. Plan/QA en
+Web66; validación Web y QA manual pendientes, Backend946 PASS previo no los cubre.
+
+## Check-in/checkout Staff — entrega Backend EN_QA (2026-10-22)
+
+- **Estado:** EN_QA; implementación y validación técnica PASS, QA manual propio
+  pendiente. Rama feature/staff-stay-lifecycle, base9abea00; sin commit/push/merge.
+  Se conservan los acuerdos previos del contrato54 y decisión académica.
+- **Entrega:** POST check-in/checkout con Staff activo, RESERVATION_MANAGE,
+  scope SQL, expectativas de estado/Room/updatedAt y recibo local idempotente.
+  Auditoría de actor Staff y rollback de salida/limpieza; no datos financieros
+  expuestos. GET Staff agrega updatedAt. BFF actual sigue con su allowlist previa;
+  no se añaden botones ni se atribuye QA visual nuevo.
+- **Reglas:** check-in CONFIRMED y fecha local válida, Room inspeccionada y sin
+  conflicto/bloqueo. Otra stay IN_HOUSE bloquea entrega física aunque venciera su
+  salida prevista o se cancelara su padre; ATS permanece independiente. Checkout
+  requiere todos los folios verificables sin deuda positiva, sin compensar
+  créditos/monedas; salida anticipada conserva fechas/cargos, deja Room DIRTY.
+- **Finanzas:** nuevas reservas públicas registran CHARGE/PAYMENT simulado en
+  Folio existente, dentro del recibo/transacción públicos. Replays no repiten
+  efectos ni rellenan historia. Guard financiero por property+reserva compartido
+  con alta/postings/reversos/transiciones de FolioService; reservas independientes
+  conservan concurrencia. No PSP real, migraciones ni dependencias nuevas.
+- **Validación final:** ./mvnw -B verify946 PASS,107 reportes,0 failures/errors/
+  skipped, BUILD SUCCESS y JAR,16:42 min; Java21/PostgreSQL17 aislados.40 casos
+  nuevos prueban HTTP/SQL/auth/scope, integración pública completa, ATS, deuda,
+  no folio, créditos, rollback, doble acción, replay/revocación y carreras con
+  cargos/alta de folio. OpenAPI17 PASS; paridad53 operaciones/42 paths/63 schemas/
+  13 tags; content-types JSON/problem+json y precisión de updatedAt comprobados.
+- **Ejecuciones anteriores:** focalizada143:139 PASS,2 fallos y2 errores por
+  refresh que descartaba cambios propios del folio, guard demasiado amplio y
+  formato UUID de Swagger. Corregidos conservando assertions y timeouts.
+  Primer verify completo946:945 PASS/1 fallo propio de OpenAPI por content-type
+  */*; anotaciones corregidas, repetición íntegra PASS. Una ejecución intermedia
+  detenida para incluir ocupación IN_HOUSE vencida no se cuenta como finalizada.
+- **Evidencia:** backend/target/staff-lifecycle-* ignorado: logs/reports iniciales,
+  primer full y final separados, OpenAPI y JAR. Sin cambios al CI ni exclusiones.
+  Diff-check/revisión de alcance PASS; los cinco archivos nuevos son de la tarea.
+- **Conservación/siguiente:** QA temporal retirado, hotel3001 sin actualizar;
+  base de datos del usuario sin tocar. Reservas históricas sin folio siguen
+  bloqueadas, no se inventa saldo cero. QA manual53 sigue pendiente. Integración
+  BFF/botones Web como siguiente incremento autorizado por separado.
+
+## Check-in/checkout Staff — inicio Backend autorizado (2026-10-22)
+
+- José autoriza proseguir con Backend54 y vínculo de pago simulado al folio.
+  READY → EN_PROGRESO. Nueva feature/staff-stay-lifecycle desde9abea00, conservando
+  los acuerdos documentales sin publicar. Main f7c8f7d ya incorpora PR160 y su
+  árbol coincide; no se integran ramas ni se cambia el entorno habitual3001.
+- Alcance: POST check-in/checkout Staff con scope SQL, timestamp de concurrencia,
+  recibo idempotente y auditoría del actor; deuda por todos los folios de reserva,
+  guard compartido con escritores. CHARGE/PAYMENT de nuevas reservas simuladas
+  en la misma transacción/recibo existente; no backfill ni nuevas migraciones.
+- Bloqueos de recursos usan predicado de scope en subconsulta para no bloquear
+  la fila Property que el booking público protege con FOR SHARE. Orden común:
+  recibo local, guard financiero de propiedad, reserva, stay, Room.
+- Pruebas previstas: HTTP/PostgreSQL/OpenAPI, auth/scope, saldo/ausencia, rollback,
+  carrera con postings/alta de folio y reintentos; regresión completa Java21/PG17.
+  Sin resultado nuevo atribuido aún. QA manual53 sigue pendiente.
+- Siguiente: finalizar pruebas Backend; BFF/botones Web posteriores. Sin commit,
+  push, merge, nuevos proveedores, secretos ni pruebas sobre la BD del usuario.
+
+## Check-in/checkout Staff — alcance académico y saldo aprobados (2026-10-22)
+
+- José informa decisión del docente: pagos del área pública simulados; integración
+  bancaria/PSP real fuera del proyecto académico actual por tiempo de desarrollo.
+  Se conserva el adaptador existente, sin exigir un proveedor para este incremento.
+- Aprueba todas las reglas consultadas: deuda de cualquier folio de la reserva
+  bloquea cada salida, sin compensación entre folios/monedas; falta de folio o
+  información contable verificable también bloquea. No quedan esas decisiones
+  de negocio abiertas. Contrato54 y decisiones globales actualizados.
+- Pago simulado aprobado no acredita saldo contable cero. Booking actual no crea
+  movimientos de folio; deberá integrarse explícitamente esa fuente para mostrar
+  un checkout público válido, sin nuevo cobro, historial reescrito ni saldo UI.
+  La comprobación debe coordinarse con los escritores financieros existentes.
+- Rama documental docs/staff-stay-lifecycle-contract, base9abea00 conservada;
+  cambios solo documentales. Transporte sigue propuesto, código PENDIENTE,
+  QA manual53 pendiente; sin nuevo verify ni resultados API/CI atribuidos.
+- Siguiente: concretar implementación Backend del contrato54 y cobertura contable
+  del recorrido simulado. Sin commit/push/merge ni cambios al stack3001 en este acuerdo.
+
+## Check-in/checkout Staff — reglas aprobadas y contrato pendiente (2026-10-22)
+
+- José aprueba las reglas propuestas y exige bloquear checkout con saldo pendiente.
+  Contrato54 registra check-in de reserva CONFIRMED en fechas locales admitidas,
+  Room asignada/INSPECTED y validada, salida anticipada sin recalcular cargos,
+  auditoría Staff y checkout→DIRTY transaccional.
+- Rama nueva documental `docs/staff-stay-lifecycle-contract`, base9abea00;
+  ese commit ya coincide con origin/feature/staff-checkout-housekeeping.
+  Estado del contrato PENDIENTE, no declarar READY la integración HTTP.
+- Hallazgo: Folio permite vínculos por reserva/stay y saldo por movimientos;
+  booking público no genera CHARGE/PAYMENT. Falta decisión sobre deuda compartida
+  y falta de fuente contable. Propuesta consultada: cualquier deuda de la reserva
+  bloquea, sin compensar con otros folios; ausencia de fuente verificable bloquea.
+- Concurrencia financiera requiere coordinar también escritores/alta de folios;
+  no basta consultar saldo dentro del checkout. Reutilizar idempotencia local y
+  permisos vigentes, sin implementar ni ampliar acceso financiero por suposición.
+- Solo documentación; diff-check y revisión de consistencia PASS. No atribuir
+  pruebas nuevas a las APIs aún inexistentes;905 PASS es evidencia de contrato53.
+  QA manual53 sigue pendiente. Sin commit/push/merge ni despliegue3001 nuevos.
+- Siguiente: decisión financiera de José y cierre del contrato54 antes de código.
+
 ## Checkout → limpieza — publicación autorizada (2026-10-22)
 
 - José autoriza commit/push de `feature/staff-checkout-housekeeping` y después

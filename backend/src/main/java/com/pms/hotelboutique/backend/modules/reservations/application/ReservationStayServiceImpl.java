@@ -81,6 +81,16 @@ public class ReservationStayServiceImpl implements ReservationStayService {
 
     @Override
     public ReservationStayView checkIn(UUID stayId) {
+        return arrive(stayId, null, null);
+    }
+
+    @Override
+    public ReservationStayView checkInAsStaff(UUID stayId, UUID actorId, UUID operationId) {
+        requireStaffContext(actorId, operationId);
+        return arrive(stayId, actorId, operationId);
+    }
+
+    private ReservationStayView arrive(UUID stayId, UUID actorId, UUID operationId) {
         if (stayId == null) throw new ReservationStayException("stay id is required");
         var stay = stays.lockById(stayId).orElseThrow(() -> new ReservationStayException("reservation stay not found"));
         try {
@@ -90,24 +100,47 @@ public class ReservationStayServiceImpl implements ReservationStayService {
                 | IllegalStateException | IllegalArgumentException error) {
             throw new ReservationStayException("cannot check in: " + error.getMessage(), error);
         }
+        if (actorId != null) recordTravel(stay, "STAY_CHECKED_IN", "RESERVED", "IN_HOUSE", actorId, operationId);
         return view(stay);
     }
 
     @Override
     public ReservationStayView checkOut(UUID stayId) {
+        return depart(stayId, null, stayId);
+    }
+
+    @Override
+    public ReservationStayView checkOutAsStaff(UUID stayId, UUID actorId, UUID operationId) {
+        requireStaffContext(actorId, operationId);
+        return depart(stayId, actorId, operationId);
+    }
+
+    private ReservationStayView depart(UUID stayId, UUID actorId, UUID correlationId) {
         if (stayId == null) throw new ReservationStayException("stay id is required");
         var stay = stays.lockById(stayId).orElseThrow(() -> new ReservationStayException("reservation stay not found"));
         try {
             stay.checkOut(Instant.now());
-            if (stay.getRoomId() != null)
-                housekeeping.markDirtyAfterCheckout(stay.getPropertyId(), stay.getRoomId(), stayId);
+            if (stay.getRoomId() != null) {
+                if (actorId == null) housekeeping.markDirtyAfterCheckout(stay.getPropertyId(), stay.getRoomId(), stayId);
+                else housekeeping.markDirtyAfterCheckout(stay.getPropertyId(), stay.getRoomId(), stayId, actorId, correlationId);
+            }
         } catch (HousekeepingException | IllegalStateException | IllegalArgumentException error) {
             throw new ReservationStayException("cannot check out: " + error.getMessage(), error);
         }
-        audit.record(new AuditService.RecordAuditCommand(ReservationAuditEvent.ActorType.SYSTEM,
-                null, "STAY_CHECKED_OUT", "RESERVATION_STAY", stayId, stay.getPropertyId(),
-                "{\"status\":\"IN_HOUSE\"}", "{\"status\":\"CHECKED_OUT\"}", "Salida del huésped", stayId));
+        recordTravel(stay, "STAY_CHECKED_OUT", "IN_HOUSE", "CHECKED_OUT", actorId, correlationId);
         return view(stay);
+    }
+
+    private static void requireStaffContext(UUID actorId, UUID operationId) {
+        if (actorId == null || operationId == null) throw new ReservationStayException("Staff context is required");
+    }
+
+    private void recordTravel(ReservationStay stay, String action, String before, String after,
+            UUID actorId, UUID correlationId) {
+        audit.record(new AuditService.RecordAuditCommand(actorId == null ? ReservationAuditEvent.ActorType.SYSTEM
+                : ReservationAuditEvent.ActorType.STAFF, actorId, action, "RESERVATION_STAY", stay.getId(),
+                stay.getPropertyId(), "{\"status\":\"" + before + "\"}", "{\"status\":\"" + after + "\"}",
+                after.equals("CHECKED_OUT") ? "Salida del huésped" : "Entrada del huésped", correlationId));
     }
 
     @Override

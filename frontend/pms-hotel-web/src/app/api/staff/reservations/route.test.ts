@@ -19,6 +19,17 @@ function request(query = `propertyId=${fixture.propertyId}`, cookie = 'pms_staff
 }
 
 describe('Staff reservations BFF', () => {
+  it('preserves an exact stay version and rejects missing versions from an incompatible Backend', async () => {
+    const real = { ...fixture, stays: [{ stayId: '44444444-4444-4444-4444-444444444444',
+      arrival: '2026-11-01', departure: '2026-11-03', status: 'RESERVED', updatedAt: '2026-10-22T18:00:00.123456Z',
+      roomType: { roomTypeId: '55555555-5555-5555-5555-555555555555', code: 'DLX', name: 'Deluxe' }, room: null }] };
+    fetchMock.mockResolvedValueOnce(Response.json(real));
+    const response = await detailGET(request(), { params: Promise.resolve({ reservationId: real.reservationId }) });
+    expect(response.status).toBe(200);
+    expect((await response.json()).stays[0].updatedAt).toBe(real.stays[0].updatedAt);
+    fetchMock.mockResolvedValueOnce(Response.json({ ...real, stays: [{ ...real.stays[0], updatedAt: undefined }] }));
+    expect((await detailGET(request(), { params: Promise.resolve({ reservationId: real.reservationId }) })).status).toBe(503);
+  });
   it('uses only the Staff cookie, fixed target and no-store with an allowlisted response', async () => {
     fetchMock.mockResolvedValue(Response.json([{ ...fixture, accessToken: 'secret', responsibleGuest: { ...fixture.responsibleGuest, email: 'private' } }]));
     const response = await GET(request());

@@ -218,6 +218,14 @@ de checkout con limpieza DIRTY y auditoría; José integra con Reservas/HK exist
 en feature/staff-checkout-housekeeping. No incluye HTTP/UI de checkout ni cierre
 financiero y no reasigna el resto del lifecycle.
 
+Contrato54, autorizado después del acuerdo de reglas el2026-10-22: José implementa
+Backend de check-in/checkout Staff y el vínculo contable del pago público simulado,
+reutilizando Reservas/Folio/HK y seguridad de Juan/Alan. Rama
+feature/staff-stay-lifecycle; sin proveedor real, nuevas facultades ni reasignación
+de los demás módulos. José integra después BFF/botones Web en
+feature/staff-stay-lifecycle-web y confirma QA manual PASS; evidencia y límites
+del gate Web en [Web66](../frontend/pms-hotel-web/docs/66_STAFF_STAY_LIFECYCLE_QA.md).
+
 El usuario confirma que José deja la implementación Backend y pasa al Frontend.
 Alan / BD1 y Juan / BD3 continúan el Backend, incluidos los pendientes de BD2.
 El reparto específico de esos pendientes debe acordarse entre ambos; documento

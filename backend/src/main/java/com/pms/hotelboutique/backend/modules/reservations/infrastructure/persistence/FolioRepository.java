@@ -11,6 +11,8 @@ public interface FolioRepository extends JpaRepository<Folio, UUID> {
 
     List<Folio> findByReservation_Id(UUID reservationId);
 
+    List<Folio> findByReservation_IdAndPropertyId(UUID reservationId, UUID propertyId);
+
     List<Folio> findByGroupId(UUID groupId);
 
     /**

@@ -57,7 +57,7 @@ public class OpenApiConfiguration {
     OpenApiCustomizer staffReservationNullability() {
         return api -> {
             var schemas = api.getComponents().getSchemas();
-            for (String name : List.of("StaffReservation", "StaffStay", "StaffRoomType", "StaffRoom", "ResponsibleGuestView", "StaffRoomAssignmentPreview", "StaffRoomAssignmentCandidate", "StaffRoomAssignmentResult")) {
+            for (String name : List.of("StaffReservation", "StaffStay", "StaffRoomType", "StaffRoom", "ResponsibleGuestView", "StaffRoomAssignmentPreview", "StaffRoomAssignmentCandidate", "StaffRoomAssignmentResult", "StaffStayLifecycleResult")) {
                 var schema = schemas.get(name);
                 if (schema != null) schema.setRequired(new java.util.ArrayList<>(schema.getProperties().keySet()));
             }

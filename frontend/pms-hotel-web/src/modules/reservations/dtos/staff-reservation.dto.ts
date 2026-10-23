@@ -11,6 +11,7 @@ export interface StaffReservationDto {
   responsibleGuest: { profileId: string; firstName: string; lastName: string } | null;
   stays: Array<{
     stayId: string;
+    updatedAt: string;
     arrival: string;
     departure: string;
     status: 'RESERVED' | 'IN_HOUSE' | 'CHECKED_OUT' | 'CANCELLED' | 'NO_SHOW';

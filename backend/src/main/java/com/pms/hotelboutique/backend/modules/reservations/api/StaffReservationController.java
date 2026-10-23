@@ -30,9 +30,72 @@ import org.springframework.web.bind.annotation.*;
 public class StaffReservationController {
     private final StaffReservationReadService reads;
     private final com.pms.hotelboutique.backend.modules.reservations.application.StaffRoomAssignmentService assignments;
+    private final com.pms.hotelboutique.backend.modules.reservations.application.StaffStayLifecycleService lifecycle;
     public StaffReservationController(StaffReservationReadService reads,
-            com.pms.hotelboutique.backend.modules.reservations.application.StaffRoomAssignmentService assignments) {
-        this.reads = reads; this.assignments = assignments;
+            com.pms.hotelboutique.backend.modules.reservations.application.StaffRoomAssignmentService assignments,
+            com.pms.hotelboutique.backend.modules.reservations.application.StaffStayLifecycleService lifecycle) {
+        this.reads = reads; this.assignments = assignments; this.lifecycle = lifecycle;
+    }
+
+    @Schema(name = "StaffStayLifecycleRequest", additionalProperties = Schema.AdditionalPropertiesValue.FALSE)
+    public record TransitionRequest(
+            @jakarta.validation.constraints.NotNull
+            @Schema(allowableValues = {"RESERVED", "IN_HOUSE"}) com.pms.hotelboutique.backend.modules.reservations.domain.ReservationStay.Status expectedStatus,
+            @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(min = 1, max = 40)
+            @Schema(type = "string", format = "date-time", description = "Exact persisted updatedAt in UTC, ending in Z") String expectedUpdatedAt,
+            @Schema(types = {"string", "null"}, format = "uuid", description = "Expected physical room; null for historical unassigned stays") String expectedRoomId) {
+        @com.fasterxml.jackson.annotation.JsonAnySetter
+        public void rejectUnknown(String key, Object value) { throw new IllegalArgumentException("Unknown lifecycle field"); }
+
+        com.pms.hotelboutique.backend.modules.reservations.application.StaffStayLifecycleService.Expectation expectation() {
+            try {
+                if (expectedUpdatedAt == null || !expectedUpdatedAt.endsWith("Z")) throw new IllegalArgumentException("UTC timestamp required");
+                return new com.pms.hotelboutique.backend.modules.reservations.application.StaffStayLifecycleService.Expectation(
+                        expectedStatus, java.time.Instant.parse(expectedUpdatedAt), expectedRoomId == null ? null : uuid(expectedRoomId));
+            } catch (java.time.DateTimeException e) { throw new IllegalArgumentException("Invalid UTC timestamp", e); }
+        }
+    }
+
+    @PostMapping("/{reservationId}/stays/{stayId}/check-in")
+    @Operation(operationId = "checkInStaffStay", summary = "Check in one confirmed reservation stay",
+            description = "Staff RESERVATION_MANAGE with live PROPERTY scope. CONFIRMED parent and RESERVED stay, local arrival <= today < departure, assigned INSPECTED room without overlapping occupancy or OOO/OOS. Revalidates under locks and records Staff audit. Idempotency-Key replays the original operation receipt.")
+    @ApiResponse(responseCode = "200", description = "Immutable completed operation; refresh detail for current state", content = @Content(mediaType = "application/json", schema = @Schema(implementation = com.pms.hotelboutique.backend.modules.reservations.application.StaffStayLifecycleService.Result.class)), headers = @Header(name = "Cache-Control", schema = @Schema(type = "string"), description = "private, no-store"))
+    @ApiResponse(responseCode = "404", description = "Reservation/stay/room absent inside property", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "409", description = "Stale state, invalid local dates, unconfirmed reservation, unavailable or uninspected room, or reused key with different payload", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    public ResponseEntity<com.pms.hotelboutique.backend.modules.reservations.application.StaffStayLifecycleService.Result> checkIn(
+            HttpServletRequest request, @RequestParam UUID propertyId,
+            @PathVariable @Parameter(schema = @Schema(type = "string", format = "uuid")) String reservationId,
+            @PathVariable @Parameter(schema = @Schema(type = "string", format = "uuid")) String stayId,
+            @RequestHeader("Idempotency-Key") @Parameter(description = "Opaque 8–128 character key; same Staff/property/action/payload replays original result", schema = @Schema(minLength = 8, maxLength = 128)) String key,
+            @jakarta.validation.Valid @RequestBody TransitionRequest body,
+            @Parameter(hidden = true) @AuthenticationPrincipal StaffPrincipal principal) {
+        validate(request);
+        return ResponseEntity.ok().header("Cache-Control", "private, no-store").body(lifecycle.checkIn(
+                principal, propertyId, uuid(reservationId), uuid(stayId), key, body.expectation()));
+    }
+
+    @PostMapping("/{reservationId}/stays/{stayId}/check-out")
+    @Operation(operationId = "checkOutStaffStay", summary = "Check out one stay only when every linked folio has a verifiable nonpositive balance",
+            description = "Staff RESERVATION_MANAGE with live PROPERTY scope. IN_HOUSE only; early departure preserves original dates and charges. Every reservation folio must have ledger entries and no positive balance; credits in other folios do not offset debt. No folio or empty ledger blocks checkout. Serializes with financial writers and atomically commits CHECKED_OUT, DIRTY and Staff audit. No payment, refund or folio closure. Idempotency-Key replays original receipt without repeating effects.")
+    @ApiResponse(responseCode = "200", description = "Immutable completed operation; refresh detail for current state", content = @Content(mediaType = "application/json", schema = @Schema(implementation = com.pms.hotelboutique.backend.modules.reservations.application.StaffStayLifecycleService.Result.class)), headers = @Header(name = "Cache-Control", schema = @Schema(type = "string"), description = "private, no-store"))
+    @ApiResponse(responseCode = "404", description = "Reservation or stay absent inside property", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "409", description = "Stale state, outstanding or unverifiable balance, or reused key with different payload; safe code in ProblemDetail", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    public ResponseEntity<com.pms.hotelboutique.backend.modules.reservations.application.StaffStayLifecycleService.Result> checkOut(
+            HttpServletRequest request, @RequestParam UUID propertyId,
+            @PathVariable @Parameter(schema = @Schema(type = "string", format = "uuid")) String reservationId,
+            @PathVariable @Parameter(schema = @Schema(type = "string", format = "uuid")) String stayId,
+            @RequestHeader("Idempotency-Key") @Parameter(description = "Opaque 8–128 character key; reuse exact request after uncertain transport", schema = @Schema(minLength = 8, maxLength = 128)) String key,
+            @jakarta.validation.Valid @RequestBody TransitionRequest body,
+            @Parameter(hidden = true) @AuthenticationPrincipal StaffPrincipal principal) {
+        validate(request);
+        return ResponseEntity.ok().header("Cache-Control", "private, no-store").body(lifecycle.checkOut(
+                principal, propertyId, uuid(reservationId), uuid(stayId), key, body.expectation()));
+    }
+
+    private static UUID uuid(String value) {
+        if (value == null || !value.matches("[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}"))
+            throw new IllegalArgumentException("UUID required");
+        return UUID.fromString(value);
     }
 
     @GetMapping("/{reservationId}/stays/{stayId}/room-assignment")

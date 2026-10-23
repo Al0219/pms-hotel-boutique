@@ -11,16 +11,45 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 @RestControllerAdvice(assignableTypes = StaffReservationController.class)
 public class StaffReservationExceptionHandler extends ResponseEntityExceptionHandler {
+    @ExceptionHandler(com.pms.hotelboutique.backend.modules.reservations.application.StaffStayLifecycleService.Conflict.class)
+    org.springframework.http.ResponseEntity<ProblemDetail> lifecycleConflict(
+            com.pms.hotelboutique.backend.modules.reservations.application.StaffStayLifecycleService.Conflict error) {
+        var problem = problem(HttpStatus.CONFLICT, "Stay operation unavailable");
+        problem.setProperty("code", error.code());
+        return org.springframework.http.ResponseEntity.status(409).header("Cache-Control", "private, no-store").body(problem);
+    }
+
+    @ExceptionHandler(com.pms.hotelboutique.backend.modules.reservations.application.LocalOperationConflictException.class)
+    org.springframework.http.ResponseEntity<ProblemDetail> keyConflict() {
+        var problem = problem(HttpStatus.CONFLICT, "Operation key reused");
+        problem.setProperty("code", "IDEMPOTENCY_KEY_REUSED");
+        return org.springframework.http.ResponseEntity.status(409).header("Cache-Control", "private, no-store").body(problem);
+    }
     @ExceptionHandler(com.pms.hotelboutique.backend.modules.reservations.application.StaffRoomAssignmentService.Conflict.class)
-    ProblemDetail conflict() { return problem(HttpStatus.CONFLICT, "Room assignment conflict"); }
+    org.springframework.http.ResponseEntity<ProblemDetail> conflict() { return response(HttpStatus.CONFLICT, "Room assignment conflict"); }
     @ExceptionHandler(ReservationQueryException.class)
-    ProblemDetail missing() { return problem(HttpStatus.NOT_FOUND, "Reservation not found"); }
+    org.springframework.http.ResponseEntity<ProblemDetail> missing() { return response(HttpStatus.NOT_FOUND, "Reservation not found"); }
     @ExceptionHandler(IllegalArgumentException.class)
-    ProblemDetail invalid() { return problem(HttpStatus.BAD_REQUEST, "Invalid reservation parameters"); }
+    org.springframework.http.ResponseEntity<ProblemDetail> invalid() { return response(HttpStatus.BAD_REQUEST, "Invalid reservation parameters"); }
     @ExceptionHandler(StaffAuthenticationException.class)
-    ProblemDetail unauthorized() { return problem(HttpStatus.UNAUTHORIZED, "Staff session required"); }
+    org.springframework.http.ResponseEntity<ProblemDetail> unauthorized() { return response(HttpStatus.UNAUTHORIZED, "Staff session required"); }
     @ExceptionHandler(AccessDeniedException.class)
-    ProblemDetail forbidden() { return problem(HttpStatus.FORBIDDEN, "Reservation access denied"); }
+    org.springframework.http.ResponseEntity<ProblemDetail> forbidden() { return response(HttpStatus.FORBIDDEN, "Reservation access denied"); }
+
+    @Override
+    protected org.springframework.http.ResponseEntity<Object> createResponseEntity(Object body,
+            org.springframework.http.HttpHeaders headers, org.springframework.http.HttpStatusCode status,
+            org.springframework.web.context.request.WebRequest request) {
+        var privateHeaders = new org.springframework.http.HttpHeaders();
+        privateHeaders.addAll(headers);
+        privateHeaders.setCacheControl("private, no-store");
+        return super.createResponseEntity(body, privateHeaders, status, request);
+    }
+
+    private static org.springframework.http.ResponseEntity<ProblemDetail> response(HttpStatus status, String title) {
+        return org.springframework.http.ResponseEntity.status(status).header("Cache-Control", "private, no-store")
+                .body(problem(status, title));
+    }
     private static ProblemDetail problem(HttpStatus status, String title) {
         var problem = ProblemDetail.forStatus(status);
         problem.setTitle(title);

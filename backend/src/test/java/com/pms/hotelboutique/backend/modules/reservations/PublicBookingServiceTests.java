@@ -59,7 +59,7 @@ class PublicBookingServiceTests {
         json = spy(new ObjectMapper());
         type = new RoomType(TYPE, PROPERTY, "STD", "Standard", Instant.now());
         service = new PublicBookingServiceImpl(validation, receipts, catalog, eligibility, new DemoRatePolicy(), admission,
-                payments, mapping, booking, reservations, entities, json);
+                payments, mapping, booking, reservations, entities, json, mock(SimulatedBookingFolioService.class));
         when(validation.validateAndHash(eq(KEY), any())).thenReturn(HASH);
         when(catalog.findProperty(PROPERTY)).thenReturn(Optional.of(property(Property.Status.ACTIVE, "GTQ")));
         when(catalog.findRoomTypes(PROPERTY)).thenReturn(List.of(type));

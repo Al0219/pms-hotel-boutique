@@ -28,9 +28,10 @@ public interface RoomRepository extends JpaRepository<Room, UUID> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
-            select e from Room e join Property p on e.propertyId = p.id
-            where p.organizationId = :#{#scope.organizationId} and p.id in :#{#scope.propertyIds}
-              and e.propertyId = :propertyId and e.id = :id
+            select e from Room e
+            where e.propertyId = :propertyId and e.id = :id and e.propertyId in
+              (select p.id from Property p where p.organizationId = :#{#scope.organizationId}
+               and p.id in :#{#scope.propertyIds})
             """)
     Optional<Room> lockInProperty(@Param("scope") AuthorizedPropertyScope scope,
             @Param("propertyId") UUID propertyId, @Param("id") UUID id);
