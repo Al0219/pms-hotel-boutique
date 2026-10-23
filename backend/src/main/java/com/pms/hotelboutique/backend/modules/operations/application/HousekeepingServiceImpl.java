@@ -66,6 +66,16 @@ public class HousekeepingServiceImpl implements HousekeepingService {
 
     @Override
     public HkRoomView markDirtyAfterCheckout(UUID propertyId, UUID roomId, UUID stayId) {
+        return soilAfterCheckout(propertyId, roomId, stayId, null, stayId);
+    }
+
+    @Override
+    public HkRoomView markDirtyAfterCheckout(UUID propertyId, UUID roomId, UUID stayId, UUID actorId, UUID operationId) {
+        if (actorId == null || operationId == null) throw new HousekeepingException("Staff context is required");
+        return soilAfterCheckout(propertyId, roomId, stayId, actorId, operationId);
+    }
+
+    private HkRoomView soilAfterCheckout(UUID propertyId, UUID roomId, UUID stayId, UUID actorId, UUID correlationId) {
         if (stayId == null) throw new HousekeepingException("stay id is required");
         readiness.lockRoom(propertyId, roomId);
         var current = states.findByPropertyIdAndRoomId(propertyId, roomId);
@@ -80,9 +90,9 @@ public class HousekeepingServiceImpl implements HousekeepingService {
             state = states.save(new HkRoomState(UUID.randomUUID(), propertyId, roomId, Instant.now()));
         }
         state.markDirty(Instant.now());
-        state.recordActor(null);
+        state.recordActor(actorId);
         record(state, "HK_SOILED", before,
-                "Salida del huésped: habitación pendiente de limpieza.", null, stayId);
+                "Salida del huésped: habitación pendiente de limpieza.", actorId, correlationId);
         return HkRoomView.from(state);
     }
 

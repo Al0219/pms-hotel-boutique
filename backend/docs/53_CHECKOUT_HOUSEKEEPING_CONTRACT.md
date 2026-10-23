@@ -1,5 +1,10 @@
 # Checkout interno → habitación pendiente de limpieza
 
+Ampliación posterior: [contrato54](54_STAFF_STAY_LIFECYCLE_CONTRACT.md) expone la
+operación Staff con guard financiero y auditoría del actor de sesión. La entrada
+interna histórica descrita aquí conserva SYSTEM y su compatibilidad; no confundir
+esa primitiva con la nueva frontera HTTP autorizada.
+
 Estado: APPROVED para integrar el servicio existente, implementación EN_QA. José aprobó
 continuar el 2026-10-22 tras la recomendación de conectar checkout real con DIRTY,
 reflejarlo en Housekeeping/Habitaciones y conservar auditoría. Incremento posterior

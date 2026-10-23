@@ -1,5 +1,94 @@
 # AlanPlan — Seguimiento Backend
 
+## Check-in/checkout Staff — QA manual aprobado y publicación (2026-10-22)
+
+- José confirma QA manual PASS del incremento y autoriza commit/push en
+  `feature/staff-stay-lifecycle-web`. La aprobación no se atribuye a cada caso
+  automatizado ni cierra retroactivamente el QA separado del contrato53.
+- Backend verify946 PASS y lint/typecheck/build Web PASS siguen vigentes sobre
+  el mismo código. Gate Web general pendiente por los timeouts reproducidos en
+  HEAD; React418 público previo documentado. No afirmar CI general PASS.
+- Publicar Backend54 y su integración Web juntos, sin merge a main. Los checks
+  de GitHub y el cierre integral del incremento permanecen pendientes.
+
+## Check-in/checkout Staff — integración Web autorizada (2026-10-22)
+
+- **Estado:** EN_PROGRESO; implementación funcional validada, QA manual de José y
+  gate Web general pendientes. Rama feature/staff-stay-lifecycle-web desde9abea00,
+  conserva Backend EN_QA sin commit/push/merge.
+- **Alcance:** detalle IMP-WEB-0302 por stay, transporte Staff estricto, versión
+  exacta, recibo idempotente, confirmación/loading/error y refresco de reservas,
+  ocupación y limpieza. Sin reglas de negocio, permisos ni APIs adicionales.
+- **Validación:** lint/typecheck/build PASS; módulo Web340/341,52 nuevas PASS.
+  Timeout5s del listado también falla en HEAD. Dos suites generales interrumpidas;
+  timeout de checkout público reproducido en HEAD, sin cambiar límites/tests.
+  Fixtures propios QueryClientProvider corregidos y regresiones del detalle PASS.
+  Backend946 PASS anterior vigente, sin nueva ejecución atribuida a Web.
+- **QA real:**17 comprobaciones funcionales,0 respuestas5xx; respuesta de checkout
+  cortada/reintentada sin duplicados, SQL un cargo/pago/entrada/salida, DIRTY/DND
+  y liberación ATS. Navegador global PARTIAL por React418 en Inicio, reproducido
+  en versión anterior y nueva; no corregir Public01 silenciosamente.
+- **Entorno:** Backend/Web nuevos activos en3001, JAR coincide con946;3 servicios
+  saludables. Datos del hotel conservados2 properties/24 rooms/2 reservas/2 stays;
+  QA en base separada. Sin nuevas migraciones/dependencias/Compose versionado.
+- **Seguimiento:** Web66 contiene evidencia y QA manual. No XLSX editado. No
+  COMPLETADA ni CI general PASS; siguiente QA manual propio y gate Web pendiente.
+
+## Check-in/checkout Staff — implementación Backend (2026-10-22)
+
+- **Estado:** EN_QA; validación técnica PASS, QA manual de José pendiente.
+  José autoriza continuar con Backend del
+  contrato54 y conectar pago simulado al folio. Transporte Backend acordado para
+  este incremento; BFF/botones se mantienen como siguiente integración Web.
+- **Rama/base:** feature/staff-stay-lifecycle desde9abea00; se conservan los cuatro
+  documentos de acuerdos pendientes. Fetch: main f7c8f7d integra PR160 y su árbol
+  coincide con esta base; sin merge/rebase ni cambios ajenos.
+- **Owner/DoR:** José, coordinación Juan/Alan; contratos49/50/52/53 y reglas54
+  aprobadas; reutilizar Auth/scope, LocalOperationService, Folio y servicios HK.
+  QA manual53 permanece pendiente, sin atribuirlo a este incremento.
+- **Alcance/archivos:** dos POST Staff y read timestamp, servicio lifecycle,
+  auditoría Staff sobre primitivas existentes, guard transaccional de escritores
+  de folio y registro CHARGE/PAYMENT simulado dentro del recibo público actual;
+  repositorios scoped, OpenAPI/tests/contratos. Sin migraciones ni dependencias.
+- **Aceptación:** bloqueo por deuda individual de cualquier folio/no verificable,
+  sin compensar créditos; calendario local/inspección/conflictos; rollback/replay,
+  concurrencia con alta/postings y actores reales. Nuevas reservas generan folio
+  balanceado; replay público/historia sin reescritura ni nuevo pago.
+- **Validación:** ./mvnw -B verify946 PASS,107 archivos de reporte,0 failures,
+  errors/skipped, BUILD SUCCESS/JAR,16:42 min, Java21/PostgreSQL17 aislados.
+  Incluye40 casos nuevos lifecycle y17 OpenAPI; paridad53 operaciones/42 paths.
+  Regresiones iniciales corregidas sin omitir tests ni cambiar sus límites;
+  logs/reportes separados. Diff-check y alcance PASS.
+- **Siguiente:** integrar BFF/botones Web y ejecutar QA manual del flujo cuando
+  José autorice ese incremento. Backend no requiere nuevas decisiones de negocio.
+  QA temporal retirado; sin commit/push/merge ni actualización del hotel3001.
+
+## Check-in/checkout Staff — acuerdo de reglas (2026-10-22)
+
+- **Estado:** reglas y alcance financiero APPROVED; implementación PENDIENTE.
+  Diseño de transporte HTTP/BFF propuesto en contrato54, sin APIs nuevas.
+  José aprueba CONFIRMED para check-in, fecha local `[arrival,departure)`,
+  inspección/asignación actual, salida anticipada sin recalcular cargos y bloqueo
+  de checkout por saldo pendiente. No implica QA manual PASS del contrato53.
+- **Owner/base:** José, coordinación Juan/Alan; rama documental
+  `docs/staff-stay-lifecycle-contract` desde9abea00, ya publicado en
+  origin/feature/staff-checkout-housekeeping. Rama anterior limpia al separar.
+- **Decisión financiera aprobada:** todos los folios de la reserva; cualquier
+  saldo positivo bloquea cada salida, sin compensar con otros folios/monedas.
+  Falta de folio o información contable verificable también bloquea.
+- **Alcance docente:** José confirma pagos públicos simulados; PSP real fuera del
+  proyecto académico actual. Registrado en decisiones globales y contrato54.
+  Booking público guarda pago/recibo simulado pero no genera movimientos de folio;
+  conectar esa contabilidad es trabajo técnico, no exige proveedor real ni permite
+  asumir saldo cero. No duplicar motor financiero ni reescribir historial.
+- **DoR/aceptación:** fuente de saldo y alcance aprobados, contrato final
+  auth/scope/idempotencia/audit, protocolo común con escritores financieros,
+  plan de PostgreSQL/HTTP/OpenAPI/BFF/Web y QA manual. Extiende detalle existente
+  según contrato50; no crear IDs de backlog ni editar XLSX.
+- **Siguiente:** concretar el incremento Backend del contrato54 y su dependencia
+  contable para ejecutar checkouts válidos del recorrido simulado. Solo docs aquí;
+  sin commit/push/merge, cambios de runtime ni nueva suite atribuida.
+
 ## Checkout → limpieza — 2026-10-22
 
 - **Estado:** EN_QA; integración autorizada por José según contrato53; QA manual propio pendiente.

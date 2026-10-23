@@ -17,6 +17,8 @@ public interface FolioMovementRepository extends JpaRepository<FolioMovement, UU
 
     boolean existsByReverses_Id(UUID movementId);
 
+    long countByFolio_Id(UUID folioId);
+
     /** Resolve a reversal target only inside the authorized folio and property. */
     Optional<FolioMovement> findByIdAndFolio_IdAndFolio_PropertyId(
             UUID movementId, UUID folioId, UUID propertyId);

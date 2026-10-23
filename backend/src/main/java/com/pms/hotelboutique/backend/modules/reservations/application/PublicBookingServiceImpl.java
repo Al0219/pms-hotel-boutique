@@ -38,12 +38,14 @@ public class PublicBookingServiceImpl implements PublicBookingService {
     private final ReservationService reservations;
     private final EntityManager entities;
     private final ObjectMapper json;
+    private final SimulatedBookingFolioService folios;
 
     public PublicBookingServiceImpl(PublicBookingValidationService validation, PublicBookingReceiptService receipts,
             PublicAvailabilityCatalogRepository catalog, PublicBookingPropertyEligibilityRepository eligibility,
             DemoRatePolicy rates, InventoryAdmissionPort admission,
             PaymentGatewayPort payments, PublicBookingMappingService mapping, ReservationBookingService booking,
-            ReservationService reservations, EntityManager entities, ObjectMapper json) {
+            ReservationService reservations, EntityManager entities, ObjectMapper json,
+            SimulatedBookingFolioService folios) {
         this.validation = validation;
         this.receipts = receipts;
         this.catalog = catalog;
@@ -56,6 +58,7 @@ public class PublicBookingServiceImpl implements PublicBookingService {
         this.reservations = reservations;
         this.entities = entities;
         this.json = json;
+        this.folios = folios;
     }
 
     @Override
@@ -118,6 +121,7 @@ public class PublicBookingServiceImpl implements PublicBookingService {
             if (!confirmed.id().equals(created.reservation().id()) || confirmed.status() != Reservation.Status.CONFIRMED) {
                 throw new PublicBookingException(BOOKING_FAILED);
             }
+            folios.record(request.propertyId(), confirmed.id(), total, request.currency(), payment);
             var response = new PublicBookingView(confirmed.id(), confirmed.confirmationCode(), confirmed.status().name(),
                     confirmed.currency(), total, new PublicBookingView.PaymentView(payment.provider(), payment.status().name(), payment.reference()),
                     created.stays().stream().map(stay -> new PublicBookingView.StayView(stay.id(), stay.roomTypeId(),

@@ -511,6 +511,35 @@ class OpenApiContractIntegrationTests {
         assertEquals(Set.of("profileId", "firstName", "lastName"), strings(schemas.path("ResponsibleGuestView").path("required")));
     }
 
+    @Test
+    void staffStayLifecycleDocumentsIdempotentScopedCommandsAndExactConcurrencyTimestamp() throws Exception {
+        var doc = document();
+        for (String action : List.of("check-in", "check-out")) {
+            var op = operation(doc, "/api/v1/reservations/{reservationId}/stays/{stayId}/" + action, "post");
+            assertEquals("staff", op.path("x-audience").asText());
+            assertTrue(op.path("security").get(0).has("bearerAuth"));
+            assertTrue(op.path("description").asText().contains("RESERVATION_MANAGE"));
+            assertTrue(parameter(op, "propertyId").path("required").asBoolean());
+            assertEquals("header", parameter(op, "Idempotency-Key").path("in").asText());
+            assertTrue(parameter(op, "Idempotency-Key").path("required").asBoolean());
+            for (String code : List.of("200", "400", "401", "403", "404", "409")) assertTrue(op.path("responses").has(code));
+            assertSuccessSchema(op, "200", "StaffStayLifecycleResult");
+            assertTrue(op.path("responses").path("200").path("headers").has("Cache-Control"));
+        }
+        var schemas = doc.path("components").path("schemas");
+        var request = schemas.path("StaffStayLifecycleRequest");
+        assertFalse(request.path("additionalProperties").asBoolean());
+        var requestFields = new HashSet<String>();
+        request.path("properties").properties().forEach(p -> requestFields.add(p.getKey()));
+        assertEquals(Set.of("expectedStatus", "expectedUpdatedAt", "expectedRoomId"), requestFields);
+        assertTrue(strings(request.path("required")).containsAll(Set.of("expectedStatus", "expectedUpdatedAt")));
+        assertEquals(1, request.path("properties").path("expectedUpdatedAt").path("minLength").asInt());
+        assertEquals(40, request.path("properties").path("expectedUpdatedAt").path("maxLength").asInt());
+        assertEquals(Set.of("operationId", "propertyId", "reservationId", "stayId", "status", "completedAt"), strings(schemas.path("StaffStayLifecycleResult").path("required")));
+        assertEquals("date-time", schemas.path("StaffStay").path("properties").path("updatedAt").path("format").asText());
+        assertTrue(strings(schemas.path("StaffStay").path("required")).contains("updatedAt"));
+    }
+
     private JsonNode document() throws Exception {
         return json.readTree(mvc.perform(get("/v3/api-docs")).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
     }

@@ -1,5 +1,12 @@
 # STAFF-RESERVATIONS-READ-01 — Lectura Staff de reservas persistidas
 
+Ampliación Backend autorizada en [contrato54](54_STAFF_STAY_LIFECYCLE_CONTRACT.md):
+GET listado/detalle agrega `updatedAt` UTC por stay para control de concurrencia.
+El timestamp debe preservarse con toda su precisión. La allowlist BFF proyecta
+el campo sin redondearlo para los botones del detalle Staff, documentados en
+[Web66](../../frontend/pms-hotel-web/docs/66_STAFF_STAY_LIFECYCLE_QA.md).
+No se añaden saldos, movimientos ni permisos financieros a esta lectura.
+
 Estado: COMPLETADA; aceptación/DoD PASS y QA manual aplicable confirmado por Alan
 el 2026-10-08 con NEXT_PUBLIC_USE_MOCK_API=false. Autorización:
 solicitud de Alan del 2026-10-08 para conectar listado/detalle Staff a PostgreSQL.

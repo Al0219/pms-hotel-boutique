@@ -5,6 +5,7 @@ import { mapStaffReservationCenter, mapStaffReservationDetail } from '../mappers
 import { ReservationList } from './reservation-list';
 import { ReservationDetail } from './reservation-detail';
 import type { StaffReservationDto } from '../dtos/staff-reservation.dto';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const mocks = vi.hoisted(() => ({ detail: vi.fn() }));
 vi.mock('../hooks/use-reservation-detail', () => ({ useReservationDetail: mocks.detail }));
@@ -52,7 +53,7 @@ describe('real reservation badges and operational filter', () => {
   it.each(cases.map((item, index) => ({ ...item, index })))('uses $label in the real detail without exposing unsupported mutations', ({ label, index }) => {
     const dto = fixture(index);
     mocks.detail.mockReturnValue({ data: mapStaffReservationDetail(dto), refetch: vi.fn() });
-    render(<ReservationDetail propertyId={dto.propertyId} reservationId={dto.reservationId} endpoint="/api/staff/reservations" sessionId="staff" canManage />);
+    render(<QueryClientProvider client={new QueryClient()}><ReservationDetail propertyId={dto.propertyId} reservationId={dto.reservationId} endpoint="/api/staff/reservations" sessionId="staff" canManage /></QueryClientProvider>);
     const header = screen.getByRole('heading', { name: `Reserva ${dto.confirmationCode}` }).closest('header')!;
     expect(within(header).getByText(label, { selector: 'span' })).toBeInTheDocument();
     for (const name of ['Cancelar reserva', 'Cambiar habitación', 'Extender estadía', 'Marcar no-show']) {

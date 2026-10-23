@@ -92,6 +92,12 @@ class PublicBookingServiceIntegrationTests {
         var receipt = receipts.find(key).orElseThrow();
         assertEquals(result, json.readValue(receipt.responseSnapshot(), PublicBookingView.class));
         assertEquals(result.payment().reference(), receipt.paymentReference());
+        UUID folio = jdbc.queryForObject("SELECT id FROM folios WHERE reservation_id=? AND property_id=?", UUID.class, result.reservationId(), property);
+        assertEquals(2, jdbc.queryForObject("SELECT count(*) FROM folio_movements WHERE folio_id=?", Integer.class, folio));
+        assertEquals(0L, jdbc.queryForObject("SELECT sum(amount_minor) FROM folio_movements WHERE folio_id=?", Long.class, folio));
+        assertEquals(result.totalMinor(), jdbc.queryForObject("SELECT amount_minor FROM folio_movements WHERE folio_id=? AND kind='CHARGE'", Long.class, folio));
+        assertEquals(-result.totalMinor(), jdbc.queryForObject("SELECT amount_minor FROM folio_movements WHERE folio_id=? AND kind='PAYMENT'", Long.class, folio));
+        assertTrue(jdbc.queryForObject("SELECT description FROM folio_movements WHERE folio_id=? AND kind='PAYMENT'", String.class, folio).contains(result.payment().reference()));
         var root = json.readTree(receipt.responseSnapshot());
         assertEquals(Set.of("reservationId", "confirmationCode", "status", "currency", "totalMinor", "payment", "stays"), fields(root));
         assertEquals(Set.of("provider", "status", "reference"), fields(root.get("payment")));
