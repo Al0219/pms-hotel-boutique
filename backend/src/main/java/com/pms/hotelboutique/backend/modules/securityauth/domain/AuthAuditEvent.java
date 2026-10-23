@@ -55,6 +55,15 @@ public class AuthAuditEvent {
         return event;
     }
 
+    public static AuthAuditEvent administrative(String action, UUID subject, UUID session,
+            UUID organization, UUID actor, UUID correlation, Instant now) {
+        AuthAuditEvent event = staffAction(action, subject, session, "administrative_change", now, actor);
+        event.organizationId = Objects.requireNonNull(organization);
+        event.scopeKind = "ORGANIZATION";
+        event.correlationId = Objects.requireNonNull(correlation);
+        return event;
+    }
+
     protected AuthAuditEvent() { }
 
     public AuthAuditEvent(String eventType, UUID staffUserId, UUID sessionId, String detail, Instant occurredAt) {

@@ -1,0 +1,178 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { mockServer } from '@/data/mocks/server';
+import { StaffAdminWorkspace } from './index';
+import { mapStaffAdminContext, mapStaffAdminDetail, mapStaffAdminPage } from './mappers/staff-admin.mapper';
+import { DomainMappingError } from '@/lib/errors/domain-mapping-error';
+const mocks = vi.hoisted(() => ({ session: vi.fn(), scope: vi.fn(), revalidate: vi.fn(), replace: vi.fn() }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: mocks.replace }) }));
+vi.mock('@/modules/auth', () => ({ useStaffSession: mocks.session, useRevalidateStaffSession: () => mocks.revalidate }));
+vi.mock('@/modules/properties', () => ({ usePropertyScope: mocks.scope }));
+const org = '11111111-1111-4111-8111-111111111111', p1 = '22222222-2222-4222-8222-222222222222', p2 = '33333333-3333-4333-8333-333333333333', id = '44444444-4444-4444-8444-444444444444';
+const roleDTO = () => ({ organizationId: org, items: ['SUPER_ADMIN', 'GERENCIA', 'RECEPCION', 'OPERACIONES', 'AUDITOR'].map(code => ({ code, name: code })) });
+const userDTO = (username = 'mlopez') => ({ id, username, workEmail: 'mlopez@hotel.example', status: 'SUSPENDED', roleCode: 'GERENCIA', membershipStatus: 'ACTIVE', organizationId: org, propertyIds: [p1, p2], createdAt: '2026-10-22T00:00:00.123456789Z', updatedAt: '2026-10-22T00:00:00Z', version: 1 });
+const context = () => ({ organizationId: org, scope: { kind: 'PROPERTY' as const, propertyIds: [p1] as [string] }, authorizedPropertyIds: [p1, p2], role: 'GERENCIA' });
+const page = () => ({ organizationId: org, scope: context().scope, items: [userDTO()], limit: 50, nextCursor: null });
+let reads: URL[];
+const clients: QueryClient[] = [];
+function choose(propertyId = p1) { mocks.scope.mockReturnValue({ ready: true, scope: { kind: 'PROPERTY', propertyIds: [propertyId] } }); }
+function mount(props: Parameters<typeof StaffAdminWorkspace>[0] = {}) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } }); clients.push(client);
+  const view = render(<QueryClientProvider client={client}><StaffAdminWorkspace {...props} /></QueryClientProvider>);
+  return { ...view, client, refresh: (next = props) => view.rerender(<QueryClientProvider client={client}><StaffAdminWorkspace {...next} /></QueryClientProvider>) };
+}
+beforeEach(() => {
+  reads = []; mocks.revalidate.mockReset(); mocks.replace.mockReset(); choose();
+  mocks.session.mockReturnValue({ id: 'session-1', staffUserId: id, roleId: 'GERENCIA', permissions: ['STAFF_MANAGE', 'MULTI_PROPERTY_READ'], memberships: [p1, p2].map((propertyId, i) => ({ propertyId, active: true, name: `Hotel ${i + 1}`, timezone: 'America/Guatemala', currency: 'GTQ', propertyCode: null })) });
+  mockServer.use(
+    http.post('*/api/auth/staff/refresh', () => new HttpResponse(null, { status: 401 })),
+    http.get('*/api/staff/admin/roles', () => HttpResponse.json(roleDTO())),
+    http.get('*/api/staff/admin/users', ({ request }) => { const url = new URL(request.url); reads.push(url); return HttpResponse.json({ ...page(), scope: { kind: url.searchParams.get('scope'), propertyIds: url.searchParams.get('scope') === 'PROPERTY' ? [url.searchParams.get('propertyId')] : [p1, p2] }, limit: Number(url.searchParams.get('limit')) }); }),
+    http.get(`*/api/staff/admin/users/${id}`, () => HttpResponse.json({ organizationId: org, scope: context().scope, item: userDTO() })),
+  );
+});
+afterEach(() => { cleanup(); clients.splice(0).forEach(client => client.clear()); vi.unstubAllEnvs(); });
+describe('Staff administration UI', () => {
+  it.each(['true', 'false'])('uses real BFF with mocks=%s, exactly three grouped columns and no fake mutations', async value => {
+    vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', value); mount(); const row = await screen.findByRole('row', { name: /mlopez/ });
+    expect(screen.getAllByRole('columnheader').map(el => el.textContent)).toEqual(['Usuario', 'Acceso', 'Asignación']);
+    const cells = within(row).getAllByRole('cell'); expect(cells).toHaveLength(3);
+    expect(screen.queryByRole('columnheader', { name: 'Acciones' })).not.toBeInTheDocument();
+    expect(within(cells[0]).getByRole('button')).toHaveAttribute('data-staff-expand');
+    expect(cells[0]).toHaveTextContent('mlopez@hotel.example'); expect(cells[1]).toHaveTextContent('GERENCIA'); expect(cells[1]).toHaveTextContent('Suspendido'); expect(cells[2]).toHaveTextContent('2 propiedades asignadas');
+    expect(within(row).getByRole('button', { name: 'Expandir información de mlopez' })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('button', { name: /Editar|Guardar|Dar de baja|Crear/ })).not.toBeInTheDocument(); expect(reads[0].searchParams.get('propertyId')).toBe(p1);
+  });
+  it('debounces literal search and sends filters to Backend, preserving detail navigation', async () => {
+    const user = userEvent.setup(); mount(); await screen.findByText('mlopez'); await user.type(screen.getByLabelText('Buscar por username'), 'm%_'); expect(screen.getByText('mlopez')).toBeInTheDocument(); expect(screen.getByText('Actualizando…')).toBeInTheDocument();
+    await waitFor(() => expect(reads.at(-1)?.searchParams.get('username')).toBe('m%_'));
+    await user.selectOptions(screen.getByLabelText('Rol'), 'GERENCIA'); await user.selectOptions(screen.getByLabelText('Estado'), 'SUSPENDED'); await screen.findByText('mlopez');
+    expect(reads.at(-1)?.searchParams.get('roleCode')).toBe('GERENCIA'); expect(reads.at(-1)?.searchParams.get('status')).toBe('SUSPENDED'); expect(screen.getByLabelText('Buscar por username')).toHaveValue('m%_');
+  });
+  it('uses opaque cursor and backward history; filters, page size and scope reset pagination', async () => {
+    mockServer.use(http.get('*/api/staff/admin/users', ({ request }) => {
+      const url = new URL(request.url); reads.push(url); const next = url.searchParams.has('cursor'), limit = Number(url.searchParams.get('limit'));
+      return HttpResponse.json({ ...page(), limit, items: next ? [userDTO('second')] : Array.from({ length: limit }, (_, i) => ({ ...userDTO(`user${i}`), id: `${String(i).padStart(8, '0')}-4444-4444-8444-444444444444` })), nextCursor: next ? null : 'signed+opaque/==' });
+    }));
+    const view = mount(), user = userEvent.setup(); await screen.findByText('user0'); await user.click(screen.getByRole('button', { name: 'Página siguiente' })); await screen.findByText('second'); expect(reads.at(-1)?.searchParams.get('cursor')).toBe('signed+opaque/==');
+    await user.click(screen.getByRole('button', { name: 'Página anterior' })); await screen.findByText('user0'); expect(reads.at(-1)?.searchParams.has('cursor')).toBe(false);
+    expect(screen.getByRole('button', { name: 'Página 1' })).toHaveAttribute('aria-current', 'page');
+    await user.click(screen.getByRole('button', { name: 'Página siguiente' })); await screen.findByText('second'); await user.selectOptions(screen.getByLabelText('Estado'), 'SUSPENDED'); await screen.findByText('user0'); expect(reads.at(-1)?.searchParams.has('cursor')).toBe(false);
+    await user.selectOptions(screen.getByLabelText('Filas por página'), '25'); await screen.findByText('user0'); expect(reads.at(-1)?.searchParams.get('limit')).toBe('25'); choose(p2); view.refresh(); expect(screen.queryByText('user0')).not.toBeInTheDocument();
+  });
+  it('sends the common five-row size to Backend and renders the shared footer', async () => {
+    mount(); const user = userEvent.setup(); await screen.findByText('mlopez');
+    expect(screen.getByText('1–1 usuarios')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Página anterior' })).toHaveTextContent('‹');
+    expect(screen.getByRole('button', { name: 'Página siguiente' })).toHaveTextContent('›');
+    await user.selectOptions(screen.getByLabelText('Filas por página'), '5');
+    await waitFor(() => expect(reads.at(-1)?.searchParams.get('limit')).toBe('5'));
+    await screen.findByText('mlopez'); expect(reads.at(-1)?.searchParams.has('cursor')).toBe(false);
+  });
+  it('expands detail under demand, does not duplicate identity and collapses with keyboard', async () => {
+    const getDetail = vi.fn(() => HttpResponse.json({ organizationId: org, scope: context().scope, item: { ...userDTO(), membershipStatus: 'INACTIVE' } }));
+    mockServer.use(http.get(`*/api/staff/admin/users/${id}`, getDetail));
+    mount({ initial: { username: 'm%', status: 'SUSPENDED' } }); await screen.findByText('mlopez'); expect(getDetail).not.toHaveBeenCalled();
+    const user = userEvent.setup(), button = screen.getByRole('button', { name: 'Expandir información de mlopez' }); button.focus(); await user.keyboard('{Enter}');
+    await screen.findByText('Inactiva'); expect(getDetail).toHaveBeenCalledTimes(1); expect(button).toHaveAttribute('aria-expanded', 'true');
+    const region = screen.getByRole('region', { name: 'Contraer información de mlopez' }); expect(region.id).toBe(button.getAttribute('aria-controls'));
+    expect(region.closest('td')).toHaveAttribute('colspan', '3');
+    expect(within(region).getByText('Hotel 2')).toBeInTheDocument(); expect(within(region).queryByText('mlopez')).not.toBeInTheDocument(); expect(within(region).queryByText('mlopez@hotel.example')).not.toBeInTheDocument();
+    expect(within(region).getByText('Creación')).toBeInTheDocument(); expect(screen.getByLabelText('Buscar por username')).toHaveValue('m%');
+    await user.keyboard(' '); expect(button).toHaveAttribute('aria-expanded', 'false'); expect(screen.getByText('Inactiva')).not.toBeVisible();
+  });
+  it('removes redundant header texts and does not expose credentials in expanded content', async () => {
+    mount(); await screen.findByText('mlopez'); expect(screen.getByRole('heading', { name: 'Usuarios' })).toBeInTheDocument();
+    for (const text of ['Fechas en hora de Guatemala.', 'Administración · Staff', 'Solo lectura', 'Consulta las cuentas de tu organización y su acceso a las propiedades.']) expect(screen.queryByText(text)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir información de mlopez' })); await screen.findByText('Creación');
+    expect(screen.queryByText(/passwordHash|Contraseña|Restablecer acceso/)).not.toBeInTheDocument(); expect(screen.getAllByRole('table')).toHaveLength(1);
+  });
+  it('toggles from row content and reuses a fresh on-demand detail without a visible details button', async () => {
+    const detail = vi.fn(() => HttpResponse.json({ organizationId: org, scope: context().scope, item: userDTO() }));
+    mockServer.use(http.get(`*/api/staff/admin/users/${id}`, detail));
+    mount(); const row = await screen.findByRole('row', { name: /mlopez/ });
+    expect(detail).not.toHaveBeenCalled(); expect(screen.queryByText(/Ver más|Ver menos/)).not.toBeInTheDocument();
+    fireEvent.click(within(row).getByText('mlopez@hotel.example')); await screen.findByText('Creación');
+    const control = within(row).getByRole('button'); expect(control).toHaveFocus(); expect(control).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.queryByText('Fechas en hora de Guatemala.')).not.toBeInTheDocument();
+    fireEvent.click(within(row).getByText('GERENCIA')); expect(control).toHaveAttribute('aria-expanded', 'false'); expect(screen.getByText('Creación')).not.toBeVisible();
+    fireEvent.click(row); await screen.findByRole('region', { name: 'Contraer información de mlopez' });
+    expect(detail).toHaveBeenCalledTimes(1);
+  });
+  it.each(['input', 'select', 'button', 'a', 'menu', 'swipe', 'editable'])('does not expand from nested %s controls', async kind => {
+    mount(); const row = await screen.findByRole('row', { name: /mlopez/ }), cell = within(row).getAllByRole('cell')[0];
+    const element = document.createElement(['menu', 'swipe', 'editable'].includes(kind) ? 'span' : kind);
+    if (kind === 'menu') element.setAttribute('role', 'menuitem');
+    if (kind === 'swipe') element.setAttribute('data-staff-row-action', '');
+    if (kind === 'editable') element.setAttribute('contenteditable', '');
+    cell.appendChild(element); fireEvent.click(element);
+    expect(row.querySelector('[data-staff-expand]')).toHaveAttribute('aria-expanded', 'false'); expect(screen.queryByText('Creación')).not.toBeInTheDocument();
+    element.remove();
+  });
+  it('keeps the table and input stable across a delayed username request, ignoring older replies', async () => {
+    const view = mount(); await screen.findByText('mlopez'); const table = screen.getByRole('table'), input = screen.getByLabelText('Buscar por username');
+    let release!: () => void; const gate = new Promise<void>(resolve => { release = resolve; });
+    mockServer.use(http.get('*/api/staff/admin/users', async ({ request }) => {
+      const url = new URL(request.url); reads.push(url); const term = url.searchParams.get('username'); if (term === 'older') await gate;
+      return HttpResponse.json({ ...page(), items: [userDTO(term ?? 'mlopez')] });
+    }));
+    fireEvent.change(input, { target: { value: 'older' } }); expect(screen.getByRole('table')).toBe(table); expect(reads).toHaveLength(1);
+    await waitFor(() => expect(reads.at(-1)?.searchParams.get('username')).toBe('older'));
+    expect(screen.getByRole('table')).toBe(table); expect(screen.getByText('mlopez')).toBeInTheDocument(); expect(screen.getByText('Actualizando…')).toBeInTheDocument(); expect(input).toBeEnabled();
+    fireEvent.change(input, { target: { value: 'newest' } }); await screen.findByText('newest'); await act(async () => release());
+    expect(screen.queryByText('older')).not.toBeInTheDocument(); expect(screen.getByRole('table')).toBe(table); expect(input).toHaveValue('newest');
+    expect(view.client.getQueryCache().findAll({ queryKey: ['staff-admin'] }).length).toBeGreaterThan(0);
+  });
+  it('sanitizes inaccessible detail and never exposes its data', async () => {
+    mockServer.use(http.get(`*/api/staff/admin/users/${id}`, () => HttpResponse.json({ detail: 'internal' }, { status: 404 })));
+    mount(); await screen.findByText('mlopez'); fireEvent.click(screen.getByRole('button', { name: 'Expandir información de mlopez' })); await screen.findByRole('alert');
+    expect(screen.getByText('El usuario no existe o no está disponible para tu acceso actual.')).toBeInTheDocument(); expect(screen.queryByText('internal')).not.toBeInTheDocument();
+  });
+  it.each(['SUPER_ADMIN', 'GERENCIA'])('allows %s with effective permission', async roleId => { mocks.session.mockReturnValue({ ...mocks.session(), roleId }); mount(); await screen.findByText('mlopez'); });
+  it.each(['RECEPCION', 'OPERACIONES', 'AUDITOR'])('blocks direct access for %s without permission', roleId => { mocks.session.mockReturnValue({ ...mocks.session(), roleId, permissions: [] }); mount(); expect(screen.queryByRole('heading', { name: 'Acceso denegado' })).not.toBeInTheDocument(); expect(mocks.replace).toHaveBeenCalledWith(roleId === 'RECEPCION' ? '/dashboard' : '/'); expect(reads).toHaveLength(0); });
+  it('does not query under preview identity', () => { mocks.session.mockReturnValue({ ...mocks.session(), staffUserId: undefined }); mount(); expect(screen.getByText(/requiere autenticación real/)).toBeInTheDocument(); expect(reads).toHaveLength(0); });
+  it.each([400, 401, 403, 404, 503])('handles %s safely without empty success', async status => {
+    mockServer.use(http.get('*/api/staff/admin/users', () => HttpResponse.json({ code: status === 400 ? 'INVALID_CURSOR' : 'ERROR', detail: 'internal-secret' }, { status })));
+    mount(); await screen.findByRole('alert'); expect(screen.queryByText(/internal-secret|No hay usuarios/)).not.toBeInTheDocument(); if (status === 401) await waitFor(() => expect(mocks.revalidate).toHaveBeenCalled()); if (status === 400) expect(screen.getByRole('button', { name: 'Volver al inicio del listado' })).toBeInTheDocument();
+  });
+  it('recovers explicitly from unavailable Backend', async () => {
+    mockServer.use(http.get('*/api/staff/admin/users', () => new HttpResponse(null, { status: 503 }))); mount(); await screen.findByRole('alert'); mockServer.use(http.get('*/api/staff/admin/users', () => HttpResponse.json({ ...page(), items: [] }))); fireEvent.click(screen.getByRole('button', { name: 'Reintentar' })); await screen.findByText('No hay usuarios visibles en este contexto.');
+  });
+  it('distinguishes no matches from an empty context', async () => { mockServer.use(http.get('*/api/staff/admin/users', () => HttpResponse.json({ ...page(), items: [] }))); mount({ initial: { username: 'missing' } }); await screen.findByText('No existen coincidencias con estos filtros.'); });
+  it('hides rows on refresh, cancels old scope, ignores late replies', async () => {
+    const view = mount(); await screen.findByText('mlopez'); let release!: () => void; const gate = new Promise<void>(resolve => { release = resolve; });
+    mockServer.use(http.get('*/api/staff/admin/users', async ({ request }) => { const url = new URL(request.url); if (url.searchParams.get('propertyId') === p1) await gate; return HttpResponse.json({ ...page(), scope: { kind: 'PROPERTY', propertyIds: [url.searchParams.get('propertyId')] }, items: [userDTO(url.searchParams.get('propertyId') === p1 ? 'late' : 'current')] }); }));
+    act(() => { void view.client.invalidateQueries({ queryKey: ['staff-admin'] }); }); await waitFor(() => expect(screen.queryByText('mlopez')).not.toBeInTheDocument()); choose(p2); view.refresh(); await screen.findByText('current'); await act(async () => release()); expect(screen.queryByText('late')).not.toBeInTheDocument();
+    await waitFor(() => expect(view.client.getQueryCache().findAll({ queryKey: ['staff-admin'] }).every(query => !JSON.stringify(query.queryKey).includes(`"PROPERTY",["${p1}"]`))).toBe(true));
+  });
+  it('recovers from an expired second-page cursor without reconstructing it', async () => {
+    mockServer.use(http.get('*/api/staff/admin/users', ({ request }) => {
+      const url = new URL(request.url); reads.push(url);
+      if (url.searchParams.has('cursor')) return HttpResponse.json({ code: 'INVALID_CURSOR' }, { status: 400 });
+      return HttpResponse.json({ ...page(), items: Array.from({ length: 50 }, (_, i) => ({ ...userDTO(`record${i}`), id: `${String(i).padStart(8, '0')}-4444-4444-8444-444444444444` })), nextCursor: 'signed-cursor' });
+    }));
+    mount(); const user = userEvent.setup(); await screen.findByText('record0');
+    await user.click(screen.getByRole('button', { name: 'Página siguiente' })); await screen.findByRole('alert');
+    await user.click(screen.getByRole('button', { name: 'Volver al inicio del listado' })); await screen.findByText('record0');
+    expect(reads.at(-1)?.searchParams.has('cursor')).toBe(false); expect(screen.getByRole('button', { name: 'Página anterior' })).toBeDisabled();
+  });
+  it('withdraws rows immediately when permissions change within the same session', async () => {
+    const view = mount(); await screen.findByText('mlopez'); mocks.session.mockReturnValue({ ...mocks.session(), permissions: [] }); view.refresh();
+    expect(screen.queryByText('mlopez')).not.toBeInTheDocument(); expect(screen.queryByRole('heading', { name: 'Acceso denegado' })).not.toBeInTheDocument(); expect(mocks.replace).toHaveBeenCalledWith('/dashboard');
+    await waitFor(() => expect(view.client.getQueryCache().findAll({ queryKey: ['staff-admin'] })).toHaveLength(0));
+  });
+  it('does not reuse identity/organization context', async () => {
+    const view = mount(); await screen.findByText('mlopez'); mocks.session.mockReturnValue({ ...mocks.session(), id: 'session-2' }); mockServer.use(http.get('*/api/staff/admin/roles', () => HttpResponse.json({ ...roleDTO(), organizationId: p2 }))); view.refresh(); expect(screen.queryByText('mlopez')).not.toBeInTheDocument(); await screen.findByRole('alert'); await waitFor(() => expect(mocks.revalidate).toHaveBeenCalled());
+  });
+  it('rejects invalid responses rather than returning an empty list', async () => { mockServer.use(http.get('*/api/staff/admin/roles', () => HttpResponse.json({ items: [] }))); mount(); await screen.findByRole('alert'); expect(reads).toHaveLength(0); });
+});
+describe('administrative mapper boundaries', () => {
+  it('allowlists user fields, never exposes credentials', () => { const data = page(); Object.assign(data.items[0], { passwordHash: 'secret', accessToken: 'secret' }); expect(JSON.stringify(mapStaffAdminPage(data, context(), 50))).not.toContain('secret'); expect(mapStaffAdminContext(roleDTO()).roles).toHaveLength(5); });
+  it.each(['organization', 'partial-assignment', 'scope', 'super-admin', 'empty', 'state', 'duplicate', 'cursor'])('rejects %s', kind => {
+    const data = page(); if (kind === 'organization') data.organizationId = p2; if (kind === 'partial-assignment') data.items[0].propertyIds.push(id); if (kind === 'scope') data.scope.propertyIds = [p2]; if (kind === 'super-admin') data.items[0].roleCode = 'SUPER_ADMIN'; if (kind === 'empty') data.items[0].propertyIds = []; if (kind === 'state') data.items[0].status = 'DELETED'; if (kind === 'duplicate') data.items.push(userDTO()); if (kind === 'cursor') Object.assign(data, { nextCursor: 'cursor' }); expect(() => mapStaffAdminPage(data, context(), 50)).toThrow(DomainMappingError);
+  });
+  it('SUPER_ADMIN ALL can see zero properties and membership INACTIVE remains explicit', () => { const readContext = { ...context(), role: 'SUPER_ADMIN', scope: { kind: 'ALL_PROPERTIES' as const, propertyIds: [] } }; expect(mapStaffAdminDetail({ organizationId: org, scope: readContext.scope, item: { ...userDTO(), propertyIds: [], membershipStatus: 'INACTIVE' } }, readContext, id).membershipStatus).toBe('INACTIVE'); });
+});

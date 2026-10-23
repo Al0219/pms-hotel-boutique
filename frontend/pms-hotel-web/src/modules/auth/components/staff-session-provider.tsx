@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { logoutStaffSession } from "../service/staff-session.service";
 import { staffSessionKey, staffSessionQuery } from "../hooks/staff-session-query";
@@ -21,6 +21,12 @@ export function useStaffSession() {
   return value;
 }
 
+/** Reuses the existing session query/refresh and signed-out handling. */
+export function useRevalidateStaffSession() {
+  const client = useQueryClient();
+  return useCallback(() => client.invalidateQueries({ queryKey: staffSessionKey }), [client]);
+}
+
 export function StaffLogout() {
   const actions = useContext(StaffActions);
   if (!actions) return null;
@@ -32,27 +38,33 @@ export function StaffLogout() {
   </div>;
 }
 
-export function StaffSessionProvider({ children }: { children: ReactNode }) {
-  return <StaffBffSession preview={staffPreviewEnabled()}>{children}</StaffBffSession>;
+export function StaffSessionProvider({ children, signedOutRedirect = "/", requireFreshSession = false }: { children: ReactNode; signedOutRedirect?: string; requireFreshSession?: boolean }) {
+  return <StaffBffSession preview={staffPreviewEnabled()} signedOutRedirect={signedOutRedirect} requireFreshSession={requireFreshSession}>{children}</StaffBffSession>;
 }
 
 async function clearStaffCaches(client: QueryClient, sessionKey: typeof staffSessionKey | typeof staffPreviewKey) {
   await client.cancelQueries({ queryKey: sessionKey });
   client.setQueryData(sessionKey, null);
   // Dashboard/calendar caches are Staff-owned; Guest/public queries stay intact.
-  for (const key of ["private-09", "reservations", "rooms", "staff-room-catalog", "staff-reservation-quotes", "staff-room-assignment", "staff-room-occupancy"]) {
+  for (const key of ["private-09", "reservations", "rooms", "staff-room-catalog", "staff-reservation-quotes", "staff-room-assignment", "staff-room-occupancy", "staff-admin"]) {
     await client.cancelQueries({ queryKey: [key] });
     client.removeQueries({ queryKey: [key] });
   }
 }
 
-function StaffBffSession({ children, preview }: { children: ReactNode; preview: boolean }) {
+function StaffBffSession({ children, preview, signedOutRedirect, requireFreshSession }: { children: ReactNode; preview: boolean; signedOutRedirect: string; requireFreshSession: boolean }) {
   const client = useQueryClient();
   const router = useRouter();
-  const [leaving, setLeaving] = useState(false);
+  const [leaving, setLeaving] = useState(false), [admitted, setAdmitted] = useState(false);
   const sessionKey = preview ? staffPreviewKey : staffSessionKey;
   const session = useQuery({ queryKey: sessionKey,
     queryFn: preview ? staffPreviewQuery.queryFn : staffSessionQuery.queryFn, retry: false });
+  useEffect(() => {
+    if (admitted || !session.data || !session.isSuccess || session.fetchStatus !== 'idle') return;
+    let active = true;
+    queueMicrotask(() => { if (active) setAdmitted(true); });
+    return () => { active = false; };
+  }, [admitted, session.data, session.isSuccess, session.fetchStatus]);
   const reopen = useMutation({ mutationFn: openStaffPreview, onSuccess: () => client.invalidateQueries({ queryKey: staffPreviewKey }) });
   const redirectStarted = useRef(false);
   const signedOut = session.isSuccess && session.data === null && session.fetchStatus === "idle";
@@ -67,8 +79,8 @@ function StaffBffSession({ children, preview }: { children: ReactNode; preview: 
   useEffect(() => {
     if (preview || !signedOut || redirectStarted.current) return;
     redirectStarted.current = true;
-    void clearStaffCaches(client, sessionKey).then(() => router.replace("/"));
-  }, [signedOut, client, router, preview, sessionKey]);
+    void clearStaffCaches(client, sessionKey).then(() => router.replace(signedOutRedirect));
+  }, [signedOut, client, router, preview, sessionKey, signedOutRedirect]);
   const logout = useMutation({
     mutationFn: preview ? closeStaffPreview : logoutStaffSession,
     onSuccess: async () => {
@@ -80,7 +92,7 @@ function StaffBffSession({ children, preview }: { children: ReactNode; preview: 
   });
   if (leaving) return <p role="status">Sesión cerrada. Volviendo al inicio…</p>;
   if (!session.data && session.fetchStatus === "paused") return <p role="status">Sin conexión. Esperando para cargar la sesión Staff.</p>;
-  if (session.isPending || (session.data === null && session.isFetching)) return <p role="status">Cargando sesión Staff…</p>;
+  if (session.isPending || (session.data === null && session.isFetching) || (requireFreshSession && !admitted && session.fetchStatus !== "idle")) return <p role="status">Cargando sesión Staff…</p>;
   // Retain the last valid identity during background/network revalidation.
   // Invalid authorization DTOs fail closed, with a load error rather than a false 401.
   if (session.isError && (!session.data || session.error instanceof DomainMappingError)) return <section>
@@ -97,10 +109,18 @@ function StaffBffSession({ children, preview }: { children: ReactNode; preview: 
       <button type="button" onClick={() => void session.refetch()}>Reintentar sesión</button>
     </section>;
   }
+  // Strict screens keep their local state during a background check, but remain
+  // hidden/inert until it succeeds. Definitive logout/identity failure above still unmounts.
+  const checking = requireFreshSession && session.fetchStatus !== 'idle';
+  const unavailable = requireFreshSession && session.isError;
   return <StaffContext.Provider value={session.data}>
     <StaffActions.Provider value={{
       logout: () => logout.mutate(), busy: logout.isPending, error: logout.isError,
-    }}>{preview && <div className={styles.notice} role="status"><strong>Vista previa Staff</strong>
-      Datos ficticios del frontend · Sin Backend, cuentas ni pagos reales.</div>}{children}</StaffActions.Provider>
+    }}>{checking && <p role="status">Cargando sesión Staff…</p>}
+      {unavailable && !checking && <section><p role="alert">No se pudo cargar la sesión Staff.</p><button type="button" onClick={() => void session.refetch()}>Reintentar sesión</button></section>}
+      {preview && <div className={styles.notice} role="status"><strong>Vista previa Staff</strong>
+      Datos ficticios del frontend · Sin Backend, cuentas ni pagos reales.</div>}
+      {requireFreshSession ? <div data-staff-session-blocked={checking || unavailable ? 'true' : undefined} hidden={checking || unavailable} inert={checking || unavailable}>{children}</div> : children}
+    </StaffActions.Provider>
   </StaffContext.Provider>;
 }

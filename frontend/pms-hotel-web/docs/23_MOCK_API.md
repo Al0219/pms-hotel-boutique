@@ -33,6 +33,29 @@ Sprint 0 prepara infraestructura; no crea fixtures de dominio fuera de una tarea
 La infraestructura está en `src/data/mocks`. `enableMocking` solo inicia el worker en navegador cuando `NEXT_PUBLIC_USE_MOCK_API=true`. El handler técnico de health valida MSW sin representar un endpoint de negocio ni una fixture de dominio.
 
 
+## Staff Admin — Fase 2B (2026-10-22), EN_QA
+
+El wrapper excluye también únicamente GET same-origin /api/staff/admin/roles,
+/users y /users/{id}, con slash final y cualquier query. Parámetros inválidos
+deben llegar al BFF para su validación. No amplía la exclusión a mutaciones,
+sesiones futuras, otro origen ni Private 07; worker generado intacto. Pruebas
+del boundary, flags, builds y runtime se distinguen de QA manual en
+[64_STAFF_ADMIN_BFF_QA.md](64_STAFF_ADMIN_BFF_QA.md). El historial de Reservas
+que sigue conserva su alcance y su estado propios.
+
+## Staff Admin — Fase 3C (2026-10-22), EN_QA
+
+Adenda al alcance histórico2B: el mismo listener previo al worker generado excluye
+ahora también PATCH same-origin /api/staff/admin/users/{id}, PATCH de su /status
+y PUT de /membership. Solo esos métodos/rutas; no reset, sesiones, DELETE ni
+orígenes externos. No respondWith ni mocks runtime de escritura; validación y
+persistencia siguen en BFF/Backend real con ambos flags. Handlers nuevos solo en
+tests, con éxito/no-op/errores y resultado incierto; sin fallback silencioso.
+Firefox automatizado con worker activo confirmó escritura y lectura persistida
+sobre PostgreSQL aislado. Evidencia, límites y QA manual pendiente en
+[66_STAFF_ADMIN_MUTATIONS_BFF_QA.md](66_STAFF_ADMIN_MUTATIONS_BFF_QA.md).
+No cambia el estado independiente de2B ni el historial de Reservas siguiente.
+
 ## STAFF-RESERVATIONS-READ-01 — exclusión real antes de MSW
 
 Los GET same-origin de `/api/staff/reservations` y su detalle no entran en MSW,

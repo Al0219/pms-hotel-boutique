@@ -139,7 +139,9 @@ class StaffAuthAuditEmitterIntegrationTests {
         assertEquals("refresh_rejected", ReflectionTestUtils.getField(attempt, "detail"));
         assertEquals(staff.id(), ReflectionTestUtils.getField(attempt, "staffUserId"));
         assertNoAttribution(attempt);
-        assertEquals(2, rows(staff.id()).size());
+        // 3B-1 now commits the known-family revocation despite the HTTP/auth rejection.
+        assertEquals(3, rows(staff.id()).size());
+        assertThrows(StaffAuthenticationException.class, () -> auth.getActivePrincipal(jwt.parse(login.accessToken())));
     }
 
     @Test

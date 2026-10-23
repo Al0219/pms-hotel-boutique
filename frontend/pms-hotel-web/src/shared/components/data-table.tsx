@@ -23,6 +23,8 @@ export interface DataTableProps<T> {
   density?: 'standard' | 'compact';
   /** Optional row composition for shared interaction adapters; keeps table semantics. */
   renderRow?: (row: T, cells: ReactNode) => ReactNode;
+  /** Optional read-only expansion, composed by the owning feature. */
+  renderExpandedRow?: (row: T) => ReactNode;
   scrollLabel?: string;
 }
 
@@ -31,7 +33,7 @@ export interface DataTableProps<T> {
  * (`table`/`thead`/`th scope`/`tbody`) y estados vacíos. El contenido de cada
  * celda lo decide el módulo consumidor. Se consume vía `@/shared/components`.
  */
-export function DataTable<T>({ columns, rows, getRowKey, label, emptyState, minWidth, density = 'standard', renderRow, scrollLabel }: Readonly<DataTableProps<T>>) {
+export function DataTable<T>({ columns, rows, getRowKey, label, emptyState, minWidth, density = 'standard', renderRow, renderExpandedRow, scrollLabel }: Readonly<DataTableProps<T>>) {
   if (rows.length === 0 && emptyState !== undefined) {
     return <p className={styles.empty}>{emptyState}</p>;
   }
@@ -52,8 +54,10 @@ export function DataTable<T>({ columns, rows, getRowKey, label, emptyState, minW
             const cells = columns.map((column) => (
                 <td key={column.key}>{column.render(row)}</td>
               ));
-            return renderRow ? <Fragment key={getRowKey(row)}>{renderRow(row, cells)}</Fragment>
-              : <tr key={getRowKey(row)}>{cells}</tr>;
+            return <Fragment key={getRowKey(row)}>
+              {renderRow ? renderRow(row, cells) : <tr>{cells}</tr>}
+              {renderExpandedRow?.(row)}
+            </Fragment>;
           })}
         </tbody>
       </table>

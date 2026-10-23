@@ -1,5 +1,5 @@
-/**
- * Public API for the staff module.
- * Export only intentionally public Domain Models, hooks and components.
- * Do not expose DTOs, mappers or service internals without an approved reason.
- */
+/** Public Staff administration workspace. Transport, mapping and inline coordination stay internal. */
+export { StaffAdminWorkspace } from './components/staff-admin-workspace';
+
+export { StaffAdminAccessBoundary } from "./components/staff-admin-access-boundary";
+export { staffNavigation, canonicalStaffRole, staffSafeDestination } from "./model/staff-navigation";

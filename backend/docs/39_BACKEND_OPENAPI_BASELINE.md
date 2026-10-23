@@ -5,6 +5,29 @@
 árbol limpio al iniciar. Mantenimiento autorizado por el usuario; estado EN_QA
 hasta su QA manual PASS. Sin commit/push/merge.
 
+## Evolución Staff Admin comandos — Backend3B-1 (2026-10-22)
+
+PATCH /staff-admin/users/{id}, PUT /{id}/membership y PATCH /{id}/status bajo
+/api/v1; audiencia internal-bff, STAFF_MANAGE y scope explícito. DTO estrictos,
+acuse mínimo y errores propios; entrada status solo SUSPENDED/DISABLED. Sin
+creación/reactivación/credenciales. GET conserva DTO y solo actualiza Allow del
+detalle para incluir PATCH. [QA54](54_STAFF_ADMIN_MUTATIONS_QA.md).
+Paridad generada/mappings PASS: **52 operaciones,40 paths,68 schemas,15 tags**,
+sin exclusiones nuevas. Backend verify915 PASS; EN_QA hasta confirmación manual.
+No se publica contrato BFF de escritura ni se cierra el baseline global.
+
+## Evolución Staff Admin lectura — Fase 2A (2026-10-22)
+
+Tres GET adicionales /api/v1/staff-admin/roles, /users y /users/{id}, protegidos
+por Bearer Staff/STAFF_MANAGE, audiencia internal-bff y scope explícito para
+usuarios. [Contrato 51](51_STAFF_ADMIN_READ_CONTRACT_PROPOSAL.md),
+[QA 52](52_STAFF_ADMIN_READ_QA.md). Sin contratos BFF/UI implementados ni mutaciones.
+Documento generado contrastado con mappings: 49 operaciones, 38 paths, 63 schemas,
+14 tags. Siete schemas administrativos propios, enums y límites, cursor nullable,
+errores sanitizados y private/no-store; ninguna exclusión de mappings nueva.
+La excepción a la aserción de parámetros del principal es solo username/roleCode
+como filtros de GET users; la organización y actor siguen siendo server-side.
+
 ## Evolución AUTH-UNIFIED-01 (2026-10-06)
 
 [Contrato vigente](44_UNIFIED_LOGIN_CONTRACT_QA.md): StaffLoginRequest pasa a

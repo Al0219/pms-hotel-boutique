@@ -78,12 +78,15 @@ public class DemoDataBootstrap implements ApplicationRunner {
 
     private void bootstrapCredentials(UUID organization) {
         UUID staff = id("staff:email-password");
-        jdbc.update("""
+        int createdStaff = jdbc.update("""
                 INSERT INTO staff_users(id,username,work_email,password_hash,role_code,status,created_at,updated_at)
                 VALUES(?,'pms_demo_reception',?,?,'RECEPCION','ACTIVE',now(),now()) ON CONFLICT DO NOTHING
                 """, staff, STAFF_EMAIL, passwords.encode(DEMO_PASSWORD));
-        Integer expectedStaff = jdbc.queryForObject("SELECT count(*) FROM staff_users WHERE id=? AND work_email=? AND username='pms_demo_reception' AND role_code='RECEPCION'", Integer.class, staff, STAFF_EMAIL);
+        // Serialize with Staff administration; existing mutable identity/access data is authoritative.
+        jdbc.queryForList("SELECT id FROM staff_users WHERE id=? FOR UPDATE", staff);
+        Integer expectedStaff = jdbc.queryForObject("SELECT count(*) FROM staff_users WHERE id=? AND username='pms_demo_reception'", Integer.class, staff);
         if (expectedStaff == null || expectedStaff != 1) throw new IllegalStateException("DEMO_AUTH_STAFF_CONFLICT: existing account preserved");
+        if (createdStaff == 1) {
         jdbc.update("""
                 INSERT INTO organization_memberships(staff_user_id,organization_id,role_code,status,created_at,updated_at)
                 VALUES(?,?,'RECEPCION','ACTIVE',now(),now()) ON CONFLICT DO NOTHING
@@ -92,6 +95,7 @@ public class DemoDataBootstrap implements ApplicationRunner {
                 INSERT INTO membership_properties(staff_user_id,organization_id,property_id,status,created_at,updated_at)
                 VALUES(?,?,?,'ACTIVE',now(),now()) ON CONFLICT DO NOTHING
                 """, staff, organization, PROPERTY_ID);
+        }
         UUID guest = id("guest:email-password");
         jdbc.update("""
                 INSERT INTO guest_accounts(id,email,email_verified_at,status,created_at,updated_at)

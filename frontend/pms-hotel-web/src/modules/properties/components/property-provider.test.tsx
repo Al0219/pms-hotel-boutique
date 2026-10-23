@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { StaffSession } from '@/modules/auth';
@@ -86,4 +87,22 @@ describe('Staff initial preference and live scope', () => {
     await act(async () => { fireEvent.change(screen.getByLabelText('Propiedad'), { target: { value: 'other' } }); });
     await selected('other'); expect(screen.getByTestId('scope')).toHaveTextContent('"propertyIds":["other"]');
   });
+});
+
+function GuardedScope({ guard }: { guard: (proceed: () => void) => void }) {
+  const { registerSelectionGuard } = usePropertyScope();
+  useEffect(() => registerSelectionGuard(guard), [registerSelectionGuard, guard]);
+  return <Scope />;
+}
+it('opt-in guard defers a valid manual selection and never intercepts forced session changes', async () => {
+  let proceed: (() => void) | undefined;
+  const guard = vi.fn((next: () => void) => { proceed = next; });
+  const view = render(<PropertyProvider><GuardedScope guard={guard} /></PropertyProvider>);
+  await selected('demo');
+  fireEvent.change(screen.getByLabelText('Propiedad'), { target: { value: 'other' } });
+  expect(guard).toHaveBeenCalledOnce(); expect(screen.getByLabelText('Propiedad')).toHaveValue('demo');
+  act(() => proceed?.()); await selected('other');
+  mocks.session.mockReturnValue({ ...initial, id: 'new', memberships: [member('new-hotel', 'NEW')] });
+  view.rerender(<PropertyProvider><GuardedScope guard={guard} /></PropertyProvider>); await selected('new-hotel');
+  expect(guard).toHaveBeenCalledOnce();
 });

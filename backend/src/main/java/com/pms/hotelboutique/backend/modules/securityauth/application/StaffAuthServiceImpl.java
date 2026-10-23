@@ -18,6 +18,9 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import com.pms.hotelboutique.backend.modules.securityauth.infrastructure.persistence.StaffSecurityLocks;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,6 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional
 public class StaffAuthServiceImpl implements StaffAuthService {
+    @PersistenceContext private EntityManager entityManager;
+    private final StaffSecurityLocks locks;
     private final PasswordLoginValidator loginInputs;
     private final StaffUserRepository staffUsers;
     private final AuthSessionRepository sessions;
@@ -41,7 +46,8 @@ public class StaffAuthServiceImpl implements StaffAuthService {
     public StaffAuthServiceImpl(StaffUserRepository staffUsers, AuthSessionRepository sessions,
             RefreshTokenRepository refreshTokens, AuthAuditEventRepository auditEvents,
             PasswordEncoder passwordEncoder, StaffJwtService jwtService, StaffAuthorizationService authorizationService,
-            @Value("${pms.security.refresh-token-ttl:P7D}") Duration refreshTokenTtl, PasswordLoginValidator loginInputs) {
+            @Value("${pms.security.refresh-token-ttl:P7D}") Duration refreshTokenTtl, PasswordLoginValidator loginInputs, StaffSecurityLocks locks) {
+        this.locks = locks;
         this.loginInputs = loginInputs;
         this.staffUsers = staffUsers;
         this.sessions = sessions;
@@ -59,8 +65,14 @@ public class StaffAuthServiceImpl implements StaffAuthService {
         String normalizedEmail = loginInputs.normalizedEmail(email, password);
         Instant now = Instant.now();
         StaffUser user = staffUsers.findByNormalizedEmail(normalizedEmail).orElse(null);
+        if (user != null) {
+            locks.users(List.of(user.getId()));
+            refreshEntity(user);
+        }
         boolean matched = passwordEncoder.matches(password, user == null ? dummyHash : user.getPasswordHash());
         if (user == null) throw new StaffAuthenticationException();
+        // Lookup may precede a concurrent email change. Never authenticate the old identifier.
+        if (!normalizedEmail.equals(user.getWorkEmail().trim().toLowerCase(java.util.Locale.ROOT))) throw new StaffAuthenticationException();
         if (!matched || !user.isActive()) {
             auditEvents.save(new AuthAuditEvent("STAFF_LOGIN_FAILED", user.getId(), null, "invalid_credentials", now));
             throw new StaffAuthenticationException();
@@ -73,6 +85,7 @@ public class StaffAuthServiceImpl implements StaffAuthService {
     }
 
     @Override
+    @Transactional(noRollbackFor = StaffAuthenticationException.class)
     public StaffTokenPair refresh(String rawRefreshToken) {
         if (rawRefreshToken == null || rawRefreshToken.isBlank()) {
             throw new StaffAuthenticationException();
@@ -80,9 +93,20 @@ public class StaffAuthServiceImpl implements StaffAuthService {
         Instant now = Instant.now();
         RefreshToken current = refreshTokens.findByTokenHash(hash(rawRefreshToken)).orElseThrow(StaffAuthenticationException::new);
         AuthSession session = current.getSession();
+        locks.users(List.of(session.getStaffUser().getId()));
+        locks.sessionsAndTokens(session.getStaffUser().getId());
+        refreshEntity(session.getStaffUser());
+        refreshEntity(session);
+        refreshEntity(current);
+        now = Instant.now();
         if (!current.isActive(now) || !session.isActive(now) || !session.getStaffUser().isActive()) {
             revokeSession(session, now, "refresh_rejected", null);
             throw new StaffAuthenticationException();
+        }
+        try { authorizationService.resolve(session.getStaffUser().getId()); }
+        catch (StaffAuthenticationException denied) {
+            revokeSession(session, now, "refresh_rejected", null);
+            throw denied;
         }
         current.revoke(now);
         StaffTokenPair tokens = createTokenPair(session, current.getFamilyId(), now);
@@ -94,8 +118,12 @@ public class StaffAuthServiceImpl implements StaffAuthService {
     @Transactional(readOnly = true)
     public StaffPrincipal getActivePrincipal(StaffPrincipal principal) {
         Instant now = Instant.now();
+        // Preserve callers joining an existing write transaction (including newly-created sessions).
+        entityManager.flush();
         AuthSession session = sessions.findById(principal.sessionId()).orElseThrow(StaffAuthenticationException::new);
         StaffUser user = session.getStaffUser();
+        refreshEntity(session);
+        refreshEntity(user);
         if (!session.isActive(now) || !user.isActive() || !user.getId().equals(principal.staffUserId())) {
             throw new StaffAuthenticationException();
         }
@@ -105,6 +133,8 @@ public class StaffAuthServiceImpl implements StaffAuthService {
 
     @Override
     public void logout(StaffPrincipal principal) {
+        locks.users(List.of(principal.staffUserId()));
+        locks.sessionsAndTokens(principal.staffUserId());
         StaffPrincipal active = getActivePrincipal(principal);
         AuthSession session = sessions.findById(active.sessionId()).orElseThrow(StaffAuthenticationException::new);
         revokeSession(session, Instant.now(), "logout", active.staffUserId());
@@ -131,16 +161,24 @@ public class StaffAuthServiceImpl implements StaffAuthService {
     }
 
     private void revokeSession(AuthSession session, Instant now, String detail, UUID authenticatedActorId) {
-        if (session.isActive(now)) {
-            session.revoke(now);
-        }
+        boolean changed = !session.isRevoked();
+        if (changed) session.revoke(now);
         List<RefreshToken> tokens = refreshTokens.findAllBySession_Id(session.getId());
-        tokens.forEach(token -> token.revoke(now));
+        for (RefreshToken token : tokens) {
+            if (!token.isRevoked()) { token.revoke(now); changed = true; }
+        }
+        // A rejected request on an already-revoked family is not another revocation fact.
+        if (!changed) return;
         AuthAuditEvent event = authenticatedActorId == null
                 ? new AuthAuditEvent("STAFF_SESSION_REVOKED", session.getStaffUser().getId(), session.getId(), detail, now)
                 : AuthAuditEvent.staffAction("STAFF_SESSION_REVOKED", session.getStaffUser().getId(), session.getId(),
                         detail, now, authenticatedActorId);
         auditEvents.save(event);
+    }
+
+    private void refreshEntity(Object entity) {
+        try { entityManager.refresh(entity); }
+        catch (jakarta.persistence.EntityNotFoundException absent) { throw new StaffAuthenticationException(); }
     }
 
     private String newRefreshToken() {

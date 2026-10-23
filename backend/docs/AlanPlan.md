@@ -2148,6 +2148,373 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 
 ### BE-006 — Staff, roles fijos, memberships y sesiones administrativas
 
+- **3D-2 COMPLETADA — aceptación QA manual PASS (2026-10-23):** usuario
+  confirma suspensión, baja lógica, confirmaciones, swipe de escritorio e iconos.
+  QA68 distingue estos casos de automatizados y pendientes: 409 HTTP, 503,
+  lector de pantalla y otras variantes/hardware no confirmados. Paginación positiva
+  conserva NO EJECUTABLE histórico. Preparación de commit/PR autorizada; una sola
+  ejecución de npm run check: lint/typecheck PASS, 2.207 tests PASS/1 FAIL
+  (checkout ajeno, archivo intacto). Focal checkout 11 PASS/1 FAIL y un build
+  separado PASS; no repetir suite completa ni Backend. PR en borrador por gate global.
+  3D-1/3B-1/3C COMPLETADAS; 3B-2 BLOQUEADA/M08; QA2A/2B y BE-006B/C/BE-014A
+  independientes intactos. Las entradas EN_QA siguientes son históricas.
+  Siguiente: publicación revisada del módulo hacia main, sin merge; creación y
+  reactivación quedan para incrementos posteriores con sus autorizaciones.
+
+- **3D-2 FAIL persistente, EN_QA (2026-10-23):** runtime HTTP en 3001 sirve build
+  anterior (`h-sNKwKaTgRGTT1sYXtdD` frente al local `Hn3SEdEnvuJrJGWzkcVRq`);
+  chunk de Usuarios sin edición ni gesto. Sin nuevos cambios funcionales por
+  hipótesis. Scripts de diagnóstico de solo lectura y recuperación en QA68.
+  54 focalizadas PASS/53 no seleccionadas; sintaxis y diff --check PASS.
+  Ruta autenticada/eventos de esa pestaña pendientes, no PASS funcional.
+  Siguiente: reiniciar Next desde su terminal, verificar código servido y probar
+  edición antes del arrastre. Sin builds/Docker ni cambios Backend/BFF; demás
+  estados independientes intactos.
+
+- **Regresión crítica 3D-2 EN_QA (2026-10-23):** prioridad click-to-edit.
+  Se retiran captura manual/anticipada y ventana de 500 ms; clic normal no se consume.
+  Selección residual ya no veta los tres campos. 66 focalizadas PASS y 46 checks
+  Firefox de componentes PASS, diff --check PASS; ruta autenticada NO VERIFICADA,
+  sin PASS funcional/manual. QA68 conserva FAIL e historial. Sin suite/builds/
+  Docker/Backend/BFF ni commit/push/merge. Siguiente: nueva QA de clics y luego
+  arrastre en ruta real; demás estados independientes intactos.
+
+- **QA FAIL de mouse3D-2 corregida, EN_QA (2026-10-23):** reproducción nativa
+  de componentes detectó exclusión de texto/triggers, captura tardía y clic que
+  abría email. Captura inicial en origen, control de selección y clic en captura;
+  ya admite username/correo/rol/propiedad, sin exigir vacío.45 focalizadas PASS,
+  35 checks nativos Firefox con fixture PASS, diff --check PASS. Ruta autenticada
+  PENDIENTE por login401 (sin credenciales extraídas); no confundir fixture con
+  Backend real ni QA manual. QA68 registra límites. Sin suite/build/Docker nuevo,
+  Backend/BFF ni commit/push/merge. Siguiente: nueva QA manual3D-2.
+
+- **Corrección puntual3D-2 EN_QA (2026-10-23):** gesto ampliado a mouse primario
+  en espacio libre y wheel horizontal de touchpad, conservando touch, selección,
+  scroll vertical, clic/expansión, teclado y confirmación.41 focalizadas PASS/2
+  archivos (26 no seleccionadas), diff --check PASS; hardware/Firefox manual
+  pendientes. Solo reconocedor/tests y registro breve en QA68; sin check general,
+  builds/E2E/Docker/hashes, Backend/BFF ni commit/push/merge. Estados independientes
+  intactos. Siguiente: validar arrastre con mouse/touchpad reales en Firefox.
+
+- **Fase3D-2 EN_QA — suspensión/baja UI (2026-10-23):** integra PATCH status
+  del BFF3C, sin modificar Backend/BFF. Fila táctil revela acciones sin ejecutar;
+  alternativa accesible/discreta en Acceso y ConfirmDialog obligatorio advierten
+  que no existe reactivación. Solo ACTIVE→SUSPENDED/DISABLED y SUSPENDED→DISABLED;
+  propio/SA/DISABLED protegidos. Tres columnas, edición directa y scope intactos.
+  Coordinador3D-1 compartido para versión/lock/GET,409 con revisión y nueva
+  confirmación,503/red bloqueado hasta GET sin retry. **Nuevo automático:**519
+  focalizadas/18 archivos PASS (37 nuevos), último check2162/303 PASS con lint/
+  typecheck/build; builds finales false/true PASS. Conserva fallos intermitentes
+  previos de checkout no modificados
+  ni considerados resueltos. Firefox→Next→Spring/PostgreSQL17 descartable:19 false+
+  19 true y11 responsive/táctil=49 checks PASS;14 SQL PASS, timeout que sí persistió
+  reconciliado sin replay. Teclado nativo con ventana NO EJECUTABLE por foco del
+  entorno; componentes PASS, hardware/lector/manual/CI no acreditados.
+  [QA68](../../frontend/pms-hotel-web/docs/68_STAFF_ADMIN_STATUS_UI_QA.md) documenta
+  inventario, comandos, capturas, limitaciones y QA manual PENDIENTE.3D-1/3B-1/3C
+  COMPLETADAS,3B-2/M08 BLOQUEADA,2A/2B independientes y BE-006B/C/BE-014A intactos.
+  Sin reactivación, altas, credenciales, commit/push/merge; preservar todo cambio
+  local. diff --check/preservación SHA-256 PASS:9 archivos existentes del alcance
+  y4 nuevos, ningún otro cambio alterado. Siguiente: aceptación manual propia
+  de3D-2, sin avanzar a otra fase.
+
+- **Fase3D-1 COMPLETADA — aceptación QA PASS autorizada (2026-10-23):**
+  usuario confirma manualmente edición directa de correo, rol y propiedades,
+  guardados/persistencia, conservación de borradores, cambios externos y
+  simplificación visual después de Actualizar usuario. **Pendientes manuales
+  conservados:**409 HTTP (no inferirlo del PASS de cambios externos), recuperación
+  503, lector de pantalla y demás escenarios no confirmados expresamente.
+  **Automático histórico, no repetido:**159 focalizadas/4 archivos PASS;
+  check2125 pruebas/302 archivos PASS, lint/typecheck/build y builds false/true PASS;
+  evidencia anterior e incidencias preservadas en [QA67](../../frontend/pms-hotel-web/docs/67_STAFF_ADMIN_INLINE_EDIT_QA.md).
+  Cierre solo documental: QA67/AlanPlan/AlanHandoff, diff --check/preservación PASS;
+  sin código, commit/push/merge ni CI remoto nuevo. Entradas EN_QA siguientes son
+  históricas.3B-1/3C COMPLETADAS,3B-2 BLOQUEADA/M08,3D-2 PENDIENTE y QA2A/2B
+  independientes intactos; no cierra BE-006B/C ni BE-014A. Siguiente: conservar
+  pendientes y esperar autorización independiente antes de implementar3D-2.
+
+- **UX de recuperación3D-1 EN_QA (2026-10-23):** Actualizar usuario ya no
+  añade ayudas permanentes, comparación del borrador ni banners de éxito. Conserva
+  grupo, nodo, borrador y versión canónica recuperada; foco vuelve al último campo
+  solo si no se ha movido a otro control. Rol permite ratificar selección pendiente
+  con mouse/táctil o Enter.409/503 requieren decisión explícita, sin reenviar al
+  recuperar; tres columnas y responsive intactos. **Automático:**159 focalizadas
+  PASS/4 archivos; check2125 PASS/302 archivos con lint/typecheck/build; builds
+  false/true PASS y diff/hashes PASS (solo8 archivos autorizados). QA67 registra
+  fallo intermitente previo de checkout y nuevas comprobaciones pendientes. Sin
+  Backend/BFF/Guest/3D-2;3D-1 EN_QA y demás estados independientes sin cambios.
+
+- **Corrección foco/visibilidad3D-1 EN_QA (2026-10-23):** reproducción con bundle
+  anterior en dos pestañas Firefox confirma remount por requireFreshSession, no
+  navegación completa. Provider conserva árbol ya autorizado oculto/inert mientras
+  verifica, sin desactivar sesión/permisos; inicial cacheada sigue bloqueada hasta
+  verificación. Blur requiere salida dentro de página, no tab/ventana/defocus por
+  consultas. Editor/listado mantienen borrador y versión; GET/caché externos marcan
+  conflicto sin adoptar snapshot hasta Actualizar usuario;503 no se desbloquea.
+  Nombres de propiedades no redefinen identidad; cambios de seguridad/404 retiran.
+  **Nuevo automático:**476 focalizadas/17 archivos PASS, check2119 tests/302
+  archivos PASS, lint/typecheck/build, builds false/true y typecheck final PASS.
+  Firefox corregido:13 false+13 true=26 comprobaciones reales PASS; carrera con
+  dos PATCH simultáneos produce200/409, revisión explícita termina versión2.
+  [QA67](../../frontend/pms-hotel-web/docs/67_STAFF_ADMIN_INLINE_EDIT_QA.md)
+  distingue baseline/harness/evidencia y nueva QA manual PENDIENTE. Sin Backend/
+  BFF/Guest/3D-2 ni nuevas dependencias. git diff --check/hashes PASS; solo trabajo
+  autorizado y servicios QA propios retirados. Estados independientes preservados,
+  3D-1 EN_QA; sin commit/push/merge y sin atribuir QA manual ni CI remoto.
+
+- **Corrección UX3D-1 click-to-edit EN_QA (2026-10-23):** sin botones visibles
+  Editar/Guardar/Cancelar; clic/teclado sobre correo/rol/propiedades. Correo aplica
+  con Enter/blur; rol al elegir; propiedades acumula cambios y envía un PUT al
+  salir o Ctrl+Enter. Escape descarta solo borradores permitidos, nunca escrituras
+  inciertas. Mantiene tres columnas, expansión, validación, snapshot/versionado,
+  contraparte completa del PUT y GET de reconciliación.409 exige lectura explícita
+  y nueva decisión (rol se vuelve a elegir);503 bloquea sin retries. Guard de scope
+  excluido de blur para no guardar por cambiar propiedad. Sin Backend/BFF/Auth/
+  Properties modificados, sin acciones3D-2 ni dependencias.
+  **Nuevo automático:**433 focalizadas PASS; check2104 tests/302 archivos PASS,
+  lint/TypeScript/build, builds false/true y typecheck posterior PASS. Firefox con
+  ventana26 false+27 true=53 comprobaciones nativas PASS (blur/teclas,409 y503 real);
+  5 de layout headless separadas PASS a1366/768/390px.16 envíos explícitos sin
+  replay y SQL AUDITOR/ACTIVE/version8/2properties. git diff --check/SHA-256 PASS;
+  solo8 archivos. [QA67](../../frontend/pms-hotel-web/docs/67_STAFF_ADMIN_INLINE_EDIT_QA.md)
+  distingue intentos fallidos del harness y evidencia final; no QA manual nueva
+  ni CI remoto. Servicios descartables propios retirados.3D-1 permanece EN_QA;
+  3B-1/3C/2C COMPLETADAS, QA2A/2B independientes,3B-2/M08 bloqueada y3D-2
+  PENDIENTE. Historial/evidencia inicial conservados, sin commit/push/merge.
+
+- **Entrega inicial Fase3D-1 EN_QA (2026-10-23):** edición inline real de correo, rol y
+  propiedades dentro de Usuario/Acceso/Asignación; tres columnas exactas.
+  PATCH correo y PUT membership de3C existentes, catálogo de roles real y opciones
+  de propiedades desde memberships activas de sesión. Un grupo por vez, GET
+  vigente antes de editar, contraparte completa/versión única en PUT; sin comandos
+  concurrentes ni refresh/retry.409 conserva borrador y exige GET/decisión explícita;
+  503 incierto bloquea escrituras incluso tras remontar hasta comprobar el estado.
+  Acuse mínimo validado, reconciliación GET, caché aislada/cancelación y cursor
+  reiniciado;200+GET404 fuera de scope conserva éxito sin datos inaccesibles.
+  Guard opt-in PropertyProvider confirma descarte voluntario; cambios forzosos
+  de identidad/permisos/logout ocultan contexto. Sin Auth/Backend/BFF modificados.
+  **Automático:**418 focalizadas PASS, check2089 tests/302 archivos PASS,
+  lint/TypeScript/build y builds mocks false/true PASS. Firefox real→Next→Spring→
+  PostgreSQL17 aislado:24 comprobaciones false+25 true=49 PASS;12 envíos explícitos,
+  conflicto real409, timeout503 sin retry, SQL final y capturas responsive.
+  git diff --check/preservación SHA-256 PASS. [QA67](../../frontend/pms-hotel-web/docs/67_STAFF_ADMIN_INLINE_EDIT_QA.md).
+  QA manual3D-1 PENDIENTE; no atribuir aceptación ni CI remoto.3B-1/3C/2C
+  COMPLETADAS intactas;2A/2B QA independientes;3B-2/M08 bloqueada;3D-2 PENDIENTE.
+  BE-006B/C y BE-014A globales no se cierran. Sin estado/alta/reset/baja UI,
+  commit/push/merge; se conserva todo el trabajo local anterior.
+
+- **Fase3C BFF COMPLETADA — aceptación QA PASS autorizada (2026-10-22):**
+  usuario confirmó manualmente login SUPER_ADMIN por Next BFF, lectura con
+  cookies Staff, correo persistido, no-op/changed=false, conflicto409 con datos
+  conservados, rol AUDITOR mediante PUT membership, SUSPENDED y DISABLED;
+  ACTIVE400, correo y membership sobre DISABLED409, sin autenticación401 y
+  Origin externo403. Lista exacta en [QA66](../../frontend/pms-hotel-web/docs/66_STAFF_ADMIN_MUTATIONS_BFF_QA.md).
+  Origin ausente, otra cuenta RECEPCION activa, desconexión503 y MSW activo
+  **no completados manualmente en esta sesión**: cobertura automatizada previa
+  conservada, sin atribuir PASS manual. Aceptación global QA PASS expresa.
+  Evidencia previa no reejecutada:382 focalizadas,2052 frontend/check, builds
+  mocks true/false y156 comprobaciones de integración PASS. Solo66/AlanPlan/
+  AlanHandoff; git diff --check y preservación por SHA-256. Sin código ni
+  commit/push/merge.3B-1 COMPLETADA;3B-2/M08 BLOQUEADA; QA2A/2B independientes
+  intactas; BE-006B/C y BE-014A no se cierran. **3D PENDIENTE**, no implementada.
+
+- **Entrega histórica Fase3C BFF EN_QA (2026-10-22):** PATCH correo, PUT membership y PATCH
+  SUSPENDED/DISABLED reales sobre namespace actual; contrato53/Backend54.
+  Cookies/transporte Staff existentes, Origin exacto obligatorio, body64KiB/DTO
+  estricto/acuse mínimo, no-store y un único despacho sin refresh/retry. MSW
+  excluye solo métodos/rutas confirmados; sin mocks de escritura en runtime.
+  check PASS:2052 tests/301 archivos, lint/typecheck/build;382 focalizados PASS,
+  builds false/true y typecheck posterior PASS. Next→JAR→PostgreSQL17 aislado:
+  55 aserciones HTTP y23 Firefox automatizadas **por cada flag**,156 en total;
+  worker realmente activo con true, cookies HttpOnly y lectura persistida.
+  Sin Backend/UI/tabla modificados, snapshot previo conservado; git diff --check
+  PASS. QA manual3C pendiente: no sustituida por estas ejecuciones del agente.
+  [QA66](../../frontend/pms-hotel-web/docs/66_STAFF_ADMIN_MUTATIONS_BFF_QA.md).
+  3B-1 COMPLETADA,2C COMPLETADA y QA2A/2B independientes intactas;3B-2/M08
+  bloqueada; BE-006B/C y BE-014A no se cierran. Sin3D ni commit/push/merge.
+
+- **Backend3B-1 COMPLETADA — QA manual PASS confirmada por el usuario (2026-10-22):**
+  cierre expresamente autorizado del alcance verificado en PostgreSQL aislado.
+  Login Staff, RECEPCION403 en catálogo, SA autorizado; correo persistido,
+  no-op200/changed=false, versión409, rol/propiedades, SUSPENDED, retiro de
+  propiedades, DISABLED y rechazo409 de cambios posteriores; reinicio persistente
+  y SQL membership ACTIVE/asignación INACTIVE/auditoría ORGANIZATION atribuida
+  correctamente. [QA54](54_STAFF_ADMIN_MUTATIONS_QA.md) conserva la lista exacta.
+  Evidencia automática previa915 Backend PASS/30 aserciones HTTP/SQL (y114
+  focalizados) conservada; no atribuida al usuario ni ejecutada nuevamente.
+  Concurrencia/rollback/revocación de tokens/aislamiento organizativo no se
+  declaran QA manual del usuario. CI remoto NO ACREDITADO.
+  3B-2/reactivación sigue BLOQUEADA por M08; BE-006B/C y BE-014A no se completan;
+  QA2A/2B independientes conservados. Solo54/AlanPlan/Handoff, sin código/3C,
+  commit/push/merge. Historial EN_QA de la entrega preservado abajo.
+
+
+- **Entrega histórica Backend3B-1 EN_QA (2026-10-22):** tres comandos reales de53: correo, rol/
+  propiedades y SUSPENDED/DISABLED; acuse mínimo, STAFF_MANAGE/scope SQL, CAS
+  global y no-op sin efectos. Locks usuario→membership→property→sesión→refresh,
+  revalidación, revocación y auditoría ORGANIZATION en transacción única.
+  Login/refresh/logout coordinados; rechazo refresh conocido persiste revocación
+  necesaria sin duplicar hechos en sesiones ya revocadas. C6-D06 global pendiente.
+  Demo solo inicializa asignaciones de Staff nuevo y preserva administración.
+  Sin migración nueva ni changesets históricos editados; Guest/BFF/Web intactos.
+  [QA54](54_STAFF_ADMIN_MUTATIONS_QA.md):114 focalizados PASS; verify final915
+  PASS/108 clases, cero fallos/errores/skipped; paridad OpenAPI52/40/68/15.
+  JAR real y PostgreSQL17/Java21 aislados:30 aserciones HTTP/SQL PASS antes/después
+  de reinicio con Guest intacto. Evidencia automatizada, QA manual pendiente.
+  Infraestructura QA propia retirada al terminar; hashes44 frontend/BFF previos
+  preservados. Reactivación3B-2 bloqueada; sin BFF/UI ni contratos Guest alterados.
+  BE-006B/C y BE-014A globales/QA2A/2B independientes no se completan;2C intacta.
+
+
+- **Inicio histórico Backend3B-1 EN_PROGRESO (2026-10-22):** autorización expresa del usuario;
+  contrato53/matriz15 contrastados sin conflicto. Correo, membership, suspensión
+  y DISABLED; locks auth/revocación/auditoría/demo. Sin reactivación ni BFF/UI.
+  Verificación aislada PostgreSQL17/Java21; no migración adicional necesaria.
+  BE-006B/C y BE-014A globales/QA2A/2B conservan estados independientes.
+
+- **Fase3A revisión M08/M11 — PENDIENTE DE APROBACIÓN FINAL (2026-10-22):**
+  producto recomienda M01–M07/M09/M10; no autoriza implementación. Se precisa
+  M02 con regla exacta de login por capa (máximo50, lectura320; sin ASCII extra),
+  y M10 mantiene tres columnas/expansión por fila/controles inline accesibles.
+  [53, secciones14–16](53_STAFF_ADMIN_MUTATIONS_CONTRACT_PROPOSAL.md): evidencia
+  futura por generación de credencial y consumo verificado de flujo Staff;
+  existentes sin backfill, ACTIVE intactos, SUSPENDED sin evidencia no reactivables.
+  Productor/canal/flujo ausentes:3B-2 bloqueada; sin migración readiness en3B-1.
+- **Subincremento Backend3B-1 propuesto, NO READY:** versión global, locks comunes
+  login/refresh/logout y revalidación, revocación de sesiones/familias y auditoría
+  en commit único; correo, rol/properties, suspensión y DISABLED. ACTIVE como
+  entrada de comando excluido (400) hasta3B-2. Matriz por operación con estado,
+  necesidad/riesgo/prueba y bloqueo de implementación/publicación/cierre global.
+  Gates de concurrencia/rollback/auditoría/no-op/Guest obligatorios antes de publicar;
+  reparación mínima del camino de refresh rechazado afectado, sin cerrar C6-D06.
+  Productor DemoDataBootstrap puede reponer asignaciones retiradas al reiniciar;
+  ajuste acotado a inicialización de Staff nuevo y locks, con regresión obligatoria
+  antes de publicación demo. PropertyService actual solo crea/renombra properties.
+  BE-006B/C PENDIENTES, BE-014A EN_QA y QA2A/2B independientes intactos;2C
+  COMPLETADA con salvedades. Solo propuesta/seguimiento, sin Java/BFF/SQL ni
+  cambios de QA. Falta aprobación expresa del alcance antes de programar.
+
+
+- **Fase 3A — propuesta entregada, PENDIENTE DE APROBACIÓN:**
+  [contrato53](53_STAFF_ADMIN_MUTATIONS_CONTRACT_PROPOSAL.md). Tres comandos
+  candidatos C4 y equivalentes BFF, DTO/errores/scope/version, locks compartidos
+  con login/refresh, revocación y auditoría atómicas; inline en tres columnas y
+  baja por swipe/confirmación con alternativa accesible. M01–M11 requieren
+  aprobación específica; destacan correo50/320, respuesta tras salir de PROPERTY,
+  auto-contacto/protección SA, credencial preparada inexistente y dependencia
+  BE-014A/subconjunto BE-006B. Sin código de mutaciones ni declarar READY.
+- **Fase 2C — COMPLETADA, cierre documental expresamente autorizado por el usuario
+  (2026-10-22):** conformidad condicionada satisfecha y regresiones PASS ya
+  registradas abajo; no se atribuye nueva inspección manual de tabla/paginación.
+  Paginación positiva manual NO EJECUTABLE y lector NO ACREDITADO conservados en
+  [Web65](../../frontend/pms-hotel-web/docs/65_STAFF_ADMIN_UI_QA.md).
+  Backend2A/BFF2B permanecen EN_QA; BE-006B/C no se completan. Entradas anteriores
+  de EN_QA/cierre preparado conservadas como historial. Esta entrega solo valida
+  documentación; no vuelve a ejecutar ni se reapropia de los PASS históricos.
+  Validación actual:15 enlaces,4 JSON,11 decisiones y25 filas de pruebas PASS;
+  hashes de65 archivos previos preservados salvo los3 documentos de seguimiento;
+  git diff --check PASS. Maven/npm/builds no aplican a cambios solo documentales.
+
+
+- **Ajuste posterior de pie de paginación Staff — PASS técnico:** solicitado por
+  usuario; EntityPagination compartido con Habitaciones/Reservas, flechas ‹/›,
+  selector/indicador/espaciado responsive comunes. Variante cursor sin paginación
+  local ni totales inventados; botones solo de páginas visitadas y límite real.
+  Focalizados103/7 PASS; check1937/299 PASS, lint/typecheck/build; build mocks=true
+  y typecheck PASS. Firefox real26 aserciones PASS y capturas revisadas por agente.
+  [Web65](../../frontend/pms-hotel-web/docs/65_STAFF_ADMIN_UI_QA.md). Conformidad
+  anterior/cierre preparado2C conservados, sin nueva QA humana atribuida;
+  paginación positiva manual NO EJECUTABLE y lector no acreditado se mantienen.
+  Backend2A/BFF2B EN_QA intactos; sin commit/push/merge.
+
+- **Fase2C última corrección — CIERRE PREPARADO, conformidad condicionada
+  SATISFECHA:** usuario confirmó6 PASS manuales (clic/contracción, Enter/Espacio,
+  caché30s, tipografía y RECEPCION→dashboard), condicionando aceptación visual a
+  retirar Acciones con regresiones PASS. Tabla final Usuario/Acceso/Asignación,
+  chevron en Usuario, colspan3 y móvil compacto. Focalizados95/8 PASS;
+  check1934/299 PASS + lint/typecheck/build; build mocks=true y typecheck PASS;
+  Firefox/MSW/Backend/PG aislado24 aserciones PASS, capturas inspeccionadas por
+  agente, sin atribuir al usuario nueva inspección manual de tres columnas.
+  [Web65](../../frontend/pms-hotel-web/docs/65_STAFF_ADMIN_UI_QA.md): paginación
+  positiva manual NO EJECUTABLE; lector de pantalla NO ACREDITADO. Backend2A y
+  BFF2B conservan EN_QA; no completar fases independientes/XLSX, ni mutaciones,
+  commits/push/merge. Preparado cierre de2C con salvedades explícitas.
+
+- **Fase2C ajustes finales UX/autorización — EN_QA:** clic en fila delega a control
+  nativo de chevron (sin Ver más/menos); ignora controles/acciones internas, usa
+  transición140ms y reducción de movimiento. Se retira solo aclaración de fechas;
+  strong/header usan token semibold600 e Inter oficial (antes strong UA700).
+  Detalle bajo demanda reutiliza frescura30s con observador cerrado/disabled y
+  gcTime0; contexto/identidad cambian sin puente de datos. Guard común usa
+  router.replace sin pantalla denegada: RECEPCION/GERENCIA/SA sin permiso a
+  dashboard; OPERACIONES/AUDITOR sin destino Staff en nav existente a / seguro;
+  sin sesión sigue /acceso. Backend/BFF intactos, sin nuevos permisos/mutaciones.
+  Focalizados95/8 PASS; check1934/299 PASS + lint/typecheck/build; build mocks=true
+  y typecheck PASS. Firefox real20 PASS sin mocks,22 con MSW/reduced-motion;
+  teclado nativo del harness no confirmado, componentes Enter/Espacio PASS.
+  Usuario confirmó segunda QA de7 escenarios básicos (incluye recuperación y
+  control anterior por teclado); redirección sin STAFF_MANAGE manual pendiente,
+  paginación positiva NO EJECUTABLE. [Web65](../../frontend/pms-hotel-web/docs/65_STAFF_ADMIN_UI_QA.md).
+  Requiere nueva confirmación manual; no COMPLETADA ni cambios de QA2A/2B.
+
+- **Fase 2C correcciones de QA/UX, 2026-10-22 — EN_QA:** usuario autoriza filas
+  expandibles en listado, GET detalle bajo demanda, búsqueda350ms sin desmontar
+  tabla dentro del mismo contexto, encabezado Usuarios y móvil compacto.
+  Guard existente hacia /acceso sin sesión, sin datos durante revalidación y
+  STAFF_MANAGE efectivo; URL de detalle antigua redirige al listado protegido.
+  Automatizado: focalizados81/8 PASS; check íntegro repetido1920/299 PASS,
+  lint/typecheck y builds true/false PASS. Primer check y contraste fallaron en
+  checkout público (cart replay); HEAD aislado12 PASS y segundo check PASS,
+  sin tocar checkout. Firefox real23 PASS sin mocks (incluye recuperación tras
+  desconexión) y21 PASS con MSW activo; teclado nativo no confirmado por harness,
+  Enter/Espacio PASS en componentes, revisar manualmente. diff-check PASS.
+  QA manual histórica comunicada: 13 PASS, 1 NO EJECUTABLE (paginación positiva)
+  y 1 PENDIENTE (desconexión/recuperación). Requiere nueva confirmación humana.
+  [Web65](../../frontend/pms-hotel-web/docs/65_STAFF_ADMIN_UI_QA.md) conserva
+  resultados anteriores y registra evidencia nueva/limitaciones. Sin modificar
+  Backend/BFF ni sus estados, sin mutaciones/credenciales ni cierre de tarea.
+
+- **Fase 2C UI lectura, 2026-10-22 — EN_QA:** autorización expresa del usuario;
+  listado/detalle en /seguridad/usuarios mediante src/modules/staff y BFF real.
+  Cuatro columnas agrupadas, responsive, filtros/cursor, STAFF_MANAGE/scope,
+  caché por sesión/contexto y limpieza Staff sin afectar Guest. Sin mutaciones.
+  [Web 65](../../frontend/pms-hotel-web/docs/65_STAFF_ADMIN_UI_QA.md): focalizados
+  84 PASS/7 archivos; check final 1.913 PASS/298 archivos, lint/typecheck/build;
+  build mocks=true/typecheck PASS; Firefox real Next/Spring/PostgreSQL 17 PASS
+  sin mocks y 18 PASS con MSW activo, capturas inspeccionadas (automatizado,
+  no confirmación manual). Backend/BFF funcionales y sus pruebas preservados;
+  no nueva ejecución Backend verify. 2A/2B/2C EN_QA hasta confirmación manual.
+  Siguiente: QA humana; contratos de mutaciones antes de inline/swipe DISABLED.
+
+- **Fase 2B BFF lectura, 2026-10-22 — EN_QA:** tres GET Next /api/staff/admin/*
+  autorizados por el usuario; DTO/proyección/validación de transporte, cookies
+  Staff y helpers existentes, errores/no-store/405 y exclusión GET MSW.
+  [Web 64](../../frontend/pms-hotel-web/docs/64_STAFF_ADMIN_BFF_QA.md): focalizados
+  149 PASS; check Web 1.871 tests/296 archivos + lint/typecheck/build PASS;
+  build mocks=true y typecheck posterior PASS; HTTP real Next/Spring/PostgreSQL
+  71 comprobaciones por cada build mocks=false/true PASS (automático, no manual).
+  Backend código/tests intactos y Fase 2A conserva EN_QA sin confirmación manual;
+  no nueva ejecución atribuida de verify Backend. UI/mutaciones fuera de alcance.
+- **Fase 2A-QA, revalidación HTTP 2026-10-22 — EN_QA:** matriz de
+  [QA 52](52_STAFF_ADMIN_READ_QA.md) ejecutada otra vez en PostgreSQL aislado.
+  31 focalizados PASS (11 HTTP real, 2 parser, 2 cursor, 16 OpenAPI); verify
+  nuevo 864 PASS, cero fallos/errores/skipped, BUILD SUCCESS. Sin defectos nuevos
+  ni cambios de código/tests; cambios de turno solo en QA/seguimiento. Backend
+  técnicamente listo para BFF; confirmación manual del usuario pendiente.
+  No COMPLETADA, sin BFF/React/commit/push/merge.
+- **Fase 2A Backend lectura, 2026-10-22 — EN_QA:** implementación de los
+  tres GET de [51](51_STAFF_ADMIN_READ_CONTRACT_PROPOSAL.md) solicitada expresamente
+  por el usuario, rama `feature/staff-admin-read` desde `a0f62d0`. Conserva los
+  cambios documentales previos. No aprueba globalmente BFF/UI ni completa B/C;
+  restricciones R01–R07 contrastadas para este alcance. Focalizados 31 PASS y
+  verify final Java 21/PostgreSQL 17: 864 PASS, cero fallos/errores/skipped;
+  OpenAPI generado coherente, diff-check PASS. [QA 52](52_STAFF_ADMIN_READ_QA.md),
+  confirmación manual del usuario pendiente. Sin mutaciones ni BFF/React.
+- **Propuesta de lectura, 2026-10-22:** [contrato HTTP/BFF y plan exacto](51_STAFF_ADMIN_READ_CONTRACT_PROPOSAL.md)
+  PENDIENTE DE APROBACIÓN (R01–R07): catálogo, listado y detalle reales. Documento
+  únicamente; sin endpoints ni cambio de estado de BE-006B/C. La dirección
+  arquitectónica fue aceptada; scope de casos límite y habilitación de este
+  subconjunto de lectura requieren la decisión expresa documentada allí.
 - **Estado:** BE-006A COMPLETADA; C4-D01 a D07 aprobadas por el usuario.
   BE-006B/C PENDIENTES de BE-014A, migración/auditoría, entrega de credenciales
   y revisión de contratos HTTP/BFF con owners.
