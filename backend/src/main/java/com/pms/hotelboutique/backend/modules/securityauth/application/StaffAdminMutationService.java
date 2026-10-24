@@ -3,6 +3,7 @@ package com.pms.hotelboutique.backend.modules.securityauth.application;
 import com.pms.hotelboutique.backend.modules.securityauth.domain.AuthAuditEvent;
 import com.pms.hotelboutique.backend.modules.securityauth.infrastructure.persistence.*;
 import java.time.Instant;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import java.util.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,33 @@ public class StaffAdminMutationService {
         return new Actor(principal,snapshot);
     }
     public void checkAccess(){actor();}
+    @Transactional(isolation=Isolation.READ_COMMITTED)
+    public User create(Map<String,List<String>> parameters,byte[] body){
+        var actor=actor();var query=StaffAdminReadQuery.parse(parameters,true);var input=parser.parseCreate(body);
+        locks.users(List.of(actor.principal().staffUserId()));actor=actor();
+        locks.memberships(List.of(actor.principal().staffUserId()),actor.snapshot().organizationId());
+        var proposed=new HashSet<>(input.propertyIds());
+        if(!portfolio(actor).containsAll(proposed))fail(STAFF_ACCESS_DENIED);
+        locks.properties(proposed,actor.snapshot().organizationId());actor=actor();
+        try {
+            if(query.scope()==ScopeKind.PROPERTY)scopes.resolveProperty(actor.snapshot(),query.propertyId());
+            else if(!("SUPER_ADMIN".equals(actor.snapshot().roleCode())&&actor.snapshot().properties().isEmpty()))scopes.resolveAllProperties(actor.snapshot());
+        }catch(org.springframework.security.access.AccessDeniedException denied){fail(STAFF_ACCESS_DENIED);}
+        if(!writes.validProperties(proposed,actor.snapshot().organizationId(),portfolio(actor)))fail(STAFF_ACCESS_DENIED);
+        if(query.scope()==ScopeKind.PROPERTY&&!proposed.contains(query.propertyId()))fail(INVALID_REQUEST);
+        if(proposed.isEmpty()&&!("SUPER_ADMIN".equals(actor.snapshot().roleCode())&&query.scope()==ScopeKind.ALL_PROPERTIES))fail(INVALID_REQUEST);
+        if(!writes.activeRole(input.roleCode().name()))fail(INVALID_REQUEST);
+        UUID id=UUID.randomUUID(),org=actor.snapshot().organizationId();
+        // An independent, cryptographically random preimage is discarded. No password is
+        // delivered or retained; SUSPENDED additionally prevents any authentication.
+        byte[] entropy=new byte[32];new java.security.SecureRandom().nextBytes(entropy);
+        String hash=BCrypt.hashpw(Base64.getEncoder().encodeToString(entropy),BCrypt.gensalt());
+        Arrays.fill(entropy,(byte)0);
+        writes.create(id,org,input.username(),input.workEmail(),input.roleCode().name(),hash,proposed);
+        audit.save(AuthAuditEvent.administrative("STAFF_CREATED",id,null,org,actor.principal().staffUserId(),UUID.randomUUID(),Instant.now()));
+        audit.flush();
+        return visible(actor,query,id);
+    }
     @Transactional(isolation=Isolation.READ_COMMITTED)
     public Result mutate(String rawId,Map<String,List<String>> parameters,byte[] body,Kind kind){
         var actor=actor();

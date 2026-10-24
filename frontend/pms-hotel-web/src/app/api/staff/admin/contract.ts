@@ -3,6 +3,7 @@ import { staffAdminRoleCodes, staffAdminStatuses, type StaffAdminDetailDTO, type
   type StaffAdminRolesDTO, type StaffAdminScopeDTO, type StaffAdminUserDTO } from './staff-admin.dto';
 
 export type StaffAdminResource = 'roles' | 'users' | 'detail';
+type StaffAdminQueryResource = StaffAdminResource | 'create';
 export interface StaffAdminQuery {
   params: URLSearchParams;
   scope?: 'PROPERTY' | 'ALL_PROPERTIES';
@@ -47,8 +48,8 @@ function cursor(value: unknown): string {
   return value; // Opaque: never decode, sign, trim or rebuild a Backend cursor.
 }
 
-export function parseStaffAdminQuery(params: URLSearchParams, resource: StaffAdminResource, id?: string): StaffAdminQuery {
-  const allowed = resource === 'roles' ? [] : resource === 'detail' ? ['scope', 'propertyId']
+export function parseStaffAdminQuery(params: URLSearchParams, resource: StaffAdminQueryResource, id?: string): StaffAdminQuery {
+  const allowed = resource === 'roles' ? [] : (resource === 'detail' || resource === 'create') ? ['scope', 'propertyId']
     : ['scope', 'propertyId', 'status', 'roleCode', 'username', 'limit', 'cursor'];
   for (const key of params.keys()) if (!allowed.includes(key) || params.getAll(key).length !== 1) fail();
   const result: StaffAdminQuery = { params: new URLSearchParams(params), limit: 50 };
@@ -60,6 +61,7 @@ export function parseStaffAdminQuery(params: URLSearchParams, resource: StaffAdm
     result.params.set('propertyId', result.propertyId);
   }
   if (resource === 'detail') { result.id = uuid(id); return result; }
+  if (resource === 'create') return result;
   if (params.has('status')) result.status = choice(params.get('status'), staffAdminStatuses);
   if (params.has('roleCode')) result.roleCode = choice(params.get('roleCode'), staffAdminRoleCodes);
   if (params.has('username')) {
@@ -132,4 +134,11 @@ export function projectStaffAdminResponse(value: unknown, resource: StaffAdminRe
   const nextCursor = raw.nextCursor === null ? null : cursor(raw.nextCursor);
   if (nextCursor !== null && items.length !== query.limit) fail();
   return { organizationId, scope: selectedScope, items, limit: query.limit, nextCursor };
+}
+
+export function projectStaffAdminCreated(value: unknown, query: StaffAdminQuery): StaffAdminUserDTO {
+  const raw = object(value), organizationId = uuid(raw.organizationId);
+  const item = user(raw, organizationId, { kind: query.scope!, propertyIds: query.scope === 'PROPERTY' ? [query.propertyId!] : propertyIds(raw.propertyIds) }, query);
+  if (item.status !== 'SUSPENDED' || item.membershipStatus !== 'ACTIVE' || item.roleCode === 'SUPER_ADMIN' || item.version !== 0) fail();
+  return item;
 }

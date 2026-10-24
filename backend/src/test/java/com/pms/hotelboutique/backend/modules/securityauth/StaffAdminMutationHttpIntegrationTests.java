@@ -50,6 +50,21 @@ class StaffAdminMutationHttpIntegrationTests {
         adminToken=token(admin);managerToken=token(manager);
     }
     @AfterEach void close(){client.close();}
+    @Test void createsPersistedSuspendedUserWithoutUsableCredentialAndRejectsDuplicate()throws Exception{
+        String name="create_"+suffix;
+        String body=json.writeValueAsString(Map.of("username",name,"workEmail",name+"@qa.test","roleCode","RECEPCION","propertyIds",List.of(p1)));
+        String path="/api/v1/staff-admin/users?scope=PROPERTY&propertyId="+p1;
+        var response=send("POST",path,body,managerToken,"application/json");ok(response,201);
+        var result=json.readTree(response.body());UUID id=UUID.fromString(result.path("id").asText());
+        assertEquals("SUSPENDED",value("status",id));assertEquals(0,version(id));
+        assertEquals("ACTIVE",jdbc.queryForObject("select status from organization_memberships where staff_user_id=?",String.class,id));
+        assertEquals("ACTIVE",jdbc.queryForObject("select status from membership_properties where staff_user_id=? and property_id=?",String.class,id,p1));
+        assertEquals(1,count("select count(*) from auth_audit_events where event_type='STAFF_CREATED' and scope_kind='ORGANIZATION' and staff_user_id=?",id));
+        assertFalse(response.body().matches("(?s).*(password|Hash|Token|credential).*"));
+        ok(get(id,managerToken,"scope=PROPERTY&propertyId="+p1),200);
+        ok(send("POST",path,body,managerToken,"application/json"),409);
+        assertNotEquals(201,rawLogin(id).statusCode());
+    }
     @Test void effectiveEmailChangeHasMinimalResultAndOrganizationalActorSubjectAudit()throws Exception{
         var response=command("PATCH",target,"",email("  New@Hotel.example  ",0),managerToken,"scope=PROPERTY&propertyId="+p1);ok(response,200);
         var result=json.readTree(response.body());assertEquals(Set.of("organizationId","staffUserId","version","changed"),result.propertyNames());

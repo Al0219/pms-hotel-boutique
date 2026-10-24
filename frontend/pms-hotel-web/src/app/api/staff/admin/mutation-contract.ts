@@ -76,3 +76,44 @@ export function projectStaffAdminMutationResult(value: unknown, id: string, expe
     || raw.version !== expectedVersion + (raw.changed ? 1 : 0)) fail();
   return { organizationId, staffUserId, version: raw.version as number, changed: raw.changed as boolean };
 }
+
+/** Creation has no expectedVersion: it allocates a new suspended identity. */
+export function parseStaffAdminCreate(raw: string) {
+  const value = object(JSON.parse(raw));
+  // Read flat object keys without confusing string content with JSON syntax.
+  // This also rejects duplicate keys before JSON.parse can silently collapse them.
+  const tokens = raw.match(/"(?:\\.|[^"\\])*"|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null|[{}\[\],:]/g) ?? [];
+  let i = 0;
+  const keys = new Set<string>();
+  if (tokens[i++] !== '{') fail();
+  while (tokens[i] !== '}') {
+    const key: unknown = JSON.parse(tokens[i++]);
+    if (typeof key !== 'string' || keys.has(key) || tokens[i++] !== ':') return fail();
+    keys.add(key);
+    if (tokens[i] === '[') {
+      i++;
+      while (tokens[i] !== ']') {
+        if (!tokens[i]?.startsWith('"')) fail();
+        i++;
+        if (tokens[i] !== ',') break;
+        i++;
+      }
+      if (tokens[i++] !== ']') fail();
+    } else {
+      if (!tokens[i] || ['{', '}', ':', ','].includes(tokens[i])) fail();
+      i++;
+    }
+    if (tokens[i] !== ',') break;
+    i++;
+  }
+  if (tokens[i++] !== '}' || i !== tokens.length || keys.size !== 4
+    || !['username', 'workEmail', 'roleCode', 'propertyIds'].every(key => keys.has(key))) fail();
+  if (typeof value.username !== 'string') return fail();
+  const username = value.username.trim();
+  if (!username || username.length > 80 || /\p{Cc}/u.test(username)) fail();
+  // Parse again through the established command validator after the exact key check.
+  const contact = parseStaffAdminCommand(JSON.stringify({ workEmail: value.workEmail, expectedVersion: 0 }), 'contact');
+  const membership = parseStaffAdminCommand(JSON.stringify({ roleCode: value.roleCode, propertyIds: value.propertyIds, expectedVersion: 0 }), 'membership');
+  return { username, workEmail: 'workEmail' in contact ? contact.workEmail : fail(),
+    roleCode: 'roleCode' in membership ? membership.roleCode : fail(), propertyIds: 'propertyIds' in membership ? membership.propertyIds : fail() };
+}

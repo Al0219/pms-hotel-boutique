@@ -8,6 +8,11 @@ public final class StaffAdminMutationModels {
     public enum Kind { CONTACT, MEMBERSHIP, STATUS }
     public enum AssignedRole { GERENCIA, RECEPCION, OPERACIONES, AUDITOR }
     public enum RequestedStatus { SUSPENDED, DISABLED }
+    @Schema(name="StaffAdminCreateCommand",additionalProperties=Schema.AdditionalPropertiesValue.FALSE)
+    public record Create(@Schema(requiredMode=Schema.RequiredMode.REQUIRED,minLength=1,maxLength=80) String username,
+            @Schema(requiredMode=Schema.RequiredMode.REQUIRED,maxLength=50,format="email") String workEmail,
+            @Schema(requiredMode=Schema.RequiredMode.REQUIRED) AssignedRole roleCode,
+            @Schema(requiredMode=Schema.RequiredMode.REQUIRED) List<UUID> propertyIds) { }
     @Schema(name="StaffAdminContactCommand",additionalProperties=Schema.AdditionalPropertiesValue.FALSE)
     public record Contact(@Schema(requiredMode=Schema.RequiredMode.REQUIRED,maxLength=50,format="email") String workEmail,
             @Schema(requiredMode=Schema.RequiredMode.REQUIRED,minimum="0",maximum="9007199254740990") long expectedVersion) { }

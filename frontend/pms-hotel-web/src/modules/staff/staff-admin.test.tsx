@@ -42,9 +42,9 @@ describe('Staff administration UI', () => {
     const cells = within(row).getAllByRole('cell'); expect(cells).toHaveLength(3);
     expect(screen.queryByRole('columnheader', { name: 'Acciones' })).not.toBeInTheDocument();
     expect(within(cells[0]).getByRole('button')).toHaveAttribute('data-staff-expand');
-    expect(cells[0]).toHaveTextContent('mlopez@hotel.example'); expect(cells[1]).toHaveTextContent('GERENCIA'); expect(cells[1]).toHaveTextContent('Suspendido'); expect(cells[2]).toHaveTextContent('2 propiedades asignadas');
+    expect(cells[0]).toHaveTextContent('mlopez@hotel.example'); expect(cells[1]).toHaveTextContent('GERENCIA'); expect(cells[1]).toHaveTextContent('Pendiente de activación'); expect(cells[2]).toHaveTextContent('2 propiedades asignadas');
     expect(within(row).getByRole('button', { name: 'Expandir información de mlopez' })).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.queryByRole('button', { name: /Editar|Guardar|Dar de baja|Crear/ })).not.toBeInTheDocument(); expect(reads[0].searchParams.get('propertyId')).toBe(p1);
+    expect(screen.queryByRole('button', { name: /Editar|Guardar|Dar de baja/ })).not.toBeInTheDocument(); expect(reads[0].searchParams.get('propertyId')).toBe(p1);
   });
   it('debounces literal search and sends filters to Backend, preserving detail navigation', async () => {
     const user = userEvent.setup(); mount(); await screen.findByText('mlopez'); await user.type(screen.getByLabelText('Buscar por username'), 'm%_'); expect(screen.getByText('mlopez')).toBeInTheDocument(); expect(screen.getByText('Actualizando…')).toBeInTheDocument();
@@ -178,4 +178,113 @@ describe('administrative mapper boundaries', () => {
     const data = page(); if (kind === 'organization') data.organizationId = p2; if (kind === 'partial-assignment') data.items[0].propertyIds.push(id); if (kind === 'scope') data.scope.propertyIds = [p2]; if (kind === 'super-admin') data.items[0].roleCode = 'SUPER_ADMIN'; if (kind === 'empty') data.items[0].propertyIds = []; if (kind === 'state') data.items[0].status = 'DELETED'; if (kind === 'duplicate') data.items.push(userDTO()); if (kind === 'cursor') Object.assign(data, { nextCursor: 'cursor' }); expect(() => mapStaffAdminPage(data, context(), 50)).toThrow(DomainMappingError);
   });
   it('SUPER_ADMIN ALL can see zero properties and membership INACTIVE remains explicit', () => { const readContext = { ...context(), role: 'SUPER_ADMIN', scope: { kind: 'ALL_PROPERTIES' as const, propertyIds: [] } }; expect(mapStaffAdminDetail({ organizationId: org, scope: readContext.scope, item: { ...userDTO(), propertyIds: [], membershipStatus: 'INACTIVE' } }, readContext, id).membershipStatus).toBe('INACTIVE'); });
+});
+
+it('creates through the real BFF route and immediately shows the persisted result with three columns', async () => {
+  const created = { ...userDTO('nuevo'), id: '55555555-5555-4555-8555-555555555555', workEmail: 'nuevo@hotel.test', roleCode: 'RECEPCION', version: 0 };
+  const post = vi.fn(async ({ request }: { request: Request }) => {
+    expect(await request.json()).toEqual({ username: 'nuevo', workEmail: 'nuevo@hotel.test', roleCode: 'RECEPCION', propertyIds: [p1, p2] });
+    return HttpResponse.json(created, { status: 201 });
+  });
+  mockServer.use(http.post('*/api/staff/admin/users', post), http.get('*/api/staff/admin/users', ({ request }) => {
+    const url = new URL(request.url); reads.push(url);
+    return HttpResponse.json({ ...page(), items: post.mock.calls.length ? [userDTO(), created] : [userDTO()], limit: Number(url.searchParams.get('limit')) });
+  }));
+  mount(); const user = userEvent.setup(); await screen.findByText('mlopez');
+  await user.click(screen.getByRole('button', { name: 'Crear usuario' }));
+  const dialog = screen.getByRole('dialog', { name: 'Crear usuario' });
+  expect(within(dialog).queryByRole('option', { name: 'SUPER_ADMIN' })).not.toBeInTheDocument();
+  await user.type(within(dialog).getByLabelText('Nombre de usuario'), 'nuevo');
+  await user.type(within(dialog).getByLabelText('Correo laboral'), 'nuevo@hotel.test');
+  await user.click(within(dialog).getByRole('checkbox', { name: 'Hotel 2' }));
+  await user.click(within(dialog).getByRole('button', { name: /^Crear$/ }));
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  await screen.findByText('nuevo'); expect(post).toHaveBeenCalledOnce();
+  expect(screen.getByText('mlopez')).toBeInTheDocument();
+  expect(screen.getByLabelText('Buscar por username')).toHaveValue('');
+  expect(reads.length).toBeGreaterThan(1);
+  expect(reads.at(-1)?.searchParams.has('username')).toBe(false);
+  expect(reads.at(-1)?.searchParams.get('scope')).toBe('PROPERTY');
+  expect(reads.at(-1)?.searchParams.get('propertyId')).toBe(p1);
+  expect(screen.getAllByRole('columnheader')).toHaveLength(3); expect(screen.getByRole('row', { name: /nuevo/ })).toHaveTextContent('Pendiente de activación');
+});
+it('blocks another create after uncertain response and reconciles by GET without replaying', async () => {
+  let lost = false;
+  const post = vi.fn(() => { lost = true; return HttpResponse.json({ code: 'STAFF_WRITE_UNAVAILABLE' }, { status: 503 }); });
+  mockServer.use(http.post('*/api/staff/admin/users', post), http.get('*/api/staff/admin/users', ({ request }) => {
+    const url = new URL(request.url); return HttpResponse.json({ ...page(), items: lost ? [{ ...userDTO('nuevo'), workEmail: 'nuevo@hotel.test', roleCode: 'RECEPCION', propertyIds: [p1] }] : [userDTO()], limit: Number(url.searchParams.get('limit')) });
+  }));
+  mount(); const user = userEvent.setup(); await screen.findByText('mlopez'); await user.click(screen.getByRole('button', { name: 'Crear usuario' }));
+  await user.type(screen.getByLabelText('Nombre de usuario'), 'nuevo'); await user.type(screen.getByLabelText('Correo laboral'), 'nuevo@hotel.test');
+  await user.click(screen.getByRole('button', { name: /^Crear$/ }));
+  await screen.findByText(/No se pudo confirmar el resultado/); expect(screen.queryByRole('button', { name: /^Crear$/ })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
+  await user.click(screen.getByRole('button', { name: 'Comprobar listado' })); await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  expect(post).toHaveBeenCalledOnce(); await screen.findByText('nuevo');
+});
+
+it('preserves a rejected draft, validates property selection and can cancel without sending', async () => {
+  const post = vi.fn(() => HttpResponse.json({ code: 'STAFF_EMAIL_CONFLICT' }, { status: 409 }));
+  mockServer.use(http.post('*/api/staff/admin/users', post));
+  mount(); const user = userEvent.setup(); await screen.findByText('mlopez'); await user.click(screen.getByRole('button', { name: 'Crear usuario' }));
+  await user.type(screen.getByLabelText('Nombre de usuario'), 'nuevo'); await user.type(screen.getByLabelText('Correo laboral'), 'nuevo@hotel.test');
+  await user.click(screen.getByRole('checkbox', { name: 'Hotel 1' })); await user.click(screen.getByRole('button', { name: /^Crear$/ }));
+  await screen.findByText(/Selecciona un rol y propiedades autorizadas/); expect(post).not.toHaveBeenCalled();
+  await user.click(screen.getByRole('checkbox', { name: 'Hotel 1' })); await user.click(screen.getByRole('button', { name: /^Crear$/ }));
+  await screen.findByText(/usuario o correo ya está registrado/); expect(screen.getByLabelText('Nombre de usuario')).toHaveValue('nuevo');
+  await user.click(screen.getByRole('button', { name: 'Cancelar' })); expect(screen.queryByRole('dialog')).not.toBeInTheDocument(); expect(post).toHaveBeenCalledOnce();
+});
+it('submits only once while creation is in flight', async () => {
+  let release!: () => void;
+  const post = vi.fn(async () => { await new Promise<void>(resolve => { release = resolve; }); return HttpResponse.json({ ...userDTO('nuevo'), workEmail: 'nuevo@hotel.test', roleCode: 'RECEPCION', propertyIds: [p1] }, { status: 201 }); });
+  mockServer.use(http.post('*/api/staff/admin/users', post));
+  mount(); const user = userEvent.setup(); await screen.findByText('mlopez'); await user.click(screen.getByRole('button', { name: 'Crear usuario' }));
+  await user.type(screen.getByLabelText('Nombre de usuario'), 'nuevo'); await user.type(screen.getByLabelText('Correo laboral'), 'nuevo@hotel.test');
+  await user.dblClick(screen.getByRole('button', { name: /^Crear$/ }));
+  await waitFor(() => expect(post).toHaveBeenCalledOnce()); expect(screen.getByRole('button', { name: 'Creando…' })).toBeDisabled();
+  fireEvent.submit(document.getElementById('staff-create-form')!); expect(post).toHaveBeenCalledOnce();
+  release(); await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+});
+
+it('allows dismissing an uncertain create after GET proves an existing account has different data, without replaying', async () => {
+  let sent = false;
+  const post = vi.fn(() => { sent = true; return HttpResponse.json({ code: 'STAFF_WRITE_UNAVAILABLE' }, { status: 503 }); });
+  mockServer.use(http.post('*/api/staff/admin/users', post), http.get('*/api/staff/admin/users', ({ request }) => {
+    const url = new URL(request.url); return HttpResponse.json({ ...page(), items: sent ? [{ ...userDTO('nuevo'), workEmail: 'different@hotel.test' }] : [userDTO()], limit: Number(url.searchParams.get('limit')) });
+  }));
+  mount(); const user = userEvent.setup(); await screen.findByText('mlopez'); await user.click(screen.getByRole('button', { name: 'Crear usuario' }));
+  await user.type(screen.getByLabelText('Nombre de usuario'), 'nuevo'); await user.type(screen.getByLabelText('Correo laboral'), 'nuevo@hotel.test');
+  await user.click(screen.getByRole('button', { name: /^Crear$/ })); await screen.findByText(/No se pudo confirmar el resultado/);
+  await user.click(screen.getByRole('button', { name: 'Comprobar listado' })); await screen.findByText(/Ese usuario existe con datos diferentes/);
+  expect(screen.getByLabelText('Correo laboral')).toHaveValue('nuevo@hotel.test');
+  expect(screen.queryByRole('button', { name: /^Crear$/ })).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Cancelar' })); expect(screen.queryByRole('dialog')).not.toBeInTheDocument(); expect(post).toHaveBeenCalledOnce();
+});
+
+it('clears search and filters and returns to the first scoped page after creation', async () => {
+  const created = { ...userDTO('nuevo'), id: '55555555-5555-4555-8555-555555555555', workEmail: 'nuevo@hotel.test', roleCode: 'RECEPCION', propertyIds: [p1], version: 0 };
+  const post = vi.fn(() => HttpResponse.json(created, { status: 201 }));
+  mockServer.use(http.post('*/api/staff/admin/users', post), http.get('*/api/staff/admin/users', ({ request }) => {
+    const url = new URL(request.url); reads.push(url);
+    const limit = Number(url.searchParams.get('limit'));
+    const first = Array.from({ length: limit }, (_, i) => ({ ...userDTO(`previo${i}`), id: `${String(i).padStart(8, '0')}-4444-4444-8444-444444444444` }));
+    const items = post.mock.calls.length ? [userDTO(), created] : url.searchParams.has('cursor') ? [userDTO('previo-final')] : first;
+    return HttpResponse.json({ ...page(), limit, items, nextCursor: !post.mock.calls.length && !url.searchParams.has('cursor') ? 'before-create' : null });
+  }));
+  mount({ initial: { username: 'previo', roleCode: 'GERENCIA', status: 'SUSPENDED', limit: 5 } });
+  const user = userEvent.setup(); await screen.findByText('previo0');
+  await user.click(screen.getByRole('button', { name: 'Página siguiente' })); await screen.findByText('previo-final');
+  expect(reads.at(-1)?.searchParams.get('cursor')).toBe('before-create');
+  await user.click(screen.getByRole('button', { name: 'Crear usuario' }));
+  await user.type(screen.getByLabelText('Nombre de usuario'), 'nuevo'); await user.type(screen.getByLabelText('Correo laboral'), 'nuevo@hotel.test');
+  await user.click(screen.getByRole('button', { name: /^Crear$/ }));
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  await screen.findByText('nuevo'); expect(screen.getByText('mlopez')).toBeInTheDocument();
+  expect(screen.getByLabelText('Buscar por username')).toHaveValue('');
+  expect(screen.getByLabelText('Rol')).toHaveValue(''); expect(screen.getByLabelText('Estado')).toHaveValue('');
+  expect(screen.getByRole('button', { name: 'Página 1' })).toHaveAttribute('aria-current', 'page');
+  const query = reads.at(-1)!.searchParams;
+  for (const key of ['username', 'roleCode', 'status', 'cursor']) expect(query.has(key)).toBe(false);
+  expect(query.get('scope')).toBe('PROPERTY'); expect(query.get('propertyId')).toBe(p1);
+  expect(post).toHaveBeenCalledOnce(); expect(screen.getByRole('row', { name: /nuevo/ })).toHaveTextContent('Pendiente de activación');
 });
