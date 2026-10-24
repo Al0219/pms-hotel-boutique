@@ -60,7 +60,15 @@ se concentran en el sidebar compartido; no hay StaffHeader horizontal
 (decisión de presentación autorizada, 2026-10-08). El menú conserva labels e
 iconos y se despliega en pantallas estrechas.
 
+## BFF Staff Admin — Fase 2B (2026-10-22), EN_QA
+
+GET /api/staff/admin/roles, /users y /users/[id] son fachadas reales de Spring
+/api/v1/staff-admin/*. Cookie Staff existente, STAFF_MANAGE/scope efectivos en
+Backend, proyección allowlist y no-store; métodos no admitidos dan 405. No crea
+páginas /seguridad/usuarios ni modifica el shell. [Contrato/QA 64](64_STAFF_ADMIN_BFF_QA.md).
+
 ## page.tsx
+
 Debe ser delgado.
 
 Ejemplo:
@@ -78,3 +86,22 @@ export default function Page() {
 - DTO mapping;
 - lógica de negocio pesada;
 - duplicate layout.
+
+## Administración Staff — Fase 2C (cierre preparado)
+
+/seguridad/usuarios y /seguridad/usuarios/[staffUserId] componen la API pública
+de src/modules/staff dentro de StaffShell; STAFF_MANAGE, PropertyProvider y BFF
+real existente. Listado de tres columnas agrupadas (Usuario, Acceso y Asignación), filtros/cursor y detalle
+solo lectura. Sin SecurityFrame adicional ni mutaciones. Evidencia y QA manual:
+[65_STAFF_ADMIN_UI_QA.md](65_STAFF_ADMIN_UI_QA.md). Backend/BFF conservan EN_QA.
+
+Corrección UX autorizada (EN_QA): el detalle principal es ahora una fila expandible
+en /seguridad/usuarios con GET bajo demanda. La URL antigua /[staffUserId]
+redirige al listado protegido conservando solo filtros; no consulta el target.
+Guard Staff existente configurado hacia /acceso sin sesión y sin contenido
+administrativo durante revalidación. Historial/manual QA en Web65.
+
+Última conformidad condicionada del usuario satisfecha: Acciones retirada,
+chevron dentro de Usuario, detalle colspan3 y regresiones PASS. No se atribuye
+una nueva inspección manual de esta tabla; salvedades y evidencia en Web65.
+Backend2A/BFF2B mantienen EN_QA independiente.

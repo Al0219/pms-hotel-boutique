@@ -145,7 +145,7 @@ describe("shared-cookie Staff session loss", () => {
     const {client}=mount();await screen.findByText("staff|GERENCIA|undefined");
     client.setQueryData(["guest-session"],{guest:true});
     client.setQueryData(["guest","summary"],{summary:true});
-    for (const key of ["reservations", "staff-reservation-quotes", "staff-room-assignment", "staff-room-occupancy"]) {
+    for (const key of ["reservations", "staff-reservation-quotes", "staff-room-assignment", "staff-room-occupancy", "staff-admin"]) {
       client.setQueryData([key, "staff"], { private: true });
     }
     authenticated=false; // Cookie/session removed by another window's successful logout.
@@ -155,7 +155,7 @@ describe("shared-cookie Staff session loss", () => {
     expect(screen.queryByText("staff|GERENCIA|undefined")).not.toBeInTheDocument();
     expect(screen.queryByText("Sesión Staff requerida")).not.toBeInTheDocument();
     expect(client.getQueryData(staffSessionKey)).toBeNull();
-    for (const key of ["reservations", "staff-reservation-quotes", "staff-room-assignment", "staff-room-occupancy"]) {
+    for (const key of ["reservations", "staff-reservation-quotes", "staff-room-assignment", "staff-room-occupancy", "staff-admin"]) {
       expect(client.getQueriesData({ queryKey: [key] })).toEqual([]);
     }
     expect(client.getQueryData(["guest-session"])).toEqual({guest:true});

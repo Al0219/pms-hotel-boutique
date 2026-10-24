@@ -48,7 +48,12 @@ public class StaffJwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
         } catch (JwtException | StaffAuthenticationException | IllegalArgumentException exception) {
             SecurityContextHolder.clearContext();
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            authenticationFailed(response);
         }
+    }
+
+    /** Namespace adapters can render their contracted error without changing C1 defaults. */
+    protected void authenticationFailed(HttpServletResponse response) throws IOException {
+        response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
     }
 }

@@ -67,7 +67,7 @@ it.each(['rooms', 'reservations'] as const)('sidebar selector refreshes real %s 
   const secondLabel = module === 'rooms' ? /Habitación 201/ : /Segundo Responsible/;
   await screen.findByRole('row', { name: firstLabel });
   expect(screen.getByRole('option', { name: 'Hotel 0' })).toHaveValue(inventoryPropertyId);
-  expect(screen.getByLabelText('Propiedad')).toHaveAttribute('title', `Hotel 0 · ${inventoryPropertyId}`);
+  expect(screen.getByLabelText('Propiedad')).toHaveAttribute('title', 'Hotel 0');
   await user.selectOptions(screen.getByLabelText('Propiedad'), second);
   expect(screen.queryByRole('row', { name: firstLabel })).not.toBeInTheDocument();
   await screen.findByRole('row', { name: secondLabel });

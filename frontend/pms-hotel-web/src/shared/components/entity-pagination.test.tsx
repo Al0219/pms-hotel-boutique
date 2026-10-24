@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EntityPagination, useEntityPagination } from './entity-pagination';
 
 afterEach(cleanup);
@@ -69,5 +69,29 @@ describe('EntityPagination', () => {
     expect(screen.getByText('126–127 de 127 registros')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Página anterior' }));
     expect(screen.getByText('121–125 de 127 registros')).toBeInTheDocument();
+  });
+});
+
+describe('EntityPagination with server cursors', () => {
+  it('uses the same arrows and sizes without inventing a total or unvisited pages', () => {
+    const setPage = vi.fn(), setPageSize = vi.fn();
+    render(<EntityPagination label="Cursores" noun="usuarios" pagination={{ mode: 'cursor', page: 2, pageSize: 25, from: 26, to: 50, hasNext: true, busy: false, setPage, setPageSize }} />);
+    expect(screen.getByText('26–50 usuarios')).toBeInTheDocument();
+    expect(screen.queryByText(/de \d+ usuarios/)).not.toBeInTheDocument();
+    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['5', '10', '25', '50', '100']);
+    expect(screen.getByRole('button', { name: 'Página anterior' })).toHaveTextContent('‹');
+    expect(screen.getByRole('button', { name: 'Página siguiente' })).toHaveTextContent('›');
+    expect(screen.queryByRole('button', { name: 'Página 3' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Página 1' })); expect(setPage).toHaveBeenLastCalledWith(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Página siguiente' })); expect(setPage).toHaveBeenLastCalledWith(3);
+    fireEvent.change(screen.getByLabelText('Filas por página'), { target: { value: '5' } }); expect(setPageSize).toHaveBeenCalledWith(5);
+  });
+  it('takes the next boundary from Backend and disables navigation during updates', () => {
+    const pagination = { mode: 'cursor' as const, page: 1, pageSize: 50, from: 1, to: 1, hasNext: false, busy: false, setPage: vi.fn(), setPageSize: vi.fn() };
+    const { rerender } = render(<EntityPagination label="Cursores" noun="usuarios" pagination={pagination} />);
+    expect(screen.getByRole('button', { name: 'Página anterior' })).toBeDisabled(); expect(screen.getByRole('button', { name: 'Página siguiente' })).toBeDisabled();
+    rerender(<EntityPagination label="Cursores" noun="usuarios" summary="Actualizando resultados…" pagination={{ ...pagination, page: 2, hasNext: true, busy: true }} />);
+    expect(screen.getByText('Actualizando resultados…')).toBeInTheDocument();
+    for (const button of screen.getAllByRole('button')) expect(button).toBeDisabled();
   });
 });

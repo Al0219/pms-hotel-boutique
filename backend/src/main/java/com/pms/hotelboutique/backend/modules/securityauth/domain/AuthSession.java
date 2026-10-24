@@ -48,5 +48,6 @@ public class AuthSession {
     public UUID getId() { return id; }
     public StaffUser getStaffUser() { return staffUser; }
     public boolean isActive(Instant now) { return status == Status.ACTIVE && expiresAt.isAfter(now); }
+    public boolean isRevoked() { return status == Status.REVOKED; }
     public void revoke(Instant now) { status = Status.REVOKED; revokedAt = now; }
 }

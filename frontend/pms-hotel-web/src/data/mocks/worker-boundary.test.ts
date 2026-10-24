@@ -75,6 +75,12 @@ describe('Staff reservations boundary before MSW', () => {
     '/api/staff/reservations',
     '/api/staff/reservations/invalid?propertyId=invalid',
     '/api/staff/reservations/?propertyId=real-property',
+    '/api/staff/admin/roles',
+    '/api/staff/admin/roles/',
+    '/api/staff/admin/users?scope=ALL_PROPERTIES',
+    '/api/staff/admin/users?scope=PROPERTY&propertyId=invalid',
+    '/api/staff/admin/users/44444444-4444-4444-8444-444444444444?scope=ALL_PROPERTIES',
+    '/api/staff/admin/users/invalid/?scope=ALL_PROPERTIES',
   ])('does not enter MSW or respondWith for the real BFF read %s', async path => {
     const worker = workerHarness();
     const event = await worker.dispatch(path);
@@ -82,6 +88,16 @@ describe('Staff reservations boundary before MSW', () => {
     expect(event.respondWith).not.toHaveBeenCalled();
     // The worker neither forwards nor clones this request: the browser performs it.
     expect(worker.networkFetch).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['/api/staff/admin/users/id?scope=ALL_PROPERTIES', 'PATCH'],
+    ['/api/staff/admin/users/44444444-4444-4444-8444-444444444444/', 'PATCH'],
+    ['/api/staff/admin/users/invalid/membership?scope=PROPERTY&propertyId=bad', 'PUT'],
+    ['/api/staff/admin/users/id/status/', 'PATCH'],
+  ])('administrative command %s %s is native even with MSW active', async (path, method) => {
+    const worker = workerHarness(), event = await worker.dispatch(path, method);
+    expect(event.stopped).toBe(true); expect(event.respondWith).not.toHaveBeenCalled(); expect(worker.networkFetch).not.toHaveBeenCalled();
   });
 
   it.each([['/api/staff/rooms', 'POST'], ['/api/staff/room-types', 'POST'], ['/api/staff/rooms/id?propertyId=real-property', 'PATCH'], ['/api/staff/room-types/id?propertyId=real-property', 'PATCH']])('does not intercept confirmed Inventory writes %s %s', async (path, method) => {
@@ -101,6 +117,15 @@ describe('Staff reservations boundary before MSW', () => {
     ['http://pms.test/rooms?propertyId=GT-HB-01', 'GET'],
     ['/api/staff/reservations/id/cancellation-preview', 'GET'],
     ['http://other.example.test/api/staff/reservations', 'GET'],
+    ['http://other.example.test/api/staff/admin/roles', 'GET'],
+    ['/api/staff/admin/roles', 'POST'],
+    ['/api/staff/admin/users', 'DELETE'],
+    ['/api/staff/admin/users/id/sessions', 'GET'],
+    ['/api/staff/admin/users/id/membership', 'PATCH'],
+    ['/api/staff/admin/users/id/status', 'PUT'],
+    ['/api/staff/admin/users/id/credential-reset', 'POST'],
+    ['http://other.example.test/api/staff/admin/users/id', 'PATCH'],
+    ['/__mock/private-07/roles', 'GET'],
   ])('preserves the existing worker behavior for %s %s', async (path, method) => {
     const worker = workerHarness();
     const event = await worker.dispatch(path, method);

@@ -138,7 +138,7 @@ class OpenApiContractIntegrationTests {
         doc.path("paths").properties().forEach(path -> path.getValue().properties().forEach(method -> {
             String route = path.getKey();
             var op = method.getValue();
-            boolean staffAuth = (route.startsWith("/api/v1/staff-auth/") || route.startsWith("/api/v1/auth/"));
+            boolean staffAuth = (route.startsWith("/api/v1/staff-auth/") || route.startsWith("/api/v1/auth/") || route.startsWith("/api/v1/staff-admin/"));
             boolean guestAuth = route.startsWith("/api/v1/guest-auth/");
             boolean publicAvailability = route.equals("/api/v1/public/availability") && method.getKey().equals("get");
             boolean publicBooking = route.equals("/api/v1/public/bookings") && method.getKey().equals("post");
@@ -306,7 +306,10 @@ class OpenApiContractIntegrationTests {
             for (var parameter : op.path("parameters")) {
                 String name = parameter.path("name").asText();
                 assertTrue(names.add(parameter.path("in").asText() + ":" + name), "duplicate parameter");
-                assertFalse(Set.of("principal", "staffUserId", "sessionId", "username", "roleCode").contains(name), name);
+                boolean staffAdminFilter = path.getKey().equals("/api/v1/staff-admin/users")
+                        && method.getKey().equals("get") && parameter.path("in").asText().equals("query")
+                        && Set.of("username", "roleCode").contains(name);
+                assertFalse(!staffAdminFilter && Set.of("principal", "staffUserId", "sessionId", "username", "roleCode").contains(name), name);
                 if (parameter.path("in").asText().equals("path")) {
                     assertTrue(parameter.path("required").asBoolean());
                     assertEquals("uuid", parameter.path("schema").path("format").asText());
@@ -514,6 +517,52 @@ class OpenApiContractIntegrationTests {
     }
 
     @Test
+    void staffAdminReadsDocumentExactTransportScopePaginationAndSafeDtos() throws Exception {
+        var doc = document();
+        for (String path : List.of("/api/v1/staff-admin/roles", "/api/v1/staff-admin/users", "/api/v1/staff-admin/users/{id}")) {
+            var op = operation(doc, path, "get");
+            assertEquals("internal-bff", op.path("x-audience").asText());
+            assertTrue(op.path("security").get(0).has("bearerAuth"));
+            assertTrue(op.path("description").asText().contains("STAFF_MANAGE"));
+            for (String code : List.of("200","400","401","403","405","503")) {
+                assertTrue(op.path("responses").has(code),path+" "+code);
+                assertTrue(op.path("responses").path(code).path("headers").has("Cache-Control"));
+            }
+            assertEquals(path.endsWith("/{id}") ? Set.of("get","patch") : Set.of("get"), keys(doc.path("paths").path(path)));
+            assertFalse(op.has("requestBody"));
+        }
+        var list = operation(doc,"/api/v1/staff-admin/users","get");
+        assertEquals(Set.of("scope","propertyId","status","roleCode","username","limit","cursor"),parameterNames(list));
+        assertTrue(parameter(list,"scope").path("required").asBoolean());
+        assertEquals(Set.of("PROPERTY","ALL_PROPERTIES"),strings(parameter(list,"scope").path("schema").path("enum")));
+        assertEquals(50,parameter(list,"limit").path("schema").path("default").asInt());
+        assertEquals(1,parameter(list,"limit").path("schema").path("minimum").asInt());
+        assertEquals(100,parameter(list,"limit").path("schema").path("maximum").asInt());
+        assertEquals(4096,parameter(list,"cursor").path("schema").path("maxLength").asInt());
+        assertEquals(80,parameter(list,"username").path("schema").path("maxLength").asInt());
+        var detail=operation(doc,"/api/v1/staff-admin/users/{id}","get");
+        assertTrue(detail.path("responses").has("404"));
+        assertEquals(Set.of("id","scope","propertyId"),parameterNames(detail));
+        assertEquals("uuid",parameter(detail,"id").path("schema").path("format").asText());
+        var roles=operation(doc,"/api/v1/staff-admin/roles","get");
+        assertTrue(parameterNames(roles).isEmpty());
+        assertSuccessSchema(roles,"200","StaffAdminRolesResponse");
+        assertSuccessSchema(list,"200","StaffAdminUsersPage");
+        assertSuccessSchema(detail,"200","StaffAdminUserDetail");
+        var schemas=doc.path("components").path("schemas");
+        var user=schemas.path("StaffAdminUserView");
+        var fields=Set.of("id","username","workEmail","status","roleCode","membershipStatus","organizationId","propertyIds","createdAt","updatedAt","version");
+        assertEquals(fields,keys(user.path("properties")));assertEquals(fields,strings(user.path("required")));
+        assertEquals(Set.of("SUPER_ADMIN","GERENCIA","RECEPCION","OPERACIONES","AUDITOR"),strings(user.path("properties").path("roleCode").path("enum")));
+        assertEquals(Set.of("string","null"),strings(schemas.path("StaffAdminUsersPage").path("properties").path("nextCursor").path("type")));
+        assertEquals(Set.of("type","title","status","code"),keys(schemas.path("StaffAdminReadError").path("properties")));
+    }
+
+    private Set<String> keys(JsonNode object) {
+        var result = new TreeSet<String>();object.properties().forEach(entry -> result.add(entry.getKey()));return result;
+    }
+
+    @Test
     void staffStayLifecycleDocumentsIdempotentScopedCommandsAndExactConcurrencyTimestamp() throws Exception {
         var doc = document();
         for (String action : List.of("check-in", "check-out")) {
@@ -544,6 +593,30 @@ class OpenApiContractIntegrationTests {
 
     private JsonNode document() throws Exception {
         return json.readTree(mvc.perform(get("/v3/api-docs")).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+    }
+
+    @Test
+    void staffAdminCommandsDocumentStrictBodiesAndNoReactivation() throws Exception {
+        var doc=document();var schemas=doc.path("components").path("schemas");
+        var routes=Map.of("/api/v1/staff-admin/users/{id}",List.of("patch","StaffAdminContactCommand"),
+            "/api/v1/staff-admin/users/{id}/membership",List.of("put","StaffAdminMembershipCommand"),
+            "/api/v1/staff-admin/users/{id}/status",List.of("patch","StaffAdminStatusCommand"));
+        for(var entry:routes.entrySet()) {
+            var op=operation(doc,entry.getKey(),entry.getValue().get(0));
+            assertEquals("internal-bff",op.path("x-audience").asText());
+            assertTrue(op.path("security").get(0).has("bearerAuth"));
+            assertTrue(parameter(op,"scope").path("required").asBoolean());
+            assertSuccessSchema(op,"200","StaffAdminMutationResult");
+            for(String status:List.of("400","401","403","404","409","413","415","503"))assertTrue(op.path("responses").has(status));
+            var command=schemas.path(entry.getValue().get(1));
+            assertFalse(command.path("additionalProperties").asBoolean(true));
+            assertEquals(9007199254740990L,command.path("properties").path("expectedVersion").path("maximum").asLong());
+        }
+        var state=schemas.path("StaffAdminStatusCommand").path("properties").path("status");
+        if(state.has("$ref"))state=schemas.path(state.path("$ref").asText().replace("#/components/schemas/",""));
+        assertEquals(Set.of("SUSPENDED","DISABLED"),strings(state.path("enum")));
+        assertEquals(50,schemas.path("StaffAdminContactCommand").path("properties").path("workEmail").path("maxLength").asInt());
+        assertEquals(Set.of("organizationId","staffUserId","version","changed"),strings(schemas.path("StaffAdminMutationResult").path("required")));
     }
 
     private JsonNode operation(JsonNode doc, String path, String method) {
