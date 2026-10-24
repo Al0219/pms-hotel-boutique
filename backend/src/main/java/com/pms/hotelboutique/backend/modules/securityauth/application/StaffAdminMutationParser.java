@@ -21,6 +21,25 @@ public class StaffAdminMutationParser {
     private record EmailInput(@NotBlank @Email(regexp=PasswordLoginValidator.EMAIL_PATTERN) @Size(max=50) String value) {
         @Override public String toString(){return "StaffEmail[redacted]";}
     }
+    public Create parseCreate(byte[] body) {
+        try {
+            var value=json.readTree(body);
+            var allowed=Set.of("username","workEmail","roleCode","propertyIds");
+            if(value==null||!value.isObject()||value.size()!=4)invalid();
+            for(var name:value.propertyNames())if(!allowed.contains(name))invalid();
+            if(!value.path("username").isString())invalid();
+            String username=value.path("username").asText().trim();
+            if(username.isBlank()||username.length()>80||username.codePoints().anyMatch(Character::isISOControl))invalid();
+            // Reuse the exact contact/login email, role and UUID validation.
+            var input=json.createObjectNode();
+            input.set("workEmail",value.get("workEmail"));input.put("expectedVersion",0);
+            var contact=parse(json.writeValueAsBytes(input),Kind.CONTACT);
+            input=json.createObjectNode();input.set("roleCode",value.get("roleCode"));
+            input.set("propertyIds",value.get("propertyIds"));input.put("expectedVersion",0);
+            var membership=parse(json.writeValueAsBytes(input),Kind.MEMBERSHIP);
+            return new Create(username,contact.email,AssignedRole.valueOf(membership.role),membership.properties.stream().sorted().toList());
+        }catch(Exception ex){throw new StaffAdminMutationException(INVALID_REQUEST);}
+    }
     public Command parse(byte[] body,Kind kind) {
         try {
             var value=json.readTree(body);

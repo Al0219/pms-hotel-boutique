@@ -211,9 +211,9 @@ describe('Staff administrative read BFF', () => {
   });
   it('explicitly rejects unsupported Next methods without calling Backend', async () => {
     for (const route of [roleRoute, usersRoute]) {
-      for (const method of ['POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'] as const) {
+      for (const method of ['PATCH', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'] as const) {
         const response = route[method](); expect(response.status).toBe(405);
-        expect(await response.text()).toBe(''); expect(response.headers.get('allow')).toBe('GET');
+        expect(await response.text()).toBe(''); expect(response.headers.get('allow')).toBe(route === usersRoute ? 'GET, POST' : 'GET');
         expect(response.headers.get('cache-control')).toBe('private, no-store'); expect(response.headers.get('set-cookie')).toBeNull();
       }
     }

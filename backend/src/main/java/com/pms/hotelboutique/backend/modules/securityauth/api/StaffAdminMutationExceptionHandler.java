@@ -25,6 +25,8 @@ public class StaffAdminMutationExceptionHandler {
         for(Throwable cause=ex;cause!=null;cause=cause.getCause())
             if(cause instanceof SQLException sql&&"23505".equals(sql.getSQLState())&&sql.getMessage()!=null
                 &&(sql.getMessage().contains("uq_staff_users_work_email_normalized")||sql.getMessage().contains("staff_users_work_email_key")))return error(STAFF_EMAIL_CONFLICT,409);
+        for(Throwable cause=ex;cause!=null;cause=cause.getCause())
+            if(cause instanceof SQLException sql&&"23505".equals(sql.getSQLState())&&sql.getMessage()!=null&&sql.getMessage().contains("staff_users_username_key"))return error(STAFF_USERNAME_CONFLICT,409);
         return error(STAFF_WRITE_UNAVAILABLE,503);
     }
     private ResponseEntity<StaffAdminMutationModels.Error> error(StaffAdminMutationException.Failure failure,int status){

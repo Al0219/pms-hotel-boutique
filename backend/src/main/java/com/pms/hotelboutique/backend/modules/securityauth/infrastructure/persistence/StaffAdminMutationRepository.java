@@ -9,6 +9,17 @@ import org.springframework.stereotype.Repository;
 public class StaffAdminMutationRepository {
     private final JdbcClient jdbc;
     public StaffAdminMutationRepository(JdbcClient jdbc){this.jdbc=jdbc;}
+    public void create(UUID id,UUID org,String username,String email,String role,String unusableHash,Set<UUID> properties){
+        jdbc.sql("""
+            insert into staff_users(id,username,work_email,password_hash,role_code,status,version,created_at,updated_at)
+            values(:id,:username,:email,:hash,:role,'SUSPENDED',0,clock_timestamp(),clock_timestamp())
+            """).param("id",id).param("username",username).param("email",email).param("hash",unusableHash).param("role",role).update();
+        jdbc.sql("""
+            insert into organization_memberships(staff_user_id,organization_id,role_code,status,created_at,updated_at)
+            values(:id,:org,:role,'ACTIVE',clock_timestamp(),clock_timestamp())
+            """).param("id",id).param("org",org).param("role",role).update();
+        replaceMembership(id,org,role,properties);
+    }
     public Set<UUID> assignments(UUID user,UUID org){
         return Set.copyOf(jdbc.sql("select property_id from membership_properties where staff_user_id=:id and organization_id=:org and status='ACTIVE'")
                 .param("id",user).param("org",org).query(UUID.class).list());

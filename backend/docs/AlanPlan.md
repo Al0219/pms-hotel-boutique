@@ -1,5 +1,12 @@
 # AlanPlan — Seguimiento Backend
 
+## Alta Staff MVP — Backend/BFF/UI (2026-10-23)
+
+- **Estado: COMPLETADA; aceptación manual PASS** del usuario para creación, persistencia y actualización del listado. Rama feature/staff-admin-create desde origin/main 53b3e09.
+- POST de alta SUSPENDED, membership/asignaciones/auditoría transaccionales, hash aleatorio no entregable; formulario modal y BFF real, protección de scope/duplicados/resultado incierto. Sin migraciones ni cambios de login/edición/estado.
+- Evidencia automatizada: Backend focal 25 PASS; Web focal 370/7 PASS, 51 del ajuste UX final y cierre 158/3; typecheck/ESLint/diff PASS. Tests HTTP/SQL y OpenAPI generado pendientes para CI; sin suite completa/build/Docker local. Detalle y límites en Web QA69.
+- Sin alta SUPER_ADMIN, invitación ni reactivación; esta última sigue bloqueada M08. BE-006B/C, BE-014A y QA2A/2B conservan estados independientes. Siguiente: invitación/activación solo con canal seguro aprobado.
+
 ## Asignación Staff — rechazar habitaciones sucias (2026-10-23)
 
 - **Estado:** EN_QA; QA manual PASS confirmado por José. Gate Web general no

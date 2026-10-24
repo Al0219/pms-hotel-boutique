@@ -11,5 +11,5 @@ export interface StaffAdminUser {
 export interface StaffAdminContext { readonly organizationId: string; readonly roles: readonly { readonly code: StaffRole; readonly name: string }[] }
 export interface StaffAdminPage { readonly users: readonly StaffAdminUser[]; readonly nextCursor: string | null }
 export interface StaffAdminFilters { readonly username: string; readonly roleCode: string; readonly status: string; readonly limit: number }
-export const statusLabels: Record<StaffStatus, string> = { ACTIVE: 'Activo', SUSPENDED: 'Suspendido', DISABLED: 'Baja administrativa' };
+export const statusLabels: Record<StaffStatus, string> = { ACTIVE: 'Activo', SUSPENDED: 'Pendiente de activación', DISABLED: 'Baja administrativa' };
 export const initialFilters: StaffAdminFilters = { username: '', roleCode: '', status: '', limit: 50 };

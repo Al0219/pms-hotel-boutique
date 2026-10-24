@@ -1,3 +1,28 @@
+## 2026-10-23 — Alta Staff MVP: COMPLETADA, aceptación manual PASS
+
+Usuario confirma creación, persistencia y actualización del listado. QA69 separa
+esa evidencia manual de las suites automatizadas: Backend focal25 PASS; Web focal
+370/7 PASS, ajuste UX staff-admin.test.tsx 51 PASS y cierre158/3; typecheck/
+ESLint/diff PASS.
+Las pruebas HTTP/SQL y OpenAPI de integración no se ejecutaron localmente y quedan
+para CI del PR; no atribuir PASS manual de Firefox, concurrencia, rollback, login,
+Origin o lector. Se preserva next-env.d.ts fuera del commit. Commit y PR hacia main
+autorizados; sin merge. M08/reactivación bloqueada; invitaciones/credenciales fuera
+del incremento. QA2A/2B y BE-006B/C/BE-014A mantienen estados independientes.
+
+## 2026-10-23 — Alta Staff MVP: EN_QA
+
+Autorización directa Backend/BFF/UI; feature/staff-admin-create desde origin/main
+53b3e09, next-env.d.ts local conservado. Alta SUSPENDED sin credencial entregable,
+org/scope/STAFF_MANAGE reales, membership ACTIVE y STAFF_CREATED transaccionales.
+BFF POST/no-store/Origin/un envío y formulario Modal con bloqueo de doble clic;
+503 exige GET del listado antes de otra alta. Tres columnas y mutaciones previas
+conservadas. Backend focal25 PASS, Web focal370/7 PASS, typecheck/ESLint/diff PASS.
+PostgreSQL real, Firefox y OpenAPI generado pendientes; HTTP/SQL/OpenAPI tienen
+pruebas añadidas no ejecutadas. Sin Docker, suite global ni build. Guía breve QA69.
+No se cierran estados independientes ni BE-006B/C/BE-014A; M08 sigue bloqueando
+reactivación. Sin commit/push/PR. Siguiente: validar creación y persistencia manual.
+
 ## 2026-10-23 — PR #163: merge normal con main, resolución semántica
 
 Usuario autoriza integrar origin/main 122f6e4 en feature/staff-admin-read 03bc308;
