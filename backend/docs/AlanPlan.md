@@ -1,5 +1,35 @@
 # AlanPlan — Seguimiento Backend
 
+## Alta de reservas Staff — EN_QA, 2026-10-23
+
+- **Estado:** EN_QA; contrato55 APPROVED e implementación disponible.
+  José prioriza crear reservas desde Recepción/Super Admin y asignar habitaciones;
+  discrepancias FO/HK pospuestas. Se reutilizan motores Booking/Inventory/Folio.
+- **Rama/base:** feature/staff-reservations-real desde origin/main53b3e09, fetch
+  sin novedades. Cierre documental anterior preservado en stash identificado
+  `docs: preserve housekeeping cycle closure before staff booking` de su rama
+  docs/staff-housekeeping-cycle-closure; copia fuera de Git. No mezclar entregas.
+- **DoR:** Web53, contratos49/50/52/54, motores Booking/Inventory/Folio y recibo
+  local revisados. Filas IMP-WEB-0301/0302 consultadas sin editar XLSX; esta alta
+  es ampliación autorizada, no cumplimiento inventado de una fila nueva.
+- **Decisión aprobada:** José acepta CONFIRMED con cargo de alojamiento/saldo
+  pendiente, sin pago automático y con asignación/check-in separados. Transporte
+  y aceptación concretos en55; permiso RESERVATION_MANAGE y propiedad explícita.
+- **Backend:** verify general1031 con un timeout Swagger; repetición95 PASS,
+  incluidas13 de alta Staff,62 HTTP público y20 OpenAPI. Sin quitar validaciones.
+- **Web:** lint/typecheck/build PASS; hubo64/64 PASS y la última corrida63/64
+  por timeout5s del recorrido mock heredado. Gate general no aprobado; dos casos
+  de administración también fallan sobre una copia de origin/main53b3e09.
+- **Integración:** navegador real25 comprobaciones PASS; SQL confirma un cargo,
+  cero pagos y un recibo por reserva. Recepción y Super Admin; DIRTY, check-in,
+  deuda, reintento exacto, móvil y logout. Guía/evidencia resumida en Web69.
+- **Entorno:** imágenes probadas en3001; tres servicios healthy y8 checks de
+  lectura PASS. Datos conservados:2 propiedades/24 rooms/5 reservas/5 stays/
+  7 estados HK/28 migraciones. QA aislado retirado; imágenes anteriores guardadas.
+- **QA manual:** PASS confirmado por José («todo funciona», 2026-10-23).
+  Commit y push autorizados; el incremento permanece EN_QA por el gate general/CI.
+- **Siguiente:** publicar la rama para revisión y checks; sin merge ni nueva tarea.
+
 ## Asignación Staff — rechazar habitaciones sucias (2026-10-23)
 
 - **Estado:** EN_QA; QA manual PASS confirmado por José. Gate Web general no

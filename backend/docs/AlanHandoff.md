@@ -1,3 +1,31 @@
+## 2026-10-23 — Alta real Staff: EN_QA, contrato55
+
+José aprueba CONFIRMED con alojamiento pendiente, sin pago automático, asignación
+y check-in separados; discrepancias pospuestas. Implementado en
+feature/staff-reservations-real desde53b3e09: Booking/Inventory/Folio reutilizados,
+actor Staff confiable, propiedad explícita, RESERVATION_MANAGE e idempotencia.
+Sin GuestAccount, capacidad ficticia, migraciones, permisos o dependencias nuevos.
+
+Backend general1031: un timeout20s de Swagger. Repetición95 PASS:13 alta Staff,
+62 HTTP público y20 OpenAPI. Web lint/typecheck/build PASS; corrida64/64 PASS
+anterior y última63/64 por timeout5s de la prueba mock de edición/N stays.
+General Web no verde; repetición de13 archivos293/295. Los dos casos restantes
+de administración también fallan en una copia de origin/main53b3e09, sin cambios
+de rama. No se debilitaron assertions, límites ni workflow; no certificar CI PASS.
+
+Navegador real25 comprobaciones PASS, Recepción/Super Admin: alta/replay tras
+corte de respuesta, DIRTY, inspección/asignación, entrada, deuda que impide salida,
+N stays, móvil y logout. SQL: un folio/cargo/recibo, cero pagos por reserva.
+Imágenes probadas en3001, tres servicios healthy y8 checks de lectura PASS;
+conteos2/24/5/5/7/28 (properties/rooms/reservations/stays/HK/migraciones) intactos.
+QA aislado retirado; imágenes anteriores guardadas con prefijo
+pms-staff-creation-before-*. Evidencia temporal fuera de Git; guía Web69.
+
+QA manual PASS confirmado por José («todo funciona», 2026-10-23), con commit y
+push autorizados. EN_QA por el gate general/CI pendiente; sin merge ni nueva tarea.
+El cierre anterior sigue aparte en el stash identificado
+`docs: preserve housekeeping cycle closure before staff booking`; no mezclarlo.
+
 ## 2026-10-23 — PR #163: merge normal con main, resolución semántica
 
 Usuario autoriza integrar origin/main 122f6e4 en feature/staff-admin-read 03bc308;

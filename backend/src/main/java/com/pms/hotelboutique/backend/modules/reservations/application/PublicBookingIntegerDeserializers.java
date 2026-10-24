@@ -4,7 +4,7 @@ import tools.jackson.core.JsonParser;
 import tools.jackson.databind.DeserializationContext;
 import tools.jackson.databind.deser.std.StdDeserializer;
 
-/** Exact numeric input for this DTO only; never truncates quantities or minor units. */
+/** Exact numeric input shared by booking DTOs; never truncates quantities or minor units. */
 public final class PublicBookingIntegerDeserializers {
     private PublicBookingIntegerDeserializers() { }
 

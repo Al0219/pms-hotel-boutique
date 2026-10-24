@@ -108,10 +108,10 @@ function waitlistPreviewMockReturn() {
 }
 
 describe("ReservationCenter", () => {
-  it('keeps creation entry points removed, including an empty center with creation permission', () => {
+  it('offers the creation route in an empty center only with current creation permission', () => {
     useReservationCenterMock.mockReturnValue({ data: { ...centerData(), reservations: [] }, error: null, isLoading: false, refetch: vi.fn() });
     const view = render(<ReservationCenter propertyId="GT-HB-01" endpoint="http://pms.test/contract/reservations" canCreate />);
-    expect(screen.queryByRole('link', { name: '+ Nueva reserva' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '+ Nueva reserva' })).toHaveAttribute('href', '/reservas/nueva');
     view.rerender(<ReservationCenter propertyId="GT-HB-01" endpoint="http://pms.test/contract/reservations" canCreate={false} />);
     expect(screen.queryByRole('link', { name: '+ Nueva reserva' })).not.toBeInTheDocument();
   });
