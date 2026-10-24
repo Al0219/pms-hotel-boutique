@@ -20,6 +20,11 @@ public interface ReservationStayService {
 
     ReservationStayView checkOut(UUID stayId);
 
+    /** Trusted internal calls after Staff facade authorization; not authorization boundaries. */
+    ReservationStayView checkInAsStaff(UUID stayId, UUID actorId, UUID operationId);
+
+    ReservationStayView checkOutAsStaff(UUID stayId, UUID actorId, UUID operationId);
+
     ReservationStayView cancelStay(UUID stayId);
 
     ReservationStayView markNoShow(UUID stayId);

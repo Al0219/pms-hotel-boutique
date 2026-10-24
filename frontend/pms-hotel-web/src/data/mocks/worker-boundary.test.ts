@@ -50,6 +50,16 @@ function workerHarness(source = protectedWorker) {
 }
 
 describe('Staff reservations boundary before MSW', () => {
+  it.each([
+    ['/api/staff/housekeeping/rooms?propertyId=property', 'GET'],
+    ['/api/staff/housekeeping/rooms/room?propertyId=property', 'GET'],
+    ['/api/staff/housekeeping/rooms/room/tracking?propertyId=property', 'POST'],
+    ['/api/staff/housekeeping/rooms/room/status?propertyId=property', 'PUT'],
+    ['/api/staff/housekeeping/rooms/room/dnd?propertyId=property', 'PUT'],
+  ])('keeps confirmed Housekeeping outside MSW: %s %s', async (path, method) => {
+    const worker = workerHarness(); const event = await worker.dispatch(path, method);
+    expect(event.stopped).toBe(true); expect(event.respondWith).not.toHaveBeenCalled();
+  });
   it('reproduces the original interception even for a request passed through to the network', async () => {
     const worker = workerHarness(generatedWorker);
     const event = await worker.dispatch('/api/staff/reservations?propertyId=real-property');

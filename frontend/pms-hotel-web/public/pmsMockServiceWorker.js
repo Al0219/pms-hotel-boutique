@@ -7,6 +7,9 @@ self.addEventListener('fetch', (event) => {
       (event.request.method === 'GET' && /^\/api\/staff\/admin\/(?:roles|users(?:\/[^/]+)?)\/?$/.test(url.pathname)) ||
       (event.request.method === 'PATCH' && /^\/api\/staff\/admin\/users\/[^/]+(?:\/status)?\/?$/.test(url.pathname)) ||
       (event.request.method === 'PUT' && /^\/api\/staff\/admin\/users\/[^/]+\/membership\/?$/.test(url.pathname)) ||
+      (event.request.method === 'GET' && /^\/api\/staff\/housekeeping\/rooms(?:\/[^/]+)?\/?$/.test(url.pathname)) ||
+      (event.request.method === 'POST' && /^\/api\/staff\/housekeeping\/rooms\/[^/]+\/tracking\/?$/.test(url.pathname)) ||
+      (event.request.method === 'PUT' && /^\/api\/staff\/housekeeping\/rooms\/[^/]+\/(?:status|dnd)\/?$/.test(url.pathname)) ||
       (['GET', 'PUT'].includes(event.request.method) && /^\/api\/staff\/reservations\/[^/]+\/stays\/[^/]+\/room-assignment\/?$/.test(url.pathname)) ||
       (event.request.method === 'GET' && /^\/api\/staff\/(?:reservations(?:\/[^/]+)?|rooms|room-types)\/?$/.test(url.pathname)) ||
       (event.request.method === 'POST' && /^\/api\/staff\/(?:rooms|room-types)\/?$/.test(url.pathname)) ||

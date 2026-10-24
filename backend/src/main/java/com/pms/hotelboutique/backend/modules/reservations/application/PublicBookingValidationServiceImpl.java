@@ -34,6 +34,12 @@ public class PublicBookingValidationServiceImpl implements PublicBookingValidati
         if (request == null || !validator.validate(request).isEmpty()) {
             throw new PublicBookingValidationException(INVALID_REQUEST);
         }
+        // LocalDate's ISO formatter also accepts signed/extended years; those do
+        // not match the public YYYY-MM-DD / OpenAPI full-date wire contract.
+        if (request.arrival().getYear() < 0 || request.arrival().getYear() > 9999
+                || request.departure().getYear() < 0 || request.departure().getYear() > 9999) {
+            throw new PublicBookingValidationException(INVALID_REQUEST);
+        }
         if (!request.arrival().isBefore(request.departure())) {
             throw new PublicBookingValidationException(INVALID_DATE_RANGE);
         }

@@ -1,5 +1,26 @@
 # housekeeping
 
+## Integración real — 2026-10-21
+
+José implementa frontend y backend de la primera entrega autorizada de
+Housekeeping. `/housekeeping` usa el BFF Staff y PROPERTY de sesión con
+OPERATIONS_MANAGE: tablero, seguimiento explícito, limpieza/inspección/rechazo
+con motivo y DND. No usa pms.test ni exige activar mocks para ese recorrido.
+Contrato aprobado: `backend/docs/51_STAFF_HOUSEKEEPING_CONTRACT.md` en la raíz.
+Estado y QA: `frontend/pms-hotel-web/docs/64_STAFF_HOUSEKEEPING_REAL_QA.md`.
+
+Contrato52 agrega el export deliberado useStaffHousekeepingRooms, solo lectura,
+para la composición app del tablero Habitaciones. GET admite RESERVATION_MANAGE
+además de OPERATIONS_MANAGE; el módulo de gestión y POST/PUT no amplían permisos.
+La limpieza actual no certifica preasignaciones futuras ni sustituye check-in.
+
+Se conservan componentes/modelos provisionales previos para escenarios aislados;
+no confirman otros endpoints. Discrepancias FO/HK y Turndown/Pickup quedan fuera
+de esta primera integración. Los exports de mapeo real son una API deliberada
+para la proyección segura del BFF; los DTOs/transporte permanecen internos.
+Las reglas de Structure Freeze que siguen describen la creación histórica del
+shell; no sustituyen la autorización y contrato de este incremento.
+
 ## Owner
 
 WEB-3

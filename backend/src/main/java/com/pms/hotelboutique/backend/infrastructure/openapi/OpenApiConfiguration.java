@@ -57,7 +57,7 @@ public class OpenApiConfiguration {
     OpenApiCustomizer staffReservationNullability() {
         return api -> {
             var schemas = api.getComponents().getSchemas();
-            for (String name : List.of("StaffReservation", "StaffStay", "StaffRoomType", "StaffRoom", "ResponsibleGuestView", "StaffRoomAssignmentPreview", "StaffRoomAssignmentCandidate", "StaffRoomAssignmentResult")) {
+            for (String name : List.of("StaffReservation", "StaffStay", "StaffRoomType", "StaffRoom", "ResponsibleGuestView", "StaffRoomAssignmentPreview", "StaffRoomAssignmentCandidate", "StaffRoomAssignmentResult", "StaffStayLifecycleResult")) {
                 var schema = schemas.get(name);
                 if (schema != null) schema.setRequired(new java.util.ArrayList<>(schema.getProperties().keySet()));
             }
@@ -83,10 +83,33 @@ public class OpenApiConfiguration {
             } else if (handler.getBeanType().equals(PublicAvailabilityController.class)) {
                 operation.addExtension("x-audience", "public");
                 operation.setSecurity(List.of());
-            } else if (packageName.contains(".modules.inventory.") || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.reservations.api.StaffReservationController.class)) {
+            } else if (packageName.contains(".modules.inventory.") || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.reservations.api.StaffReservationController.class)
+                    || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.operations.api.StaffHousekeepingController.class)) {
                 operation.addExtension("x-audience", "staff");
             }
             return operation;
+        };
+    }
+
+    @Bean
+    OpenApiCustomizer staffHousekeepingNullability() {
+        return api -> {
+            var room = api.getComponents().getSchemas().get("StaffHousekeepingRoom");
+            if (room == null) return;
+            // A nullable type alone is insufficient: enum must also permit JSON null.
+            Schema<Object> status = new Schema<>();
+            status.setTypes(Set.of("string", "null"));
+            status.setEnum(java.util.Arrays.asList("DIRTY", "CLEAN", "INSPECTED", null));
+            status.setDescription("Cleaning state; null for an untracked physical room.");
+            room.getProperties().put("status", status);
+            var candidate = api.getComponents().getSchemas().get("StaffRoomAssignmentCandidate");
+            if (candidate != null) {
+                Schema<Object> cleaning = new Schema<>();
+                cleaning.setTypes(Set.of("string", "null"));
+                cleaning.setEnum(java.util.Arrays.asList("DIRTY", "CLEAN", "INSPECTED", null));
+                cleaning.setDescription("Current cleaning, not arrival forecast; null means no tracking.");
+                candidate.getProperties().put("housekeeping_status", cleaning);
+            }
         };
     }
 }

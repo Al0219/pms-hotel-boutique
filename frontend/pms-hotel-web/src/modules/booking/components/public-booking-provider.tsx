@@ -16,6 +16,7 @@ interface PublicBookingSession {
   setCurrency: Dispatch<SetStateAction<DisplayCurrency>>;
   cart: { scope: string; propertyId?: string; items: RoomSelection[] };
   setCart: Dispatch<SetStateAction<{ scope: string; propertyId?: string; items: RoomSelection[] }>>;
+  resetCart: () => void;
 }
 function storageValue(key: string) { try { return window.sessionStorage.getItem(key); } catch { return null; } }
 function subscribeStorage(listener: () => void) {
@@ -35,15 +36,22 @@ export function PublicBookingProvider({ children }: { children: ReactNode }) {
   const cart = state?.key === key ? state.cart : restored;
   const setCart: PublicBookingSession['setCart'] = useCallback(update => setState(previous => ({ key,
     cart: typeof update === 'function' ? update(previous?.key === key ? previous.cart : readStoredCart(storageValue(key), mock)) : update })), [key, mock]);
+  const resetCart = useCallback(() => {
+    setState({ key, cart: { scope: '', items: [] } });
+    try {
+      window.sessionStorage.removeItem(key);
+      window.dispatchEvent(new Event('pms-public-cart-change'));
+    } catch { /* Storage disabled: the in-memory cart still resets. */ }
+  }, [key]);
   useEffect(() => {
     if (state?.key !== key) return;
     try {
       if (state.cart.scope) window.sessionStorage.setItem(key, serializeCart(state.cart));
-      else window.sessionStorage.removeItem(key);
+      else if (window.sessionStorage.getItem(key) !== null) window.sessionStorage.removeItem(key);
       window.dispatchEvent(new Event('pms-public-cart-change'));
     } catch { /* Storage disabled: navigation still uses the in-memory Provider. */ }
   }, [state, key]);
-  return <Context.Provider value={{ currency, setCurrency, cart, setCart, searchNotice, setSearchNotice }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ currency, setCurrency, cart, setCart, resetCart, searchNotice, setSearchNotice }}>{children}</Context.Provider>;
 }
 
 export function usePublicBookingSession() {
@@ -59,8 +67,7 @@ export function usePublicDisplayCurrency() {
 
 /** Clear the booking cart without changing currency preference or Guest Auth. */
 export function useResetPublicBooking() {
-  const { setCart } = usePublicBookingSession();
-  return () => setCart({ scope: '', items: [] });
+  return usePublicBookingSession().resetCart;
 }
 
 export function usePublicRoomSelection(criteria: Partial<BookingSearchCriteria>, propertyId?: string) {

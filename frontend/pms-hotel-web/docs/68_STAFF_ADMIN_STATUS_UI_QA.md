@@ -8,6 +8,56 @@ SUSPENDED→DISABLED mediante el PATCH de estado existente.3D-1,3B-1 y3C siguen
 COMPLETADAS;3B-2 permanece BLOQUEADA por M08. Backend2A/BFF2B conservan sus QA
 independientes; no se cierran BE-006B/C ni BE-014A.
 
+## Integración de PR #163 con origin/main (2026-10-23)
+
+Merge normal autorizado de `origin/main` **122f6e4** sobre `feature/staff-admin-read`
+**03bc308**; sin rebase/force push ni merge del PR a main. `next-env.d.ts` local
+se protege en stash identificado y copia externa, excluido del commit de resolución.
+
+Conflictos revisados individualmente:
+
+| Archivo | Resolución |
+| --- | --- |
+| AlanHandoff.md | Conservar íntegros ambos historiales antes del tramo común |
+| OpenApiContractIntegrationTests.java | Conservar tests Staff Admin y lifecycle, cerrando el helper antes del nuevo método |
+| pmsMockServiceWorker.js | Unir bypass exactos Admin y Housekeeping, sin ampliar métodos/orígenes |
+| staff-shell.tsx | Conservar Usuarios, Reportes, Housekeeping y sus scopes/permisos; usar navegación pública compartida |
+| staff-session-provider.tsx | Unión de cachés staff-admin, staff-housekeeping y reports con namespaces previos; Guest intacto |
+| staff-logout-navigation.test.tsx | Comprobar limpieza de ambos namespaces y reports; conservación Guest/public |
+
+Se actualiza la navegación extraída para reutilizar las reglas efectivas de main
+al escoger un destino autorizado tras denegar Usuarios. Nuevos tests de destino
+Housekeeping/Reportes y presencia de sus enlaces. Sin permisos/contratos nuevos.
+Postman mantiene todas las requests de ambos padres; sin resoluciones ours/theirs.
+
+**Diagnóstico checkout:** worktree temporal detached de main 122f6e4, con código
+sin Staff Admin y dependencias de la misma versión: **12/12 PASS**. El PR no había
+modificado checkout. main ya contiene **67ef77d**, que limpia sessionStorage de
+forma síncrona antes de navegar; la implementación antigua dependía del efecto
+React de setCart. El merge incorpora esa corrección y su test reforzado sin editar
+checkout: provider y archivo de test coinciden byte a byte con origin/main.
+El fallo previo de public-payment-review-page.test.tsx:175 queda como evidencia
+histórica, no se atribuye a una regresión Staff ni se debilita la aserción.
+
+**Verificación focalizada:** 457 PASS/12 archivos (incluye checkout tras merge),
+20 PASS/3 archivos de navegación/Properties/Housekeeping. Backend: únicamente
+OpenApiContractIntegrationTests, **19 PASS, 0 failures/errors/skipped**, Java 21 y
+PostgreSQL 17 tmpfs sin puertos, fuentes copiadas a /tmp, sin BD habitual.
+No se repite verify Backend completo. `git diff --check` y revisión del índice PASS.
+**Validación global local (una sola ejecución):** lint/typecheck PASS;
+**2.341 PASS/1 timeout** en el caso Staff de cursores, 324 archivos PASS/1 FAIL;
+checkout PASS. No se vuelve a ejecutar la suite completa. El caso pasaba aislado
+con 50 filas (2.679 ms) y en la primera corrida focalizada; con la suite completa
+agotó 5.000 ms. Su fixture ahora usa una página completa de 5 filas y sigue
+verificando cursor opaco, atrás/adelante, filtros, cambio a 25 y scope. Se mantienen
+todas las aserciones y timeout; nueva aserción de limit=5. Aislado: **829 ms PASS**.
+No es una alteración del producto ni de checkout. Focales finales: **477 PASS/15 archivos**; **npm run build separado PASS** (único
+build que faltaba, pues check se detuvo en tests). No se declara check local PASS;
+CI global del nuevo commit deberá confirmar el gate.
+Evidencia en `/tmp/pms-pr163-integration/`; logs/temporales fuera del commit.
+Estados: 3D-2/3D-1/3C/3B-1 COMPLETADAS, 3B-2 BLOQUEADA/M08, QA2A/2B independientes
+intactos. Pendientes manuales de 409/503/lector y demás escenarios conservados.
+
 ## Cierre autorizado y preparación de commit/PR (2026-10-23)
 
 El usuario confirma aceptación manual PASS y autoriza cerrar **únicamente 3D-2**

@@ -8,6 +8,7 @@ import { EntityDataGrid, StatusBadge, EntityListSurface, EntityPagination, useEn
 
 import { useRooms } from "../hooks/use-rooms";
 import { useRoomOccupancy } from '../hooks/use-room-occupancy';
+import { CLEANING_LABELS, type RoomCleaningSource } from '../model/room-cleaning-source';
 import { hotelOccupancyDay, isOccupancyDay, type RoomOccupancyState, type RoomOccupancySource, type RoomOccupancyStay } from '../model/room-occupancy';
 import { OCCUPANCY_LABELS, OCCUPANCY_VARIANTS } from './room-occupancy-labels';
 import { ROOM_STATUS_LABELS } from "./room-status-labels";
@@ -36,11 +37,12 @@ interface RoomBoardProps {
   timezone?: string;
   propertyName?: string;
   occupancySource?: RoomOccupancySource;
+  cleaningSource?: RoomCleaningSource;
   canManage?: boolean;
   viewControls?: ReactNode;
 }
 
-export function RoomBoard({ propertyId, endpoint, sessionId, timezone, propertyName, occupancySource, canManage = false, viewControls }: Readonly<RoomBoardProps>) {
+export function RoomBoard({ propertyId, endpoint, sessionId, timezone, propertyName, occupancySource, cleaningSource, canManage = false, viewControls }: Readonly<RoomBoardProps>) {
   const { data: rooms, error, isLoading, fetchStatus, refetch } = useRooms(propertyId, endpoint, sessionId);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('ALL');
@@ -48,20 +50,29 @@ export function RoomBoard({ propertyId, endpoint, sessionId, timezone, propertyN
   const [occupancyFilter, setOccupancyFilter] = useState<RoomOccupancyState | 'ALL' | 'UNKNOWN'>('ALL');
   const [roomType, setRoomType] = useState('ALL');
   const [floor, setFloor] = useState('ALL');
+  const [cleaningFilter, setCleaningFilter] = useState('ALL');
   const occupancy = useRoomOccupancy(propertyId, sessionId, date, !!endpoint, rooms, occupancySource);
 
   const snapshot = occupancy.query.isSuccess && occupancy.query.data?.propertyId === propertyId
     && occupancy.query.data?.date === date ? occupancy.query.data : undefined;
   const occupancyByRoom = new Map(snapshot?.rooms.map(room => [room.roomId, room]));
+  const cleaningCurrent = cleaningSource?.isSuccess && !cleaningSource.isError && !cleaningSource.isFetching
+    && cleaningSource.data?.propertyId === propertyId ? cleaningSource.data : undefined;
+  const cleaningByRoom = new Map(cleaningCurrent?.rooms.map(room => [room.roomId, room]));
+  const cleaningState = (roomId: string) => {
+    const record = cleaningByRoom.get(roomId);
+    return record ? record.status ?? 'UNTRACKED' : 'UNKNOWN';
+  };
   const types = [...new Set((rooms ?? []).map(room => room.roomTypeLabel))].sort();
   const floors = [...new Set((rooms ?? []).map(room => room.floor))].sort((a, b) => (a ?? '').localeCompare(b ?? '', 'es', { numeric: true }));
   const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
   const visible = (rooms ?? []).filter(room => (status === 'ALL' || room.status === status)
+    && (cleaningFilter === 'ALL' || cleaningState(room.id) === cleaningFilter)
     && (occupancyFilter === 'ALL' || (occupancyByRoom.get(room.id)?.state ?? 'UNKNOWN') === occupancyFilter)
     && (roomType === 'ALL' || room.roomTypeLabel === roomType) && (floor === 'ALL' || (room.floor ?? 'UNKNOWN') === floor)
     && normalize(`${room.number} ${room.roomTypeLabel}`).includes(normalize(search.trim())))
     .sort((a, b) => a.number.localeCompare(b.number, 'es', { numeric: true }));
-  const pagination = useEntityPagination(visible, JSON.stringify([sessionId, propertyId, search, status, date, occupancyFilter, roomType, floor]));
+  const pagination = useEntityPagination(visible, JSON.stringify([sessionId, propertyId, search, status, date, occupancyFilter, roomType, floor, cleaningFilter]));
 
   if (!propertyId) {
     return <section className={workspace.page} role="status">{viewControls}<p>La sesión debe proporcionar un scope de propiedad autorizado antes de consultar habitaciones.</p></section>;
@@ -92,17 +103,20 @@ export function RoomBoard({ propertyId, endpoint, sessionId, timezone, propertyN
   const count = (state: RoomOccupancyState | 'UNKNOWN') => rooms.filter(room => (occupancyByRoom.get(room.id)?.state ?? 'UNKNOWN') === state).length;
   const hasOperation = rooms.some(room => room.status !== null);
   const hasFloor = rooms.some(room => room.floor !== null);
-  const clear = () => { setSearch(''); setStatus('ALL'); setOccupancyFilter('ALL'); setRoomType('ALL'); setFloor('ALL'); };
+  const clear = () => { setSearch(''); setStatus('ALL'); setOccupancyFilter('ALL'); setRoomType('ALL'); setFloor('ALL'); setCleaningFilter('ALL'); };
 
   return <section className={workspace.page}>
 
     {!rooms.length && <p>No hay habitaciones para esta propiedad.</p>}
     <EntityListSurface label="Lista de habitaciones" showScrollHint={visible.length > 0} filters={<>
       <EntityFilterField label="Buscar habitación" search><input type="search" value={search} placeholder="Número o tipo" onChange={event => setSearch(event.target.value)} /></EntityFilterField>
+      {cleaningSource && <EntityFilterField label="Limpieza actual"><select aria-label="Limpieza actual" value={cleaningFilter} onChange={event => setCleaningFilter(event.target.value)}>
+        <option value="ALL">Todas</option>{Object.entries(CLEANING_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+      </select></EntityFilterField>}
       <EntityFilterField label="Ocupación"><select value={occupancyFilter} onChange={event => setOccupancyFilter(event.target.value as typeof occupancyFilter)}>
         <option value="ALL">Todas</option>{Object.entries(OCCUPANCY_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}<option value="UNKNOWN">Sin información</option></select></EntityFilterField>
       <EntityFilterField label="Tipo de habitación"><select value={roomType} onChange={event => setRoomType(event.target.value)}><option value="ALL">Todos los tipos</option>{types.map(type => <option key={type}>{type}</option>)}</select></EntityFilterField>
-    </>} filterActions={<button type="button" className={workspace.button} disabled={!search && status === 'ALL' && occupancyFilter === 'ALL' && roomType === 'ALL' && floor === 'ALL'} onClick={clear}>Limpiar filtros</button>} supportingFilters={<>
+    </>} filterActions={<button type="button" className={workspace.button} disabled={!search && status === 'ALL' && occupancyFilter === 'ALL' && roomType === 'ALL' && floor === 'ALL' && cleaningFilter === 'ALL'} onClick={clear}>Limpiar filtros</button>} supportingFilters={<>
       <div className={workspace.viewControls}>{viewControls}</div>
       <EntityFilterField label="Fecha de consulta" column={2}><input type="date" value={date} onChange={event => setDate(event.target.value)} aria-invalid={!isOccupancyDay(date)} /></EntityFilterField>
       <div className={workspace.supportActions}>
@@ -148,6 +162,11 @@ export function RoomBoard({ propertyId, endpoint, sessionId, timezone, propertyN
               ? assigned.stays.map(stay => <StayRelation key={stay.stayId} stay={stay} inTable />)
               : <span>Sin estadía asignada</span> : <span>Relación no disponible</span>}</div>;
           } },
+          ...(cleaningSource ? [{ key: 'cleaning', header: 'Limpieza actual', render: (room: NonNullable<typeof rooms>[number]) => {
+            const state = cleaningState(room.id);
+            return <div className={styles.cellGroup}><StatusBadge variant={state === 'INSPECTED' ? 'success' : state === 'DIRTY' ? 'error' : state === 'CLEAN' ? 'warning' : 'neutral'} size="sm">{CLEANING_LABELS[state]}</StatusBadge>
+              <small className={workspace.cellMuted}>{state === 'INSPECTED' ? 'Limpieza verificada; check-in debe revalidar.' : 'No entregar sin inspección.'}</small></div>;
+          } }] : []),
           { key: 'state', header: 'Estado', render: room => {
             const assigned = occupancyByRoom.get(room.id);
             return <div className={styles.cellGroup}>
@@ -163,5 +182,11 @@ export function RoomBoard({ propertyId, endpoint, sessionId, timezone, propertyN
           } },
         ]} />
     </EntityListSurface>
+    {cleaningSource && <div className={styles.notice}>
+      <p>La limpieza corresponde al estado actual, independientemente de la fecha de ocupación consultada. Preasignar una habitación no autoriza su entrega.</p>
+      {cleaningSource.isFetching && <p role="status">Actualizando limpieza…</p>}
+      {cleaningSource.isError && <p role="alert">No pudimos consultar la limpieza. No se puede asumir que las habitaciones estén listas.</p>}
+      <button className={styles.actionButton} type="button" disabled={cleaningSource.isFetching} onClick={() => void cleaningSource.refetch()}>Actualizar limpieza</button>
+    </div>}
   </section>;
 }

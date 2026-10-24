@@ -185,7 +185,7 @@ no se añade implícitamente como permiso de lectura por su nombre de rol.
 
 | Operación / servicio | Permiso propuesto | Scope/recurso y condiciones |
 | --- | --- | --- |
-| Housekeeping: trackRoom/statusOf/clean/dirty/inspect/reject/DND/list | OPERATIONS_MANAGE | PROPERTY Room/HK; overlay DND no sustituye lifecycle; actor/inspector confiables |
+| Housekeeping: trackRoom/statusOf/clean/dirty/inspect/reject/DND/list | OPERATIONS_MANAGE; contrato52 permite también RESERVATION_MANAGE solo en GET list/detail para consulta desde Habitaciones | PROPERTY Room/HK; overlay DND no sustituye lifecycle; actor/inspector confiables |
 | Maintenance: open/start/resolve/cancel/reopen/assign/linkOutage/get/list | OPERATIONS_MANAGE | OT/Room/OOO y asignaciones autorizadas, misma property; resolver OT no implica sellable |
 | Outage: register/release/getScoped/list | OPERATIONS_MANAGE | OOO/OOS con actor/motivo/período e historial; coordinar inventario/locks BD2 para no romper admisión |
 | Discrepancy: report/investigate/reconcile/cancel/get/list | OPERATIONS_MANAGE | Room/discrepancy scoped; reason/actor; no modificar reservas/folio fuera del pipeline |
@@ -199,6 +199,16 @@ La matriz no concede OPERATIONS_MANAGE a RECEPCION. AD-03 aprueba una capacidad
 limitada para abrir/leer solicitudes sin concederle mantenimiento ni cierre de
 business date por conveniencia de UI. OPERACIONES no responde al huésped
 externamente aunque pueda actualizar una tarea interna para Recepción.
+
+La aprobación de [Housekeeping Staff](51_STAFF_HOUSEKEEPING_CONTRACT.md) del
+2026-10-21 aplica solo al tablero, seguimiento, limpieza/inspección/rechazo y DND
+con OPERATIONS_MANAGE. No aprueba por extensión mantenimiento, discrepancias,
+mensajería, night audit ni los contratos HTTP restantes de esta propuesta.
+
+[Contrato52](52_ROOM_READINESS_CONTRACT.md), aprobado posteriormente por José,
+amplía solo GET Housekeeping a RESERVATION_MANAGE para mostrar limpieza a Recepción.
+El módulo de gestión y sus escrituras siguen con OPERATIONS_MANAGE; no cambia C2
+globalmente. Preasignación no entrega la habitación; check-in exige inspección.
 
 ### Commercial — coordinación BD3
 

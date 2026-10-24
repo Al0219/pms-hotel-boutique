@@ -136,6 +136,9 @@ class ReservationStayServiceIntegrationTests {
         var assigned = stays.assignRoom(stay.id(), room);
         assertEquals(room, assigned.roomId());
 
+        jdbc.update("INSERT INTO hk_room_states(id,property_id,room_id,status,dnd,created_at,updated_at) VALUES (?,?,?,'INSPECTED',false,now(),now())",
+                UUID.randomUUID(), SEED_PROPERTY, room);
+
         var inHouse = stays.checkIn(stay.id());
         assertEquals(ReservationStay.Status.IN_HOUSE, inHouse.status());
         assertThrows(ReservationStayException.class, () -> stays.checkIn(stay.id()));

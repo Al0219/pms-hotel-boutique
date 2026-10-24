@@ -30,15 +30,19 @@ public class FolioServiceImpl implements FolioService {
     private final ReservationRepository reservations;
     private final ReservationStayRepository stays;
     private final AuditService audit;
+    private final FolioTransactionGuard guard;
+    private final jakarta.persistence.EntityManager entities;
 
     public FolioServiceImpl(FolioRepository folios, FolioMovementRepository movements,
             ReservationRepository reservations, ReservationStayRepository stays,
-            AuditService audit) {
+            AuditService audit, FolioTransactionGuard guard, jakarta.persistence.EntityManager entities) {
         this.folios = folios;
         this.movements = movements;
         this.reservations = reservations;
         this.stays = stays;
         this.audit = audit;
+        this.guard = guard;
+        this.entities = entities;
     }
 
     @Override
@@ -46,6 +50,7 @@ public class FolioServiceImpl implements FolioService {
         Instant now = Instant.now();
         Folio folio = new Folio(UUID.randomUUID(), command.propertyId(), command.type(),
                 command.currency(), now);
+        guard.lock(command.propertyId(), command.reservationId() == null ? folio.getId() : command.reservationId());
         if (command.reservationId() != null) {
             Reservation reservation = reservations.findById(command.reservationId())
                     .orElseThrow(() -> new FolioException("reservation not found"));
@@ -66,7 +71,7 @@ public class FolioServiceImpl implements FolioService {
         }
         // Property existence is enforced by the FK (BD1 owns properties, no
         // JPA read model to reuse); no parallel lookup is kept here.
-        FolioView opened = FolioView.from(folios.save(folio));
+        FolioView opened = FolioView.from(folios.saveAndFlush(folio));
         record("FOLIO_OPENED", "FOLIO", opened.id(), opened.propertyId(), null,
                 "{\"status\":\"OPEN\"}", null, null);
         return opened;
@@ -94,7 +99,7 @@ public class FolioServiceImpl implements FolioService {
     @Override
     public FolioView.MovementView postReversal(UUID folioId, UUID originalMovementId,
             @Valid ReversalReason reason, UUID actorId) {
-        Folio folio = existing(folioId);
+        Folio folio = writable(folioId);
         if (!folio.acceptsPostings()) {
             throw new FolioException("folio is not open for postings");
         }
@@ -171,7 +176,7 @@ public class FolioServiceImpl implements FolioService {
     }
 
     private Folio open(UUID folioId) {
-        Folio folio = existing(folioId);
+        Folio folio = writable(folioId);
         if (!folio.acceptsPostings()) {
             throw new FolioException("folio is not open for postings");
         }
@@ -179,7 +184,7 @@ public class FolioServiceImpl implements FolioService {
     }
 
     private FolioView transition(UUID folioId, String action, FolioTransition transition) {
-        Folio folio = existing(folioId);
+        Folio folio = writable(folioId);
         Folio.Status before = folio.getStatus();
         try {
             transition.apply(folio, Instant.now());
@@ -201,6 +206,16 @@ public class FolioServiceImpl implements FolioService {
                 : ReservationAuditEvent.ActorType.STAFF;
         audit.record(new AuditService.RecordAuditCommand(type, actorId, action, entityType,
                 entityId, propertyId, before, after, null, correlation));
+    }
+
+    private Folio writable(UUID folioId) {
+        Folio folio = existing(folioId);
+        guard.lock(folio.getPropertyId(), folio.getReservation() == null ? folio.getId() : folio.getReservation().getId());
+        // Preserve earlier writes of this same transaction before refreshing a cached header.
+        entities.flush();
+        // Discard an old first-level snapshot after waiting for a financial writer.
+        entities.refresh(folio);
+        return folio;
     }
 
     private Folio existing(UUID folioId) {

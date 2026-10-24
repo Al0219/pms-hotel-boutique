@@ -1,3 +1,26 @@
+## 2026-10-23 — PR #163: merge normal con main, resolución semántica
+
+Usuario autoriza integrar origin/main 122f6e4 en feature/staff-admin-read 03bc308;
+sin rebase/force push ni merge del PR a main. Se resuelven individualmente seis
+conflictos: ambos historiales, OpenAPI Admin+lifecycle, bypass MSW Admin+HK,
+navegación Usuarios+Reportes+HK/scopes y limpieza/prueba de cachés Staff. Destinos
+seguros reutilizan permisos efectivos de navegación; no nuevos permisos ni contratos.
+next-env.d.ts local protegido con stash/copia, excluido de resolución.
+Checkout en worktree detached main: 12 PASS; main ya tenía 67ef77d (limpieza del
+carrito antes de navegar). Tras integrar, checkout coincide exactamente con main,
+sin ediciones propias: 457 focalizadas/12 archivos PASS y otras 20/3 PASS.
+OpenAPI focal Java21/PG17 tmpfs aislado: 19 PASS; sin verify Backend global.
+Una única ejecución npm run check: lint/typecheck PASS, 2.341 PASS/1 timeout
+Staff cursor (5s), checkout PASS. Fixture de cursores reducida de50 a5 filas,
+con todas las aserciones y timeout intactos: aislado2.679→829ms PASS; se mantiene
+cambio a25, filtros/scope e historial. No se repite global; focales finales477/15
+PASS y build separado PASS. No se declara check local PASS. Gate global pendiente
+de CI del nuevo commit. PostgreSQL QA y worktree temporales retirados, evidencia
+conservada y caché externa intacta. Diff/index PASS;
+procedimiento y evidencia en QA68. Estados previos independientes, 3D-2 COMPLETADA
+y bloqueo M08 conservados. Siguiente: registrar global, commit normal de merge,
+push a misma rama y actualizar estado/revisión/CI del PR sin fusionarlo.
+
 ## 2026-10-23 — Cierre 3D-2: aceptación manual PASS y preparación de PR
 
 Usuario autoriza COMPLETADA para 3D-2: suspensión, baja lógica, confirmaciones,
@@ -661,6 +684,450 @@ preservados; sin commit/push/merge.3D-2 EN_QA. Siguiente: validar mouse/touchpad
 - **Siguiente:** revisar/aprobar R01–R07; registrar decisión y rama dedicada antes
   de implementar el subconjunto de lectura, sin dar BE-006B/C por completados.
 
+## Asignación Staff — bloqueo de DIRTY y validación Web (2026-10-23)
+
+José aprueba bloquear la preasignación de Room DIRTY y destacar el motivo en
+Reservas. Revisión de contratos50/52 y decisión aprobada; rama
+`fix/staff-room-assignment-dirty-guard` desde c4e5109. Origin/main aa831b8 tiene
+el mismo árbol de base; no merge/rebase. QA manual PASS confirmado por José;
+estado EN_QA hasta terminar el gate Web general. Commit/push autorizados.
+
+Backend conserva la candidata DIRTY con selectable=false/reason; PUT relee estado
+escalar después del lock Room compartido con HK y devuelve409 sin asignación ni
+audit parcial. CLEAN/sin seguimiento conservan preasignación; INSPECTED sigue
+siendo obligatorio para check-in. BFF/mapper y UI preservan el motivo, destacado
+en rojo con texto explícito. No nuevas APIs, permisos, migraciones o dependencias.
+
+./mvnw -B verify BUILD SUCCESS: 950 pruebas/107 reportes, 0 fallos/errores/omitidas,
+Java21.0.9/PostgreSQL17.11 aislados. Incluye 19 pruebas Staff de lectura/asignación,
+preview obsoleta y escritor HK concurrente con snapshot JPA previo; OpenAPI17 PASS.
+Java no cambió después de ese verify. JAR SHA256:
+0ef0c18ee95029b90b78a8ee529a1880cb32cbfbabcdbb5320b08f4b0aabee9c.
+
+Web: 22/22 focalizadas PASS en la ejecución inicial; última repetición 21/22 y
+recorrido real 0/1 por timeout5s de los casos N stays. Ambos fallan también en
+HEAD c4e5109 (baseline5/7), sin relación con un rechazo DIRTY. Casos nuevos PASS.
+Comparación adicional: el carrito original agota5s en una copia exacta de
+origin/main aa831b8 y en la rama. Gate Web general no aprobado; mantener EN_QA.
+Los resultados de barridos con experimentos temporales no certifican el árbol
+final: se restauran todos los cambios públicos, de formato y de tests ajenos.
+Solo queda la corrección DIRTY y espera/consulta semántica del calendario de su
+recorrido existente, preservando todas las assertions y límites. Sin exclusiones,
+tests deshabilitados o cambios al workflow. Evidencia fuera de Git.
+Últimos lint/typecheck Linux PASS sobre el árbol final.
+
+Se conservan contenedores, imágenes y PostgreSQL habituales del hotel3001; QA
+aislado, sin datos sintéticos en esa base. Build Web Linux anterior PASS vigente:
+no cambios de runtime posteriores. Dependencias verificadas contra package/lock,
+sin cambios a Docker/Compose. Publicación autorizada; PR/checks GitHub pendientes.
+Web/Backend restaurados con sus mismas imágenes; tres servicios saludables,
+Inicio/Reservas HTTP200 y checksum del JAR activo idéntico al verify950.
+La aprobación manual no se atribuye a casos individuales ni cierra el QA separado53.
+
+## Check-in/checkout Staff — QA manual aprobado y publicación (2026-10-22)
+
+José confirma QA manual PASS y autoriza commit/push del Backend54 y la Web
+dependiente en `feature/staff-stay-lifecycle-web`, sin merge a main. Esta entrada
+actualiza los pendientes de QA manual/publicación de las entregas siguientes;
+no cierra retroactivamente el QA separado del contrato53 ni certifica escenarios
+individuales no detallados por José. Backend946 y lint/typecheck/build Web PASS
+siguen vigentes. Gate Web general y checks de GitHub pendientes; conservar los
+timeouts de baseline y React418 público documentados, sin declarar CI PASS.
+
+## Check-in/checkout Staff — entrega Web para QA (2026-10-22)
+
+- **Estado:** EN_PROGRESO; funcionalidad implementada/validada, cierre general y
+  QA manual de José pendientes. Rama feature/staff-stay-lifecycle-web, conserva
+  Backend EN_QA; sin commit/push/merge ni cambios de migraciones/dependencias.
+- **Entrega:** botones por stay en el detalle real, confirmación accesible,
+  expectativas congeladas al abrir, versión sin redondear, cookie Staff/Origin,
+  propiedad explícita y códigos409 saneados. No habilita acciones provisionales.
+  Reintento incierto conserva clave/cuerpo, incluso cerrando y reabriendo diálogo
+  mientras siga montado. Refresca reserva/lista/stays, asignación, ocupación y HK.
+- **Validación:** lint/typecheck/build PASS.50 archivos Web340/341 PASS,52 nuevas
+  PASS; timeout5s del listado reproduce en HEAD9abea00 (10/11 PASS). Timeout público
+  también reproduce en HEAD. Suites generales interrumpidas y no certificadas;
+  fixtures QueryClientProvider propios corregidos, assertions/límites intactos.
+  Backend946 PASS previo vigente, sin repetir Java para atribuirlo a la UI.
+- **Real:**17 comprobaciones funcionales en PostgreSQL aislado,0 respuestas5xx,
+  móvil390px. Corte deliberado de respuesta de checkout y recuperación idempotente;
+  un cargo/pago/entrada/salida en SQL, Room DIRTY conservando DND, fechas/cargos y
+  ATS correcto. Navegador global PARTIAL por React418 en Inicio con fechas/query,
+  reproducido en versión anterior y nueva; reporte FAIL original conservado.
+- **Entorno:**3001 actualizado tras recrear Backend/Web; verificación SHA256 del
+  JAR igual al946 PASS, ruta nueva sin sesión401, disponibilidad200/6 ofertas y3
+  servicios saludables. Hotel conserva2 properties/24 rooms/2 reservas/2 stays;
+  ninguna reserva o limpieza de QA en su base. Configuración/volumen preservados.
+  Contenedores/redes temporales retirados; volumen aislado de QA detenido.
+- **Siguiente:** QA manual propio en3001 con reserva pública nueva para hoy y Room
+  inspeccionada; gate Web general pendiente por timeouts previos. Web66 detalla
+  pasos/evidencia. No afirmar COMPLETADA ni CI PASS; reservas sin folio no verifican
+  saldo cero. Temporal pms-stay-lifecycle-web-qa fuera de Git conserva evidencia.
+
+## Check-in/checkout Staff — inicio Web (2026-10-22)
+
+José autoriza conectar BFF/botones del contrato54. Nueva rama
+feature/staff-stay-lifecycle-web desde9abea00 conserva el Backend EN_QA sin
+publicar; no merge/rebase ni cambios al XLSX. Alcance por ReservationStay,
+RESERVATION_MANAGE/property explícita, timestamp sin redondear, reintento con la
+misma clave/cuerpo, confirmación accesible y refresco de lecturas. Plan/QA en
+Web66; validación Web y QA manual pendientes, Backend946 PASS previo no los cubre.
+
+## Check-in/checkout Staff — entrega Backend EN_QA (2026-10-22)
+
+- **Estado:** EN_QA; implementación y validación técnica PASS, QA manual propio
+  pendiente. Rama feature/staff-stay-lifecycle, base9abea00; sin commit/push/merge.
+  Se conservan los acuerdos previos del contrato54 y decisión académica.
+- **Entrega:** POST check-in/checkout con Staff activo, RESERVATION_MANAGE,
+  scope SQL, expectativas de estado/Room/updatedAt y recibo local idempotente.
+  Auditoría de actor Staff y rollback de salida/limpieza; no datos financieros
+  expuestos. GET Staff agrega updatedAt. BFF actual sigue con su allowlist previa;
+  no se añaden botones ni se atribuye QA visual nuevo.
+- **Reglas:** check-in CONFIRMED y fecha local válida, Room inspeccionada y sin
+  conflicto/bloqueo. Otra stay IN_HOUSE bloquea entrega física aunque venciera su
+  salida prevista o se cancelara su padre; ATS permanece independiente. Checkout
+  requiere todos los folios verificables sin deuda positiva, sin compensar
+  créditos/monedas; salida anticipada conserva fechas/cargos, deja Room DIRTY.
+- **Finanzas:** nuevas reservas públicas registran CHARGE/PAYMENT simulado en
+  Folio existente, dentro del recibo/transacción públicos. Replays no repiten
+  efectos ni rellenan historia. Guard financiero por property+reserva compartido
+  con alta/postings/reversos/transiciones de FolioService; reservas independientes
+  conservan concurrencia. No PSP real, migraciones ni dependencias nuevas.
+- **Validación final:** ./mvnw -B verify946 PASS,107 reportes,0 failures/errors/
+  skipped, BUILD SUCCESS y JAR,16:42 min; Java21/PostgreSQL17 aislados.40 casos
+  nuevos prueban HTTP/SQL/auth/scope, integración pública completa, ATS, deuda,
+  no folio, créditos, rollback, doble acción, replay/revocación y carreras con
+  cargos/alta de folio. OpenAPI17 PASS; paridad53 operaciones/42 paths/63 schemas/
+  13 tags; content-types JSON/problem+json y precisión de updatedAt comprobados.
+- **Ejecuciones anteriores:** focalizada143:139 PASS,2 fallos y2 errores por
+  refresh que descartaba cambios propios del folio, guard demasiado amplio y
+  formato UUID de Swagger. Corregidos conservando assertions y timeouts.
+  Primer verify completo946:945 PASS/1 fallo propio de OpenAPI por content-type
+  */*; anotaciones corregidas, repetición íntegra PASS. Una ejecución intermedia
+  detenida para incluir ocupación IN_HOUSE vencida no se cuenta como finalizada.
+- **Evidencia:** backend/target/staff-lifecycle-* ignorado: logs/reports iniciales,
+  primer full y final separados, OpenAPI y JAR. Sin cambios al CI ni exclusiones.
+  Diff-check/revisión de alcance PASS; los cinco archivos nuevos son de la tarea.
+- **Conservación/siguiente:** QA temporal retirado, hotel3001 sin actualizar;
+  base de datos del usuario sin tocar. Reservas históricas sin folio siguen
+  bloqueadas, no se inventa saldo cero. QA manual53 sigue pendiente. Integración
+  BFF/botones Web como siguiente incremento autorizado por separado.
+
+## Check-in/checkout Staff — inicio Backend autorizado (2026-10-22)
+
+- José autoriza proseguir con Backend54 y vínculo de pago simulado al folio.
+  READY → EN_PROGRESO. Nueva feature/staff-stay-lifecycle desde9abea00, conservando
+  los acuerdos documentales sin publicar. Main f7c8f7d ya incorpora PR160 y su
+  árbol coincide; no se integran ramas ni se cambia el entorno habitual3001.
+- Alcance: POST check-in/checkout Staff con scope SQL, timestamp de concurrencia,
+  recibo idempotente y auditoría del actor; deuda por todos los folios de reserva,
+  guard compartido con escritores. CHARGE/PAYMENT de nuevas reservas simuladas
+  en la misma transacción/recibo existente; no backfill ni nuevas migraciones.
+- Bloqueos de recursos usan predicado de scope en subconsulta para no bloquear
+  la fila Property que el booking público protege con FOR SHARE. Orden común:
+  recibo local, guard financiero de propiedad, reserva, stay, Room.
+- Pruebas previstas: HTTP/PostgreSQL/OpenAPI, auth/scope, saldo/ausencia, rollback,
+  carrera con postings/alta de folio y reintentos; regresión completa Java21/PG17.
+  Sin resultado nuevo atribuido aún. QA manual53 sigue pendiente.
+- Siguiente: finalizar pruebas Backend; BFF/botones Web posteriores. Sin commit,
+  push, merge, nuevos proveedores, secretos ni pruebas sobre la BD del usuario.
+
+## Check-in/checkout Staff — alcance académico y saldo aprobados (2026-10-22)
+
+- José informa decisión del docente: pagos del área pública simulados; integración
+  bancaria/PSP real fuera del proyecto académico actual por tiempo de desarrollo.
+  Se conserva el adaptador existente, sin exigir un proveedor para este incremento.
+- Aprueba todas las reglas consultadas: deuda de cualquier folio de la reserva
+  bloquea cada salida, sin compensación entre folios/monedas; falta de folio o
+  información contable verificable también bloquea. No quedan esas decisiones
+  de negocio abiertas. Contrato54 y decisiones globales actualizados.
+- Pago simulado aprobado no acredita saldo contable cero. Booking actual no crea
+  movimientos de folio; deberá integrarse explícitamente esa fuente para mostrar
+  un checkout público válido, sin nuevo cobro, historial reescrito ni saldo UI.
+  La comprobación debe coordinarse con los escritores financieros existentes.
+- Rama documental docs/staff-stay-lifecycle-contract, base9abea00 conservada;
+  cambios solo documentales. Transporte sigue propuesto, código PENDIENTE,
+  QA manual53 pendiente; sin nuevo verify ni resultados API/CI atribuidos.
+- Siguiente: concretar implementación Backend del contrato54 y cobertura contable
+  del recorrido simulado. Sin commit/push/merge ni cambios al stack3001 en este acuerdo.
+
+## Check-in/checkout Staff — reglas aprobadas y contrato pendiente (2026-10-22)
+
+- José aprueba las reglas propuestas y exige bloquear checkout con saldo pendiente.
+  Contrato54 registra check-in de reserva CONFIRMED en fechas locales admitidas,
+  Room asignada/INSPECTED y validada, salida anticipada sin recalcular cargos,
+  auditoría Staff y checkout→DIRTY transaccional.
+- Rama nueva documental `docs/staff-stay-lifecycle-contract`, base9abea00;
+  ese commit ya coincide con origin/feature/staff-checkout-housekeeping.
+  Estado del contrato PENDIENTE, no declarar READY la integración HTTP.
+- Hallazgo: Folio permite vínculos por reserva/stay y saldo por movimientos;
+  booking público no genera CHARGE/PAYMENT. Falta decisión sobre deuda compartida
+  y falta de fuente contable. Propuesta consultada: cualquier deuda de la reserva
+  bloquea, sin compensar con otros folios; ausencia de fuente verificable bloquea.
+- Concurrencia financiera requiere coordinar también escritores/alta de folios;
+  no basta consultar saldo dentro del checkout. Reutilizar idempotencia local y
+  permisos vigentes, sin implementar ni ampliar acceso financiero por suposición.
+- Solo documentación; diff-check y revisión de consistencia PASS. No atribuir
+  pruebas nuevas a las APIs aún inexistentes;905 PASS es evidencia de contrato53.
+  QA manual53 sigue pendiente. Sin commit/push/merge ni despliegue3001 nuevos.
+- Siguiente: decisión financiera de José y cierre del contrato54 antes de código.
+
+## Checkout → limpieza — publicación autorizada (2026-10-22)
+
+- José autoriza commit/push de `feature/staff-checkout-housekeeping` y después
+  acordar el contrato Staff de check-in/checkout. No autoriza merge ni implementar
+  sus nuevas APIs/BFF/UI antes de acordar las reglas pendientes.
+- Estado EN_QA: la autorización de Git no sustituye QA manual PASS. Se conserva
+  la evidencia técnica anterior: verify905 PASS,0 failures/errors/skipped,
+  sin nuevas ejecuciones ni checks remotos atribuidos. Diff/alcance revisados.
+- Entorno habitual3001 sin actualizar; siguiente paso: propuesta contractual
+  separada de la implementación interna publicada.
+
+## Checkout → limpieza — entrega técnica EN_QA (2026-10-22)
+
+- **Estado:** EN_QA, QA manual propio pendiente. Rama
+  feature/staff-checkout-housekeeping, base0d4affd; contrato53 aprobado para
+  integrar el servicio interno, sin HTTP/BFF/UI de checkout autorizados.
+- **Cambio:** checkOut bloquea stay y Room, confirma CHECKED_OUT + DIRTY y dos
+  eventos SYSTEM correlacionados en una transacción; rollback completo si audit
+  falla. Reutiliza HK y cleaningReason; crea seguimiento al salir si faltaba,
+  conserva DND y otras stays. Caso histórico sin Room no inventa asignación.
+- **Pruebas finales:** ./mvnw -B verify905 PASS/BUILD SUCCESS/JAR,0 omitidas,
+  Java21/PostgreSQL17 aislados,17:13 min.16 casos nuevos: concurrencia/reintento,
+  rollback, caché JPA y DND, creación de seguimiento, ATS y futura preasignación.
+  Regresiones de reservas/finanzas/inventario/operaciones/auth/OpenAPI PASS.
+- **Primera ejecución:**905 casos,904 PASS y1 timeout en Swagger de
+  PublicBookingHttpIntegrationTests:153. Init19,95s contra20s. Repetición íntegra
+  con PG nuevo y caché de compilación:905 PASS; HTTP62 PASS, Swagger9,84s.
+  Sin modificar prueba/timeout/configuración/CI ni omitir casos. Logs/reports de
+  ambas ejecuciones separados en backend/target/checkout-hk-* ignorado.
+- **Conservación:** no migraciones, dependencias, rutas, permisos, cobros ni
+  frontend funcional nuevos. No se hacen checkouts en la base del usuario ni
+  se actualiza el stack habitual3001. Pruebas/temporales exclusivamente aislados.
+- **Siguiente:** revisión/QA manual de José y acordar contrato Staff si desea
+  operarlo desde pantalla. No afirmar que ya existen botones de entrada/salida.
+  Sin commit/push/merge; no checks remotos atribuidos. La entrada siguiente es histórica.
+
+## Checkout → limpieza — inicio (2026-10-22)
+
+- **Estado:** EN_PROGRESO. José autoriza continuar con la integración propuesta.
+- **Rama/base:** feature/staff-checkout-housekeeping desde0d4affd; main1c0eccd
+  contiene los PR157–159 y su árbol coincide. Rama anterior publicada intacta.
+- **Contrato/alcance:**53, servicio interno checkOut existente; checkout/HK/audit
+  en una transacción, Room→DIRTY, motivo legible, concurrencia y efectos únicos.
+  Reutilizar HousekeepingService y proyección actual; no HTTP/UI/folio nuevos.
+- **Siguiente:** implementación y QA automatizado; luego QA manual de José.
+  Sin commit/push/merge autorizados ni cambios al entorno/datos del usuario.
+
+## Housekeeping — motivo de rechazo y foco (2026-10-22)
+
+- **Estado:** COMPLETADA; validación técnica y QA manual propio PASS, confirmado
+  expresamente por José el 2026-10-22. Autoriza commit/push en la misma rama.
+- **Causa:** Modal reenfocaba al cambiar el callback inline, incluso por cada
+  letra; el motivo persistía en audit pero no formaba parte del DTO de lectura.
+- **Cambio:** foco inicial separado del listener; pausa de polling/foco mientras
+  se confirma. Motivo vigente DIRTY desde auditoría existente con property scope,
+  proyectado como cleaningReason y visible en detalle; DND no lo reemplaza.
+- **Validación:** Web84 pruebas/18 archivos PASS con el límite original;
+  typecheck/lint PASS. Backend verify focalizado41 PASS/BUILD SUCCESS, Java21/PG17:
+  StaffHousekeepingIntegrationTests, HousekeepingServiceIntegrationTests,
+  RoomReadinessIntegrationTests y OpenApiContractIntegrationTests. Se reprodujo
+  antes del arreglo la pérdida de foco y el guardado accidental al escribir espacios.
+  Regresión de composición Habitaciones:4 PASS/1 timeout5s inicial; archivo íntegro
+  repetido5 PASS con límite30s solo en CLI local. Sin cambios de timeout/CI/tests.
+  Build producción Backend/Web PASS, dependencias Web cacheadas del mismo lock
+  mediante override temporal ya validado; no cambios Dockerfile/Compose/lockfile.
+- **Integrado3001:**7 comprobaciones Chrome PASS: escritura continua con espacios
+  y tildes, foco conservado más de30s, cancelar sin cambios, motivo existente en
+  detalle tras recargar y móvil390px sin overflow; sin excepciones JS ni5xx.
+  SQL antes/después:2 properties/24 rooms/2 reservas/5 estados HK/25 eventos audit,
+  iguales. No se guardó un rechazo nuevo ni se reescribió historia. Tres
+  contenedores saludables; PostgreSQL original intacto. Temporales fuera del repo.
+- **Siguiente:** publicar este ajuste en `feature/staff-housekeeping-real`.
+  Próximo alcance por acordar con José; sin merge ni funcionalidad adicional
+  autorizados en este cierre. No se atribuyen checks remotos de GitHub.
+
+## Limpieza y entrega — cierre manual y publicación autorizada (2026-10-21)
+
+- **Estado:** COMPLETADA; QA técnico y manual propio PASS. José confirma
+  expresamente su QA de este incremento y autoriza commit/push en la misma rama.
+  José aprobó preasignar con aviso sin entregar una
+  habitación no inspeccionada; contrato52. Base publicada HK3186d92, misma rama.
+- **Entrega:** consulta de limpieza para Recepción desde Habitaciones sin acceso
+  de gestión HK; preview informa limpieza actual y aviso. CheckIn interno exige
+  Room asignada/INSPECTED, con bloqueo Room compartido por escritores HK.
+- **Límites:** no nuevo endpoint/botón check-in, no automatismo check-out→DIRTY,
+  sin cambios ATS, migraciones, roles globales ni secretos. Fixture Comercial
+  de check-in se adapta a la regla aprobada, sin alterar su lógica funcional.
+- **Backend final:** ./mvnw -B verify887 PASS,0 failures/errors/skipped,
+  BUILD SUCCESS y JAR,12:24 min, Java21/PostgreSQL17 aislados, sin builds/Chrome
+  simultáneos. Primera ejecución:3 fallos por fixture propia ya corregidos;
+  segunda:796 PASS y exit137 durante builds, no éxito. Logs/reports separados
+  en backend/target/readiness-*; no modificar assertions de BD3 ni excluir casos.
+- **Web:**143 casos verificados:135 PASS/8 timeouts5s; control HEAD también falla
+  por tiempo. Los6 archivos afectados repiten30 PASS con30s solo en runner local,
+  sin cambios a tests/timeouts/CI del repo. Build/typecheck/lint PASS.
+- **Integrado3001:**22 comprobaciones Chrome PASS,0 JS/5xx y sin overflow390px.
+  Recepción lee limpieza y filtra; tracking/status/DND403. Reserva/asignación
+  existentes conservadas, ATS intacto. SQL conserva2 propiedades/24 rooms/6 tipos,
+  2 reservas/2 stays/1 GuestAccount/2 StaffUsers/28 migraciones/2 HK;1 recibo QA.
+  HK audit10→12 por DND on/off Admin. Chrome QA cerrado; stack habitual saludable.
+- **Docker:** imagen Backend canónica y Web compilada con dependencias cacheadas
+  del mismo package/lock, comparación byte a byte PASS. npm ci normal falló por
+  conectividad ETIMEDOUT; override/Dockerfile temporal fuera del repo, sin cambiar
+  fuente/configuración/dependencias/credenciales. Cold build requiere red npm.
+- **Siguiente:** publicar en `feature/staff-housekeeping-real` y continuar
+  puliendo este módulo según los ajustes que indique José. Sin merge ni nuevas
+  funcionalidades definidas en este cierre. CI remoto no ejecutado.
+
+## Housekeeping — cierre manual y publicación autorizada (2026-10-21)
+
+- **Estado:** EN_QA → COMPLETADA. José confirmó que probó Housekeeping y está
+  bien; autoriza commit y push de `feature/staff-housekeeping-real`.
+- **Permisos:** conservar la implementación aprobada con OPERATIONS_MANAGE y
+  property scope. No se añade acceso de Recepción ni se modifica la matriz
+  global de roles. Superadmin probado; Gerencia/Operaciones conservan el acceso
+  previsto en C2. No se interpreta la confirmación como un nuevo permiso.
+- **Evidencia:** Backend verify879 PASS y verify final focalizado26 PASS;
+  Web1863 casos verificados entre la suite y la repetición del archivo con
+  timeout, build/typecheck/lint PASS. QA integrado3001:17 comprobaciones PASS.
+  Se reutiliza esta evidencia sin atribuir nuevas ejecuciones ni CI remoto.
+- **Siguiente:** commit/push de esta rama y revisión del próximo alcance privado.
+  No merge ni cambios funcionales adicionales en este cierre; base y datos
+  locales conservados. Los registros EN_QA siguientes son históricos.
+
+## Housekeeping — actualización local3001 y QA integrado (2026-10-21)
+
+- **Estado:** EN_QA. José autorizó reconstruir el entorno habitual y probar
+  el flujo integrado con cuentas existentes. No autorizó publicación ni merge.
+- **Despliegue local:** imágenes Backend/Web reconstruidas con Dockerfiles
+  existentes; mocks=false y puerto3001. Compose up --no-build --wait PASS;
+  Backend/Web/PostgreSQL saludables. Mismo contenedor/volumen PostgreSQL;
+  copia pg_dump previa guardada fuera del repo. Preview aislada3101 detenida.
+- **QA real positivo:** Inicio/catálogo/detalle/checkout Guest/confirmación;
+  pago SIMULATED y ATS disminuye exactamente1. Recepción accede por formulario,
+  encuentra la reserva pública y asigna habitación física; Habitaciones muestra
+  la ocupación reservada para la fecha elegida; Calendario y reporte on-books
+  consultan datos reales. Logout vuelve a Inicio. Recepción→HK403, sin ampliar permisos.
+- **Conservación:**24 Rooms/6 RoomTypes/2 Properties/28 migraciones y cuentas
+  previas conservadas. QA añadió1 Reservation,1 Stay,1 GuestProfile y1 recibo;
+  no GuestAccount nueva ni reservas duplicadas al repetir verificaciones.
+- **Bloqueo de cuenta resuelto:** José autorizó expresamente crear qa_staff
+  local mediante StaffBootstrapConfiguration. Contenedor one-off con la imagen
+  existente, sin reiniciar el stack ni modificar .env/Compose. Cuenta SUPER_ADMIN
+  ACTIVE,1 membership y1 STAFF_BOOTSTRAP_CREATED; contraseña codificada por el
+  PasswordEncoder existente. Contenedor temporal retirado y eliminado tras el alta;
+  valores de bootstrap usados solo en ese proceso, sin credenciales versionadas.
+  Recepción conserva su rol; StaffUsers pasa de1 a2 por el alta autorizada.
+- **QA integrado final:**17 comprobaciones PASS en navegador contra3001, cero
+  excepciones JS/5xx. Incluye login Superadmin por formulario, PROPERTY concreta,
+  seguimiento/limpieza/inspección, DND independiente, reload y logout/guard.
+  Habitación201 final INSPECTED/DNDfalse,5 eventos HK con actor Admin esperado.
+  ATS no cambia por limpieza/DND. Se reutilizó la reserva QA existente:2 reservas
+  totales y1 recibo de QA, sin nuevas cuentas Guest ni reservas duplicadas.
+  Creación/ATS-1 constan en ejecución anterior. Scripts/resultados/recibo/captura/
+  backup en temporal pms-housekeeping-local3001-qa, fuera del repo.
+- **Siguiente:** usuario prueba el entorno3001 y confirma QA manual antes de
+  COMPLETADA. Autorizar el QA/alta no se interpreta como PASS manual ni publicación.
+  Sin cambios funcionales adicionales, migraciones, secretos versionados,
+  commit, push ni merge.
+
+## Housekeeping Staff real — implementación y validación (2026-10-21)
+
+- **Estado:** EN_QA; José aprobó contrato51 y su implementación frontend y
+  backend. Rama `feature/staff-housekeeping-real`, base main `8e1abbe`.
+- **Entrega:** cinco operaciones Staff/BFF por PROPERTY, tablero con filtros y
+  detalle, seguimiento explícito, ciclo de limpieza con motivo y DND independiente.
+  Reutiliza HousekeepingService, tablas y permisos C2; no agrega migraciones.
+- **Seguridad:** sesión Staff vigente, OPERATIONS_MANAGE y scope antes de consultar;
+  actor del servidor, auditoría atómica, bloqueo de Room y versión UTC exacta.
+  Conflicto/replay devuelve409; sin retries ciegos ni cambios a inventario/reservas.
+- **Backend:** `./mvnw -B verify`, 879 pruebas PASS/BUILD SUCCESS. Después del último
+  ajuste de nulabilidad de OpenAPI, verify focalizado de
+  StaffHousekeepingIntegrationTests y OpenApiContractIntegrationTests:26 PASS.
+  No se atribuyen los879 a esa segunda invocación. Java21/PostgreSQL17 aislado;
+  logs, reports, OpenAPI y JAR en backend/target/housekeeping-* ignorados.
+- **Web:** suite306 archivos/1863 casos:1862 PASS y1 timeout5s en checkout existente;
+  archivo repetido íntegro25 PASS, mismo timeout y fuentes intactas. Todos los
+  casos verificados entre dos ejecuciones, sin atribuir1863 PASS a una sola.
+  Build producción (mocks=false), typecheck y lint PASS. Sin cambiar CI/tests
+  para ocultar errores. La ejecución Windows anterior fue interrumpida por
+  lentitud y la primera Linux paralela tuvo timeouts; no se cuentan como PASS.
+- **Navegador/BD:** Chrome contra BFF/API/PG reales aislados:9 comprobaciones PASS,
+  escritorio/móvil sin overflow, reload, ciclo/motivo/DND, replay409, logout y
+  Recepción denegada; sin excepciones JS. Habitación101 final DIRTY/DNDfalse;
+  6 eventos HK con actor Staff esperado, sin evento adicional por replay.
+  Capturas/logs/resultados en el directorio temporal pms-housekeeping-browser-qa.
+  Primer intento previo a health UP devolvió503 sin escrituras; repetido tras UP.
+- **Siguiente/límites:** QA manual del usuario según Web64; no COMPLETADA aún.
+  El stack habitual3001 y su BD se conservaron sin reconstruir/modificar;
+  preview aislada3101 con datos desechables. No se atribuye CI remoto, publicación
+  ni PASS manual. Sin migraciones, dependencias nuevas, secretos, commit o push.
+
+## Housekeeping Staff real — contrato preparado (2026-10-21)
+
+- José autoriza frontend y backend del módulo. Rama aislada
+  `feature/staff-housekeeping-real`, main `8e1abbe`; working tree inicial limpio.
+- Inspección: HousekeepingService/HkRoomState, ciclo DIRTY/CLEAN/INSPECTED y DND,
+  actor/audit existentes; UI provisional y pms.test. No existe contrato HTTP
+  aprobado; la matriz de permisos operativos sigue propuesta para Housekeeping.
+- Contrato51 PROPOSED: rutas/DTO/BFF, OPERATIONS_MANAGE, PROPERTY, actor de sesión,
+  seguimiento explícito, transiciones/motivo, DND, concurrencia y pruebas.
+  Sin duplicar servicios ni asumir que Sin seguimiento es un estado persistido.
+- Evidencia: baseline Web `npm run test -- src/modules/housekeeping
+  --maxWorkers=1 --reporter=dot`, 11 archivos/40 pruebas PASS; enlaces del
+  contrato y `git diff --check` PASS. No se atribuye validación HTTP/Backend
+  ni QA manual a una integración todavía no implementada.
+- Siguiente: aprobar contrato y ejecutar el incremento. No hay cambios Java/UI,
+  migraciones, secretos, commit, push ni merge.
+
+## Juan / publicación de correcciones H1–H4 vía PR (2026-10-08)
+
+- **Autorización:** usuario solicita actualizar la rama, publicarla y entregar
+  sus cambios en main mediante PR; autoriza comandos/decisiones recomendadas,
+  con prohibición de editar código sin nueva autorización. Rama vigente
+  `fix/backend-public-booking-audit-h1-h4`, desde `d01a707`.
+- **Nueva base:** main `a0f62d0` (PR153 Panel Staff real). Único conflicto en
+  este documento resuelto conservando ambos historiales. Backend src íntegro
+  respecto a `d01a707`; Web idéntico a main. Sin edición manual de código,
+  tests, migraciones ni secretos. Compose/CI conservan entorno aprobado3001.
+- **Evidencia reutilizada:** Backend868 PASS/BUILD SUCCESS y QA manual H1–H4
+  previamente confirmado. Web de la nueva base: CI `37883662077` success,
+  exactamente las mismas fuentes/lockfile. Backend/Stack CI de main también
+  success; no sustituye el CI propio del PR que se verificará antes de fusionar.
+- **Proceso/siguiente:** finalizar este merge documental, push de la rama,
+  crear PR y revisar sus checks. Reglas efectivas de main exigen PR,0 approvals
+  obligatorios y prohíben force-push/deletion; sin bypass de políticas.
+  Cinco documentos untracked iniciales quedan excluidos y preservados.
+
+## Juan / integración local main PR150–PR152 (2026-10-08)
+
+- **Autorización/base:** continuación de traer la última main a la rama local
+  `fix/backend-public-booking-audit-h1-h4`. PR149 integrado en `85922a5`; nueva
+  main recibida `e354b6b` (PR150 asignación real de habitación y PR152 calendario).
+  Sin push ni despliegue solicitados para estas integraciones.
+- **Resolución:** único conflicto textual adicional en Compose, Property ID;
+  se conserva la configuración demo aprobada por el usuario. Compose/CI idénticos
+  a `9674151`: puerto3001 localhost, mocks false, demo y OTP/email/SMTP.
+  Comentarios de .env.example alineados con el UUID configurado por Compose;
+  .env real y secretos intactos. Historiales nuevos de Alan y Juan preservados.
+- **Estado:** COMPLETADA (integración Git local), resolución técnica validada.
+- **Validación Backend:** verify 868 PASS, 0 failures/errors/skipped,
+  BUILD SUCCESS/JAR (7:49). Fuentes read-only, PostgreSQL tmpfs, sin puertos
+  ni uso de la BD del hotel. H1–H4 y nuevos contratos Staff/OpenAPI incluidos.
+- **Validación Web:** suite completa de 1786 casos/293 archivos: 1783 PASS y
+  3 timeouts de5000ms bajo ejecución simultánea con Backend. Repetición de los
+  tres archivos afectados, `--maxWorkers=1`, con mismo timeout:38 PASS/3 archivos;
+  los tres casos pasan en2.99s/3.43s/3.14s. No se cambian fuentes/tests/timeouts.
+  Todos los casos quedan verificados entre ambas ejecuciones; no se atribuye
+  1786 PASS a una única invocación. Typecheck/lint/build PASS; mocks false y UUID
+  demo explícito. Web coincide íntegro con main `e354b6b`. Solo config/docs resueltos.
+- **Evidencia/siguiente:** backend/target/public-booking-main152-* ignorado;
+  logs Backend/instalación/tests/retry/typecheck/lint/build y surefire/JAR retenidos.
+  Validación de configuración PR149 conservada: Compose/CI siguen idénticos.
+  Contenedores QA retirados; volumen original y caché conservados.
+  Cierre del segundo merge local autorizado; sin despliegue ni push.
+  Cinco documentos untracked iniciales excluidos de los commits y conservados.
 ## 2026-10-08 — Panel Staff real: cierre con QA manual PASS
 
 - **Estado/aceptación/DoD:** EN_QA → COMPLETADA; PASS. Alan confirmó «QA manual
@@ -805,6 +1272,114 @@ preservados; sin commit/push/merge.3D-2 EN_QA. Siguiente: validar mouse/touchpad
   sin commit/push/merge.
 
 # AlanHandoff — Seguimiento Backend
+
+## Juan / integración main PR149 — validación local (2026-10-08)
+
+- **Autorización/rama/base:** usuario solicita traer main y resolver conflictos;
+  rama `fix/backend-public-booking-audit-h1-h4`, desde `9674151`, main recibido
+  `2e29426` (PR149). Publicación previa `9674151` verificada; este merge es local.
+- **Resolución:** único conflicto textual en este handoff. Se conservan completos
+  los bloques de Juan y los nuevos historiales de Alan; AlanPlan integra ambos.
+  Código de correcciones H1–H4 idéntico a `9674151`; nuevos módulos/contratos Staff
+  y Web importados de main, sin modificar migraciones, dependencias o secretos.
+- **Validación Backend:** `mvn -o -B --no-transfer-progress verify`:860 PASS,
+  0 failures/errors/skipped, BUILD SUCCESS/JAR. PG17.11 tmpfs, Java21.0.9/Maven3.9.11
+  aislados en `pms-juan-main149-qa`, sin puertos ni uso de la BD del hotel.
+- **Decisión aprobada:** usuario elige expresamente la opción recomendada el
+  2026-10-08: conservar el entorno AUTH-UNIFIED-01 APPROVED. Compose preserva
+  `127.0.0.1:3001:3000`, mocks false por defecto, Property demo, perfil/demo,
+  passthrough OTP/email/SMTP y callback Google/origen público3001; CI curl3001.
+  Se revisan y resuelven todos los cambios de esos dos archivos respecto a main;
+  quedan idénticos a `9674151`, sin exponer/modificar secretos ni arrancar el hotel.
+- **Validación de configuración:** Compose schema sin interpolar PASS; assertions
+  de puerto/origen/callback/mocks/passthrough y Backend/PostgreSQL internos PASS.
+  Evidencia: backend/target/public-booking-main149-compose-validation.log ignorado.
+- **Validación Web:** copia aislada sin .env; Node24.21.0/npm11.19.0,
+  `npm test -- --maxWorkers=2`: 1698 PASS / 284 archivos. `npm run typecheck`,
+  `npm run lint` y `npm run build` (mocks false) PASS. Dependencias instaladas
+  con `npm ci --include=dev --ignore-scripts --no-audit --no-fund` únicamente en
+  contenedor temporal; ejecución en su capa /tmp por mount tmpfs noexec.
+- **Evidencia/siguiente:** backend/target/public-booking-main149-verify.log,
+  public-booking-main149-surefire-reports y public-booking-main149.jar ignorados.
+  Logs Web public-booking-main149-web-{install,tests,typecheck,lint,build}.log.
+  Cinco documentos untracked originales conservados; sin push ni cambio de main.
+  Conflictos textuales resueltos y diff-check PASS. Decisión de configuración
+  resuelta; cierre del merge local autorizado. Contenedores QA retirados,
+  volumen del hotel conservado. No despliegue ni push de esta integración.
+
+
+## Juan / correcciones H1–H4 — publicación autorizada (2026-10-08)
+
+- **Autorización/entrega:** usuario solicita el commit exacto `bugs y errores resueltos`
+  y push de `fix/backend-public-booking-audit-h1-h4`; incremento COMPLETADA,
+  QA técnico852 PASS y QA manual PASS conservados.
+- **Alcance:** cinco fuentes, cinco tests y seguimiento propio en AlanPlan/Handoff.
+  Cinco documentos untracked preexistentes y artefactos ignorados quedan fuera.
+- **Siguiente/límite:** crear el commit revisado y publicar esta rama con upstream;
+  sin merge, force-push, cambio de main o avance a otra tarea.
+
+
+## Juan / correcciones H1–H4 — cierre con QA manual PASS (2026-10-08)
+
+- **Estado/aceptación:** COMPLETADA. Juan confirma expresamente «QA PASS» tras
+  la entrega EN_QA y su checklist; queda registrado el QA manual final del incremento.
+- **Rama/base:** `fix/backend-public-booking-audit-h1-h4`, `bb83103`; fuentes y
+  tests de la entrega preservados. Este cierre modifica solo el seguimiento propio.
+- **Validación/DoD:** evidencia técnica previa final852 PASS, 0 failures/errors/
+  skipped, BUILD SUCCESS; HTTP real, PG/concurrencia/rollback/replay/OpenAPI y
+  diff-check PASS. QA manual del owner PASS; aceptación y DoD H1–H4 cerrados.
+- **Límites/siguiente:** historial EN_QA conservado debajo; estados J1–J6/A4 y
+  archivos ajenos intactos. Sin commit/push/merge; publicación o nueva tarea
+  requieren autorización independiente.
+
+
+## Juan / correcciones H1–H4 — entrega técnica EN_QA (2026-10-08)
+
+- **Estado/rama/base:** EN_QA; `fix/backend-public-booking-audit-h1-h4`,
+  `bb83103`. Usuario aprueba las recomendaciones de la auditoría y autoriza
+  implementarlas; cinco documentos untracked preexistentes intactos.
+- **Decisiones/alcance:** ACTIVE al admitir y protegido hasta commit para nuevas
+  reservas; replay original. Entrada NUL inválida antes de pago, fechas del formato
+  aprobado con comprobación de recibos históricos y metadata OpenAPI coherente.
+  Solo fuentes/tests Reservations y seguimiento propio; hash V1 y recibos intactos.
+- **Validación prevista:** unit/HTTP/OpenAPI y PostgreSQL real, carreras de estado,
+  rollback y replay; focalizados y verify sin exclusiones, diff-check/alcance.
+  Mantener EN_QA al entregar hasta QA manual PASS del owner. Sin commit/push/merge.
+- **Entregado:** cinco fuentes Reservations (una nueva de lookup) y cinco tests.
+  `FOR SHARE` después de locks RoomType relee status/currency actuales sin cache
+  JPA y protege hasta commit/rollback exterior; admite lectores/bookings paralelos.
+  DTO rechaza NUL y publica no blank compatible con Java/ECMA-262 sin alterar caso,
+  espacios válidos o Unicode. Fechas signed/extendidas INVALID_REQUEST400 en J3;
+  GTQ exacto mediante enum Swagger. Sin migraciones, POM o Security global.
+- **Compatibilidad local:** Docker apagado al iniciar; volumen original leído solo
+  para una copia de 49MB, PG17.11 independiente. Conteos: public_booking_receipts=0,
+  recibos con fechas fuera YYYY-MM-DD=0. Original montado read-only; sin consultas
+  de PII, modificaciones de filas o arranque del stack original.
+- **Validación:** focalizados iniciales257 PASS; verify final852 PASS, 0 failures/
+  errors/skipped, BUILD SUCCESS/JAR; Java21.0.9/Maven3.9.11/PG17.11, proyecto
+  `pms-public-juan-fix-h1-h4`, sin puertos. Cuatro pruebas PG nuevas de concurrencia
+  cubren estado cambiado durante espera, writer bloqueado hasta commit/rollback
+  y dos RoomTypes avanzando simultáneamente; replay original y hash golden PASS.
+- **HTTP real final:** GET availability200 y OpenAPI42 operaciones; NUL/año10000/
+  USDGTQ → INVALID_REQUEST400. POST válido201 y replay201 con reserva
+  `4167efa8-60c4-472b-b5c0-aa370081cb50` y JSON idéntico. Schema GTQ-only, nombres
+  vacíos/NUL/Unicode blank rechazados; NBSP y composición Unicode conservadas en
+  regex comprobada con ECMA-262. Sin errores técnicos nuevos ni pruebas omitidas.
+- **Artefactos:** backend/target/public-booking-audit-fixes-focused.log,
+  public-booking-audit-fixes-verify.log, public-booking-audit-fixes-surefire-reports
+  y public-booking-audit-fixes.jar. Evidencia ignorada; auditoría histórica y
+  otros cuatro documentos untracked preservados. Diff-check/alcance PASS.
+- **QA manual pendiente de Juan:** usar una base QA y catálogo reales: obtener
+  offers y crear/repetir booking201; mismo reservationId/confirmationCode/payment
+  y filas sin duplicados. Nombre con NUL, fechas +10000 y moneda USDGTQ deben400
+  sin pago/filas. Comprobar Swagger GTQ/no blank. Para H1 inspeccionar fixtures PG
+  de `PublicBookingServiceIntegrationTests`: deactivación durante espera aborta;
+  writer espera commit/rollback y replay tras INACTIVE conserva respuesta original.
+  Ejecutar esos casos exclusivamente sobre BD QA; no cambiar estado por SQL en el
+  volumen del hotel. Confirmar QA manual PASS antes de COMPLETADA.
+- **Siguiente/límite:** entrega EN_QA; solo falta validación manual del owner.
+  No commit/push/merge ni cierre de otras tareas. El conteo local de recibos no
+  sustituye comprobar otro entorno antes de desplegar validación más estricta.
 
 ## 2026-10-08 — Integración Staff Habitaciones/C-R-U: cierre con QA manual real PASS
 
@@ -4132,3 +4707,23 @@ El siguiente módulo operativo puede consumir C2 desde el BFF y debe aplicar
 `PROPERTY`/`ALL_PROPERTIES` mediante el scope Backend. El CRUD auditado de
 usuarios, roles y memberships continúa fuera de BE-005 y deberá revocar
 sesiones al modificar el acceso.
+
+## On-books diario — ampliación de lectura para RECEPCION (2026-10-20)
+
+- **Estado:** COMPLETADA (2026-10-20). El usuario aprobó el catálogo Figma con on-books real y
+  acceso de RECEPCION a categorías; para esta lectura aprobó usar el permiso
+  existente `RESERVATION_MANAGE` sin conceder `COMMERCIAL_MANAGE`.
+- **Cambio:** autorización Backend del GET on-books acepta cualquiera de esos
+  dos permisos; scope de propiedad y `MULTI_PROPERTY_READ` siguen vigentes.
+  Contrato, OpenAPI, Postman y guía QA actualizados; sin migraciones.
+- **Pruebas:** Docker PostgreSQL aislado, 10 pruebas on-books + 15 OpenAPI,
+  cero fallos y BUILD SUCCESS. La property propia de RECEPCION devuelve 200;
+  property ajena y ALL_PROPERTIES sin permiso devuelven 403.
+- **QA integrado:** Docker Backend/Web/PostgreSQL healthy. Sesión RECEPCION
+  mostró Reportes; consulta Web de Hotel Boutique Demo para 2026-10-20 devolvió
+  24 disponibles, 3 on-books, 0 OOO y 12.50%, coherentes entre tarjetas y tabla.
+  Web lint/typecheck/build PASS y suite completa 301 archivos/1827 pruebas PASS.
+- **QA manual:** el usuario revisó la pantalla integrada y confirmó PASS el
+  2026-10-20. No se declara completado ningún otro reporte o KPI.
+- **Siguiente:** publicación solo con autorización independiente; sin
+  commit/push/merge.

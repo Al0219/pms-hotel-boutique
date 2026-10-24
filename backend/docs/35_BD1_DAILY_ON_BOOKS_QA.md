@@ -2,7 +2,7 @@
 
 La ruta Backend `GET /api/v1/reports/on-books/daily` consulta el estado actual
 de las noches de estancia, no ocupación realizada ni una reconstrucción
-histórica. Requiere Bearer Staff activo con `COMMERCIAL_MANAGE`; el modo
+histórica. Requiere Bearer Staff activo con `RESERVATION_MANAGE` o `COMMERCIAL_MANAGE`; el modo
 `ALL_PROPERTIES` requiere además `MULTI_PROPERTY_READ`. Hay dos filtros de
 scope mutuamente excluyentes: `propertyId=<UUID>` y `scope=ALL_PROPERTIES`.
 Las fechas `from` y `to` son inclusivas y locales a cada property.
@@ -33,6 +33,9 @@ Para comprobar la ruta manualmente, importar
 Para una property sin habitaciones debe haber una fila por fecha con ceros,
 `onBooksPercent: null` y `unavailableReason: NO_AVAILABLE_ROOMS`.
 
+Probar también RECEPCION con `RESERVATION_MANAGE`: property propia → `200`,
+property ajena y `ALL_PROPERTIES` sin `MULTI_PROPERTY_READ` → `403`.
+
 Luego probar manualmente: sin token, token Guest o sesión Staff revocada →
 `401`; Staff sin permiso o property ajena/inexistente → `403`; filtros de scope
 ausentes o ambos, scope desconocido, UUID/fecha inválidos, `from > to`, 367
@@ -49,5 +52,10 @@ usar **Try it out** y completar `from`, `to` y exactamente uno de
 los encabezados y la respuesta JSON. No guardar el token en capturas ni
 compartirlo. La suite MockMvc/PostgreSQL anterior prueba la ruta sin navegador.
 
-El BFF Web sigue sujeto a revisión de su owner. Esta rama no publica la ruta
-Web. Revenue/ADR/RevPAR, llegadas/salidas y CSV quedan fuera de este incremento.
+El BFF Web integrado expone el reporte en `/reportes` para Staff autorizado.
+La QA local del 2026-10-20 con sesión RECEPCION en Docker verificó el menú,
+el catálogo y la consulta de Hotel Boutique Demo para una noche: 24 habitaciones
+disponibles, 3 on-books, 0 fuera de orden y 12.50%, con la misma fila en la
+tabla. El usuario revisó la pantalla y confirmó QA manual PASS para esta
+ampliación el 2026-10-20. Revenue/ADR/RevPAR, llegadas/salidas y CSV quedan fuera de este
+incremento.

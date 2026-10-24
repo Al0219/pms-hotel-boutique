@@ -57,7 +57,10 @@ describe('Staff administration UI', () => {
       const url = new URL(request.url); reads.push(url); const next = url.searchParams.has('cursor'), limit = Number(url.searchParams.get('limit'));
       return HttpResponse.json({ ...page(), limit, items: next ? [userDTO('second')] : Array.from({ length: limit }, (_, i) => ({ ...userDTO(`user${i}`), id: `${String(i).padStart(8, '0')}-4444-4444-8444-444444444444` })), nextCursor: next ? null : 'signed+opaque/==' });
     }));
-    const view = mount(), user = userEvent.setup(); await screen.findByText('user0'); await user.click(screen.getByRole('button', { name: 'Página siguiente' })); await screen.findByText('second'); expect(reads.at(-1)?.searchParams.get('cursor')).toBe('signed+opaque/==');
+    // Exercise real cursor transitions with a full, small page; this is not a 50-row render benchmark.
+    const view = mount({ initial: { limit: 5 } }), user = userEvent.setup(); await screen.findByText('user0');
+    expect(reads[0].searchParams.get('limit')).toBe('5');
+    await user.click(screen.getByRole('button', { name: 'Página siguiente' })); await screen.findByText('second'); expect(reads.at(-1)?.searchParams.get('cursor')).toBe('signed+opaque/==');
     await user.click(screen.getByRole('button', { name: 'Página anterior' })); await screen.findByText('user0'); expect(reads.at(-1)?.searchParams.has('cursor')).toBe(false);
     expect(screen.getByRole('button', { name: 'Página 1' })).toHaveAttribute('aria-current', 'page');
     await user.click(screen.getByRole('button', { name: 'Página siguiente' })); await screen.findByText('second'); await user.selectOptions(screen.getByLabelText('Estado'), 'SUSPENDED'); await screen.findByText('user0'); expect(reads.at(-1)?.searchParams.has('cursor')).toBe(false);

@@ -84,6 +84,16 @@ class OpenApiContractIntegrationTests {
     }
 
     @Test
+    void housekeepingDocumentsPersistedCleaningReasonWithoutExposingAuditHistory() throws Exception {
+        var schema = document().path("components").path("schemas").path("StaffHousekeepingRoom");
+        assertTrue(strings(schema.path("required")).contains("cleaningReason"));
+        var reason = schema.path("properties").path("cleaningReason");
+        assertEquals(Set.of("string", "null"), strings(reason.path("type")));
+        assertTrue(reason.path("description").asText().contains("append-only audit"));
+        assertFalse(schema.path("properties").has("auditEvents"));
+    }
+
+    @Test
     void guestAccountSummaryDocumentsOwnIdentityAndOptionalRealDataOnly() throws Exception {
         var doc = document();
         var op = operation(doc, "/api/v1/guest-auth/account/summary", "get");
@@ -322,6 +332,7 @@ class OpenApiContractIntegrationTests {
         assertEquals("ALL_PROPERTIES", parameter(report, "scope").path("schema").path("enum").get(0).asText());
         assertTrue(report.path("description").asText().contains("366"));
         assertTrue(report.path("description").asText().contains("50000"));
+        assertTrue(report.path("description").asText().contains("RESERVATION_MANAGE"));
         assertFalse(parameterNames(report).contains("cursor"));
         var available = operation(doc, "/api/v1/properties/{propertyId}/availability", "get");
         assertEquals(Set.of("propertyId", "roomTypeId", "arrival", "departure"), parameterNames(available));
@@ -468,6 +479,8 @@ class OpenApiContractIntegrationTests {
             assertTrue(op.path("responses").path("200").path("headers").has("Cache-Control"));
         }
         assertSuccessSchema(operation(doc, route, "get"), "200", "StaffRoomAssignmentPreview");
+        assertTrue(operation(doc, route, "get").path("description").asText().contains("DIRTY rooms remain visible but are not selectable"));
+        assertTrue(operation(doc, route, "put").path("description").asText().contains("rejecting DIRTY rooms"));
         assertSuccessSchema(operation(doc, route, "put"), "200", "StaffRoomAssignmentResult");
         assertTrue(operation(doc, route, "put").path("responses").has("409"));
         var schemas = doc.path("components").path("schemas");
@@ -547,6 +560,35 @@ class OpenApiContractIntegrationTests {
 
     private Set<String> keys(JsonNode object) {
         var result = new TreeSet<String>();object.properties().forEach(entry -> result.add(entry.getKey()));return result;
+    }
+
+    @Test
+    void staffStayLifecycleDocumentsIdempotentScopedCommandsAndExactConcurrencyTimestamp() throws Exception {
+        var doc = document();
+        for (String action : List.of("check-in", "check-out")) {
+            var op = operation(doc, "/api/v1/reservations/{reservationId}/stays/{stayId}/" + action, "post");
+            assertEquals("staff", op.path("x-audience").asText());
+            assertTrue(op.path("security").get(0).has("bearerAuth"));
+            assertTrue(op.path("description").asText().contains("RESERVATION_MANAGE"));
+            assertTrue(parameter(op, "propertyId").path("required").asBoolean());
+            assertEquals("header", parameter(op, "Idempotency-Key").path("in").asText());
+            assertTrue(parameter(op, "Idempotency-Key").path("required").asBoolean());
+            for (String code : List.of("200", "400", "401", "403", "404", "409")) assertTrue(op.path("responses").has(code));
+            assertSuccessSchema(op, "200", "StaffStayLifecycleResult");
+            assertTrue(op.path("responses").path("200").path("headers").has("Cache-Control"));
+        }
+        var schemas = doc.path("components").path("schemas");
+        var request = schemas.path("StaffStayLifecycleRequest");
+        assertFalse(request.path("additionalProperties").asBoolean());
+        var requestFields = new HashSet<String>();
+        request.path("properties").properties().forEach(p -> requestFields.add(p.getKey()));
+        assertEquals(Set.of("expectedStatus", "expectedUpdatedAt", "expectedRoomId"), requestFields);
+        assertTrue(strings(request.path("required")).containsAll(Set.of("expectedStatus", "expectedUpdatedAt")));
+        assertEquals(1, request.path("properties").path("expectedUpdatedAt").path("minLength").asInt());
+        assertEquals(40, request.path("properties").path("expectedUpdatedAt").path("maxLength").asInt());
+        assertEquals(Set.of("operationId", "propertyId", "reservationId", "stayId", "status", "completedAt"), strings(schemas.path("StaffStayLifecycleResult").path("required")));
+        assertEquals("date-time", schemas.path("StaffStay").path("properties").path("updatedAt").path("format").asText());
+        assertTrue(strings(schemas.path("StaffStay").path("required")).contains("updatedAt"));
     }
 
     private JsonNode document() throws Exception {

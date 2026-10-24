@@ -23,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional(readOnly = true)
 public class DailyOnBooksServiceImpl implements DailyOnBooksService {
-    private static final String READ = "COMMERCIAL_MANAGE";
     private static final long MAX_NIGHTS = 366;
     private static final long MAX_ROWS = 50_000;
 
@@ -65,8 +64,8 @@ public class DailyOnBooksServiceImpl implements DailyOnBooksService {
         }
         var active = sessions.getActivePrincipal(principal);
         var snapshot = authorization.resolve(active.staffUserId());
-        if (!snapshot.hasPermission(READ)) {
-            throw new AccessDeniedException("Staff cannot read commercial reporting");
+        if (!snapshot.hasPermission("COMMERCIAL_MANAGE") && !snapshot.hasPermission("RESERVATION_MANAGE")) {
+            throw new AccessDeniedException("Staff cannot read on-books reporting");
         }
         return snapshot;
     }

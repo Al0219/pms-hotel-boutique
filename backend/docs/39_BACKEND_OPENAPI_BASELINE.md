@@ -1,5 +1,27 @@
 # 39 — Baseline OpenAPI/Swagger Backend
 
+## Revisión de asignación por limpieza (2026-10-23)
+
+Contratos50/52: candidata DIRTY visible con selectable=false y reason no vacío;
+PUT409 si la limpieza actual es DIRTY después del lock Room. OpenAPI describe
+esta condición en GET/PUT y esquema Candidate, sin nuevas rutas ni campos.
+Validación del incremento en AlanHandoff.
+
+## Evolución Staff lifecycle (2026-10-22)
+
+[Contrato54](54_STAFF_STAY_LIFECYCLE_CONTRACT.md) agrega POST
+`/api/v1/reservations/{reservationId}/stays/{stayId}/check-in` y `/check-out`, con
+PROPERTY explícito, Bearer Staff/RESERVATION_MANAGE e Idempotency-Key. Request
+StaffStayLifecycleRequest, respuesta StaffStayLifecycleResult, errores ProblemDetail
+con code seguro para409. GET Staff agrega updatedAt por stay, sin datos financieros.
+OpenApiContractIntegrationTests valida estos contratos y la paridad completa con
+mappings; no se agregan exclusiones. Documento generado real:53 operaciones,
+42 paths,63 schemas y13 tags. OpenAPI17 PASS y verify completo946 PASS, sin
+failures/errors/skipped, BUILD SUCCESS/JAR. Primer full detectó content-type */*
+en el nuevo200; se corrigieron anotaciones a application/json y problem+json,
+conservando la prueba. Evidencia y límites en AlanHandoff; integración BFF/UI y
+QA manual aprobado en [Web66](../../frontend/pms-hotel-web/docs/66_STAFF_STAY_LIFECYCLE_QA.md).
+
 **Incremento:** BE-005-OPENAPI-01. **Fecha:** 2026-10-05.
 **Rama/base:** `chore/backend-openapi-contract-baseline`, HEAD `8cb2811`;
 árbol limpio al iniciar. Mantenimiento autorizado por el usuario; estado EN_QA
@@ -177,7 +199,7 @@ Las respuestas listadas son contractuales, no un catálogo de fallos inesperados
 | POST | `/api/v1/properties/{propertyId}/rooms` | Bearer Staff | COMMERCIAL_MANAGE; PROPERTY | `CreateRoomRequest` → `RoomView` | 201, 400, 401, 403, 404, 409 |
 | GET | `/api/v1/properties/{propertyId}/rooms/{roomId}` | Bearer Staff | Staff activo; PROPERTY | `—` → `RoomView` | 200, 400, 401, 403, 404 |
 | PATCH | `/api/v1/properties/{propertyId}/rooms/{roomId}` | Bearer Staff | COMMERCIAL_MANAGE; PROPERTY | `PatchRoomRequest` → `RoomView` | 200, 400, 401, 403, 404, 409 |
-| GET | `/api/v1/reports/on-books/daily` | Bearer Staff | COMMERCIAL_MANAGE; PROPERTY o ALL_PROPERTIES + MULTI_PROPERTY_READ | `—` → `DailyOnBooksResponse` | 200, 400, 401, 403 |
+| GET | `/api/v1/reports/on-books/daily` | Bearer Staff | RESERVATION_MANAGE o COMMERCIAL_MANAGE; PROPERTY o ALL_PROPERTIES + MULTI_PROPERTY_READ | `—` → `DailyOnBooksResponse` | 200, 400, 401, 403 |
 | POST | `/api/v1/staff-auth/refresh` | Cookie Staff refresh | Sin permiso funcional adicional; sin property scope de entrada | `—` → `StaffAuthResponse` | 200, 401 |
 | DELETE | `/api/v1/staff-auth/session` | Bearer Staff | Sin permiso funcional adicional; sin property scope de entrada | `—` → `—` | 204, 401 |
 | GET | `/api/v1/staff-auth/session` | Bearer Staff | Sin permiso funcional adicional; sin property scope de entrada | `—` → `StaffSessionResponse` | 200, 401 |
@@ -385,3 +407,28 @@ física PASS confirmado por Alan el 2026-10-08. Se conserva la evidencia de Open
 anterior; en este cierre documental no se regeneró ni modificó el contrato.
 Estados operativos, availability pública y default Demo son correcciones Web y no
 añaden operaciones, schemas ni enums Backend al baseline.
+
+## Incremento Housekeeping Staff — 2026-10-21
+
+Corrección solicitada 2026-10-22: StaffHousekeepingRoom agrega `cleaningReason`,
+string/null requerido, derivado de auditoría existente para DIRTY. Null si no hay
+motivo vigente; mismo scope/permisos, sin endpoint ni historial nuevo. Cobertura
+OpenApiContractIntegrationTests y StaffHousekeepingIntegrationTests.
+
+Ampliación [contrato52](52_ROOM_READINESS_CONTRACT.md): GET list/detail admite
+OPERATIONS_MANAGE o RESERVATION_MANAGE; escrituras solo OPERATIONS_MANAGE.
+StaffRoomAssignmentCandidate agrega housekeeping_status nullable con enum que
+incluye JSON null, ready_for_check_in y warning. No nuevas operaciones HTTP:
+el bloqueo de entrega se aplica al servicio checkIn interno existente.
+
+Contrato [51](51_STAFF_HOUSEKEEPING_CONTRACT.md) aprobado. Añade cinco operaciones
+del controller StaffHousekeepingController: GET colección/detalle, POST tracking,
+PUT status y PUT dnd bajo `/api/v1/properties/{propertyId}/housekeeping/rooms`.
+Audiencia staff y bearerAuth, OPERATIONS_MANAGE y PROPERTY revalidados; parámetros
+UUID, cuerpos JSON cerrados y errores400/401/403/404/409 según operación.
+Schemas StaffHousekeepingBoard/StaffHousekeepingRoom y requests específicos;
+estado/DND/fecha nulos en habitaciones sin seguimiento. El enum nullable de
+status incluye JSON null, no solo type:null. UTC y token exacto de concurrencia;
+respuestas private,no-store. Ninguna exclusión nueva. Cobertura por pruebas
+estructurales globales y StaffHousekeepingIntegrationTests; evidencia/estado
+final se registran en AlanHandoff y la guía Web64.

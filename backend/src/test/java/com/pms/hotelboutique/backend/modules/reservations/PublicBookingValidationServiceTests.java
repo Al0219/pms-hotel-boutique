@@ -222,6 +222,52 @@ class PublicBookingValidationServiceTests {
 
     private String hash(PublicBookingRequest request) { return service.validateAndHash("j3-request-123", request); }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"\0", "Ana\0", "A\0na", "\0Ana"})
+    void nulInAnyPublicTextIsRejectedBeforePropertyLookup(String value) {
+        for (var input : List.of(
+                request(List.of(STANDARD), new BookingGuest(value, GUEST.lastName(), GUEST.email())),
+                request(List.of(STANDARD), new BookingGuest(GUEST.firstName(), value, GUEST.email())),
+                request(List.of(STANDARD), new BookingGuest(GUEST.firstName(), GUEST.lastName(), value)),
+                request(List.of(new Stay(ROOM_TYPE, value, 1)), GUEST))) {
+            assertEquals(INVALID_REQUEST, assertThrows(PublicBookingValidationException.class, () -> hash(input)).code());
+        }
+        verifyNoInteractions(properties);
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {-1, 10000})
+    void signedAndExtendedYearsAreInvalidBeforePropertyLookup(int year) {
+        for (var input : List.of(
+                new PublicBookingRequest(PROPERTY, LocalDate.of(year, 1, 1), DEPARTURE,
+                        "GTQ", 300000L, List.of(STANDARD), GUEST, PaymentMode.SIMULATED_CARD),
+                new PublicBookingRequest(PROPERTY, ARRIVAL, LocalDate.of(year, 1, 3),
+                        "GTQ", 300000L, List.of(STANDARD), GUEST, PaymentMode.SIMULATED_CARD))) {
+            assertEquals(INVALID_REQUEST, assertThrows(PublicBookingValidationException.class, () -> hash(input)).code());
+        }
+        verifyNoInteractions(properties);
+    }
+
+    @Test
+    void fourDigitYearBoundaryDoesNotIntroduceABookingHorizon() {
+        var input = new PublicBookingRequest(PROPERTY, LocalDate.of(9999, 1, 1), LocalDate.of(9999, 1, 2),
+                "GTQ", 65000L, List.of(STANDARD), GUEST, PaymentMode.SIMULATED_CARD);
+        assertDoesNotThrow(() -> hash(input));
+    }
+
+    @Test
+    void unicodeTextRetainsExistingNotBlankSemanticsAndExactHash() {
+        for (String blank : List.of("", " \t\n", "\u1680", "\u2003", "\u2028", "\u3000")) {
+            assertEquals(INVALID_REQUEST, assertThrows(PublicBookingValidationException.class,
+                    () -> hash(request(List.of(STANDARD), new BookingGuest(blank, "Lopez", GUEST.email())))).code());
+        }
+        for (String text : List.of("\u00a0", "\u2007", "\u202f", "Jos\u00e9", "Jose\u0301", "\ud83d\ude00")) {
+            assertDoesNotThrow(() -> hash(request(List.of(STANDARD), new BookingGuest(text, "Lopez", GUEST.email()))));
+        }
+        assertNotEquals(hash(request(List.of(STANDARD), new BookingGuest("Jos\u00e9", "Lopez", GUEST.email()))),
+                hash(request(List.of(STANDARD), new BookingGuest("Jose\u0301", "Lopez", GUEST.email()))));
+    }
+
     private static PublicBookingRequest valid() { return request(List.of(STANDARD, DELUXE), GUEST); }
 
     private static PublicBookingRequest request(List<Stay> stays, BookingGuest guest) {

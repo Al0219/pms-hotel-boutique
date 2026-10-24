@@ -9,6 +9,7 @@ import com.pms.hotelboutique.backend.modules.inventory.domain.Property;
 import com.pms.hotelboutique.backend.modules.inventory.domain.RoomType;
 import com.pms.hotelboutique.backend.modules.inventory.infrastructure.persistence.PublicAvailabilityCatalogRepository;
 import com.pms.hotelboutique.backend.modules.reservations.domain.Reservation;
+import com.pms.hotelboutique.backend.modules.reservations.infrastructure.persistence.PublicBookingPropertyEligibilityRepository;
 import jakarta.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ public class PublicBookingServiceImpl implements PublicBookingService {
     private final PublicBookingValidationService validation;
     private final PublicBookingReceiptService receipts;
     private final PublicAvailabilityCatalogRepository catalog;
+    private final PublicBookingPropertyEligibilityRepository eligibility;
     private final DemoRatePolicy rates;
     private final InventoryAdmissionPort admission;
     private final PaymentGatewayPort payments;
@@ -36,14 +38,18 @@ public class PublicBookingServiceImpl implements PublicBookingService {
     private final ReservationService reservations;
     private final EntityManager entities;
     private final ObjectMapper json;
+    private final SimulatedBookingFolioService folios;
 
     public PublicBookingServiceImpl(PublicBookingValidationService validation, PublicBookingReceiptService receipts,
-            PublicAvailabilityCatalogRepository catalog, DemoRatePolicy rates, InventoryAdmissionPort admission,
+            PublicAvailabilityCatalogRepository catalog, PublicBookingPropertyEligibilityRepository eligibility,
+            DemoRatePolicy rates, InventoryAdmissionPort admission,
             PaymentGatewayPort payments, PublicBookingMappingService mapping, ReservationBookingService booking,
-            ReservationService reservations, EntityManager entities, ObjectMapper json) {
+            ReservationService reservations, EntityManager entities, ObjectMapper json,
+            SimulatedBookingFolioService folios) {
         this.validation = validation;
         this.receipts = receipts;
         this.catalog = catalog;
+        this.eligibility = eligibility;
         this.rates = rates;
         this.admission = admission;
         this.payments = payments;
@@ -52,6 +58,7 @@ public class PublicBookingServiceImpl implements PublicBookingService {
         this.reservations = reservations;
         this.entities = entities;
         this.json = json;
+        this.folios = folios;
     }
 
     @Override
@@ -88,6 +95,14 @@ public class PublicBookingServiceImpl implements PublicBookingService {
         requireRatePlans(request, types);
         var demand = demand(request);
         return admission.admit(request.propertyId(), demand, () -> {
+            var currentProperty = eligibility.lock(request.propertyId())
+                    .orElseThrow(() -> new PublicBookingValidationException(PROPERTY_NOT_FOUND));
+            if (!Property.Status.ACTIVE.name().equals(currentProperty.status())) {
+                throw new PublicBookingValidationException(PROPERTY_NOT_FOUND);
+            }
+            if (!rates.currency().getCurrencyCode().equals(currentProperty.currency())) {
+                throw new PublicBookingException(BOOKING_FAILED);
+            }
             // Admission locks the real RoomType rows. Refresh prices after waiting for
             // those locks, so a concurrent code change cannot charge a stale demo price.
             var refreshed = new HashSet<UUID>();
@@ -106,6 +121,7 @@ public class PublicBookingServiceImpl implements PublicBookingService {
             if (!confirmed.id().equals(created.reservation().id()) || confirmed.status() != Reservation.Status.CONFIRMED) {
                 throw new PublicBookingException(BOOKING_FAILED);
             }
+            folios.record(request.propertyId(), confirmed.id(), total, request.currency(), payment);
             var response = new PublicBookingView(confirmed.id(), confirmed.confirmationCode(), confirmed.status().name(),
                     confirmed.currency(), total, new PublicBookingView.PaymentView(payment.provider(), payment.status().name(), payment.reference()),
                     created.stays().stream().map(stay -> new PublicBookingView.StayView(stay.id(), stay.roomTypeId(),

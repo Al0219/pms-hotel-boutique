@@ -67,6 +67,26 @@ it('enforces the same boundary on a future route under the users namespace', asy
   await waitFor(() => expect(navigation.replace).toHaveBeenCalledExactlyOnceWith('/')); expect(adminReads).toEqual([]);
 });
 
+it.each([
+  ['OPERACIONES', ['OPERATIONS_MANAGE'], '/housekeeping', 'Housekeeping'],
+  ['AUDITOR', ['RESERVATION_MANAGE'], '/reportes', 'Reportes'],
+  ['AUDITOR', ['COMMERCIAL_MANAGE'], '/reportes', 'Reportes'],
+] as const)('main integration: denied %s keeps the authorized destination %s', async (role, permissions, expected, label) => {
+  session.roleCode = role; session.permissions = [...permissions]; mount();
+  await waitFor(() => expect(navigation.replace).toHaveBeenCalledExactlyOnceWith(expected));
+  expect(screen.getByRole('link', { name: label })).toHaveAttribute('href', expected);
+  expect(screen.queryByRole('link', { name: 'Usuarios' })).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('Buscar por username')).not.toBeInTheDocument();
+  expect(adminReads).toEqual([]);
+});
+
+it('main integration: authorized users retain housekeeping and reporting beside Users', async () => {
+  session.permissions.push('OPERATIONS_MANAGE', 'COMMERCIAL_MANAGE'); mount();
+  await screen.findByRole('heading', { name: 'Selecciona una propiedad' });
+  for (const name of ['Housekeeping', 'Reportes', 'Usuarios']) expect(screen.getByRole('link', { name })).toBeInTheDocument();
+  expect(adminReads).toEqual([]);
+});
+
 const property = '22222222-2222-4222-8222-222222222222', targetId = '66666666-6666-4666-8666-666666666666';
 function inlineFixture() {
  session.memberships = [{ propertyId: property, propertyCode: 'QA', name: 'Hotel QA', timezone: 'America/Guatemala', currency: 'GTQ' }];
