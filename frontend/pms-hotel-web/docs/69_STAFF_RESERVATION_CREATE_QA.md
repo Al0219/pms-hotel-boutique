@@ -90,3 +90,30 @@ push. Gate general/CI pendiente; sin merge ni cierre COMPLETADA.
 Evidencia temporal en `pms-staff-creation-qa` fuera del repositorio; no versionar
 logs, scripts auxiliares, JAR, capturas ni credenciales. Los mocks históricos
 permanecen separados; el recorrido real no los usa para crear reservas.
+
+## Integración con origin/main fe6a381 — 2026-10-24
+
+José autoriza integrar PR164 (alta de usuarios Staff) en esta rama, validar y
+publicar. Se conservan ambas entradas en AlanPlan/AlanHandoff; la prueba compartida
+de OpenAPI combina automáticamente ambos incrementos. Sin cambios funcionales
+propios adicionales: los otros archivos entrantes coinciden con main y los propios
+con dc77cee. No hay merge del PR a main, rebase ni force.
+
+- Backend focal Java21/PostgreSQL17 aislados: Maven verify BUILD SUCCESS,
+  166 pruebas, cero fallos/errores/omitidas. Incluye booking público, alta Staff,
+  OpenAPI y administración Staff; no es la suite Backend completa.
+- Linux/Node24: lint, typecheck y build de producción PASS. Conjunto Web de
+  15 archivos:484/491 PASS; los siete fallos estaban en staff-admin.test.tsx y
+  staff-inline-edit.test.tsx. Las pruebas del alta de reservas pasan.
+- Repetición de ambos archivos en Node24/Vitest4.1.11 sobre Windows:119/120
+  PASS, con los límites/assertions originales. Seis fallos iniciales pasan; queda
+  `recovers from an expired second-page cursor without reconstructing it`,
+  timeout5s de staff-admin.test.tsx:154.
+- Ese mismo caso, ejecutado aisladamente sobre una copia exacta de origin/main
+  fe6a381 obtenida con git archive, también falla por timeout5s. No se modifica
+  administración Staff ni se declara resuelto ese fallo preexistente.
+- Evidencia temporal en pms-staff-merge-qa-20261023, fuera de Git. El entorno
+  habitual y su BD permanecen intactos; los runners y PostgreSQL de QA son aislados.
+
+QA manual previo PASS conservado. EN_QA: gate general/CI aún pendiente; esta
+validación no acredita una suite Web completa verde ni nuevos checks remotos.

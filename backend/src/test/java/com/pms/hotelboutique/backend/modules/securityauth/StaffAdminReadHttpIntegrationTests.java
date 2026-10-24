@@ -212,7 +212,7 @@ class StaffAdminReadHttpIntegrationTests {
     }
     @Test void unsupportedAdministrativeMethodsHaveNoSideEffectsAndReturn405() throws Exception {
         long before=jdbc.queryForObject("SELECT count(*) FROM staff_users",Long.class);
-        for(String method:List.of("POST","PATCH","PUT","DELETE")) {
+        for(String method:List.of("PATCH","PUT","DELETE")) {
             var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+environment.getRequiredProperty("local.server.port")+"/api/v1/staff-admin/users"))
                     .header("Authorization","Bearer "+adminToken).header("Content-Type","application/json")
                     .method(method,HttpRequest.BodyPublishers.ofString("{}"));

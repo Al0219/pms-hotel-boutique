@@ -1,5 +1,22 @@
 # AlanPlan — Seguimiento Backend
 
+## Integración del PR de reservas con main — EN_QA (2026-10-24)
+
+- José autoriza integrar origin/main fe6a381 (PR164, alta de usuarios Staff) en
+  feature/staff-reservations-real, validar y publicar; no integrar el PR a main.
+- Conflictos solo en AlanPlan/AlanHandoff: conservar ambas entradas e historiales.
+  OpenAPI combina automáticamente las pruebas de alta de usuarios y de reservas.
+  El resto del contenido entrante coincide exactamente con main; sin cambios
+  funcionales propios adicionales ni cambios de migraciones/dependencias/workflows.
+- Backend focal Java21/PostgreSQL17 aislados: verify BUILD SUCCESS,166 pruebas,
+  cero fallos/errores/omitidas, incluidos ambos módulos y OpenAPI.
+- Web lint/typecheck PASS;15 archivos484/491 PASS. Repetición de los dos archivos
+  fallidos119/120 PASS; el timeout de paginación restante también falla aislado en
+  copia exacta de origin/main fe6a381. Sin cambiar pruebas/límites ni otro módulo.
+  Build de producción PASS; evidencia detallada en Web69.
+- QA manual previo PASS conservado; gate general/CI pendiente, estado EN_QA.
+  Siguiente: publicar el merge normal autorizado y revisar los checks del PR.
+
 ## Alta de reservas Staff — EN_QA, 2026-10-23
 
 - **Estado:** EN_QA; contrato55 APPROVED e implementación disponible.
@@ -29,6 +46,13 @@
 - **QA manual:** PASS confirmado por José («todo funciona», 2026-10-23).
   Commit y push autorizados; el incremento permanece EN_QA por el gate general/CI.
 - **Siguiente:** publicar la rama para revisión y checks; sin merge ni nueva tarea.
+
+## Alta Staff MVP — Backend/BFF/UI (2026-10-23)
+
+- **Estado: COMPLETADA; aceptación manual PASS** del usuario para creación, persistencia y actualización del listado. Rama feature/staff-admin-create desde origin/main 53b3e09.
+- POST de alta SUSPENDED, membership/asignaciones/auditoría transaccionales, hash aleatorio no entregable; formulario modal y BFF real, protección de scope/duplicados/resultado incierto. Sin migraciones ni cambios de login/edición/estado.
+- Evidencia automatizada: Backend focal 25 PASS; Web focal 370/7 PASS, 51 del ajuste UX final y cierre 158/3; typecheck/ESLint/diff PASS. Tests HTTP/SQL y OpenAPI generado pendientes para CI; sin suite completa/build/Docker local. Detalle y límites en Web QA69.
+- Sin alta SUPER_ADMIN, invitación ni reactivación; esta última sigue bloqueada M08. BE-006B/C, BE-014A y QA2A/2B conservan estados independientes. Siguiente: invitación/activación solo con canal seguro aprobado.
 
 ## Asignación Staff — rechazar habitaciones sucias (2026-10-23)
 

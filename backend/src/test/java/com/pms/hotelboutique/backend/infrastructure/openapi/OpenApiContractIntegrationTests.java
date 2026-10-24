@@ -549,7 +549,7 @@ class OpenApiContractIntegrationTests {
                 assertTrue(op.path("responses").has(code),path+" "+code);
                 assertTrue(op.path("responses").path(code).path("headers").has("Cache-Control"));
             }
-            assertEquals(path.endsWith("/{id}") ? Set.of("get","patch") : Set.of("get"), keys(doc.path("paths").path(path)));
+            assertEquals(path.endsWith("/{id}") ? Set.of("get","patch") : path.endsWith("/users") ? Set.of("get","post") : Set.of("get"), keys(doc.path("paths").path(path)));
             assertFalse(op.has("requestBody"));
         }
         var list = operation(doc,"/api/v1/staff-admin/users","get");
@@ -638,6 +638,17 @@ class OpenApiContractIntegrationTests {
         assertEquals(Set.of("SUSPENDED","DISABLED"),strings(state.path("enum")));
         assertEquals(50,schemas.path("StaffAdminContactCommand").path("properties").path("workEmail").path("maxLength").asInt());
         assertEquals(Set.of("organizationId","staffUserId","version","changed"),strings(schemas.path("StaffAdminMutationResult").path("required")));
+    }
+
+    @Test
+    void staffCreationDocumentsSuspendedViewAndStrictInputWithoutCredentials() throws Exception {
+        var doc=document();var op=operation(doc,"/api/v1/staff-admin/users","post");
+        assertSuccessSchema(op,"201","StaffAdminUserView");
+        assertTrue(op.path("security").get(0).has("bearerAuth"));
+        var schema=doc.path("components").path("schemas").path("StaffAdminCreateCommand");
+        assertEquals(Set.of("username","workEmail","roleCode","propertyIds"),strings(schema.path("required")));
+        assertFalse(schema.path("additionalProperties").asBoolean(true));
+        assertEquals(50,schema.path("properties").path("workEmail").path("maxLength").asInt());
     }
 
     private JsonNode operation(JsonNode doc, String path, String method) {

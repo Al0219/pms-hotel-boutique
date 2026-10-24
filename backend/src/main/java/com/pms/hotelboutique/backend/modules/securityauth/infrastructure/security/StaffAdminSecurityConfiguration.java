@@ -42,7 +42,7 @@ public class StaffAdminSecurityConfiguration {
                 if ("OPTIONS".equals(request.getMethod())) {
                     response.setStatus(405);response.setHeader("Cache-Control","private, no-store");
                     String uri=request.getRequestURI();
-                    response.setHeader("Allow", uri.matches("/api/v1/staff-admin/users/[^/]+/membership")?"PUT":uri.matches("/api/v1/staff-admin/users/[^/]+/status")?"PATCH":uri.matches("/api/v1/staff-admin/users/[^/]+")?"GET, HEAD, PATCH":"GET, HEAD");
+                    response.setHeader("Allow", uri.matches("/api/v1/staff-admin/users/?")?"GET, HEAD, POST":uri.matches("/api/v1/staff-admin/users/[^/]+/membership")?"PUT":uri.matches("/api/v1/staff-admin/users/[^/]+/status")?"PATCH":uri.matches("/api/v1/staff-admin/users/[^/]+")?"GET, HEAD, PATCH":"GET, HEAD");
                     return;
                 }
                 try { super.doFilterInternal(request, response, chain); }

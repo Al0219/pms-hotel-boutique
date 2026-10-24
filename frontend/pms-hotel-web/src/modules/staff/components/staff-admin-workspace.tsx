@@ -9,6 +9,7 @@ import { staffAdminIdentity, useStaffAdmin, useStaffAdminDetail } from '../hooks
 import { initialFilters, statusLabels, type StaffAdminFilters, type StaffAdminUser } from '../model/staff-admin';
 import { useStaffInlineEdit } from '../hooks/use-staff-inline-edit';
 import { StaffStatusActions } from './staff-status-actions';
+import { StaffCreateDialog } from './staff-create-dialog';
 import { StaffAdminRow } from './staff-admin-row';
 import { staffStatusActions } from '../model/staff-admin-edit';
 import { StaffInlineGroup } from './staff-inline-group';
@@ -60,6 +61,7 @@ function AdminContent({ session, scope, initial, registerSelectionGuard }: Props
   const [blocked, setBlocked] = useState(false);
   const [scopeChange, setScopeChange] = useState<(() => void) | null>(null);
   const [scopeNotice, setScopeNotice] = useState('');
+  const [creating, setCreating] = useState(false);
   const [revealed, setRevealed] = useState<string | null>(null);
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -70,10 +72,11 @@ function AdminContent({ session, scope, initial, registerSelectionGuard }: Props
   const { context, query, loading, error, retry } = useStaffAdmin(session, scope, filters, cursor, !blocked);
   const editor = useStaffInlineEdit(session, scope, context.data?.organizationId, () => { setHistory([null]); if (cursor === null) void query.refetch(); }, () => setBlocked(true));
   useEffect(() => registerSelectionGuard?.(proceed => {
+    if (creating) { setScopeNotice('Cierra el formulario de creación antes de cambiar de propiedad.'); return; }
     if (!editor.active) { proceed(); return; }
     if (editor.busy || editor.state?.phase === 'uncertain') { setScopeNotice('Comprueba el resultado de esta cuenta antes de cambiar de propiedad.'); return; }
     setScopeChange(() => proceed);
-  }), [registerSelectionGuard, editor.active, editor.busy, editor.state?.phase]);
+  }), [registerSelectionGuard, editor.active, editor.busy, editor.state?.phase, creating]);
   const change = (field: keyof StaffAdminFilters, value: string | number) => { setFilters(current => ({ ...current, [field]: value })); setHistory([null]); setExpanded(null); };
   const unsafe = error instanceof DomainMappingError || (error instanceof HttpStatusError && [401, 403, 404].includes(error.status));
   const preservingDraft = editor.active && editor.state?.user.organizationId === context.data?.organizationId && !unsafe;
@@ -104,7 +107,10 @@ function AdminContent({ session, scope, initial, registerSelectionGuard }: Props
     {scopeNotice && <p role="status">{scopeNotice}</p>}
     {editor.notice && <p role="status">{editor.notice}</p>}
     {editor.state?.phase === 'idle' && editor.state.message && <p role="status">{editor.state.message}</p>}
-    <header className={styles.header}><h1>Usuarios</h1></header>
+    <header className={styles.header}><h1>Usuarios</h1><Button disabled={editor.active || !context.data || updating} onClick={() => setCreating(true)}>Crear usuario</Button></header>
+    {creating && context.data && <StaffCreateDialog session={session} scope={scope} context={context.data} onClose={() => setCreating(false)} onCreated={() => {
+      setCreating(false); setInput(''); setFilters(initialFilters); setHistory([null]); setExpanded(null);
+    }} />}
     <EntityListSurface label="Administración de usuarios Staff" showScrollHint={false} filters={<>
       <EntityFilterField label="Buscar por username" search><input type="search" disabled={editor.active} maxLength={80} value={input} onChange={event => setInput(event.target.value)} placeholder="Username literal" /></EntityFilterField>
       <EntityFilterField label="Rol"><select disabled={editor.active} value={filters.roleCode} onChange={event => change('roleCode', event.target.value)}><option value="">Todos los roles</option>{context.data?.roles.map(role => <option key={role.code} value={role.code}>{role.name}</option>)}</select></EntityFilterField>
