@@ -44,3 +44,4 @@ export type {
   WaitlistConversionPreview,
   WaitlistConversionResult,
 } from "./model/waitlist";
+export { mapStaffBookingQuote, mapStaffBookingReceipt } from './mappers/staff-booking.mapper';

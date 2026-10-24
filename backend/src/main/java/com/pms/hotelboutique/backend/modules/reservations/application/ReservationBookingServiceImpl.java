@@ -41,12 +41,17 @@ public class ReservationBookingServiceImpl implements ReservationBookingService 
 
     @Override
     public BookingView createBooking(@Valid CreateBookingCommand command) {
+        return create(command, null, UUID.randomUUID());
+    }
+
+    @Override
+    public BookingView createBookingAsStaff(@Valid CreateBookingCommand command, UUID actorId, UUID correlationId) {
+        return create(command, java.util.Objects.requireNonNull(actorId), java.util.Objects.requireNonNull(correlationId));
+    }
+
+    private BookingView create(CreateBookingCommand command, UUID actorId, UUID correlation) {
         validateStayDates(command);
         precheckAvailability(command);
-        // One correlation id links every event of this flow. The actor is
-        // SYSTEM: no authenticated principal reaches the service layer yet;
-        // controllers will supply the real actor in a later contract.
-        UUID correlation = UUID.randomUUID();
         List<InventoryDemand> demand = command.stays().stream()
                 .map(stay -> new InventoryDemand(stay.roomTypeId(),
                         new StayDateRange(stay.arrival(), stay.departure()), 1))
@@ -55,28 +60,28 @@ public class ReservationBookingServiceImpl implements ReservationBookingService 
         if (admissionPort == null) {
             // No admission engine wired: persist directly. Same fail-open
             // posture as the ATS precheck when its port is absent.
-            return persistBooking(command, correlation);
+            return persistBooking(command, actorId, correlation);
         }
         try {
             // The whole booking persists inside the admission callback, in the
             // same READ_COMMITTED transaction while BD2 holds the room-type
             // locks. No REQUIRES_NEW, async work or external side effects.
             return admissionPort.admit(command.propertyId(), demand,
-                    () -> persistBooking(command, correlation));
+                    () -> persistBooking(command, actorId, correlation));
         } catch (InventoryExhaustedException e) {
             throw new ReservationBookingException(
                     "no availability for the requested stays", e);
         }
     }
 
-    private BookingView persistBooking(CreateBookingCommand command, UUID correlation) {
+    private BookingView persistBooking(CreateBookingCommand command, UUID actorId, UUID correlation) {
         try {
             UUID bookingGuestId = resolveBooker(command);
             ReservationView reservation = reservations.create(new CreateReservationCommand(
                     command.propertyId(), bookingGuestId, command.currency(),
                     command.sourceChannel(), command.sourceReference(), command.notes()));
             audit.record(new AuditService.RecordAuditCommand(
-                    ReservationAuditEvent.ActorType.SYSTEM, null, "RESERVATION_CREATED",
+                    actorId == null ? ReservationAuditEvent.ActorType.SYSTEM : ReservationAuditEvent.ActorType.STAFF, actorId, "RESERVATION_CREATED",
                     "RESERVATION", reservation.id(), reservation.propertyId(), null,
                     "{\"status\":\"" + reservation.status() + "\"}", null, correlation));
             List<ReservationStayView> created = new ArrayList<>();
@@ -90,7 +95,7 @@ public class ReservationBookingServiceImpl implements ReservationBookingService 
                 }
                 created.add(stays.get(createdStay.id()));
                 audit.record(new AuditService.RecordAuditCommand(
-                        ReservationAuditEvent.ActorType.SYSTEM, null, "RESERVATION_STAY_ADDED",
+                        actorId == null ? ReservationAuditEvent.ActorType.SYSTEM : ReservationAuditEvent.ActorType.STAFF, actorId, "RESERVATION_STAY_ADDED",
                         "RESERVATION_STAY", createdStay.id(), reservation.propertyId(), null,
                         "{\"status\":\"" + createdStay.status() + "\"}", null, correlation));
             }

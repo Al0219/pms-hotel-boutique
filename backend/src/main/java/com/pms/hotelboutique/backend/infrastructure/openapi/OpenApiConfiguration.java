@@ -57,7 +57,8 @@ public class OpenApiConfiguration {
     OpenApiCustomizer staffReservationNullability() {
         return api -> {
             var schemas = api.getComponents().getSchemas();
-            for (String name : List.of("StaffReservation", "StaffStay", "StaffRoomType", "StaffRoom", "ResponsibleGuestView", "StaffRoomAssignmentPreview", "StaffRoomAssignmentCandidate", "StaffRoomAssignmentResult", "StaffStayLifecycleResult")) {
+            for (String name : List.of("StaffReservation", "StaffStay", "StaffRoomType", "StaffRoom", "ResponsibleGuestView", "StaffRoomAssignmentPreview", "StaffRoomAssignmentCandidate", "StaffRoomAssignmentResult", "StaffStayLifecycleResult",
+                    "StaffReservationCreationOption", "StaffReservationCreationQuote", "StaffReservationCreationReceipt")) {
                 var schema = schemas.get(name);
                 if (schema != null) schema.setRequired(new java.util.ArrayList<>(schema.getProperties().keySet()));
             }
@@ -84,6 +85,7 @@ public class OpenApiConfiguration {
                 operation.addExtension("x-audience", "public");
                 operation.setSecurity(List.of());
             } else if (packageName.contains(".modules.inventory.") || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.reservations.api.StaffReservationController.class)
+                    || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.reservations.api.StaffReservationCreationController.class)
                     || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.operations.api.StaffHousekeepingController.class)) {
                 operation.addExtension("x-audience", "staff");
             }

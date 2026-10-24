@@ -16,6 +16,23 @@ Backend54 tiene verify946 PASS y QA manual PASS confirmado por José;
 el cierre integral sigue pendiente del gate Web general y checks de GitHub.
 No se crea ID de backlog, estado operativo ni permiso nuevo.
 
+## Corrección de Web CI del PR165 — EN_QA, 2026-10-24
+
+El [job de GitHub](https://github.com/Al0219/pms-hotel-boutique/actions/runs/40069070822/job/120798386672)
+del commit83c84b0 pasa instalación/lint/typecheck y falla al comprobar el foco del
+recibo de entrada; no es el timeout de paginación documentado en Web69.
+Al confirmar, close() también programaba devolver foco al comando, compitiendo
+con el efecto que enfoca el recibo. El éxito ahora solo cierra el modal; cancelar
+conserva el retorno al comando. Sin cambios de transacciones, Backend o Modal shared.
+
+La assertion de foco original espera el efecto de React sin quitar la validación.
+Dos regresiones de entrada/salida fallan antes del cambio y pasan después; se
+añade cobertura de cancelación.24 pruebas/4 archivos PASS, lint/typecheck PASS.
+Suite completa local con Node24 y dos workers en curso; reaparece el timeout de
+paginación ya reproducido en main. Sin aumentar timeouts ni excluir pruebas.
+Publicación en la misma rama del PR; nueva CI y QA manual de esta corrección
+pendientes. La aceptación manual histórica y los estados independientes se conservan.
+
 ## Alcance y aceptación
 
 - Detalle `/reservas/{id}`, PROPERTY concreta, sesión Staff y

@@ -1,5 +1,22 @@
 # Staff — Nueva reserva
 
+## Integración real autorizada — 2026-10-23
+
+José aprueba alta CONFIRMED con cargo de alojamiento pendiente, sin pago
+automático y con asignación/check-in separados. Contrato Backend55 confirmado;
+implementación EN_QA en feature/staff-reservations-real desde53b3e09.
+QA manual de José PASS; gate general/CI pendiente, publicación autorizada.
+Con mocks=false se usa el formulario y transporte Staff reales, no el service
+provisional descrito debajo. GET de opciones y POST de alta con cookie Staff,
+RESERVATION_MANAGE, PROPERTY explícita y recibo idempotente; tipos/tarifas GTQ
+desde Backend. No inventar capacidad ni ocupantes. Datos de huésped separados
+en nombre/apellidos y sin crear GuestAccount. El detalle existente permite asignar
+Room y realizar check-in. QA del incremento:
+[Web69](69_STAFF_RESERVATION_CREATE_QA.md).
+
+Las secciones siguientes conservan el alcance/evidencia históricos del frontend
+local; no describen el nuevo recorrido real ni acreditan su QA manual.
+
 ## Alcance autorizado
 
 José solicita retomar el botón pendiente del Centro de Reservas. Slice frontend

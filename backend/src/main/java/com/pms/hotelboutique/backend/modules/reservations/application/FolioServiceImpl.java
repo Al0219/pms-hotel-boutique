@@ -47,6 +47,15 @@ public class FolioServiceImpl implements FolioService {
 
     @Override
     public FolioView openFolio(@Valid OpenFolioCommand command) {
+        return openFolio(command, null);
+    }
+
+    @Override
+    public FolioView openFolioAsStaff(@Valid OpenFolioCommand command, UUID actorId) {
+        return openFolio(command, java.util.Objects.requireNonNull(actorId));
+    }
+
+    private FolioView openFolio(OpenFolioCommand command, UUID actorId) {
         Instant now = Instant.now();
         Folio folio = new Folio(UUID.randomUUID(), command.propertyId(), command.type(),
                 command.currency(), now);
@@ -73,7 +82,7 @@ public class FolioServiceImpl implements FolioService {
         // JPA read model to reuse); no parallel lookup is kept here.
         FolioView opened = FolioView.from(folios.saveAndFlush(folio));
         record("FOLIO_OPENED", "FOLIO", opened.id(), opened.propertyId(), null,
-                "{\"status\":\"OPEN\"}", null, null);
+                "{\"status\":\"OPEN\"}", actorId, null);
         return opened;
     }
 

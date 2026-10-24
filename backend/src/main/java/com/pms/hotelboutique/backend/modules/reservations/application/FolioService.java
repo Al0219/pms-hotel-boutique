@@ -23,6 +23,9 @@ public interface FolioService {
 
     FolioView openFolio(@Valid OpenFolioCommand command);
 
+    /** Trusted internal call after Staff authorization, not an authorization boundary. */
+    FolioView openFolioAsStaff(@Valid OpenFolioCommand command, UUID actorId);
+
     FolioView.MovementView postCharge(UUID folioId, @Valid MovementAmount amount, UUID actorId);
 
     FolioView.MovementView postPayment(UUID folioId, @Valid MovementAmount amount, UUID actorId);
