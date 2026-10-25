@@ -1,3 +1,115 @@
+## 2026-10-25 — PR166: correcciones focales por fallos CI
+
+Primera CI del merge f4e0e44: Stack PASS, Web12 fallos en staff-admin-row y Backend6
+fallos de conteos de migración (1054 pruebas ejecutadas). Diagnóstico: callback
+izquierdo recibió un segundo argumento undefined; backdrop de recuperación se
+montaba incluso cuando no aplicaba. Se conserva onReveal(boolean) para izquierda/
+cierre y solo se monta recuperación habilitada. No se debilitaron tests de gestos.
+Cinco clases de upgrade esperaban el total anterior28; se incorpora el changeset
+aditivo012 (29), con aserción explícita de presencia, conservando checksums, datos
+históricos, triggers e idempotencia. No se tocaron migraciones aplicadas.
+Validación local: 105 tests Web focales PASS,23 de migración PASS, typecheck/diff
+PASS. Sin suites completas locales ni nueva QA manual. Nueva CI pendiente del
+commit de corrección; MVP y estados independientes conservados. Sin merge a main.
+
+## 2026-10-25 — PR166: integración normal de origin/main0d1f4b7
+
+Merge autorizado en worktree aislado desde c7f0f1c; conflictos solo en este historial
+y AlanPlan, resueltos conservando íntegros ambos bloques Staff/reservas. OpenAPI
+se combinó automáticamente y conserva los contratos de ambos módulos. Sin resolver
+con ours/theirs ni cambios funcionales propios. MVP de creación/Gmail/activación/
+M08/reactivación/swipe y estados de QA conservados.
+Validación local focal: OpenApiContractIntegrationTests22 PASS sobre PostgreSQL17
+descartable, Java25/release21; npm run typecheck PASS y git diff --check PASS.
+Sin suite completa ni nueva QA manual. Android y next-env.d.ts, cinco archivos
+locales, preservados byte a byte fuera del merge. Publicar commit normal y revisar
+CI del PR; sin force push ni fusión del PR a main. CI aún pendiente al registrar.
+
+## 2026-10-25 — Reactivación MVP: COMPLETADA / PASS manual; preparación PR
+
+Aceptación explícita del usuario para el flujo confirmado de reactivación con
+swipe. Invitación Gmail/activación inicial conservan su cierre previo. Recuperación
+de cuentas antiguas, SMTP externo adicional, lector de pantalla y escenarios
+manuales no acreditados siguen pendientes: no se confunden con cobertura automatizada.
+Evidencia histórica: Backend38 focales distintos PASS, BFF/Web34 y últimos64 de
+gesto/acciones PASS; no sumar repeticiones. Guía55 registra la separación.
+Preparación actual: revisión de diff/untracked y git diff --check; sin repetir
+suites/build/Docker. Android y next-env.d.ts excluidos y preservados. CI completo
+queda al PR hacia main; no merge. Estados independientes BE/QA sin cierre por arrastre.
+
+## 2026-10-25 — Swipe derecho de recuperación Staff: EN_QA
+
+Mismo reconocedor desplaza tres columnas a derecha y revela panel izquierdo de
+recuperación según elegibilidad real; Reactivar con UserRoundCheck/confirmación o
+recuperación con Mail. Gesto contrario cierra; swipe izquierdo, edición y teclado
+conservados. Sin Backend/BFF/infra nueva. 64 pruebas focales PASS; typecheck/diff
+PASS. Mouse/touch/wheel verificados con eventos automatizados; Firefox/touchpad
+físico pendientes (guía55). Sin suite completa/build/Docker ni commit/push.
+
+## 2026-10-25 — Reactivación y recuperación Staff MVP: EN_QA
+
+Mismos endpoints y correo Gmail: reactivar SUSPENDED con M08 vigente y confirmación;
+sin evidencia, recuperación explícita del administrador también para cuentas
+antiguas. Suspensión efectiva revoca enlaces pendientes; consumo nuevo activa con
+contraseña/M08/auditoría en una transacción. Sin flags confiados al navegador ni
+reactivación DISABLED. UI conserva columnas/edición/swipe y refresca listado/detalle.
+Backend38 pruebas distintas PASS (HTTP14 finales, OpenAPI21, correo3); BFF/Web34 y
+regresión focal3 PASS; typecheck/diff PASS. Fixtures de permisos y ProblemDetail
+corregidas, sin relajar seguridad. Sin suites completas/build/Docker E2E.
+Pendiente Firefox/Gmail/lector de pantalla; guía55. No cerrar globalmente3B-2 ni
+QA independientes. Cierre inicial anterior intacto. Sin commit/push/PR.
+
+## 2026-10-25 — Invitación y activación Staff MVP: COMPLETADA / PASS
+
+Aceptación explícita del usuario. Último ajuste: Next Link «Iniciar sesión» abre
+`/acceso?from=staff-activation`; solo ese recorrido evita el salto automático por
+sesión Staff/Guest existente. Login normal intacto, sin autenticación automática ni
+cambios Backend/BFF/Gmail/credenciales. Solo revisión y git diff --check PASS; no
+nuevos tests/build/Docker ni ejecución manual atribuida. Evidencia y pendientes
+anteriores conservados (guía55). No cierra reactivación general/QA independientes.
+Sin commit/push/PR; cambios locales preservados.
+
+## 2026-10-25 — Consumo de invitación activa altas nuevas: EN_QA
+
+Cambio de producto autorizado: contraseña/M08/token/ACTIVE/auditoría/revocación
+se confirman juntos, versión única y locks existentes más propiedades. Requisitos
+fallidos revierten todo; cuentas antiguas y DISABLED siguen excluidas. Sin sesión
+automática: éxito ofrece `/acceso`. Gmail/alta automática intactos. Backend focal35
+PASS; Web18 PASS (+últimas3 repetidas), typecheck/diff PASS. Gmail real/Firefox
+pendientes; guía55. No cerrar reactivación general ni QA independientes. Sin
+commit/push/PR; cambios ajenos conservados.
+
+## 2026-10-25 — Alta Staff con invitación automática: EN_QA
+
+Alta confirmada201 → POST invitation real con versión/scope vigentes. Bloqueo
+durante ambas operaciones; mensajes distintos para envío confirmado o incierto,
+sin repetir creación/invitación. Listado actualizado y reenvío manual conservado.
+Focal15 PASS, typecheck/diff PASS; Gmail/Firefox pendientes. Sin cambios Backend/
+BFF ni infraestructura. Guía55. Sin commit/push.
+
+## 2026-10-25 — Invitación Staff reutiliza Gmail: EN_QA
+
+Se reutiliza el bean SMTP existente sin cambios en el correo Guest. Eliminada
+configuración Staff SMTP independiente y dependencia Mailpit; solo se detuvo el
+capturador de esta QA, sin tocar PostgreSQL ni otros servicios. Tests focales15
+PASS (3 Staff +12 existentes), typecheck/diff PASS. Gmail real/Firefox pendientes;
+no se atribuye envío real a los tests interceptados. Guía55 actualizada; historial
+con Mailpit abajo permanece como evidencia anterior. Sin commit/push/PR.
+
+## 2026-10-23 — Invitación y activación inicial Staff MVP: EN_QA
+
+Autorización directa; feature/staff-activation-mvp desde main fe6a381. Nuevas altas
+reciben marcador de onboarding; anteriores no reciben backfill de preparación ni
+reactivación. Invitación SMTP real, hash de token/TTL/un uso, consumo→M08+contraseña
+hashed manteniendo SUSPENDED, admin confirma ACTIVE con requisitos actuales.
+BFF/UI reales; tres columnas, Origin/cookies/no-store, una escritura/usuario y
+recuperación409/503. Migración012 y metadatos invalidados con correo/DISABLED;
+locks, revocación y auditoría atómicos. Backend focal57 PASS, Web334/7 y30/2 PASS,
+HTTP real28 aserciones PASS (incluye SMTP detenido→503/rollback), typecheck/lint/diff
+PASS. Sin suites completas/builds/stack Docker E2E. Manual Firefox y proveedor
+SMTP externo pendientes; guía55 y entorno descartable3111/Mailpit19526. No completar
+3B-2 global ni BE-006B/C/BE-014A/QA2A/2B. next-env.d.ts conservado; sin commit/push/PR.
+
 ## 2026-10-24 — Integración autorizada con main fe6a381: EN_QA
 
 José autoriza integrar PR164 en feature/staff-reservations-real y publicar tras

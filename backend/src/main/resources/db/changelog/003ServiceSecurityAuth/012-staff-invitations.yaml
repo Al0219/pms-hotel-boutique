@@ -1,0 +1,39 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-staff-auth-012
+      author: alan
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: true
+            sql: |
+              CREATE TABLE staff_invitation_flows (
+                id uuid PRIMARY KEY,
+                staff_user_id uuid NOT NULL,
+                organization_id uuid NOT NULL,
+                credential_generation uuid NOT NULL UNIQUE,
+                token_hash varchar(64) NOT NULL UNIQUE,
+                work_email varchar(320) NOT NULL,
+                created_at timestamptz NOT NULL,
+                expires_at timestamptz NOT NULL,
+                sent_at timestamptz,
+                consumed_at timestamptz,
+                revoked_at timestamptz,
+                FOREIGN KEY (staff_user_id, organization_id) REFERENCES organization_memberships(staff_user_id, organization_id),
+                CHECK (expires_at > created_at),
+                CHECK (token_hash ~ '^[0-9a-f]{64}$')
+              );
+              CREATE INDEX ix_staff_invitation_subject ON staff_invitation_flows(staff_user_id, organization_id);
+              ALTER TABLE staff_users
+                ADD COLUMN initial_activation_pending boolean NOT NULL DEFAULT false,
+                ADD COLUMN credential_generation uuid,
+                ADD COLUMN credential_prepared_generation uuid,
+                ADD COLUMN credential_prepared_at timestamptz,
+                ADD COLUMN credential_prepared_source varchar(32),
+                ADD COLUMN credential_prepared_flow_id uuid REFERENCES staff_invitation_flows(id),
+                ADD CONSTRAINT ck_staff_credential_prepared CHECK (
+                  (credential_prepared_generation IS NULL AND credential_prepared_at IS NULL AND credential_prepared_source IS NULL AND credential_prepared_flow_id IS NULL)
+                  OR (credential_generation IS NOT NULL AND credential_prepared_generation IS NOT NULL AND credential_prepared_generation = credential_generation
+                      AND credential_prepared_at IS NOT NULL AND credential_prepared_source IS NOT NULL AND credential_prepared_source = 'INVITATION_CONSUMED' AND credential_prepared_flow_id IS NOT NULL)
+                );
+              -- No readiness or onboarding backfill for existing accounts.

@@ -92,6 +92,9 @@ describe('Staff reservations boundary before MSW', () => {
 
   it.each([
     ['/api/staff/admin/users?scope=ALL_PROPERTIES', 'POST'],
+    ['/api/staff/admin/users/id/invitation?scope=ALL_PROPERTIES', 'POST'],
+    ['/api/staff/admin/users/id/invitation?scope=ALL_PROPERTIES', 'GET'],
+    ['/api/auth/staff/invitations/consume', 'POST'],
     ['/api/staff/admin/users/id?scope=ALL_PROPERTIES', 'PATCH'],
     ['/api/staff/admin/users/44444444-4444-4444-8444-444444444444/', 'PATCH'],
     ['/api/staff/admin/users/invalid/membership?scope=PROPERTY&propertyId=bad', 'PUT'],

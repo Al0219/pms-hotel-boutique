@@ -32,3 +32,6 @@ databaseChangeLog:
   - include:
       file: 011-guest-registration-request-quota.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 012-staff-invitations.yaml
+      relativeToChangelogFile: true

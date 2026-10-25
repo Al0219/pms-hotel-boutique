@@ -7,7 +7,7 @@ public final class StaffAdminMutationModels {
     private StaffAdminMutationModels() { }
     public enum Kind { CONTACT, MEMBERSHIP, STATUS }
     public enum AssignedRole { GERENCIA, RECEPCION, OPERACIONES, AUDITOR }
-    public enum RequestedStatus { SUSPENDED, DISABLED }
+    public enum RequestedStatus { ACTIVE, SUSPENDED, DISABLED }
     @Schema(name="StaffAdminCreateCommand",additionalProperties=Schema.AdditionalPropertiesValue.FALSE)
     public record Create(@Schema(requiredMode=Schema.RequiredMode.REQUIRED,minLength=1,maxLength=80) String username,
             @Schema(requiredMode=Schema.RequiredMode.REQUIRED,maxLength=50,format="email") String workEmail,

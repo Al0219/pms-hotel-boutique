@@ -2,7 +2,7 @@ import type { StaffAdminRoleCode, StaffAdminStatus } from './staff-admin.dto';
 
 export type StaffAdminMutationResource = 'contact' | 'membership' | 'status';
 export type StaffAdminAssignableRole = Exclude<StaffAdminRoleCode, 'SUPER_ADMIN'>;
-export type StaffAdminRequestedStatus = Exclude<StaffAdminStatus, 'ACTIVE'>;
+export type StaffAdminRequestedStatus = StaffAdminStatus;
 export interface StaffAdminContactCommandDTO { workEmail: string; expectedVersion: number }
 export interface StaffAdminMembershipCommandDTO {
   roleCode: StaffAdminAssignableRole;

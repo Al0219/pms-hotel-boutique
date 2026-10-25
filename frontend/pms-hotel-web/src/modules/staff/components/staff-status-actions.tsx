@@ -70,8 +70,8 @@ export function StaffStatusActions({ user, session, editor, revealed, reveal, un
       {confirming && state.phase === 'editing' && !editor.validation && createPortal(<ConfirmDialog
         title={`¿${label} a ${user.username}?`} destructive confirmLabel={label} busyLabel="Aplicando…"
         body={state.draft.status === 'DISABLED'
-          ? 'La baja lógica es definitiva: se cerrarán el acceso y las sesiones. Se conservará el historial. Actualmente no existe reactivación.'
-          : 'Se suspenderán el acceso y las sesiones de esta cuenta. Aunque la suspensión no es una baja definitiva, actualmente no existe reactivación.'}
+          ? 'La baja lógica es definitiva: se cerrarán el acceso y las sesiones. Se conservará el historial. No se puede reactivar una cuenta deshabilitada.'
+          : 'Se suspenderán el acceso y las sesiones de esta cuenta. La reactivación requerirá credencial verificada y una acción administrativa autorizada.'}
         onCancel={cancel} onConfirm={() => { setConfirming(false); void editor.finish(user.id, 'status'); }} />, document.body)}
     </div>}
   </div>;
