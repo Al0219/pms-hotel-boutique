@@ -1,3 +1,17 @@
+## 2026-10-25 — PR166: correcciones focales por fallos CI
+
+Primera CI del merge f4e0e44: Stack PASS, Web12 fallos en staff-admin-row y Backend6
+fallos de conteos de migración (1054 pruebas ejecutadas). Diagnóstico: callback
+izquierdo recibió un segundo argumento undefined; backdrop de recuperación se
+montaba incluso cuando no aplicaba. Se conserva onReveal(boolean) para izquierda/
+cierre y solo se monta recuperación habilitada. No se debilitaron tests de gestos.
+Cinco clases de upgrade esperaban el total anterior28; se incorpora el changeset
+aditivo012 (29), con aserción explícita de presencia, conservando checksums, datos
+históricos, triggers e idempotencia. No se tocaron migraciones aplicadas.
+Validación local: 105 tests Web focales PASS,23 de migración PASS, typecheck/diff
+PASS. Sin suites completas locales ni nueva QA manual. Nueva CI pendiente del
+commit de corrección; MVP y estados independientes conservados. Sin merge a main.
+
 ## 2026-10-25 — PR166: integración normal de origin/main0d1f4b7
 
 Merge autorizado en worktree aislado desde c7f0f1c; conflictos solo en este historial

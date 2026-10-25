@@ -2,6 +2,13 @@
 
 ## PR166 — Integración con main (2026-10-25)
 
+- Primera CI: Stack PASS; Web falló por compatibilidad del callback/backdrop y
+  Backend por6 conteos de upgrade anteriores a012. Correcciones mínimas: conservar
+  llamada booleana izquierda y montar recuperación solo habilitada; total29 con
+  presencia explícita012 sin quitar checksums/datos/triggers/idempotencia.
+- Focal local correctivo: Web105 PASS, migraciones23 PASS, typecheck/diff PASS;
+  sin suites completas locales. Publicar corrección y revisar segunda CI.
+
 - Merge normal autorizado de origin/main0d1f4b7 en feature/staff-activation-mvp,
   realizado en worktree aislado para preservar Android/next-env.d.ts locales.
 - Dos conflictos documentales resueltos por conservación de ambas entradas;

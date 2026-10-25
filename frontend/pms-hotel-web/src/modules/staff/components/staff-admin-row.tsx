@@ -44,7 +44,9 @@ export function StaffAdminRow({ children, enabled, revealed = false, recoveryEna
   const resting = useCallback(() => enabled && revealed ? -width() : recoveryEnabled && recoveryRevealed ? width() : 0, [enabled, revealed, recoveryEnabled, recoveryRevealed, width]);
   const settle = useCallback((start: number, left: boolean) => {
     const next = start < 0 ? (left ? -width() : 0) : start > 0 ? (left ? 0 : width()) : left ? (enabled ? -width() : 0) : (recoveryEnabled ? width() : 0);
-    translate(next); onReveal(next !== 0, next > 0 ? 'recovery' : undefined);
+    translate(next);
+    if (next > 0) onReveal(true, 'recovery');
+    else onReveal(next < 0);
   }, [enabled, recoveryEnabled, translate, width, onReveal]);
   const endPointer = useCallback(() => {
     const start = gesture.current;
@@ -175,6 +177,6 @@ export function StaffAdminRow({ children, enabled, revealed = false, recoveryEna
       wheel.current = null;
       gesture.current = { id: event.pointerId, x: event.clientX, y: event.clientY, offset: offset.current, horizontal: false, mouse, selecting, moved: false, preselected };
     }} onClick={onClick}>{cells.map((cell, index) => isValidElement<{ children?: ReactNode }>(cell) && cell.type === 'td'
-      ? cloneElement(cell, {}, <>{index === cells.length - 1 && <><div ref={setRecoveryPanel} className={`${styles.swipeBackdrop} ${styles.swipeRecoveryBackdrop}`} data-staff-row-action aria-hidden={!recoveryEnabled || !recoveryRevealed} inert={!recoveryEnabled || !recoveryRevealed} /><div ref={setPanel} className={styles.swipeBackdrop} data-staff-row-action aria-hidden={!enabled || !revealed} inert={!enabled || !revealed} /></>}<div className={styles.swipeCell}>{cell.props.children}</div></>)
+      ? cloneElement(cell, {}, <>{index === cells.length - 1 && <>{recoveryEnabled && <div ref={setRecoveryPanel} className={`${styles.swipeBackdrop} ${styles.swipeRecoveryBackdrop}`} data-staff-row-action aria-hidden={!recoveryEnabled || !recoveryRevealed} inert={!recoveryEnabled || !recoveryRevealed} />}<div ref={setPanel} className={styles.swipeBackdrop} data-staff-row-action aria-hidden={!enabled || !revealed} inert={!enabled || !revealed} /></>}<div className={styles.swipeCell}>{cell.props.children}</div></>)
       : cell)}</tr></StaffRowRecoveryPanelContext></StaffRowPanelContext>;
 }

@@ -295,3 +295,15 @@ En esta preparación de commit/PR solo se revisaron cambios y se ejecutó
 completas delegadas al CI del PR. Cambios ajenos Android y next-env.d.ts excluidos
 y preservados. Sin cierre por arrastre de BE-006B/C, BE-014A ni QA2A/2B. No merge.
 Las entradas EN_QA anteriores representan la evidencia histórica previa al cierre.
+
+## Integración PR166 — 2026-10-25
+
+Merge normal de origin/main0d1f4b7 en f4e0e44. Dos conflictos solo documentales
+resueltos conservando ambos historiales; OpenAPI combinado22 PASS y typecheck/diff
+PASS. Primera CI: Stack PASS; Web12 fallos por segundo argumento undefined al
+callback legado; Backend6 fallos por conteos previos a migración012. Corrección
+conserva API de gesto izquierdo y no monta recuperación no aplicable; cinco tests
+de upgrade incorporan012 y siguen comprobando checksums/datos/idempotencia.
+Verificación focal correctiva: Web105 PASS /3 archivos, migraciones23 PASS /5
+clases, typecheck/diff PASS. Sin suites completas locales ni nueva QA manual.
+Esperar nueva CI; aceptación manual previa no cambia. Android/next-env preservados.

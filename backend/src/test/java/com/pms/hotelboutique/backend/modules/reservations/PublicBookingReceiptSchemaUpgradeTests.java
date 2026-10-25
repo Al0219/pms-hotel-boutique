@@ -35,7 +35,8 @@ class PublicBookingReceiptSchemaUpgradeTests {
                 }
                 migrate(connection, schema, "classpath:db/changelog/db.changelog-master.yaml");
                 Map<String, String> after = manifest(connection, schema);
-                assertEquals(before.size() + 4, after.size());
+                assertEquals(before.size() + 5, after.size());
+                assertTrue(after.keySet().stream().anyMatch(key -> key.startsWith("003-staff-auth-012\n")));
                 before.forEach((key, checksum) -> assertEquals(checksum, after.get(key), key));
                 assertTrue(after.keySet().stream().anyMatch(key -> key.startsWith("004-reservations-008\n")));
                 try (var row = sql.executeQuery("SELECT confirmation_code,status,currency FROM " + schema + ".reservations WHERE id='" + reservation + "'")) {
