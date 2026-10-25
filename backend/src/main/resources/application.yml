@@ -62,3 +62,6 @@ pms:
   resend:
     api-key: ${RESEND_API_KEY:}
     from-email: ${RESEND_FROM_EMAIL:}
+
+  staff:
+    invitation-url: ${PMS_STAFF_INVITATION_URL:http://localhost:3001/activar-staff}

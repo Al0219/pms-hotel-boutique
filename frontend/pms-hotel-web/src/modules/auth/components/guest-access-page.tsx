@@ -21,11 +21,11 @@ const accessInformation = {
 } as const;
 
 /** Shared presentation; login always delegates to BD1's existing BFF. */
-export function GuestAccessPage({ returnTo, googleError, pendingRequestId }: { returnTo?: string; googleError?: boolean; pendingRequestId?:string } = {}) {
+export function GuestAccessPage({ returnTo, googleError, pendingRequestId, afterStaffActivation = false }: { returnTo?: string; googleError?: boolean; pendingRequestId?:string; afterStaffActivation?:boolean } = {}) {
   const { status, account } = useGuestSession();
   const login = useUnifiedLogin(returnTo, googleError);
   const router = useRouter();
-  const [mode, setMode] = useState<AuthMode>(pendingRequestId?'register':'login');
+  const [mode, setMode] = useState<AuthMode>(!afterStaffActivation && pendingRequestId?'register':'login');
   const [registrationBusy,setRegistrationBusy]=useState(false);
   const [restorePending,setRestorePending]=useState(pendingRequestId);
   const [notice, setNotice] = useState<string>();
@@ -34,17 +34,17 @@ export function GuestAccessPage({ returnTo, googleError, pendingRequestId }: { r
   const loginEmail = useRef<HTMLInputElement>(null);
   const focusLogin = useRef(false);
   useEffect(()=>{if(mode==='login' && focusLogin.current){focusLogin.current=false;loginEmail.current?.focus();}},[mode]);
-  useStaffAccessRedirect(mode==='login' && !registrationBusy && status === 'signed-out' && !account && !login.busy && !login.redirecting);
+  useStaffAccessRedirect(!afterStaffActivation && mode==='login' && !registrationBusy && status === 'signed-out' && !account && !login.busy && !login.redirecting);
   const redirected = useRef(false);
   const destination = guestAccessReturn(returnTo);
   useEffect(() => {
-    if (!account || redirected.current || login.busy || login.redirecting || registrationBusy) return;
+    if (afterStaffActivation || !account || redirected.current || login.busy || login.redirecting || registrationBusy) return;
     redirected.current = true;
     const target = destination ?? (returnTo === undefined ? readGuestCheckoutReturn() : undefined) ?? '/cuenta';
     clearGuestCheckoutReturn(); router.replace(target);
-  }, [account, destination, returnTo, router, login.busy, login.redirecting, registrationBusy]);
+  }, [account, destination, returnTo, router, login.busy, login.redirecting, registrationBusy, afterStaffActivation]);
   if (status === 'checking' || status === 'error') return <GuestSessionCheck />;
-  if (account || login.redirecting) return <p role="status">Acceso correcto. Redirigiendo…</p>;
+  if ((!afterStaffActivation && account) || login.redirecting) return <p role="status">Acceso correcto. Redirigiendo…</p>;
   const publicDestination = destination === '/mis-reservas' || destination === '/cuenta/reservas/vincular' ? '/habitaciones' : destination ?? '/';
   const reservationsAccess = destination === '/mis-reservas' || destination === '/cuenta/reservas/vincular';
   function changeMode(next: AuthMode) {

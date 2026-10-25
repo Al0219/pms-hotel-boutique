@@ -96,7 +96,7 @@ describe('Staff administrative mutations BFF', () => {
   ])('rejects malformed/noncontracted contact %j', async body => {
     await error(await contact.PATCH(request(body), context()), 400, 'INVALID_REQUEST'); expect(fetchMock).not.toHaveBeenCalled();
   });
-  it.each(['', 'ACTIVE', 'active', 'UNKNOWN'])('rejects unsupported state %s', async status => {
+  it.each(['', 'active', 'UNKNOWN'])('rejects unsupported state %s', async status => {
     await error(await state.PATCH(request({ status, expectedVersion: 7 }, { suffix: '/status' }), context()), 400, 'INVALID_REQUEST'); expect(fetchMock).not.toHaveBeenCalled();
   });
   it.each([

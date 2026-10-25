@@ -1,6 +1,6 @@
 'use client';
 import { Children, cloneElement, isValidElement, useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
-import { StaffRowPanelContext } from './staff-row-panel-context';
+import { StaffRowPanelContext, StaffRowRecoveryPanelContext } from './staff-row-panel-context';
 import styles from './staff-admin.module.css';
 
 const controls = 'input, select, textarea, button, a, [role="button"], [role="slider"], [contenteditable], [data-staff-row-action]';
@@ -22,11 +22,13 @@ function startsInSelection(selection: Selection | null, target: EventTarget | nu
   return !measured && target instanceof Node && !!selection.anchorNode && target.contains(selection.anchorNode);
 }
 /** Candidate tracking never captures/cancels a normal click. Only an actual drag owns its release click. */
-export function StaffAdminRow({ children, enabled, revealed = false, onReveal, onClick }: {
-  children: ReactNode; enabled: boolean; revealed?: boolean; onReveal: (show: boolean) => void; onClick: (event: ReactMouseEvent<HTMLTableRowElement>) => void;
+export function StaffAdminRow({ children, enabled, revealed = false, recoveryEnabled = false, recoveryRevealed = false, onReveal, onClick }: {
+  children: ReactNode; enabled: boolean; revealed?: boolean; recoveryEnabled?: boolean; recoveryRevealed?: boolean; onReveal: (show: boolean, side?: 'recovery') => void; onClick: (event: ReactMouseEvent<HTMLTableRowElement>) => void;
 }) {
   const row = useRef<HTMLTableRowElement>(null);
   const [panel, setPanel] = useState<HTMLDivElement | null>(null);
+  const [recoveryPanel, setRecoveryPanel] = useState<HTMLDivElement | null>(null);
+  const canGesture = enabled || recoveryEnabled;
   const offset = useRef(0);
   const gesture = useRef<{ id: number; x: number; y: number; offset: number; horizontal: boolean; mouse: boolean; selecting: boolean; moved: boolean; preselected: boolean } | null>(null);
   const wheel = useRef<{ x: number; at: number; handled: boolean } | null>(null);
@@ -34,10 +36,16 @@ export function StaffAdminRow({ children, enabled, revealed = false, onReveal, o
   const suppressReleaseClick = useRef(false);
   const width = useCallback(() => panel?.getBoundingClientRect().width || Math.min(240, (row.current?.clientWidth || 440) * .55), [panel]);
   const translate = useCallback((value: number) => {
-    offset.current = Math.max(-width(), Math.min(0, value));
+    offset.current = Math.max(enabled ? -width() : 0, Math.min(recoveryEnabled ? width() : 0, value));
     row.current?.style.setProperty('--staff-swipe-x', `${offset.current}px`);
-    if (row.current) row.current.dataset.staffSwipeVisible = String(offset.current < 0);
-  }, [width]);
+    if (row.current) row.current.dataset.staffSwipeVisible = String(offset.current !== 0);
+    if (row.current) row.current.dataset.staffSwipeSide = offset.current > 0 ? 'recovery' : offset.current < 0 ? 'status' : 'none';
+  }, [width, enabled, recoveryEnabled]);
+  const resting = useCallback(() => enabled && revealed ? -width() : recoveryEnabled && recoveryRevealed ? width() : 0, [enabled, revealed, recoveryEnabled, recoveryRevealed, width]);
+  const settle = useCallback((start: number, left: boolean) => {
+    const next = start < 0 ? (left ? -width() : 0) : start > 0 ? (left ? 0 : width()) : left ? (enabled ? -width() : 0) : (recoveryEnabled ? width() : 0);
+    translate(next); onReveal(next !== 0, next > 0 ? 'recovery' : undefined);
+  }, [enabled, recoveryEnabled, translate, width, onReveal]);
   const endPointer = useCallback(() => {
     const start = gesture.current;
     gesture.current = null;
@@ -45,12 +53,12 @@ export function StaffAdminRow({ children, enabled, revealed = false, onReveal, o
     return start;
   }, []);
   useEffect(() => {
-    const resize = () => { if (!gesture.current) translate(enabled && revealed ? -width() : 0); };
+    const resize = () => { if (!gesture.current) translate(resting()); };
     resize();
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(resize);
     if (row.current) observer?.observe(row.current);
     return () => observer?.disconnect();
-  }, [enabled, revealed, translate, width]);
+  }, [resting, translate]);
   useEffect(() => {
     const element = row.current;
     if (!element) return;
@@ -58,9 +66,9 @@ export function StaffAdminRow({ children, enabled, revealed = false, onReveal, o
       if (gesture.current?.horizontal) suppressReleaseClick.current = true;
       endPointer(); wheel.current = null;
       clearTimeout(wheelTimer.current);
-      translate(enabled && revealed ? -width() : 0);
+      translate(resting());
     };
-    if (!enabled) cancel();
+    if (!canGesture) cancel();
     const visibility = () => { if (document.visibilityState === 'hidden') cancel(); };
     const key = (event: KeyboardEvent) => { suppressReleaseClick.current = false; if (event.key === 'Escape') cancel(); };
     // A new press always represents a new intent, never the previous drag's click.
@@ -68,7 +76,7 @@ export function StaffAdminRow({ children, enabled, revealed = false, onReveal, o
     const move = (event: PointerEvent) => {
       const start = gesture.current;
       if (!start || start.id !== event.pointerId) return;
-      if (!enabled || (start.mouse && !(event.buttons & 1))) { cancel(); return; }
+      if (!canGesture || (start.mouse && !(event.buttons & 1))) { cancel(); return; }
       const dx = Math.abs(event.clientX - start.x), dy = Math.abs(event.clientY - start.y);
       if (dx >= 8 || dy >= 8) start.moved = true;
       if (start.selecting) return; // Observe selection releases without taking over text selection.
@@ -85,19 +93,19 @@ export function StaffAdminRow({ children, enabled, revealed = false, onReveal, o
         element.dataset.staffDragging = 'true';
         if (start.mouse && !start.preselected && selection?.toString()) selection.removeAllRanges();
         event.preventDefault();
-        translate(start.offset + event.clientX - start.x);
+        const next = start.offset + event.clientX - start.x;
+        translate(start.offset < 0 ? Math.min(0, next) : start.offset > 0 ? Math.max(0, next) : next);
       }
     };
     const up = (event: PointerEvent) => {
       if (gesture.current?.id !== event.pointerId) return;
       const start = endPointer()!;
       if (start.horizontal || (start.moved && (start.selecting || window.getSelection()?.toString()))) suppressReleaseClick.current = true;
-      if (!enabled || !start.horizontal || (start.mouse && event.button !== 0)
+      if (!canGesture || !start.horizontal || (start.mouse && event.button !== 0)
         || Math.abs(event.clientX - start.x) < 48 || Math.abs(event.clientX - start.x) <= Math.abs(event.clientY - start.y) * 1.6) {
-        translate(enabled && revealed ? -width() : 0); return;
+        translate(resting()); return;
       }
-      const show = event.clientX < start.x;
-      translate(show ? -width() : 0); onReveal(show);
+      settle(start.offset, event.clientX < start.x);
     };
     const lostCapture = (event: PointerEvent) => { if (gesture.current?.id === event.pointerId) cancel(); };
     const click = (event: MouseEvent) => {
@@ -110,7 +118,7 @@ export function StaffAdminRow({ children, enabled, revealed = false, onReveal, o
     const mouseMove = (event: MouseEvent) => { if (gesture.current?.horizontal) event.preventDefault(); };
     const nativeDrag = (event: DragEvent) => { if (gesture.current && !gesture.current.selecting) event.preventDefault(); };
     const horizontalWheel = (event: WheelEvent) => {
-      if (!enabled || gesture.current || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey
+      if (!canGesture || gesture.current || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey
         || window.getSelection()?.toString() || ownsControl(event.target)) { wheel.current = null; return; }
       const { deltaX, deltaY } = event;
       if (!Number.isFinite(deltaX) || !Number.isFinite(deltaY) || !deltaX || Math.abs(deltaX) <= Math.abs(deltaY) * 1.6) { wheel.current = null; return; }
@@ -121,10 +129,10 @@ export function StaffAdminRow({ children, enabled, revealed = false, onReveal, o
       const next = { x: (sameBurst ? previous.x : 0) + deltaX * unit, at: now, handled: sameBurst ? previous.handled : false };
       wheel.current = next;
       clearTimeout(wheelTimer.current);
-      if (!next.handled) translate((revealed ? -width() : 0) - next.x);
+      if (!next.handled) translate(resting() < 0 ? Math.min(0, resting() - next.x) : resting() > 0 ? Math.max(0, resting() - next.x) : -next.x);
       if (!next.handled && Math.abs(next.x) >= 48) {
-        next.handled = true; translate(next.x > 0 ? -width() : 0); onReveal(next.x > 0);
-      } else if (!next.handled) wheelTimer.current = setTimeout(() => translate(revealed ? -width() : 0), 150);
+        next.handled = true; settle(resting(), next.x > 0);
+      } else if (!next.handled) wheelTimer.current = setTimeout(() => translate(resting()), 150);
     };
     element.addEventListener('wheel', horizontalWheel, { passive: false });
     document.addEventListener('pointerdown', newPress, true);
@@ -153,13 +161,13 @@ export function StaffAdminRow({ children, enabled, revealed = false, onReveal, o
       window.removeEventListener('blur', cancel);
       window.removeEventListener('keydown', key);
     };
-  }, [enabled, revealed, onReveal, endPointer, translate, width]);
+  }, [canGesture, resting, settle, endPointer, translate]);
   const cells = Children.toArray(children);
-  return <StaffRowPanelContext value={panel}><tr ref={row} className={`${styles.expandableRow} ${styles.swipePresentationRow} ${enabled ? styles.swipeRow : ''}`}
+  return <StaffRowPanelContext value={panel}><StaffRowRecoveryPanelContext value={recoveryPanel}><tr ref={row} className={`${styles.expandableRow} ${styles.swipePresentationRow} ${canGesture ? styles.swipeRow : ''}`}
     onPointerDown={event => {
       endPointer();
       const mouse = event.pointerType === 'mouse';
-      if (!enabled || (!mouse && event.pointerType !== 'touch') || event.isPrimary === false || event.defaultPrevented || ownsControl(event.target)) return;
+      if (!canGesture || (!mouse && event.pointerType !== 'touch') || event.isPrimary === false || event.defaultPrevented || ownsControl(event.target)) return;
       if (mouse && event.button !== 0) return;
       const selection = window.getSelection(), preselected = !!selection?.toString();
       const selectedOrigin = startsInSelection(selection, event.target, event.clientX, event.clientY);
@@ -167,6 +175,6 @@ export function StaffAdminRow({ children, enabled, revealed = false, onReveal, o
       wheel.current = null;
       gesture.current = { id: event.pointerId, x: event.clientX, y: event.clientY, offset: offset.current, horizontal: false, mouse, selecting, moved: false, preselected };
     }} onClick={onClick}>{cells.map((cell, index) => isValidElement<{ children?: ReactNode }>(cell) && cell.type === 'td'
-      ? cloneElement(cell, {}, <>{index === cells.length - 1 && <div ref={setPanel} className={styles.swipeBackdrop} data-staff-row-action aria-hidden={!enabled || !revealed} inert={!enabled || !revealed} />}<div className={styles.swipeCell}>{cell.props.children}</div></>)
-      : cell)}</tr></StaffRowPanelContext>;
+      ? cloneElement(cell, {}, <>{index === cells.length - 1 && <><div ref={setRecoveryPanel} className={`${styles.swipeBackdrop} ${styles.swipeRecoveryBackdrop}`} data-staff-row-action aria-hidden={!recoveryEnabled || !recoveryRevealed} inert={!recoveryEnabled || !recoveryRevealed} /><div ref={setPanel} className={styles.swipeBackdrop} data-staff-row-action aria-hidden={!enabled || !revealed} inert={!enabled || !revealed} /></>}<div className={styles.swipeCell}>{cell.props.children}</div></>)
+      : cell)}</tr></StaffRowRecoveryPanelContext></StaffRowPanelContext>;
 }

@@ -1,5 +1,57 @@
 # AlanPlan — Seguimiento Backend
 
+## Reactivación y recuperación Staff MVP (2026-10-25)
+
+- Ajuste UI swipe derecho: backdrop izquierdo con Reactivar/UserRoundCheck o
+  recuperación/Mail según GET real; confirmación, teclado y swipe izquierdo intactos.
+  64 tests focales PASS, typecheck/diff PASS. Aceptación del usuario registrada; verificaciones individuales no acreditadas siguen pendientes.
+
+- **COMPLETADA / PASS manual**, aceptación explícita del usuario en feature/staff-activation-mvp. PATCH status
+  reactiva SUSPENDED con M08 válido; sin evidencia, POST invitation explícito permite
+  recuperar también cuentas antiguas. Consumo activa con contraseña/M08 en un commit.
+- Suspensión efectiva revoca enlaces pendientes conservando evidencia acreditada;
+  tokens anteriores no activan. DISABLED/SUPER_ADMIN/autoedición/scope protegidos.
+  Gmail, BFF existente, tres columnas/edición/swipe conservados; sin migraciones.
+- Backend focal38 pruebas distintas PASS (HTTP14 finales +OpenAPI21 +correo3);
+  BFF/Web34 y regresión focal3 PASS; typecheck/diff PASS. Sin suite completa/build/
+  Docker E2E ni envío Gmail real. Guía55, sección final.
+- Recuperación de cuentas antiguas, SMTP externo adicional y accesibilidad no
+  acreditada conservan QA manual pendiente; no cierre global3B-2 ni de
+  BE-006B/C, BE-014A, QA2A/2B. El MVP inicial conserva aceptación anterior.
+
+- Cierre2026-10-25: PASS manual solo para el flujo confirmado por el usuario;
+  cobertura automatizada histórica separada. En esta preparación solo revisión
+  y git diff --check; verificación completa en CI del PR. Sin merge ni cambios ajenos.
+
+## Invitación y activación inicial Staff MVP (2026-10-23)
+
+- **COMPLETADA / PASS por aceptación del usuario (2026-10-25)**; rama feature/staff-activation-mvp desde main fe6a381.
+- SMTP real y enlace256bits/30min de un uso; solo hash persistido. Consumo establece contraseña/evidencia M08 sin activar ni crear sesión. Admin confirma ACTIVE solo para altas nuevas con evidencia, membership y propiedades vigentes.
+- Migración aditiva012, GET/POST invitation y POST consume; BFF/Origin/no-store/un envío y UI en las tres columnas existentes. Correo/DISABLED invalidan preparación; locks/versión/revocación/auditoría transaccionales conservados.
+- Backend focal57 PASS; Web334/7 PASS y últimos30/2 PASS; HTTP real Next/Spring/PostgreSQL/Mailpit28 aserciones PASS; typecheck/lint focal/diff PASS. Sin suite completa/build/Docker E2E. Detalle y QA Firefox en55.
+- Manual pendiente; sin invitación/reactivación de cuentas previas. No cerrar3B-2 global, BE-006B/C, BE-014A ni QA2A/2B. Creación MVP y fases completadas conservadas. Siguiente: aceptación manual del flujo inicial.
+
+- Ajuste 2026-10-25: invitación reutiliza `SmtpEmailConfiguration`/`JavaMailSender`
+  Gmail existentes; sin PMS_STAFF_SMTP ni dependencia Mailpit. Solo capturador QA
+  detenido; PostgreSQL intacto. Tests focales15 PASS, typecheck/diff PASS. Gmail real
+  pendiente; evidencia anterior conservada como histórica. Estado EN_QA (guía55).
+
+- 2026-10-25: alta201 encadena invitación automática con ID/versión/scope reales;
+  fallo de envío conserva alta y ofrece flujo manual sin reintentos.15 tests focales
+  PASS, typecheck/diff PASS. Recepción Gmail/Firefox pendiente; EN_QA, guía55.
+
+- Cambio autorizado2026-10-25: consumo de invitación activa la cuenta inicial en
+  el mismo commit de contraseña/M08, sin paso administrativo ni autologin. Roles/
+  membership/propiedades vigentes bajo locks; versión única, revocación y auditoría.
+  Backend focal35 PASS; Web18 PASS (+repetición3 destinatario), typecheck/diff PASS.
+  Gmail/Firefox pendiente; EN_QA. No habilita reactivación antigua (guía55).
+
+- Cierre2026-10-25 autorizado por el usuario tras ajuste final: enlace de
+  confirmación a `/acceso` con marca `from=staff-activation` evita redirección
+  automática por sesión existente solo en este recorrido. Mensaje intacto, sin
+  autologin ni cambios Backend/BFF/Gmail. Solo revisión/diff-check PASS; no nuevas
+  pruebas ni QA manual atribuida. Evidencia histórica y pendientes conservados.
+
 ## Alta Staff MVP — Backend/BFF/UI (2026-10-23)
 
 - **Estado: COMPLETADA; aceptación manual PASS** del usuario para creación, persistencia y actualización del listado. Rama feature/staff-admin-create desde origin/main 53b3e09.

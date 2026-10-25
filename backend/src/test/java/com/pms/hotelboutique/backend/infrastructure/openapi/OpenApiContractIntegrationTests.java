@@ -144,7 +144,7 @@ class OpenApiContractIntegrationTests {
             boolean publicBooking = route.equals("/api/v1/public/bookings") && method.getKey().equals("post");
             assertEquals(publicAvailability || publicBooking ? "public" : staffAuth || guestAuth ? "internal-bff" : "staff", op.path("x-audience").asText());
             boolean anonymous = route.endsWith("/google/start") || route.endsWith("/google/exchange")
-                    || route.equals("/api/v1/auth/sessions") || route.equals("/api/v1/guest-auth/sessions") || route.equals("/api/v1/staff-auth/sessions") || route.equals("/api/v1/staff-auth/login") || route.equals("/api/v1/guest-auth/registrations") || publicAvailability || publicBooking;
+                    || route.equals("/api/v1/staff-auth/invitations/consume") || route.equals("/api/v1/auth/sessions") || route.equals("/api/v1/guest-auth/sessions") || route.equals("/api/v1/staff-auth/sessions") || route.equals("/api/v1/staff-auth/login") || route.equals("/api/v1/guest-auth/registrations") || publicAvailability || publicBooking;
             if (anonymous) assertTrue(op.path("security").isMissingNode() || op.path("security").isEmpty());
             else {
                 String scheme = route.endsWith("/refresh") ? (staffAuth ? "staffRefreshCookie" : "guestRefreshCookie")
@@ -614,7 +614,7 @@ class OpenApiContractIntegrationTests {
         }
         var state=schemas.path("StaffAdminStatusCommand").path("properties").path("status");
         if(state.has("$ref"))state=schemas.path(state.path("$ref").asText().replace("#/components/schemas/",""));
-        assertEquals(Set.of("SUSPENDED","DISABLED"),strings(state.path("enum")));
+        assertEquals(Set.of("ACTIVE","SUSPENDED","DISABLED"),strings(state.path("enum")));
         assertEquals(50,schemas.path("StaffAdminContactCommand").path("properties").path("workEmail").path("maxLength").asInt());
         assertEquals(Set.of("organizationId","staffUserId","version","changed"),strings(schemas.path("StaffAdminMutationResult").path("required")));
     }
@@ -628,6 +628,18 @@ class OpenApiContractIntegrationTests {
         assertEquals(Set.of("username","workEmail","roleCode","propertyIds"),strings(schema.path("required")));
         assertFalse(schema.path("additionalProperties").asBoolean(true));
         assertEquals(50,schema.path("properties").path("workEmail").path("maxLength").asInt());
+    }
+
+    @Test
+    void staffInvitationDocumentsScopedAdminAndPublicOneUseConsumer() throws Exception {
+        var doc=document();
+        var invite=operation(doc,"/api/v1/staff-admin/users/{id}/invitation","post");
+        assertTrue(parameter(invite,"scope").path("required").asBoolean());
+        assertTrue(invite.path("security").get(0).has("bearerAuth"));
+        var consume=operation(doc,"/api/v1/staff-auth/invitations/consume","post");
+        assertTrue(consume.path("security").isEmpty()||consume.path("security").isMissingNode());
+        assertTrue(consume.path("requestBody").path("content").has("application/json"));
+        assertCodes(consume,"200","400","409","503");
     }
 
     private JsonNode operation(JsonNode doc, String path, String method) {

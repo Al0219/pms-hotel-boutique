@@ -5,7 +5,7 @@ import { parseStaffAdminQuery, projectStaffAdminCreated } from './contract';
 import { parseStaffAdminCommand, projectStaffAdminMutationResult, parseStaffAdminCreate } from './mutation-contract';
 import type { StaffAdminMutationResource } from './mutation.dto';
 
-const headers = { 'cache-control': 'private, no-store' };
+export const headers = { 'cache-control': 'private, no-store' };
 const failures = {
   INVALID_REQUEST: { status: 400, title: 'Invalid Staff request' },
   STAFF_SESSION_REQUIRED: { status: 401, title: 'Staff session required' },
@@ -14,17 +14,18 @@ const failures = {
   STAFF_VERSION_CONFLICT: { status: 409, title: 'Staff version conflict' },
   STAFF_EMAIL_CONFLICT: { status: 409, title: 'Staff email unavailable' },
   STAFF_USERNAME_CONFLICT: { status: 409, title: 'Staff username unavailable' },
+  STAFF_INVITATION_INVALID: { status: 409, title: 'Staff invitation unavailable' },
   STAFF_STATE_CONFLICT: { status: 409, title: 'Staff state conflict' },
   STAFF_WRITE_UNAVAILABLE: { status: 503, title: 'Staff write unavailable' },
 } as const;
 type Code = keyof typeof failures;
-function failure(code: Code, override?: 413 | 415) {
+export function failure(code: Code, override?: 413 | 415) {
   const { title, status: normalStatus } = failures[code], status = override ?? normalStatus;
   return NextResponse.json({ type: 'about:blank', title, status, code },
     { status, headers: { ...headers, 'content-type': 'application/problem+json' } });
 }
 class OversizedBody extends Error {}
-async function boundedText(body: ReadableStream<Uint8Array> | null): Promise<string> {
+export async function boundedText(body: ReadableStream<Uint8Array> | null): Promise<string> {
   if (!body) return '';
   const reader = body.getReader(), chunks: Uint8Array[] = [];
   let length = 0;
@@ -41,10 +42,10 @@ async function boundedText(body: ReadableStream<Uint8Array> | null): Promise<str
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
   return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
 }
-export function rejectStaffAdminMutationMethod(allow: 'GET, PATCH' | 'PATCH' | 'PUT') {
+export function rejectStaffAdminMutationMethod(allow: 'GET, PATCH' | 'GET, POST' | 'PATCH' | 'PUT') {
   return new NextResponse(null, { status: 405, headers: { ...headers, allow } });
 }
-async function upstreamFailure(upstream: Response) {
+export async function upstreamFailure(upstream: Response) {
   try {
     if (upstream.headers.get('content-type')?.split(';')[0].trim().toLowerCase() !== 'application/problem+json') throw new Error();
     const raw: unknown = JSON.parse(await boundedText(upstream.body));

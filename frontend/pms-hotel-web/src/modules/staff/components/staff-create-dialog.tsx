@@ -9,7 +9,7 @@ import { useStaffCreate } from '../hooks/use-staff-create';
 import styles from './staff-admin.module.css';
 
 export function StaffCreateDialog({ session, scope, context, onClose, onCreated }: {
-  session: StaffSession; scope: PropertyScope; context: StaffAdminContext; onClose: () => void; onCreated: (user: StaffAdminUser) => void;
+  session: StaffSession; scope: PropertyScope; context: StaffAdminContext; onClose: () => void; onCreated: (user: StaffAdminUser, notice: string) => void;
 }) {
   const [draft, setDraft] = useState<StaffAdminCreateDTO>({ username: '', workEmail: '', roleCode: 'RECEPCION', propertyIds: scope.kind === 'PROPERTY' ? [...scope.propertyIds] : [] });
   const create = useStaffCreate(session, scope, context.organizationId, onCreated);
@@ -18,7 +18,7 @@ export function StaffCreateDialog({ session, scope, context, onClose, onCreated 
   return <Modal title="Crear usuario" busy={closingBlocked} onClose={onClose} footer={<>
     <Button variant="outline" disabled={closingBlocked} onClick={onClose}>Cancelar</Button>
     {create.uncertain ? <Button disabled={create.busy} onClick={() => void create.verify()}>{create.busy ? 'Comprobando…' : 'Comprobar listado'}</Button>
-      : <Button type="submit" form="staff-create-form" disabled={create.busy}>{create.busy ? 'Creando…' : 'Crear'}</Button>}
+      : <Button type="submit" form="staff-create-form" disabled={create.busy}>{create.busy ? create.inviting ? 'Enviando invitación…' : 'Creando…' : 'Crear'}</Button>}
   </>}>
     <form id="staff-create-form" className={styles.createForm} onSubmit={event => { event.preventDefault(); void create.submit(draft); }}>
       <label>Nombre de usuario<input required maxLength={80} autoComplete="off" disabled={locked} value={draft.username} onChange={event => setDraft({ ...draft, username: event.target.value })} /></label>

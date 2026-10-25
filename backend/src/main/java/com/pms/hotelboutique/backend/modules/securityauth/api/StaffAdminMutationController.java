@@ -18,9 +18,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping(value="/api/v1/staff-admin/users",produces="application/json")
-@Tag(name="Staff administration commands",description="Internal BFF-only; no reactivation or credential delivery.")
+@Tag(name="Staff administration commands",description="Internal BFF-only; activation or reactivation requires verified M08 evidence.")
 @SecurityRequirement(name="bearerAuth")
-@ApiResponse(responseCode="400",description="INVALID_REQUEST: strict fields/version/scope; ACTIVE explicitly excluded.",headers=@Header(name="Cache-Control",schema=@Schema(allowableValues="private, no-store")),content=@Content(mediaType="application/problem+json",schema=@Schema(implementation=StaffAdminMutationModels.Error.class)))
+@ApiResponse(responseCode="400",description="INVALID_REQUEST: strict fields/version/scope.",headers=@Header(name="Cache-Control",schema=@Schema(allowableValues="private, no-store")),content=@Content(mediaType="application/problem+json",schema=@Schema(implementation=StaffAdminMutationModels.Error.class)))
 @ApiResponse(responseCode="401",description="STAFF_SESSION_REQUIRED",headers=@Header(name="Cache-Control",schema=@Schema(allowableValues="private, no-store")),content=@Content(mediaType="application/problem+json",schema=@Schema(implementation=StaffAdminMutationModels.Error.class)))
 @ApiResponse(responseCode="403",description="STAFF_ACCESS_DENIED",headers=@Header(name="Cache-Control",schema=@Schema(allowableValues="private, no-store")),content=@Content(mediaType="application/problem+json",schema=@Schema(implementation=StaffAdminMutationModels.Error.class)))
 @ApiResponse(responseCode="404",description="STAFF_USER_NOT_FOUND: absent and inaccessible indistinguishable.",headers=@Header(name="Cache-Control",schema=@Schema(allowableValues="private, no-store")),content=@Content(mediaType="application/problem+json",schema=@Schema(implementation=StaffAdminMutationModels.Error.class)))
@@ -60,7 +60,7 @@ public class StaffAdminMutationController {
     @PatchMapping("/{id}/status")
     @Parameters({@Parameter(name="scope",in=ParameterIn.QUERY,required=true,schema=@Schema(allowableValues={"PROPERTY","ALL_PROPERTIES"})),
     @Parameter(name="propertyId",in=ParameterIn.QUERY,description="Required for PROPERTY, forbidden for ALL_PROPERTIES.",schema=@Schema(type="string",format="uuid"))})
-    @Operation(summary="Suspend or logically disable Staff",description="STAFF_MANAGE; input only SUSPENDED or DISABLED. No reactivation. DISABLED terminal; no self-edit or SUPER_ADMIN state change. Revocation/audit in same transaction. expectedVersion required.")
+    @Operation(summary="Suspend or logically disable Staff",description="STAFF_MANAGE; SUSPENDED or DISABLED; ACTIVE requires verified M08 evidence, active membership and valid properties. Suspension revokes pending invitations. DISABLED terminal; no self-edit or SUPER_ADMIN state change. Revocation/audit in same transaction. expectedVersion required.")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(required=true,content=@Content(mediaType="application/json",schema=@Schema(implementation=Status.class)))
     public Result status(@Parameter(schema=@Schema(type="string",format="uuid")) @PathVariable String id,@Parameter(hidden=true) @RequestParam MultiValueMap<String,String> query,HttpServletRequest request)throws IOException{return execute(id,query,request,Kind.STATUS);}
     private Result execute(String id,MultiValueMap<String,String> query,HttpServletRequest request,Kind kind)throws IOException{

@@ -26,8 +26,8 @@ public class StaffAdminMutationService {
             StaffAdminReadRepository reads,StaffAdminMutationRepository writes,StaffSecurityLocks locks,StaffAdminMutationParser parser,AuthAuditEventRepository audit){
         this.sessions=sessions;this.authorization=authorization;this.scopes=scopes;this.reads=reads;this.writes=writes;this.locks=locks;this.parser=parser;this.audit=audit;
     }
-    private record Actor(StaffPrincipal principal,StaffAuthorizationSnapshot snapshot){}
-    private Actor actor(){
+    record Actor(StaffPrincipal principal,StaffAuthorizationSnapshot snapshot){}
+    Actor actor(){
         var authentication=SecurityContextHolder.getContext().getAuthentication();
         if(authentication==null||!authentication.isAuthenticated()||!(authentication.getPrincipal() instanceof StaffPrincipal p))fail(STAFF_SESSION_REQUIRED);
         var principal=sessions.getActivePrincipal((StaffPrincipal)authentication.getPrincipal());
@@ -36,6 +36,18 @@ public class StaffAdminMutationService {
         return new Actor(principal,snapshot);
     }
     public void checkAccess(){actor();}
+    record LockedTarget(Actor actor,User user,StaffAdminReadQuery query) { }
+    /** Caller must hold one transaction. Same user→membership→property lock order as commands. */
+    LockedTarget lockTarget(String rawId,Map<String,List<String>> parameters){
+        var actor=actor();var query=StaffAdminReadQuery.parse(parameters,true);var id=StaffAdminReadQuery.uuid(rawId);
+        visible(actor,query,id);
+        var ids=List.of(actor.principal().staffUserId(),id);locks.users(ids);actor=actor();
+        locks.memberships(ids,actor.snapshot().organizationId());
+        var user=visible(actor,query,id);locks.properties(user.propertyIds(),actor.snapshot().organizationId());
+        actor=actor();user=visible(actor,query,id);
+        if(id.equals(actor.principal().staffUserId())||user.roleCode()==RoleCode.SUPER_ADMIN)fail(STAFF_ACCESS_DENIED);
+        return new LockedTarget(actor,user,query);
+    }
     @Transactional(isolation=Isolation.READ_COMMITTED)
     public User create(Map<String,List<String>> parameters,byte[] body){
         var actor=actor();var query=StaffAdminReadQuery.parse(parameters,true);var input=parser.parseCreate(body);
@@ -88,6 +100,9 @@ public class StaffAdminMutationService {
         boolean changed;
         if(kind==Kind.CONTACT)changed=!command.email.equals(target.workEmail().trim().toLowerCase(Locale.ROOT));
         else if(kind==Kind.STATUS){
+            if("ACTIVE".equals(command.status)) {
+                if(target.status()!=UserStatus.SUSPENDED||target.membershipStatus()!=MembershipStatus.ACTIVE||target.propertyIds().isEmpty()||!writes.activationReady(id,org))fail(STAFF_STATE_CONFLICT);
+            }
             if(target.status()==UserStatus.DISABLED&&!"DISABLED".equals(command.status))fail(STAFF_STATE_CONFLICT);
             changed=!command.status.equals(target.status().name());
         } else {
@@ -101,6 +116,9 @@ public class StaffAdminMutationService {
         String field=kind==Kind.CONTACT?"work_email":kind==Kind.STATUS?"status":"role_code";
         String value=kind==Kind.CONTACT?command.email:kind==Kind.STATUS?command.status:command.role;
         if(writes.updateUser(id,org,command.version,field,value)!=1)fail(STAFF_VERSION_CONFLICT);
+        if(kind==Kind.CONTACT||(kind==Kind.STATUS&&"DISABLED".equals(command.status)))writes.invalidateCredential(id,org,kind==Kind.STATUS);
+        if(kind==Kind.STATUS&&"SUSPENDED".equals(command.status))writes.revokePendingInvitations(id,org);
+        if(kind==Kind.STATUS&&"ACTIVE".equals(command.status))writes.completeInitialActivation(id,org);
         if(kind==Kind.MEMBERSHIP)writes.replaceMembership(id,org,command.role,command.properties);
         UUID correlation=UUID.randomUUID(); Instant now=Instant.now();
         for(UUID session:writes.revokeSessions(id))audit.save(AuthAuditEvent.administrative("STAFF_SESSION_REVOKED",id,session,org,actor.principal().staffUserId(),correlation,now));
@@ -110,7 +128,7 @@ public class StaffAdminMutationService {
         return new Result(org,id,command.version+1,true);
     }
     private Set<UUID> portfolio(Actor actor){return new HashSet<>(actor.snapshot().properties().stream().map(StaffAuthorizationSnapshot.PropertyAccess::propertyId).toList());}
-    private User visible(Actor actor,StaffAdminReadQuery query,UUID id){
+    User visible(Actor actor,StaffAdminReadQuery query,UUID id){
         Scope scope;
         try{
             if(query.scope()==ScopeKind.ALL_PROPERTIES&&"SUPER_ADMIN".equals(actor.snapshot().roleCode())&&actor.snapshot().properties().isEmpty())scope=new Scope(ScopeKind.ALL_PROPERTIES,List.of());

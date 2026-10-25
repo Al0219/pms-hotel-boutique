@@ -20,7 +20,7 @@ public class StaffAdminMethodExceptionResolver extends AbstractHandlerExceptionR
                 || !request.getRequestURI().startsWith("/api/v1/staff-admin/")) return null;
         response.setStatus(405);
         String uri=request.getRequestURI();
-        String allow=uri.matches("/api/v1/staff-admin/users/?")?"GET, HEAD, POST":uri.matches("/api/v1/staff-admin/users/[^/]+/membership")?"PUT":
+        String allow=uri.matches("/api/v1/staff-admin/users/[^/]+/invitation")?"GET, HEAD, POST":uri.matches("/api/v1/staff-admin/users/?")?"GET, HEAD, POST":uri.matches("/api/v1/staff-admin/users/[^/]+/membership")?"PUT":
                 uri.matches("/api/v1/staff-admin/users/[^/]+/status")?"PATCH":
                 uri.matches("/api/v1/staff-admin/users/[^/]+")?"GET, HEAD, PATCH":"GET, HEAD";
         response.setHeader("Allow", allow);
