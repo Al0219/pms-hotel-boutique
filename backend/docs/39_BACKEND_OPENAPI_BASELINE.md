@@ -1,5 +1,16 @@
 # 39 — Baseline OpenAPI/Swagger Backend
 
+## Alta de reservas Staff — contrato55 (2026-10-23)
+
+Dos operaciones nuevas: GET `/api/v1/reservations/creation-options` y POST
+`/api/v1/reservations`. Audiencia staff y bearerAuth vigentes, RESERVATION_MANAGE
+y PROPERTY explícita; DTOs StaffReservationCreationGuest/Request/Option/Quote/
+Receipt. Admisión transaccional, alojamiento pendiente sin PAYMENT, recibo local
+idempotente201 (nuevo/replay), errores400/401/403/404/409/500 y private,no-store.
+Sin capacidad inventada, exclusiones nuevas ni cambios a los GET existentes.
+Pruebas estructurales y paridad mappings en OpenApiContractIntegrationTests;
+evidencia del incremento en AlanHandoff y contrato55.
+
 ## Revisión de asignación por limpieza (2026-10-23)
 
 Contratos50/52: candidata DIRTY visible con selectable=false y reason no vacío;

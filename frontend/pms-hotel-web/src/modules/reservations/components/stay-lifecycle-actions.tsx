@@ -27,7 +27,7 @@ export function StayLifecycleActions({ propertyId, reservationId, sessionId, sta
       expectedUpdatedAt: selected.stay.updatedAt, expectedRoomId: selected.stay.roomId });
     if (result) {
       setNotice(`${entering ? 'Entrada' : 'Salida'} registrada. Consulta el estado actualizado de la estadía.${!entering && stay.roomId ? ' La habitación asignada queda pendiente de limpieza.' : ''}`);
-      close();
+      setOpen(false);
     }
   }
   return <div>

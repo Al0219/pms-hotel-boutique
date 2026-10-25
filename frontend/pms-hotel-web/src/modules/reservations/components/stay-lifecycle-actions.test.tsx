@@ -24,8 +24,36 @@ describe('Staff entry/exit confirmation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar entrada' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(screen.getByRole('status')).toHaveTextContent('Entrada registrada');
-    expect(screen.getByRole('status')).toHaveFocus();
+    await waitFor(() => expect(screen.getByRole('status')).toHaveFocus());
     expect(mocks.perform.mock.calls[0][2].expectedUpdatedAt).toBe(dto.stays[0].updatedAt);
+  });
+  it.each([
+    { action: 'entrada', previous: 'RESERVED', status: 'IN_HOUSE' },
+    { action: 'salida', previous: 'IN_HOUSE', status: 'CHECKED_OUT' },
+  ] as const)('keeps the $action receipt focused without restoring the old command', async ({ action, previous, status }) => {
+    mocks.perform.mockResolvedValueOnce({ propertyId: dto.propertyId, reservationId: dto.reservationId,
+      stayId: stay.id, operationId: dto.reservationId, status, completedAt: '2026-10-22T18:10:00Z' });
+    view({ stay: { ...stay, travelState: previous } });
+    const trigger = screen.getByRole('button', { name: `Registrar ${action}` });
+    trigger.focus();
+    const restoreFocus = vi.spyOn(trigger, 'focus');
+    try {
+      fireEvent.click(trigger);
+      fireEvent.click(screen.getByRole('button', { name: `Confirmar ${action}` }));
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+      await waitFor(() => expect(screen.getByRole('status')).toHaveFocus());
+      expect(restoreFocus).not.toHaveBeenCalled();
+    } finally { restoreFocus.mockRestore(); }
+  });
+  it('returns focus to the command when confirmation is cancelled without a receipt', async () => {
+    view();
+    const trigger = screen.getByRole('button', { name: 'Registrar entrada' });
+    trigger.focus(); fireEvent.click(trigger);
+    fireEvent.click(screen.getByRole('button', { name: 'Volver al detalle' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(mocks.perform).not.toHaveBeenCalled();
   });
   it('blocks entry before room assignment and omits new entry for an unconfirmed parent', () => {
     const first = view({ stay: { ...stay, roomId: null, roomLabel: null } });

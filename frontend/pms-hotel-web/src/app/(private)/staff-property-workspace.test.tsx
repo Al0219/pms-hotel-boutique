@@ -56,6 +56,12 @@ describe('Staff property composition', () => {
     view.rerender(<StaffReservationsWorkspace reservationId="real-reservation" />);
     expect(mocks.detail).toHaveBeenCalledWith(expect.objectContaining({ endpoint: '/api/staff/reservations', canManage: false, reservationId: 'real-reservation' }));
   });
+  it.each(['RECEPCION', 'SUPER_ADMIN'])('enables creation for %s through RESERVATION_MANAGE', roleId => {
+    vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'false');
+    mocks.session.mockReturnValue({ ...sessionFixture, roleId, permissions: ['RESERVATION_MANAGE'] });
+    render(<StaffReservationsWorkspace />);
+    expect(mocks.center).toHaveBeenCalledWith(expect.objectContaining({ propertyId: 'GT-HB-01', canCreate: true }));
+  });
 });
 
 it('enables contracted real management with COMMERCIAL_MANAGE and keeps real source composition', () => {

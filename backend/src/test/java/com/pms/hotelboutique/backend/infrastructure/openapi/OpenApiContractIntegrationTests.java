@@ -94,6 +94,27 @@ class OpenApiContractIntegrationTests {
     }
 
     @Test
+    void staffCreationDocumentsUnpaidLodgingAdmissionAndImmutableReceipt() throws Exception {
+        var doc = document();
+        var quote = operation(doc, "/api/v1/reservations/creation-options", "get");
+        var create = operation(doc, "/api/v1/reservations", "post");
+        assertSuccessSchema(quote, "200", "StaffReservationCreationQuote");
+        assertSuccessSchema(create, "201", "StaffReservationCreationReceipt");
+        assertTrue(create.path("description").asText().contains("unpaid lodging CHARGE"));
+        assertTrue(create.path("description").asText().contains("No GuestAccount, payment"));
+        assertTrue(create.path("security").get(0).has("bearerAuth"));
+        assertTrue(create.path("responses").has("409"));
+        var schemas = doc.path("components").path("schemas");
+        assertFalse(schemas.path("StaffReservationCreationRequest").path("additionalProperties").asBoolean());
+        assertFalse(schemas.path("StaffReservationCreationOption").path("properties").has("capacity"));
+        Set<String> receiptFields = new HashSet<>();
+        schemas.path("StaffReservationCreationReceipt").path("properties").properties()
+                .forEach(field -> receiptFields.add(field.getKey()));
+        assertEquals(Set.of("operationId", "propertyId", "reservationId", "completedAt"), receiptFields);
+        assertEquals(receiptFields, strings(schemas.path("StaffReservationCreationReceipt").path("required")));
+    }
+
+    @Test
     void guestAccountSummaryDocumentsOwnIdentityAndOptionalRealDataOnly() throws Exception {
         var doc = document();
         var op = operation(doc, "/api/v1/guest-auth/account/summary", "get");
@@ -500,7 +521,7 @@ class OpenApiContractIntegrationTests {
             assertEquals("uuid", parameter(op, "propertyId").path("schema").path("format").asText());
             for (String code : List.of("200", "400", "401", "403")) assertTrue(op.path("responses").has(code));
             assertTrue(op.path("responses").path("200").path("headers").has("Cache-Control"));
-            assertFalse(doc.path("paths").path(route).has("post"));
+            assertEquals(route.equals("/api/v1/reservations"), doc.path("paths").path(route).has("post"));
         }
         assertSuccessSchema(operation(doc, "/api/v1/reservations/{reservationId}", "get"), "200", "StaffReservation");
         assertTrue(operation(doc, "/api/v1/reservations/{reservationId}", "get").path("responses").has("404"));

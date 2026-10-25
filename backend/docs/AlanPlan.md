@@ -1,5 +1,16 @@
 # AlanPlan — Seguimiento Backend
 
+## PR166 — Integración con main (2026-10-25)
+
+- Merge normal autorizado de origin/main0d1f4b7 en feature/staff-activation-mvp,
+  realizado en worktree aislado para preservar Android/next-env.d.ts locales.
+- Dos conflictos documentales resueltos por conservación de ambas entradas;
+  OpenAPI combinado sin perder pruebas Staff/reservas. Sin cambios funcionales
+  adicionales ni alteración de contratos o aceptación manual anteriores.
+- OpenAPI focal22 PASS, typecheck y diff-check PASS; sin suites completas locales
+  ni nueva QA manual. CI pendiente; siguiente: publicar merge y revisar jobs.
+- No force push ni merge del PR a main; estados QA independientes conservados.
+
 ## Reactivación y recuperación Staff MVP (2026-10-25)
 
 - Ajuste UI swipe derecho: backdrop izquierdo con Reactivar/UserRoundCheck o
@@ -51,6 +62,53 @@
   automática por sesión existente solo en este recorrido. Mensaje intacto, sin
   autologin ni cambios Backend/BFF/Gmail. Solo revisión/diff-check PASS; no nuevas
   pruebas ni QA manual atribuida. Evidencia histórica y pendientes conservados.
+
+## Integración del PR de reservas con main — EN_QA (2026-10-24)
+
+- José autoriza integrar origin/main fe6a381 (PR164, alta de usuarios Staff) en
+  feature/staff-reservations-real, validar y publicar; no integrar el PR a main.
+- Conflictos solo en AlanPlan/AlanHandoff: conservar ambas entradas e historiales.
+  OpenAPI combina automáticamente las pruebas de alta de usuarios y de reservas.
+  El resto del contenido entrante coincide exactamente con main; sin cambios
+  funcionales propios adicionales ni cambios de migraciones/dependencias/workflows.
+- Backend focal Java21/PostgreSQL17 aislados: verify BUILD SUCCESS,166 pruebas,
+  cero fallos/errores/omitidas, incluidos ambos módulos y OpenAPI.
+- Web lint/typecheck PASS;15 archivos484/491 PASS. Repetición de los dos archivos
+  fallidos119/120 PASS; el timeout de paginación restante también falla aislado en
+  copia exacta de origin/main fe6a381. Sin cambiar pruebas/límites ni otro módulo.
+  Build de producción PASS; evidencia detallada en Web69.
+- QA manual previo PASS conservado; gate general/CI pendiente, estado EN_QA.
+  Siguiente: publicar el merge normal autorizado y revisar los checks del PR.
+
+## Alta de reservas Staff — EN_QA, 2026-10-23
+
+- **Estado:** EN_QA; contrato55 APPROVED e implementación disponible.
+  José prioriza crear reservas desde Recepción/Super Admin y asignar habitaciones;
+  discrepancias FO/HK pospuestas. Se reutilizan motores Booking/Inventory/Folio.
+- **Rama/base:** feature/staff-reservations-real desde origin/main53b3e09, fetch
+  sin novedades. Cierre documental anterior preservado en stash identificado
+  `docs: preserve housekeeping cycle closure before staff booking` de su rama
+  docs/staff-housekeeping-cycle-closure; copia fuera de Git. No mezclar entregas.
+- **DoR:** Web53, contratos49/50/52/54, motores Booking/Inventory/Folio y recibo
+  local revisados. Filas IMP-WEB-0301/0302 consultadas sin editar XLSX; esta alta
+  es ampliación autorizada, no cumplimiento inventado de una fila nueva.
+- **Decisión aprobada:** José acepta CONFIRMED con cargo de alojamiento/saldo
+  pendiente, sin pago automático y con asignación/check-in separados. Transporte
+  y aceptación concretos en55; permiso RESERVATION_MANAGE y propiedad explícita.
+- **Backend:** verify general1031 con un timeout Swagger; repetición95 PASS,
+  incluidas13 de alta Staff,62 HTTP público y20 OpenAPI. Sin quitar validaciones.
+- **Web:** lint/typecheck/build PASS; hubo64/64 PASS y la última corrida63/64
+  por timeout5s del recorrido mock heredado. Gate general no aprobado; dos casos
+  de administración también fallan sobre una copia de origin/main53b3e09.
+- **Integración:** navegador real25 comprobaciones PASS; SQL confirma un cargo,
+  cero pagos y un recibo por reserva. Recepción y Super Admin; DIRTY, check-in,
+  deuda, reintento exacto, móvil y logout. Guía/evidencia resumida en Web69.
+- **Entorno:** imágenes probadas en3001; tres servicios healthy y8 checks de
+  lectura PASS. Datos conservados:2 propiedades/24 rooms/5 reservas/5 stays/
+  7 estados HK/28 migraciones. QA aislado retirado; imágenes anteriores guardadas.
+- **QA manual:** PASS confirmado por José («todo funciona», 2026-10-23).
+  Commit y push autorizados; el incremento permanece EN_QA por el gate general/CI.
+- **Siguiente:** publicar la rama para revisión y checks; sin merge ni nueva tarea.
 
 ## Alta Staff MVP — Backend/BFF/UI (2026-10-23)
 

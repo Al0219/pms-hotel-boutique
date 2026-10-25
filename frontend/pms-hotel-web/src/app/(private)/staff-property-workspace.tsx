@@ -25,12 +25,12 @@ export function StaffReservationsWorkspace({ reservationId, endpoint }: { reserv
   const resource = endpoint ?? '/api/staff/reservations';
   return <StaffPropertyWorkspace>{(propertyId, sessionId) => reservationId
     ? <ReservationDetail key={`${sessionId}:${propertyId}:${reservationId}`} reservationId={reservationId} propertyId={propertyId} endpoint={resource} sessionId={sessionId} canManage={canAssign} />
-    : <ReservationCenter key={`${sessionId}:${propertyId}`} propertyId={propertyId} endpoint={resource} canCreate={false} />}</StaffPropertyWorkspace>;
+    : <ReservationCenter key={`${sessionId}:${propertyId}`} propertyId={propertyId} endpoint={resource} canCreate={canAssign} />}</StaffPropertyWorkspace>;
 }
 
 export function StaffNewReservationWorkspace() {
   const session = useStaffSession();
-  const canCreate = session.permissions.includes('RESERVATION_MANAGE') || session.roleId === 'SUPER_ADMIN';
+  const canCreate = session.permissions.includes('RESERVATION_MANAGE');
   return <StaffPropertyWorkspace>{(propertyId, sessionId) => {
     const property = session.memberships.find(item => item.propertyId === propertyId && item.active);
     return property ? <StaffNewReservation key={`${sessionId}:${propertyId}`} propertyId={propertyId} sessionId={sessionId}

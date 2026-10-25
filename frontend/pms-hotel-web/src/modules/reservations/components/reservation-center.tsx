@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from 'next/link';
 
 import { HttpNetworkError } from "@/lib/http/errors";
 
@@ -54,7 +55,7 @@ function AlertsPanel({ alerts }: Readonly<{ alerts: ReadonlyArray<ReservationAle
   );
 }
 
-export function ReservationCenter({ propertyId, endpoint }: Readonly<ReservationCenterProps>) {
+export function ReservationCenter({ propertyId, endpoint, canCreate = false }: Readonly<ReservationCenterProps>) {
   const { data: center, error, isLoading, refetch } = useReservationCenter(propertyId, endpoint);
   const [convertingWaitlistId, setConvertingWaitlistId] = useState<string | null>(null);
 
@@ -83,12 +84,17 @@ export function ReservationCenter({ propertyId, endpoint }: Readonly<Reservation
     );
   }
 
+  const creationAction = canCreate ? <div className={styles.creationActions}>
+    <Link className={styles.primaryAction} href="/reservas/nueva">+ Nueva reserva</Link>
+  </div> : null;
+
   if (!center?.reservations.length) {
-    return <section className={workspace.page}><p>No hay reservas para esta propiedad.</p></section>;
+    return <section className={workspace.page}>{creationAction}<p>No hay reservas para esta propiedad.</p></section>;
   }
 
   return (
     <div className={workspace.page}>
+      {creationAction}
       {center.summary && <div className={styles.kpis} aria-label="Resumen del día">
         <KpiCard label="Llegadas hoy" value={center.summary.arrivalsToday} />
         <KpiCard

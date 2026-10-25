@@ -449,3 +449,14 @@ CLEAN y ausencia de seguimiento conservan las reglas previas de preasignación;
 INSPECTED sigue siendo obligatorio para check-in. No cambia ATS, OOO/OOS,
 permisos, propiedad, estados de reserva ni asignaciones previamente guardadas.
 Contrato y QA de esta revisión en contratos Backend50/52 y AlanPlan/AlanHandoff.
+
+### Reservas tomadas por Staff — alojamiento pendiente, sin pago automático
+
+**Fecha:** 2026-10-23. **Status:** APPROVED por José al aceptar el flujo de alta.
+Recepción, Gerencia y Super Admin con RESERVATION_MANAGE y PROPERTY autorizada
+pueden crear una Reservation CONFIRMED con N stays RESERVED y cargo inicial de
+alojamiento pendiente en folio Guest. No se crea GuestAccount, cobra dinero ni
+simula un pago para saldar la reserva. Asignar Room y realizar check-in siguen
+como acciones separadas: DIRTY bloquea asignar e INSPECTED es obligatorio para
+entregar. La deuda mantiene el bloqueo de checkout aprobado. Contrato55 detalla
+el incremento; no amplía los permisos financieros generales de Recepción.
