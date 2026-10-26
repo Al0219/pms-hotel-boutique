@@ -88,7 +88,7 @@ function LoginStateCard({
 /** Login establishes only the account session; /reservations owns the 0/1/N stay decision. */
 export function LoginScreen({ onAuthenticated, service }: LoginScreenProps) {
   const { clearActiveReservationContext } = useActiveReservationContext();
-  const { beginSession } = useGuestAuthSession();
+  const { beginSession, sessionExpired } = useGuestAuthSession();
   const login = useGuestLogin(service);
   const inFlight = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
@@ -129,6 +129,7 @@ export function LoginScreen({ onAuthenticated, service }: LoginScreenProps) {
   }
 
   function onSuccess(session: GuestAuthSession): void {
+    setPassword("");
     clearActiveReservationContext();
     beginSession(session);
     if (onAuthenticated) onAuthenticated(session);
@@ -183,7 +184,7 @@ export function LoginScreen({ onAuthenticated, service }: LoginScreenProps) {
               autoComplete="email"
               editable={!isPending}
               keyboardType="email-address"
-              maxLength={254}
+              maxLength={50}
               placeholder="nombre@correo.com"
               placeholderTextColor={tokens.color.muted}
               onChangeText={changeEmail}
@@ -270,6 +271,7 @@ export function LoginScreen({ onAuthenticated, service }: LoginScreenProps) {
               </Text>
             ) : null}
           </View>
+          {sessionExpired ? <LoginStateCard body="Inicia sesión nuevamente para continuar." testID="guest-session-expired" title="Tu sesión ha expirado" /> : null}
           {invalidCredentials ? (
             <LoginStateCard
               body="Revisa tus datos e inténtalo de nuevo."

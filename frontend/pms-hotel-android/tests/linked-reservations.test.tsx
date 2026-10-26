@@ -13,6 +13,9 @@ import {
   useActiveReservationContext,
 } from "@/modules/guest-auth";
 
+// Navigation focus is supplied by Expo at runtime; these unit tests inject services without a navigator.
+jest.mock('expo-router', () => ({ ...jest.requireActual('expo-router'), useFocusEffect: jest.fn() }));
+
 const primary = {
   reservationId: "HB-2026-004281",
   reservationStayId: "stay-2026-004281",

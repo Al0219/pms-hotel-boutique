@@ -2,8 +2,8 @@ import { type ReservationStayDto } from "@/modules/stay/data/dtos/ReservationSta
 import { type ActiveReservationContext } from "@/modules/guest-auth/domain/models/ActiveReservationContext";
 
 /**
- * Remote boundary for the current stay. An HTTP implementation is deferred
- * until a backend endpoint and request contract are confirmed.
+ * Remote boundary for the current stay; HTTP uses the confirmed Guest read
+ * projection, while hooks retain the existing DTO to Domain mapping.
  */
 export interface StayService {
   getCurrentStay(

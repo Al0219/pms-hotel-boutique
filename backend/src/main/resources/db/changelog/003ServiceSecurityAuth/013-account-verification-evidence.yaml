@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-guest-account-evidence-013
+      author: alan-bd1
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              ALTER TABLE guest_email_verifications DROP CONSTRAINT guest_email_verifications_source_check;
+              ALTER TABLE guest_email_verifications ADD CONSTRAINT guest_email_verifications_source_check CHECK (source IN ('REGISTRATION','GOOGLE','ACCOUNT'));

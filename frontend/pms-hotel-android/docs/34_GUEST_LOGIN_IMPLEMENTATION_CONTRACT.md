@@ -82,3 +82,10 @@ Los providers locales del grupo `(guest)` (solicitudes de sesión, checkout, veh
 - **QA-AND-0502-04 — Footer de Logout:** el footer podía salir del viewport en Android. Header y footer ahora son fijos; las secciones viven en un `ScrollView` body con `flex: 1` y `minHeight: 0`. El panel permanece dentro de `SafeAreaView` con edge inferior, por lo que no usa márgenes dependientes de un dispositivo ni queda detrás de la gesture bar.
 - **QA-AND-0502-05 — Back en Inicio:** Android Back en `/account` ya no retorna silenciosamente a Login: solicita el mismo `requestLogout` centralizado y confirma mediante el modal existente antes de ejecutar `performLogout`.
 - **QA-AND-0502-06 — Back en raíces secundarias:** Android Back en `/services`, `/valet` o `/hotel` usa `router.replace('/account')`. Las rutas hijas conservan sus handlers/Back nativos aprobados.
+
+## Extensión Android ↔ Backend (2026-10-25)
+
+El [incremento real38](38_ANDROID_BACKEND_MVP.md), autorizado separadamente,
+reutiliza estos contratos/UI y extiende transporte y persistencia de sesión solo
+en modo API real. Las limitaciones frontend-first anteriores describen el modo
+mock; no son autoridad para endpoints Backend. QA físico permanece EN_QA.

@@ -10,6 +10,7 @@ const context = { reservationId: "reservation-1", reservationStayId: "stay-1" };
 const stayDto: ReservationStayDto = {
   id: "stay-1",
   reservationId: "reservation-1",
+  confirmationCode: "ABC1234567",
   roomType: {
     id: "room-type-1",
     name: "Deluxe King",
@@ -30,6 +31,7 @@ describe("Stay contracts", () => {
     expect(stay).toMatchObject({
       id: "stay-1",
       reservationId: "reservation-1",
+      confirmationCode: "ABC1234567",
       roomType: { id: "room-type-1", name: "Deluxe King" },
       room: { id: "room-101", number: "101" },
       arrival: "2026-09-10",
@@ -58,4 +60,16 @@ describe("Stay contracts", () => {
       }).getCurrentStay(context),
     ).rejects.toThrow("remote failure");
   });
+});
+
+it.each([undefined, null, '', '   '])('maps unavailable reference %s to neutral without reusing the reservation ID', (confirmationCode) => {
+  const stay = mapReservationStayDto({ ...stayDto, confirmationCode });
+  expect(stay.confirmationCode).toBeNull();
+  expect(stay.reservationId).toBe('reservation-1');
+  expect(stay.id).toBe('stay-1');
+});
+it('maps the provided code without changing internal identities', () => {
+  const stay = mapReservationStayDto({ ...stayDto, confirmationCode: ' ABC1234567 ' });
+  expect(stay.confirmationCode).toBe('ABC1234567');
+  expect(stay.reservationId).toBe('reservation-1');
 });

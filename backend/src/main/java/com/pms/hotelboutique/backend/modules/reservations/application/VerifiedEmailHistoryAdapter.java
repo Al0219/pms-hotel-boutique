@@ -15,6 +15,13 @@ public class VerifiedEmailHistoryAdapter implements VerifiedEmailHistoryPort {
     public VerifiedEmailHistoryAdapter(JdbcClient jdbc, AuditService audit) { this.jdbc=jdbc; this.audit=audit; }
     @Override @Transactional(propagation = Propagation.MANDATORY)
     public void linkCompatibleReservations(UUID accountId, UUID verificationId) {
+        link(accountId, verificationId, false);
+    }
+    @Override @Transactional(propagation = Propagation.MANDATORY)
+    public void linkConfirmedCompatibleReservations(UUID accountId, UUID verificationId) {
+        link(accountId, verificationId, true);
+    }
+    private void link(UUID accountId, UUID verificationId, boolean confirmedOnly) {
         // Lock in stable order; contact edits and manual OTP inserts cannot transfer ownership.
         var candidates = jdbc.sql("""
             SELECT r.id,r.property_id,g.guest_account_id AS profile_owner
@@ -23,8 +30,10 @@ public class VerifiedEmailHistoryAdapter implements VerifiedEmailHistoryPort {
             JOIN reservations r ON r.booking_guest_id=g.id
             WHERE v.id=:proof AND a.id=:account AND a.status='ACTIVE' AND a.email_verified_at IS NOT NULL
               AND lower(btrim(a.email))=v.normalized_email
-            ORDER BY r.id FOR UPDATE OF r,g
-            """).param("proof", verificationId).param("account", accountId)
+            """ + (confirmedOnly ? """
+              AND r.status='CONFIRMED' AND (g.guest_account_id IS NULL OR g.guest_account_id=:account)
+              AND NOT EXISTS (SELECT 1 FROM guest_reservation_links existing WHERE existing.reservation_id=r.id)
+            """ : "") + " ORDER BY r.id FOR UPDATE OF r,g").param("proof", verificationId).param("account", accountId)
             .query((rs,n)->new Candidate(rs.getObject("id",UUID.class),rs.getObject("property_id",UUID.class),rs.getObject("profile_owner",UUID.class))).list();
         for (var c : candidates) {
             if (c.owner()!=null && !accountId.equals(c.owner())) { conflict(accountId,c,verificationId); continue; }

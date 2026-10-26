@@ -1,5 +1,7 @@
-import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { environment } from "@/config/environment";
+import { useGuestLogout } from "@/modules/guest-auth/presentation/hooks/useGuestLogout";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import { BackHandler, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { NetworkError } from "@/data/remote/http/HttpError";
@@ -22,6 +24,10 @@ export function LinkedReservationsScreen({ service }: LinkedReservationsScreenPr
   const { session } = useGuestAuthSession();
   const { activeReservationContext, setActiveReservationContext } = useActiveReservationContext();
   const query = useLinkedReservations(session?.accountId, service);
+  const refetch = query.refetch;
+  useFocusEffect(useCallback(() => {
+    if (!environment.useMockApi && session?.accountId) void refetch({ cancelRefetch: false });
+  }, [refetch, session?.accountId]));
   const [selected, setSelected] = useState<LinkedReservationSummary | null>(null);
   const [confirmationVisible, setConfirmationVisible] = useState(false);
   const changingActiveStay = Boolean(activeReservationContext);
@@ -69,7 +75,14 @@ export function LinkedReservationsScreen({ service }: LinkedReservationsScreenPr
     {(query.data ?? []).map((reservation) => { const current = sameStay(reservation, activeReservationContext); const checked = current || selected?.reservationStayId === reservation.reservationStayId; return <Pressable accessibilityRole="radio" accessibilityState={{ checked }} key={reservation.reservationStayId} onPress={() => choose(reservation)} style={[styles.card, checked && styles.cardSelected]} testID={"linked-reservation-" + reservation.reservationStayId}><Text style={styles.reference}>{reservation.reference}</Text><Text style={styles.body}>{reservation.propertyLabel ?? "Hotel Boutique"}</Text><Text style={styles.body}>{dates(reservation)}</Text><Text style={styles.body}>{reservation.roomLabel ? "Habitación " + reservation.roomLabel : "Habitación por asignar"}</Text>{current ? <Text style={styles.current}>Estadía actual</Text> : null}</Pressable>; })}
     <Pressable accessibilityRole="button" accessibilityState={{ disabled: !selected }} disabled={!selected} onPress={continueSelection} style={[styles.button, !selected && styles.buttonDisabled]} testID="linked-reservations-continue"><Text style={styles.buttonLabel}>{changingActiveStay ? "Cambiar estadía" : "Continuar"}</Text></Pressable>
     {changingActiveStay ? <Pressable accessibilityRole="button" onPress={() => router.replace("/account")} style={styles.cancelButton} testID="linked-reservations-cancel"><Text style={styles.cancelLabel}>Cancelar</Text></Pressable> : null}
-  </ScrollView><ConfirmationModal body="Cambiarás a la estadía seleccionada." confirmLabel="Cambiar estadía" onCancel={() => setConfirmationVisible(false)} onConfirm={confirmChange} testID="linked-reservations-change-confirmation" title="¿Cambiar de estadía?" visible={confirmationVisible} /></View>;
+  <RealSessionLogout /></ScrollView><ConfirmationModal body="Cambiarás a la estadía seleccionada." confirmLabel="Cambiar estadía" onCancel={() => setConfirmationVisible(false)} onConfirm={confirmChange} testID="linked-reservations-change-confirmation" title="¿Cambiar de estadía?" visible={confirmationVisible} /></View>;
 }
-function State({ actionLabel = "Reintentar", body, offline, onRetry, testID, title }: { actionLabel?: string; body: string; offline?: boolean; onRetry?: () => void; testID: string; title: string }) { return <View style={styles.screen}><View style={[styles.state, offline && styles.offline]} testID={testID}><Text accessibilityRole="header" style={styles.title}>{title}</Text><Text style={styles.body}>{body}</Text>{onRetry ? <Pressable accessibilityRole="button" onPress={onRetry} style={styles.button} testID={testID + "-action"}><Text style={styles.buttonLabel}>{actionLabel}</Text></Pressable> : null}</View></View>; }
+function State({ actionLabel = "Reintentar", body, offline, onRetry, testID, title }: { actionLabel?: string; body: string; offline?: boolean; onRetry?: () => void; testID: string; title: string }) { return <View style={styles.screen}><View style={[styles.state, offline && styles.offline]} testID={testID}><Text accessibilityRole="header" style={styles.title}>{title}</Text><Text style={styles.body}>{body}</Text>{onRetry ? <Pressable accessibilityRole="button" onPress={onRetry} style={styles.button} testID={testID + "-action"}><Text style={styles.buttonLabel}>{actionLabel}</Text></Pressable> : null}<RealSessionLogout /></View></View>; }
+/** Accounts without linked stays must still be able to revoke their native session. */
+function RealSessionLogout() {
+  const logout = useGuestLogout();
+  const [confirm, setConfirm] = useState(false);
+  if (environment.useMockApi) return null;
+  return <><Pressable accessibilityRole="button" onPress={() => setConfirm(true)} style={styles.cancelButton}><Text style={styles.cancelLabel}>Cerrar sesión</Text></Pressable><ConfirmationModal body="Tendrás que iniciar sesión nuevamente para continuar." confirmLabel="Cerrar sesión" onCancel={() => setConfirm(false)} onConfirm={() => { setConfirm(false); logout(); }} title="¿Cerrar sesión?" visible={confirm} testID="linked-reservations-logout-confirmation" /></>;
+}
 const styles = StyleSheet.create({ screen: { backgroundColor: tokens.color.surfaceMuted, flex: 1 }, content: { gap: 12, padding: 24 }, title: { color: tokens.color.inkStrong, fontSize: tokens.typography.size.title, fontWeight: "700" }, subtitle: { color: tokens.color.muted, fontSize: tokens.typography.size.body }, body: { color: tokens.color.ink, fontSize: tokens.typography.size.body }, card: { backgroundColor: tokens.color.surface, borderColor: tokens.color.border, borderRadius: 12, borderWidth: 1, gap: 4, padding: 16 }, cardSelected: { borderColor: tokens.color.brand, borderWidth: 2 }, reference: { color: tokens.color.inkStrong, fontSize: tokens.typography.size.sectionTitle, fontWeight: "700" }, current: { color: tokens.color.brand, fontSize: tokens.typography.size.body, fontWeight: "700" }, button: { alignItems: "center", backgroundColor: tokens.color.brand, borderRadius: 10, marginTop: 8, padding: 14 }, buttonDisabled: { opacity: 0.45 }, buttonLabel: { color: tokens.color.white, fontSize: tokens.typography.size.body, fontWeight: "700" }, cancelButton: { alignItems: "center", borderColor: tokens.color.brand, borderRadius: 10, borderWidth: 1, padding: 14 }, cancelLabel: { color: tokens.color.brand, fontSize: tokens.typography.size.body, fontWeight: "700" }, state: { gap: 12, margin: 24, padding: 24 }, offline: { backgroundColor: tokens.color.pendingSurface } });

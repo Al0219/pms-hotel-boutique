@@ -3,5 +3,5 @@ import { type GuestAuthSession } from '@/modules/guest-auth/domain/models/GuestA
 
 /** Resolves the canonical Account model; it never embeds Account data in Session. */
 export interface GuestAccountService {
-  getCurrent(session: GuestAuthSession): Promise<GuestAccount>;
+  getCurrent(session: GuestAuthSession): Promise<Pick<GuestAccount, 'key' | 'emailText' | 'displayName'>>;
 }
