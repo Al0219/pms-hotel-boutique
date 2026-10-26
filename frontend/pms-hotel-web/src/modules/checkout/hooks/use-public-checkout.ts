@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { onlineManager } from '@tanstack/react-query';
+import { onlineManager, useQueryClient } from '@tanstack/react-query';
 import { getPublicEnvironment } from '@/lib/env';
 import { HttpNetworkError } from '@/lib/http/errors';
 import { useResetPublicBooking, resolveSelection, type BookingSearchCriteria } from '@/modules/booking';
@@ -19,6 +19,7 @@ import { publicBookingFailure } from '../domain/public-booking-failure';
 
 /** With no review, this hook can only replay the original pending operation. */
 export function usePublicCheckout(review: BookingReview | null, criteria: Partial<BookingSearchCriteria>, { navigateOnError = true } = {}) {
+  const queryClient = useQueryClient();
   const pending = usePendingPublicBooking();
   const draft = useCheckoutDraft(review?.scope ?? pending?.scope ?? '');
   const router = useRouter();
@@ -62,6 +63,9 @@ export function usePublicCheckout(review: BookingReview | null, criteria: Partia
       setPhase('processing'); sent = true;
       const confirmation = await confirmPublicBooking(operation.request, operation.roomNames, controller.signal);
       if (draft.settlePublicAttempt(operation, confirmation)) clearCart();
+      // Confirmation is final even if an active Guest query cannot refresh right now.
+      void queryClient.invalidateQueries({ queryKey: ['guest', 'reservations'] }).catch(() => undefined);
+      void queryClient.invalidateQueries({ queryKey: ['guest', 'account-summary'] }).catch(() => undefined);
       if (!controller.signal.aborted) { setPhase('done'); router.push(confirmationHref(operation.criteria)); }
       return { confirmed: true, outcomeUnknown: false };
     } catch (problem) {

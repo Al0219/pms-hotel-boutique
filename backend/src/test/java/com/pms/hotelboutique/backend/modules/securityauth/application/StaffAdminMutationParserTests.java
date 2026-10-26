@@ -37,8 +37,8 @@ class StaffAdminMutationParserTests {
                 assertEquals(expected,parser.parse(body,CONTACT).email);
             }));
     }
-    @Test void rejectsReactivationPromotionDuplicatePropertiesAndClientReadiness(){
-        for(var entry:List.of(Map.entry(STATUS,"{\"status\":\"ACTIVE\",\"expectedVersion\":0}"),
+    @Test void rejectsUnknownStatusPromotionDuplicatePropertiesAndClientReadiness(){
+        for(var entry:List.of(Map.entry(STATUS,"{\"status\":\"UNKNOWN\",\"expectedVersion\":0}"),
                 Map.entry(STATUS,"{\"status\":\"SUSPENDED\",\"expectedVersion\":0,\"credentialReady\":true}"),
                 Map.entry(MEMBERSHIP,"{\"roleCode\":\"SUPER_ADMIN\",\"propertyIds\":[],\"expectedVersion\":0}"),
                 Map.entry(MEMBERSHIP,"{\"roleCode\":\"GERENCIA\",\"propertyIds\":[\"11111111-1111-4111-8111-111111111111\",\"11111111-1111-4111-8111-111111111111\"],\"expectedVersion\":0}")))

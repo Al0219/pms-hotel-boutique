@@ -1,11 +1,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, waitFor } from "@testing-library/react-native";
 import { useEffect } from "react";
+import { Pressable, Text } from "react-native";
 import { renderRouter } from "expo-router/testing-library";
 
 import { NetworkError } from "@/data/remote/http/HttpError";
 import { AccountStayHubScreen } from "@/modules/account";
-import { ActiveReservationContextProvider } from "@/modules/guest-auth";
+import { ActiveReservationContextProvider, useActiveReservationContext } from "@/modules/guest-auth";
 import { GuestNoticeProvider, useGuestNotice } from "@/modules/navigation";
 import { type ReservationStayDto } from "@/modules/stay/data/dtos/ReservationStayDto";
 import { currentStayFixture } from "@/modules/stay/data/mocks/currentStayFixture";
@@ -27,7 +28,12 @@ function NoticeTrigger() {
   return null;
 }
 
-function createAccountRoute(service: StayService, withNotice = false) {
+function StaySwitcher() {
+  const { setActiveReservationContext } = useActiveReservationContext();
+  return <Pressable onPress={() => setActiveReservationContext({ reservationId: 'reservation-b', reservationStayId: 'stay-b' })}><Text>Cambiar a B</Text></Pressable>;
+}
+
+function createAccountRoute(service: StayService, withNotice = false, withSwitcher = false) {
   return function AccountRoute() {
     return (
       <QueryClientProvider client={createQueryClient()}>
@@ -37,6 +43,7 @@ function createAccountRoute(service: StayService, withNotice = false) {
             reservationStayId: "stay-2026-004281",
           }}
         >
+          {withSwitcher ? <StaySwitcher /> : null}
           <GuestNoticeProvider>
             {withNotice ? <NoticeTrigger /> : null}
             <SessionServiceRequestsProvider>
@@ -68,7 +75,7 @@ describe("Account / Stay Hub V3", () => {
     expect(rendered.queryByTestId("account-promotions-launcher")).toBeNull();
     expect(rendered.getByText("Habitación 204")).toBeTruthy();
     expect(rendered.getByText("Deluxe King")).toBeTruthy();
-    expect(rendered.getByText("HB-2026-004281")).toBeTruthy();
+    expect(rendered.getByText("Reserva · HB-2026-004281")).toBeTruthy();
     expect(rendered.queryByText("REMOTE_STATUS")).toBeNull();
     expect(rendered.queryByTestId("account-stay-status")).toBeNull();
     expect(rendered.getAllByText("Inicio")).toHaveLength(2);
@@ -187,5 +194,37 @@ describe("Account / service request confirmation", () => {
       ).toBeNull(),
     );
     expect(rendered.getByTestId("account-stay-hub-screen")).toBeTruthy();
+  });
+});
+
+describe('Account reference presentation', () => {
+  it.each([undefined, null, '', '   '])('shows neutral text for missing reference %s without displaying the internal ID', async (confirmationCode) => {
+    const AccountRoute = createAccountRoute(new MockStayService({ kind: 'success', dto: { ...currentStayFixture, confirmationCode } }));
+    const view = await renderRouter({ account: AccountRoute }, { initialUrl: '/account' });
+    await waitFor(() => expect(view.getByText('Reserva · Referencia no disponible')).toBeTruthy());
+    expect(view.queryByText(currentStayFixture.reservationId!)).toBeNull();
+  });
+  it('renders the provided reference and constrains long text to one line', async () => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    const AccountRoute = createAccountRoute({ getCurrentStay: async () => ({ ...currentStayFixture, reservationId: id, confirmationCode: 'ABC1234567' }) });
+    const view = await renderRouter({ account: AccountRoute }, { initialUrl: '/account' });
+    await waitFor(() => expect(view.getByText('Reserva · ABC1234567')).toBeTruthy());
+    expect(view.queryByText(id)).toBeNull();
+    expect(view.getByTestId('account-stay-reference').props).toMatchObject({ numberOfLines: 1, ellipsizeMode: 'tail' });
+  });
+  it.each([null, 'REFERENCE-B'])('uses only the selected stay reference after loading (B=%s)', async (confirmationCode) => {
+    let resolveB!: (value: ReservationStayDto) => void;
+    const pendingB = new Promise<ReservationStayDto>(resolve => { resolveB = resolve; });
+    const getCurrentStay = jest.fn(context => context.reservationId === 'reservation-b' ? pendingB : Promise.resolve({ ...currentStayFixture, confirmationCode: 'REFERENCE-A' }));
+    const AccountRoute = createAccountRoute({ getCurrentStay }, false, true);
+    const view = await renderRouter({ account: AccountRoute }, { initialUrl: '/account' });
+    await waitFor(() => expect(view.getByText('Reserva · REFERENCE-A')).toBeTruthy());
+    await fireEvent.press(view.getByText('Cambiar a B'));
+    await waitFor(() => expect(view.getByTestId('account-stay-loading')).toBeTruthy());
+    expect(view.queryByText('Reserva · REFERENCE-A')).toBeNull();
+    resolveB({ ...currentStayFixture, id: 'stay-b', reservationId: 'reservation-b', confirmationCode });
+    await waitFor(() => expect(view.getByText(confirmationCode ? `Reserva · ${confirmationCode}` : 'Reserva · Referencia no disponible')).toBeTruthy());
+    expect(view.queryByText('Reserva · REFERENCE-A')).toBeNull();
+    expect(getCurrentStay).toHaveBeenLastCalledWith({ reservationId: 'reservation-b', reservationStayId: 'stay-b' });
   });
 });

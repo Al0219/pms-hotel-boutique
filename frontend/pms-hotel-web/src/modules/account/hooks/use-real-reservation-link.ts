@@ -30,8 +30,8 @@ export function useRealReservationLink() {
         mapRealLinkVerification(await verifyRealReservationLink(flow!.challenge!.id, otp, request.signal));
         if (request.signal.aborted || current.current !== identity) return;
         await Promise.all([
-          client.invalidateQueries({ queryKey: ['guest', 'reservations', account.id] }),
-          client.invalidateQueries({ queryKey: ['guest', 'reservation-detail', account.id] }),
+          client.invalidateQueries({ queryKey: ['guest', 'reservations', 'real', account.id] }),
+          client.invalidateQueries({ queryKey: ['guest', 'reservation-stay', 'real', account.id] }),
           client.invalidateQueries({ queryKey: ['guest', 'account-summary', account.id] }),
         ]);
         if (!request.signal.aborted && current.current === identity) setState({ identity, linked: true });

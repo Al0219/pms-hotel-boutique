@@ -32,7 +32,7 @@ class GuestRegistrationMigrationIntegrationTests {
    try{
     Map<String,String> before=Map.of();
     if(upgrade){migrate(c,schema,"classpath:db/changelog/db.changelog-before-guest-registration.yaml");before=manifest(c);legacyLink(c);}
-    migrate(c,schema,"classpath:db/changelog/db.changelog-master.yaml");var after=manifest(c);assertEquals(upgrade?before.size()+3:28,after.size());before.forEach((id,sum)->assertEquals(sum,after.get(id)));
+    migrate(c,schema,"classpath:db/changelog/db.changelog-master.yaml");var after=manifest(c);assertEquals(upgrade?before.size()+5:30,after.size());assertTrue(after.containsKey("003-staff-auth-012"));assertTrue(after.containsKey("003-guest-account-evidence-013"));before.forEach((id,sum)->assertEquals(sum,after.get(id)));
     if(upgrade)try(var st=c.createStatement();var rs=st.executeQuery("SELECT link_source,challenge_id,email_verification_id FROM guest_reservation_links")){assertTrue(rs.next());assertEquals("RESERVATION_OTP",rs.getString(1));assertNotNull(rs.getObject(2));assertNull(rs.getObject(3));}
     sql(c,"INSERT INTO guest_accounts(id,email,email_verified_at,status,created_at,updated_at) VALUES('00000000-0000-4000-8000-000000000001','Fixture@Example.test',now(),'ACTIVE',now(),now())");
     assertThrows(java.sql.SQLException.class,()->sql(c,"INSERT INTO guest_accounts(id,email,email_verified_at,status,created_at,updated_at) VALUES('00000000-0000-4000-8000-000000000002',' fixture@example.test ',now(),'ACTIVE',now(),now())"));
@@ -54,7 +54,7 @@ class GuestRegistrationMigrationIntegrationTests {
     var before=manifest(c);
     sql(c,"INSERT INTO guest_pending_registrations(id,email,email_fingerprint,binding_hash,status,created_at,expires_at,otp_expires_at) VALUES('00000000-0000-4000-8000-000000000021','legacy@example.test',repeat('a',64),repeat('b',64),'INVALID',now(),now()+interval '30 minutes',now()+interval '10 minutes')");
     sql(c,"INSERT INTO guest_registration_deliveries(id,registration_id,email_fingerprint,sent_at) VALUES('00000000-0000-4000-8000-000000000022','00000000-0000-4000-8000-000000000021',repeat('a',64),now())");
-    migrate(c,schema,"classpath:db/changelog/db.changelog-master.yaml");var after=manifest(c);assertEquals(before.size()+1,after.size());before.forEach((id,sum)->assertEquals(sum,after.get(id)));
+    migrate(c,schema,"classpath:db/changelog/db.changelog-master.yaml");var after=manifest(c);assertEquals(before.size()+3,after.size());assertTrue(after.containsKey("003-staff-auth-012"));assertTrue(after.containsKey("003-guest-account-evidence-013"));before.forEach((id,sum)->assertEquals(sum,after.get(id)));
     try(var st=c.createStatement();var rs=st.executeQuery("SELECT count(*) FROM guest_registration_request_events")){rs.next();assertEquals(1,rs.getInt(1));}
     migrate(c,schema,"classpath:db/changelog/db.changelog-master.yaml");assertEquals(after,manifest(c));
    }finally{c.setSchema("public");sql(c,"DROP SCHEMA "+schema+" CASCADE");}

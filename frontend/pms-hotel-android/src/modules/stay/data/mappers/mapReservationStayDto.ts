@@ -49,11 +49,18 @@ function mapStayStatus(value: string | null | undefined): StayStatus {
   return requireNonBlankString(value, 'reservationStay.status') as StayStatus;
 }
 
+function mapConfirmationCode(value: string | null | undefined): string | null {
+  if (value == null) return null;
+  if (typeof value !== 'string') throw new DomainMappingError('reservationStay.confirmationCode');
+  return value.trim() || null;
+}
+
 /** Maps a remote fixture DTO to the UI-safe domain read model without defaults. */
 export function mapReservationStayDto(dto: ReservationStayDto | null | undefined): ReservationStay {
   const reservationStay = requireDtoField(dto, 'reservationStay');
 
   return {
+    confirmationCode: mapConfirmationCode(reservationStay.confirmationCode),
     id: requireNonBlankString(reservationStay.id, 'reservationStay.id'),
     reservationId: requireNonBlankString(reservationStay.reservationId, 'reservationStay.reservationId'),
     roomType: mapRoomType(reservationStay.roomType),

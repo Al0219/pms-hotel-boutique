@@ -7,20 +7,23 @@ import { normalizePasswordLoginEmail } from '@/lib/login-input';
 import type { StaffAdminCreateDTO } from '../dtos/staff-admin-create.dto';
 import type { StaffAdminUser } from '../model/staff-admin';
 import { StaffAdminWriteError } from '../model/staff-admin-edit';
+import { sendStaffInvitation } from '../service/staff-invitation.service';
+import { mapStaffCommandResult } from '../mappers/staff-admin-command.mapper';
 import { createStaffAdmin } from '../service/staff-admin-create.service';
 import { readStaffAdminUsers } from '../service/staff-admin.service';
 import { mapStaffAdminDetail, mapStaffAdminPage } from '../mappers/staff-admin.mapper';
 import { staffAdminBaseKey, staffAdminReadContext } from './use-staff-admin';
 
-export function useStaffCreate(session: StaffSession, scope: PropertyScope, organizationId: string, created: (user: StaffAdminUser) => void) {
+export function useStaffCreate(session: StaffSession, scope: PropertyScope, organizationId: string, created: (user: StaffAdminUser, notice: string) => void) {
   const client = useQueryClient(), revalidate = useRevalidateStaffSession();
   const [busy, setBusy] = useState(false), [uncertain, setUncertain] = useState(false), [message, setMessage] = useState('');
+  const [inviting, setInviting] = useState(false);
   const [verifiedExisting, setVerifiedExisting] = useState(false);
   const pending = useRef<StaffAdminCreateDTO | null>(null), sending = useRef(false);
   const context = staffAdminReadContext(session, scope, organizationId);
-  const complete = (user: StaffAdminUser) => {
+  const complete = (user: StaffAdminUser, notice: string) => {
     void client.invalidateQueries({ queryKey: staffAdminBaseKey(session) });
-    setUncertain(false); created(user);
+    setUncertain(false); created(user, notice);
   };
   async function submit(draft: StaffAdminCreateDTO) {
     if (sending.current || uncertain) return;
@@ -40,14 +43,30 @@ export function useStaffCreate(session: StaffSession, scope: PropertyScope, orga
       const user = mapStaffAdminDetail({ organizationId, scope, item: raw }, context, raw.id);
       if (user.username !== username || user.workEmail !== workEmail || user.roleCode !== command.roleCode || user.status !== 'SUSPENDED'
         || JSON.stringify([...user.propertyIds].sort()) !== JSON.stringify([...command.propertyIds].sort())) throw new Error('Invalid creation response');
-      complete(user);
+      // Creation is already committed. An invitation failure must never reach the
+      // creation-error branch or make the form offer another POST /users.
+      setInviting(true);
+      const key = [...staffAdminBaseKey(session), 'write-lock', organizationId, user.id];
+      client.setQueryDefaults(key, { gcTime: Infinity }); client.setQueryData(key, { pending: true });
+      let notice = 'Usuario creado. Invitación enviada a su correo';
+      try {
+        const result = mapStaffCommandResult(await sendStaffInvitation(user.id, scope, user.version), organizationId, user.id, user.version);
+        if (!result.changed) throw new Error('Invitation delivery not confirmed');
+        client.removeQueries({ queryKey: key, exact: true });
+      } catch (error) {
+        const status = error instanceof StaffAdminWriteError ? error.status : 503;
+        if (status !== 503) client.removeQueries({ queryKey: key, exact: true });
+        if ([401, 403].includes(status)) void revalidate();
+        notice = 'Usuario creado, pero no se pudo confirmar el envío de la invitación';
+      }
+      complete(user, notice);
     } catch (error) {
       if (error instanceof StaffAdminWriteError && error.status !== 503) {
         setMessage(error.status === 409 ? 'El usuario o correo ya está registrado. Revisa los datos.'
           : error.status === 401 ? 'Tu sesión ha caducado.' : error.status === 403 ? 'Ya no tienes permiso para crear esta cuenta.' : 'Revisa los datos del formulario.');
         if ([401, 403].includes(error.status)) void revalidate();
       } else { setUncertain(true); setMessage('No se pudo confirmar el resultado. Comprueba el listado antes de intentar otra alta.'); }
-    } finally { sending.current = false; setBusy(false); }
+    } finally { sending.current = false; setBusy(false); setInviting(false); }
   }
   async function verify() {
     if (sending.current || !pending.current) return;
@@ -62,7 +81,7 @@ export function useStaffCreate(session: StaffSession, scope: PropertyScope, orga
             || JSON.stringify([...found.propertyIds].sort()) !== JSON.stringify([...command.propertyIds].sort())) {
             setVerifiedExisting(true); setMessage('Ese usuario existe con datos diferentes. Cierra el formulario y revisa el listado; no se enviará otra alta.'); return;
           }
-          complete(found); return;
+          complete(found, 'Usuario creado, pero no se pudo confirmar el envío de la invitación'); return;
         }
         cursor = page.nextCursor;
       } while (cursor);
@@ -70,5 +89,5 @@ export function useStaffCreate(session: StaffSession, scope: PropertyScope, orga
     } catch { setMessage('No se pudo comprobar el estado. No se enviará otra alta hasta recuperar la conexión y verificarlo.'); }
     finally { sending.current = false; setBusy(false); }
   }
-  return { submit, verify, busy, uncertain, verifiedExisting, message };
+  return { submit, verify, busy, inviting, uncertain, verifiedExisting, message };
 }

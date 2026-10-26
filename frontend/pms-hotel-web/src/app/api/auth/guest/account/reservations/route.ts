@@ -1,3 +1,3 @@
-import { NextRequest } from 'next/server';
-import { guestReservationRead } from './proxy';
-export const GET = (request: NextRequest) => guestReservationRead(request);
+import { type NextRequest } from 'next/server';
+import { guestReservationsRequest } from '@/lib/bff/guest-reservations';
+export function GET(request: NextRequest) { return guestReservationsRequest(request, 'list'); }

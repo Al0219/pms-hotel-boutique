@@ -22,13 +22,13 @@ beforeEach(() => {
     http.post('*/api/auth/staff/refresh', () => new HttpResponse(null, { status: 401 })));
 });
 afterEach(() => { cleanup(); clients.splice(0).forEach(c => c.clear()); vi.unstubAllEnvs(); vi.clearAllMocks(); sessionStorage.clear(); localStorage.clear(); });
-async function setup(returnTo?: string, pendingRequestId?: string, withStaffSession = false) {
+async function setup(returnTo?: string, pendingRequestId?: string, withStaffSession = false, afterStaffActivation = false) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } }); clients.push(client);
   if (withStaffSession) {
     client.setQueryData(staffSessionKey, mapStaffSession(activeStaff));
     mockServer.use(http.get('*/api/auth/staff/session', () => HttpResponse.json(activeStaff)));
   }
-  render(<AppRouterContext.Provider value={navigation}><QueryClientProvider client={client}><GuestSessionProvider><GuestAccessPage returnTo={returnTo} pendingRequestId={pendingRequestId} /></GuestSessionProvider></QueryClientProvider></AppRouterContext.Provider>);
+  render(<AppRouterContext.Provider value={navigation}><QueryClientProvider client={client}><GuestSessionProvider><GuestAccessPage returnTo={returnTo} pendingRequestId={pendingRequestId} afterStaffActivation={afterStaffActivation} /></GuestSessionProvider></QueryClientProvider></AppRouterContext.Provider>);
   await screen.findByRole('heading', { name: 'Accede a tu cuenta' });
   return userEvent.setup();
 }
@@ -38,6 +38,17 @@ function submit() {
   fireEvent.submit(screen.getByLabelText('Correo electrónico').closest('form')!);
 }
 describe('Canonical universal login', () => {
+  it('preserves the Staff activation login without resuming an existing Staff session', async () => {
+    await setup(undefined, 'pending-registration', true, true);
+    expect(screen.getByRole('button', { name: 'Iniciar sesión' })).toBeInTheDocument();
+    expect(navigation.replace).not.toHaveBeenCalled();
+  });
+  it('does not replace the Staff activation login with a previously open Guest account', async () => {
+    mockServer.use(http.get('*/api/auth/guest/session', () => HttpResponse.json({ guestAccountId: 'guest', sessionId: 'guest-session', email: 'guest@example.test', context: 'GUEST' })));
+    await setup(undefined, undefined, false, true);
+    expect(screen.getByRole('heading', { name: 'Accede a tu cuenta' })).toBeInTheDocument();
+    expect(navigation.replace).not.toHaveBeenCalled();
+  });
   it.each(['/mis-reservas', '/cuenta', '/cuenta/reservas', '/cuenta/historial', '/cuenta/reservas/vincular', checkout])('does not resume Staff while accessing the Guest destination %s', async returnTo => {
     await setup(returnTo, undefined, true);
     expect(screen.getByRole('heading', { name: 'Accede a tu cuenta' })).toBeInTheDocument();

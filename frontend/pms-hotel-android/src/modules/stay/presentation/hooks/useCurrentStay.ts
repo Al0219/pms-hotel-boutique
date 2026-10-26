@@ -1,3 +1,5 @@
+import { environment } from "@/config/environment";
+import { HttpStayService } from "@/modules/stay/data/http/HttpStayService";
 import { useQuery } from "@tanstack/react-query";
 
 import { type ActiveReservationContext } from "@/modules/guest-auth/domain/models/ActiveReservationContext";
@@ -8,7 +10,7 @@ import { MockStayService } from "@/modules/stay/data/mocks/MockStayService";
 import { type StayService } from "@/modules/stay/data/services/StayService";
 import { type ReservationStay } from "@/modules/stay/domain/models/ReservationStay";
 
-const defaultStayService: StayService = new MockStayService();
+const defaultStayService: StayService = environment.useMockApi ? new MockStayService() : new HttpStayService();
 
 async function loadCurrentStay(
   service: StayService,

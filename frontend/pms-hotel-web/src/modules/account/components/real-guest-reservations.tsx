@@ -1,10 +1,10 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import { useGuestSession } from '@/modules/auth';
-import { HttpStatusError } from '@/lib/http';
-import { useRealGuestReservation, useRealGuestReservations } from '../hooks/use-real-guest-reservations';
-import { guestDateLabel, guestReservationLabels, guestStayLabels, guestStayNights, type RealGuestReservation } from '../model/real-guest-reservations';
+import { HttpNetworkError, HttpStatusError } from '@/lib/http';
+import { useLinkedGuestReservations, useGuestStay } from '../hooks/use-linked-guest-reservations';
+import type { LinkedGuestReservation } from '../model/linked-guest-reservation';
+import { guestDateLabel, guestReservationLabel, guestStayLabel, guestStayNights } from '../model/real-guest-reservations';
 import styles from './real-guest-reservations.module.css';
 
 function Frame({ title, children }: { title: string; children: React.ReactNode }) {
@@ -15,50 +15,43 @@ function Frame({ title, children }: { title: string; children: React.ReactNode }
   </div></section>;
 }
 function ReadError({ error, retry }: { error: unknown; retry: () => void }) {
-  return <div className={styles.feedback}><p role="alert">{error instanceof HttpStatusError && error.status === 404 ? 'Esta reserva no está disponible en tu cuenta.' : 'No pudimos consultar tus reservas. Tu reserva no se cancela por este inconveniente.'}</p><button className={styles.secondary} onClick={retry}>Reintentar consulta</button><Link href="/mis-reservas">Volver a mis reservas</Link></div>;
+  return <div className={styles.feedback}><p role="alert">{error instanceof HttpStatusError && error.status === 404 ? 'Esta estancia no está disponible en tu cuenta.' : 'No pudimos consultar tus reservas. Tu reserva no se cancela por este inconveniente.'}</p><button className={styles.secondary} onClick={retry}>Reintentar consulta</button><Link href="/mis-reservas">Volver a mis reservas</Link></div>;
 }
-export function RealGuestReservationsPage() {
-  const { account } = useGuestSession();
-  return account ? <History key={account.id} /> : null;
-}
-function History() {
-  const [page, setPage] = useState(0); const query = useRealGuestReservations(page);
+
+/** Shares the existing Web/Android Guest projection and reconciliation contract. */
+export function RealGuestReservations({ reservationId }: { reservationId?: string }) {
+  const query = useLinkedGuestReservations();
+  const [selected, setSelected] = useState<{ reservationId: string; stayId: string } | null>(null);
+  const stay = useGuestStay(selected?.reservationId, selected?.stayId);
+  const rows = reservationId ? query.data?.filter(row => row.id === reservationId) : query.data;
   const unavailable = query.isError || query.fetchStatus === 'paused';
-  return <Frame title="Mis reservas">
+  const stayUnavailable = stay.isError || stay.fetchStatus === 'paused';
+  return <Frame title={reservationId ? 'Detalle de tu reserva' : 'Mis reservas'}>
+    {reservationId && <Link className={styles.back} href="/mis-reservas">← Volver a mis reservas</Link>}
     {query.isPending && !unavailable && <div className={styles.feedback} role="status" aria-live="polite">Consultando tus reservas…</div>}
-    {unavailable && <ReadError error={query.error} retry={() => { void query.refetch(); }} />}
-    {!unavailable && query.data && <>
-      {query.data.totalElements === 0 ? <div className={styles.empty}><span className={styles.emptyIcon} aria-hidden="true">⌂</span><h2>Tu próxima estancia comienza aquí</h2><p>Aún no hay reservas vinculadas a esta cuenta.</p><p>Si acabas de reservar como invitado, tu reserva puede estar confirmada sin aparecer todavía aquí. Vincúlala con la referencia de tu comprobante y el mismo correo con el que reservaste.</p><div className={styles.actions}><Link className={styles.primary} href="/cuenta/reservas/vincular">Vincular mi reserva</Link><Link className={styles.secondary} href="/habitaciones">Explorar habitaciones</Link></div></div>
-        : <><p className={styles.count}>{query.data.totalElements} {query.data.totalElements === 1 ? 'reserva vinculada' : 'reservas vinculadas'}</p>
-          {!query.data.items.length ? <div className={styles.feedback}><p>Esta página no tiene resultados.</p><button className={styles.secondary} onClick={() => setPage(0)}>Volver a la primera página</button></div>
-            : <div className={styles.grid}>{query.data.items.map(reservation => <ReservationCard key={reservation.reservationId} reservation={reservation} />)}</div>}
-          <nav className={styles.pagination} aria-label="Páginas de mis reservas"><button className={styles.secondary} disabled={page === 0 || query.isFetching} onClick={() => setPage(p => p - 1)}>← Anterior</button><span>Página {page + 1} de {Math.ceil(query.data.totalElements / query.data.size)}</span><button className={styles.secondary} disabled={(page + 1) * query.data.size >= query.data.totalElements || query.isFetching} onClick={() => setPage(p => p + 1)}>Siguiente →</button></nav>
-        </>}
+    {unavailable && <ReadError error={query.error ?? new HttpNetworkError()} retry={() => { void query.refetch(); }} />}
+    {!unavailable && rows && <>
+      {!rows.length ? <div className={styles.empty}><span className={styles.emptyIcon} aria-hidden="true">⌂</span><h2>{reservationId ? 'Reserva no disponible' : 'Tu próxima estancia comienza aquí'}</h2><p>{reservationId ? 'No encontramos esta reserva en tu cuenta.' : 'Aún no hay reservas vinculadas a esta cuenta.'}</p><p>{reservationId ? 'Puedes volver al historial para consultar tus reservas disponibles.' : 'Las reservas confirmadas compatibles se recuperan con tu correo verificado. Si acabas de reservar como invitado y aún no aparece, puedes vincularla con la referencia de tu comprobante.'}</p><div className={styles.actions}><Link className={styles.primary} href="/cuenta/reservas/vincular">Vincular mi reserva</Link><Link className={styles.secondary} href="/habitaciones">Explorar habitaciones</Link></div></div>
+        : <><p className={styles.count}>{rows.length} {rows.length === 1 ? 'reserva vinculada' : 'reservas vinculadas'}</p><div className={styles.grid}>{rows.map(reservation => <ReservationCard key={reservation.id} reservation={reservation} onSelect={stayId => setSelected({ reservationId: reservation.id, stayId })} />)}</div></>}
     </>}
+    {selected && !unavailable && rows?.some(row => row.id === selected.reservationId && row.stays.some(item => item.id === selected.stayId)) && <section className={styles.detail} aria-label="Información de la estancia">
+      {stay.isPending && !stayUnavailable && <div className={styles.feedback} role="status">Consultando tu estancia…</div>}
+      {stayUnavailable && <ReadError error={stay.error ?? new HttpNetworkError()} retry={() => { void stay.refetch(); }} />}
+      {!stayUnavailable && stay.data && <article className={styles.card}><p className={styles.overline}>DETALLE DE LA ESTANCIA</p><h2 className={styles.hotel}>{stay.data.roomType.name}</h2><p>{stay.data.room ? `Habitación ${stay.data.room.code}` : 'Habitación por asignar'}</p><p className={styles.dates}><time dateTime={stay.data.arrival}>{guestDateLabel(stay.data.arrival)}</time> → <time dateTime={stay.data.departure}>{guestDateLabel(stay.data.departure)}</time></p><p className={styles.muted}>{guestStayNights(stay.data)} noches · {guestStayLabel(stay.data.status)}</p></article>}
+    </section>}
     <aside className={styles.notice}>Reservar como invitado no crea una cuenta. Solo verás aquí reservas vinculadas mediante una verificación de correo.</aside>
   </Frame>;
 }
-function ReservationCard({ reservation, detail = false }: { reservation: RealGuestReservation; detail?: boolean }) {
+function ReservationCard({ reservation, onSelect }: { reservation: LinkedGuestReservation; onSelect: (stayId: string) => void }) {
   return <article className={styles.card}>
-    <div className={styles.cardTop}><div><span className={styles.overline}>CÓDIGO DE RESERVA</span><h2>{reservation.confirmationCode}</h2></div><span className={styles.badge} data-state={reservation.status}>{guestReservationLabels[reservation.status]}</span></div>
+    <div className={styles.cardTop}><div><span className={styles.overline}>CÓDIGO DE RESERVA</span><h2><Link className={styles.reference} href={`/cuenta/reservas/${encodeURIComponent(reservation.id)}`}>{reservation.reference}</Link></h2></div><span className={styles.badge} data-state={reservation.status}>{guestReservationLabel(reservation.status)}</span></div>
     <h3 className={styles.hotel}>{reservation.propertyName}</h3>
-    {reservation.bookingGuestName && <p className={styles.muted}>Responsable: {reservation.bookingGuestName}</p>}
-    <p className={styles.muted}>{reservation.stays.length} {reservation.stays.length === 1 ? 'estancia' : 'estancias'} · Hora local del hotel: {reservation.propertyTimeZone}</p>
-    <ul className={styles.stays}>{reservation.stays.map((stay, i) => <li key={stay.reservationStayId}><div><span className={styles.overline}>ESTANCIA {i + 1}</span><h3>{stay.roomTypeName}</h3></div>
-      {reservation.status !== 'CANCELLED' && <span className={styles.stayStatus}>{guestStayLabels[stay.status]}</span>}
+    <p className={styles.muted}>{reservation.stays.length} {reservation.stays.length === 1 ? 'estancia' : 'estancias'}</p>
+    <ul className={styles.stays}>{reservation.stays.map((stay, i) => <li key={stay.id}><div><span className={styles.overline}>ESTANCIA {i + 1}</span><h3>{stay.roomCode === null ? 'Habitación por asignar' : `Habitación ${stay.roomCode}`}</h3></div>
+      {reservation.status !== 'CANCELLED' && <span className={styles.stayStatus}>{guestStayLabel(stay.status)}</span>}
       <p className={styles.dates}><time dateTime={stay.arrival}>{guestDateLabel(stay.arrival)}</time><span aria-hidden="true">→</span><time dateTime={stay.departure}>{guestDateLabel(stay.departure)}</time></p>
       <span className={styles.muted}>{guestStayNights(stay)} {guestStayNights(stay) === 1 ? 'noche' : 'noches'}</span>
+      <button className={styles.secondary} type="button" onClick={() => onSelect(stay.id)}>Ver estancia {i + 1}</button>
     </li>)}</ul>
-    {!reservation.stays.length && <p className={styles.muted}>Esta reserva todavía no tiene estancias registradas. Si esperabas una confirmación, consulta al hotel.</p>}
-    {!detail && <Link className={styles.details} href={`/cuenta/reservas/${reservation.reservationId}`}>Ver detalle de {reservation.confirmationCode} <span aria-hidden="true">→</span></Link>}
   </article>;
-}
-export function RealGuestReservationDetail({ reservationId }: { reservationId: string }) {
-  const query = useRealGuestReservation(reservationId);
-  const unavailable = query.isError || query.fetchStatus === 'paused';
-  return <Frame title="Detalle de tu reserva"><Link className={styles.back} href="/mis-reservas">← Volver a mis reservas</Link>
-    {query.isPending && !unavailable && <div className={styles.feedback} role="status">Consultando tu reserva…</div>}
-    {unavailable && <ReadError error={query.error} retry={() => { void query.refetch(); }} />}
-    {!unavailable && query.data && <div className={styles.detail}><ReservationCard reservation={query.data.reservation} detail /><aside className={styles.guide}><p className={styles.overline}>VIAJA CON TRANQUILIDAD</p><h2>Tu estancia, a mano</h2><p>Conserva tu código de reserva para tu llegada. Las fechas que ves corresponden al calendario local del hotel.</p><p>Para cambios o solicitudes especiales, comunícate directamente con el hotel.</p><Link className={styles.secondary} href="/habitaciones">Planear otra estancia</Link></aside></div>}
-  </Frame>;
 }

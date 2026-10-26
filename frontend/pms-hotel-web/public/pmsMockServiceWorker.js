@@ -5,6 +5,8 @@ self.addEventListener('fetch', (event) => {
   if (
     url.origin === self.location.origin && (
       (event.request.method === 'GET' && /^\/api\/staff\/admin\/(?:roles|users(?:\/[^/]+)?)\/?$/.test(url.pathname)) ||
+      (['GET', 'POST'].includes(event.request.method) && /^\/api\/staff\/admin\/users\/[^/]+\/invitation\/?$/.test(url.pathname)) ||
+      (event.request.method === 'POST' && /^\/api\/auth\/staff\/invitations\/consume\/?$/.test(url.pathname)) ||
       (event.request.method === 'POST' && /^\/api\/staff\/admin\/users\/?$/.test(url.pathname)) ||
       (event.request.method === 'PATCH' && /^\/api\/staff\/admin\/users\/[^/]+(?:\/status)?\/?$/.test(url.pathname)) ||
       (event.request.method === 'PUT' && /^\/api\/staff\/admin\/users\/[^/]+\/membership\/?$/.test(url.pathname)) ||

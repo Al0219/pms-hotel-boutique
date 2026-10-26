@@ -12,9 +12,8 @@ const clients: QueryClient[] = [];
 const guest = { guestAccountId: '11111111-1111-4111-8111-111111111111', sessionId: '22222222-2222-4222-8222-222222222222', email: 'guest@example.test', context: 'GUEST' };
 beforeEach(() => {
   vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'false'); router.replace.mockClear();
-  mockServer.use(http.get('*/api/auth/guest/account/reservations', () => HttpResponse.json({
-    guestAccountId: guest.guestAccountId, page: 0, size: 20, totalElements: 0, items: [],
-  })));
+  mockServer.use(http.post('*/api/auth/guest/account/reservations/reconcile', () => new HttpResponse(null, { status: 204 })),
+    http.get('*/api/auth/guest/account/reservations', () => HttpResponse.json([])));
 });
 afterEach(() => { cleanup(); clients.splice(0).forEach(client => client.clear()); vi.unstubAllEnvs(); });
 function mount() {

@@ -1,13 +1,14 @@
 "use client";
+import { getPublicEnvironment } from '@/lib/env';
+import { RealGuestReservations } from './real-guest-reservations';
 import Link from "next/link";
 import { AccountFeedback, AccountSection } from "./account-section";
 import { useGuestReservations } from "../hooks/use-guest-reservations";
-import { getPublicEnvironment } from '@/lib/env';
-import { RealGuestReservationDetail } from './real-guest-reservations';
 
 export function ReservationHistoryDetail({ reservationId }: { reservationId: string }) {
-  return getPublicEnvironment().useMockApi ? <MockReservationHistoryDetail reservationId={reservationId} /> : <RealGuestReservationDetail reservationId={reservationId} />;
+  return getPublicEnvironment().useMockApi ? <MockReservationHistoryDetail reservationId={reservationId} /> : <RealGuestReservations reservationId={reservationId} />;
 }
+
 function MockReservationHistoryDetail({ reservationId }: { reservationId: string }) {
   const query = useGuestReservations();
   const reservation = query.data?.find(item => item.id === reservationId);

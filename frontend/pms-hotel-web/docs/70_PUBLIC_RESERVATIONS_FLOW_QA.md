@@ -1,161 +1,141 @@
-# Confirmación pública → Mis reservas — EN_QA
+# Confirmación pública → Mis reservas — integración EN_QA
 
-José solicita corregir el recorrido real Web el 2026-10-25. Fuente: main0d1f4b7,
-J6, contrato C3 y AUTH-GUEST-REG-HISTORY-01. Implementación inicial en el worktree
-fix/public-my-reservations-flow. El26/10 se traslada al proyecto principal en
-fix/public-my-reservations-3001 para actualizar el entorno habitual; los cambios
-locales de Android se conservan intactos.
-No se actualiza XLSX ni se declara cerrado el historial IMP-WEB-0205.
+## Alcance y contrato vigente
 
-## Diagnóstico confirmado
+José autoriza el26/10 integrar origin/main a98250f en
+fix/public-my-reservations-3001 y publicar tras resolver/validar. Main incorpora
+PR166 (activación Staff) y167 (Backend Guest/Android). Las dos ramas agregaban
+GET /api/v1/guest-auth/account/reservations con respuestas distintas.
 
-- GuestReservationsPage redirigía con account=null incluso durante checking/error.
-- GuestAccessPage restauraba Staff aunque returnTo pidiera Mis reservas o checkout.
-- El login contextual no pedía GUEST explícitamente y aceptaba una respuesta Staff.
-- El contexto de navegación para Google descartaba /mis-reservas; un reintento
-  sin returnTo también borraba el destino guardado.
-- El historial conservaba /account/history?accountId provisional y la vista real
-  estaba deshabilitada. Account Summary real no constituye un historial completo.
-  Un vacío de la vista antigua no acredita que una reserva se haya borrado.
+Se conserva el contrato compartido56/57 de main: lista plana de estancias
+vinculadas, GET /{reservationId}/stays/{stayId} y POST /reconcile. Web reutiliza
+su BFF, service, mapper y hooks; agrupa N estancias por reserva, consulta el
+detalle de cada estancia y conserva refresh Guest/refetch al recuperar foco.
+No se agrega un segundo mapping ni se altera la API usada por Android.
+La paginación y el detalle por contenedor de la versión inicial de esta rama
+se retiran junto con su implementación duplicada; contrato original marcado
+sustituido en backend/docs/GUEST_RESERVATIONS_READ_PROPOSAL.md.
 
-## Corrección de acceso implementada
+La reconciliación solo usa sesión Guest y evidencia de correo verificado
+persistida; no toma identidad del navegador, no transfiere vínculos ni recrea
+reservas, estancias, pagos o recibos. Se conserva su separación transaccional y
+sus pruebas de main. La ruta GET no realiza recuperación ni escrituras.
+Migraciones nuevas de main se conservan sin editar las aplicadas.
 
-- Esperar resultado Guest definitivo; errores recuperables permiten reintentar
-  sesión y no se interpretan como sesión cerrada ni como historial vacío.
-- Un destino Guest explícito o guardado no restaura Staff. Login pide context=GUEST
-  y el mapper rechaza resultados/selecciones de otra esfera.
-- El acceso universal sin intención Guest conserva restauración y login Staff.
-  No se cierran sesiones Staff ni se modifican permisos o Backend Auth.
-- Cerrar la sesión Guest vuelve al acceso contextual de cuenta para evitar que
-  una cookie Staff coexistente cambie el recorrido del cliente al panel privado.
-- Layout/Gate de cuenta conservan destinos Guest fijos validados. Las rutas
-  externas, privadas Staff y parámetros de identidad no se aceptan como retorno.
-- Google conserva únicamente el path Guest permitido (incluido detalle UUID) o
-  los parámetros aprobados de búsqueda; nunca correo, referencia de confirmación,
-  OTP, contraseña ni tokens en storage.
+## Presentación y acceso conservados
 
-## Historial y vinculación reales implementados
+- Fondo crema, encabezados serif, tarjetas blancas/oliva y layout adaptable.
+  Referencias y todas las estancias, fechas/noches, estado de reserva separado
+  del estado de estancia y habitación asignada o por asignar. Tipo persistido
+  en el detalle. No inventar precios, titular, ocupantes, políticas o zona horaria
+  ausentes de la proyección vigente.
+- Carga, error, vacío real y detalle no disponible se distinguen. Un fallo no
+  se convierte en ausencia de reservas ni en cancelación. Reintento explícito.
+- /mis-reservas espera restauración Guest definitiva; error de sesión permite
+  reintentar. returnTo Guest explícito o guardado evita restaurar Staff.
+- Login contextual solicita GUEST y rechaza respuestas de otra esfera. Acceso
+  universal Staff sigue operativo. Retorno Google usa rutas Guest validadas.
+- Se conserva afterStaffActivation de main: esa pantalla no retoma sesiones
+  Guest/Staff anteriores ni un registro pendiente. Regresiones específicas.
+- Logout Guest conserva retorno público; la sesión Staff sigue independiente.
+  Layout/Gate mantienen el destino aprobado y rechazan rutas externas/Staff.
 
-José aprueba el contrato en backend/docs/GUEST_RESERVATIONS_READ_PROPOSAL.md el
-2026-10-25. Listado paginado y detalle dependen de links persistidos y GuestPrincipal
-activo, sin identidad seleccionada por el navegador. Proyección mínima: referencia,
-hotel/zona horaria, responsable nullable, estado y todas las estancias con sus
-fechas/tipo/estado. Sin precios, ocupantes, políticas ni notas internas inventadas.
-El detalle se consulta por separado y no se busca solo en la primera página.
+## Vínculo manual C3
 
-Transporte BFF Guest HttpOnly: /api/auth/guest/account/reservations y /{id}; OTP
-/api/auth/guest/reservation-links/challenges y /verify. POST valida Origin/JSON,
-claves cerradas y cuerpo acotado; no toma cookies Staff ni bearer del navegador.
-202 solo aporta un desafío opaco,204 confirma vínculo sin devolver reservationId;
-fallos inciertos nunca se convierten en éxito. Reenvío con espera local mínima60s
-según C3, sin interpretar esa espera como expiración del OTP. Query/cache por
-cuenta; cambio de sesión cancela e ignora verificaciones tardías. Sin persistir OTP.
+Los BFF /api/auth/guest/reservation-links/challenges y /verify continúan el
+contrato existente C3: cookie Guest HttpOnly, Origin/JSON/cuerpo acotado y claves
+cerradas.202 devuelve solo requestId opaco;204 vacío confirma el vínculo.
+No se inventan TTL, reservationId de respuesta, OTP o éxito tras fallo incierto.
+El reenvío respeta60s y no equivale a expiración del desafío. Cambio de sesión
+cancela e ignora resultados tardíos. Sin persistir OTP ni datos sensibles.
 
-Historial/detalle usan crema/serif/oliva y tarjetas responsivas. Carga, error y
-vacío real se distinguen; el vacío explica que una reserva confirmada como invitado
-puede requerir vinculación. Dashboard real ya ofrece historial y vínculo.
+Tras204 se invalidan únicamente las claves propias de main:
+['guest','reservations','real',accountId],
+['guest','reservation-stay','real',accountId] y account-summary.
+Las claves mock y Staff permanecen separadas. Mock explícito sigue funcionando.
 
-Se conserva la regla vigente: auto-link de historial compatible después de
-verificar el registro/Google nuevo; OTP manual para vínculos pendientes. No se
-vincula por correo no verificado ni se cambia silenciosamente el alta anónima J6.
+La vinculación automática compatible aprobada en main depende del correo
+verificado en Backend. La vinculación manual OTP sigue requiriendo clave HMAC y
+entrega Resend/SMTP configuradas; no se generaron secretos ni se simuló correo
+en los servicios habituales como parte de esta integración.
 
-## Evidencia
+## Validación de integración
 
-Regresiones antes del cambio:5 fallos de acceso Guest/Staff,2 de restauración,
-1 de retorno guardado y1 de reintento Google. Backend verify completo1049 PASS
-con Java21/PostgreSQL17; incluye alta pública anónima de dos estancias, ausencia
-de acceso por email/perfil solamente, OTP incorrecto rechazado,204 real y consulta
-posterior propia/listado/detalle, más404 para otra cuenta. OpenAPI y aislamiento
-Guest/Staff validados. Web Node24: lint y typecheck PASS; build de producción
-Next16.3.4 PASS con mocks=false. Typecheck ejecutado por separado; el build del
-proyecto conserva su configuración previa de omitir validación TypeScript.
+- ESLint PASS y TypeScript PASS; correcciones de tipos de los tests adaptados.
+- Backend ./mvnw -B verify completo con Java21/PostgreSQL17 aislados: BUILD
+  SUCCESS,1077 pruebas, cero fallos/errores/omitidas. Incluye23 OpenAPI,14
+  invitaciones Staff,9 MVP Android,6 recuperación y7 regresiones C3/historial.
+- Web focal Windows,15 archivos:206/217 PASS. Nueve timeouts5s y dos esperas de
+  datos que aún mostraban carga; no se atribuyen todos a un fallo funcional ni
+  se declara gate aprobado. Las seis pruebas OTP nuevas pasan. Suite completa
+  Linux/Node24 programada tras Maven, un worker para evitar competencia local.
+  Sin excluir tests, elevar timeouts ni cambiar workflow/deps.
+- Lint/typecheck/build Linux PASS. Primera general Linux:2472/2535,337 archivos;
+  el contenedor heredó NEXT_PUBLIC_API_BASE_URL=/api, variable de despliegue que
+  causa Invalid URL en varios tests. No modificar HTTP/services para ocultarlo.
+  Repetición del primer archivo sin variables de despliegue:3/3 PASS sin cambiar
+  código. Evidencia original conservada; no atribuir PASS remoto.
+- General limpia completa, Node24 y dos workers:2521/2535,337 archivos. Trece
+  timeouts5s y una aserción de carrito en el caso de replay cancelado. Ese test
+  usa una respuesta simulada de100ms; la repetición posterior pasa sin modificar
+  implementación ni aserciones. No atribuir todos los fallos iniciales a timeouts.
+- Repetición de los9 archivos fallidos, un worker y mismo entorno limpio:
+  243/246. Checkout25/25, vínculo4/4, inline Staff69/69, estado Staff48/48,
+  habitaciones12/12 y limpieza2/2 PASS. Persisten timeouts en cursor Staff,
+  rechazo de red en revalidación de búsqueda y filtros/paginación de reservas.
+  Estos archivos de tests y sus componentes no tienen modificaciones propias
+  frente a main; no afirmar que se reprodujeron en una ejecución de main actual.
+  No se amplían límites, eliminan aserciones ni modifican módulos ajenos.
+  Gate general Web no aprobado; EN_QA y checks remotos pendientes.
 
-Focal de13 archivos:183/185 PASS; dos timeouts5s en recorridos mock anteriores de
-reservation-link.test.tsx y reservation-link-page.test.tsx. Las12 pruebas nuevas
-de interfaz real pasan, junto con las rutas BFF, mappers, acceso/contexto y sesión
-Guest. El resultado focal no equivale a una suite general aprobada.
-Repetición de los dos archivos después del build:12/12 PASS sin cambios; repetición
-conjunta del26/10:183/185 otra vez, con los mismos timeouts. Se conservan los tests
-originales y sus aserciones; el límite permanece en5s y ninguna prueba se deshabilita.
+Se mantienen las pruebas entrantes de main y se adapta la cobertura anterior
+al contrato compartido: N estancias y datos privados, aislamiento por vínculo,
+identidad ajena, sesión revocada/Staff, hotel inactivo, error/reintento y recorrido
+HTTP anónimo→dos estancias→OTP incorrecto→OTP válido→lectura propia/404 ajeno.
+Las aserciones de páginas y del DTO retirado no describen el contrato vigente;
+se sustituyen por verificaciones de lista y detalle de estancia reales.
 
-General local: interrumpida tras130/334 archivos con40 fallos reportados,
-39 con duración de al menos5s y una aserción de Private09. El caso Private09
-de cambiar propiedad y recargar pasó en repetición aislada sin modificar ese
-módulo ni sus tests.
-Tres casos Staff (cursor de segunda página y dos de edición inline) también
-fallan por timeout en copia exacta de main0d1f4b7, sin esta corrección. Esos módulos,
-shared/lib, workflow, dependencias y límites de pruebas permanecen intactos.
-Evidencia: web-general-interrupted.json/log, main-staff-timeouts.log y
-guest-final-verification.log fuera de Git. No afirmar CI general ni remoto PASS.
-Otras evidencias: legacy-link-after-build.log, guest-final-verification-rerun.log
-y private09-current.log. La validación focal sigue siendo parcial bajo carga.
+Evidencia de integración fuera de Git: pms-guest-main-integration-20261026;
+backend-verify.log/reports, web-general-clean.json, web-retry.json y logs de
+lint/typecheck/build. La corrida con variables de despliegue permanece separada.
+No modificar el XLSX ni declarar cerrado IMP-WEB-0205 global.
 
-Navegador Chrome con backend real/PostgreSQL aislados:16/16 comprobaciones PASS.
-Alta pública anónima con dos tipos/estancias, cookie Staff vigente, acceso Guest,
-vacío real antes del vínculo,202 opaco, OTP incorrecto rechazado,204 real, historial
-y detalle con ambas estancias, móvil390px sin overflow, cierre Guest sin saltar
-a Staff y conservación de su sesión. Sin excepciones JS ni respuestas5xx.
-Revisión visual de capturas1440px y390px PASS.
+## Entorno habitual y evidencia previa
 
-La entrega de correo se sustituyó exclusivamente por un fixture controlado en
-pms_guest_browser (instancia PostgreSQL QA): se preparó el desafío real para
-verificar un código conocido sin contactar proveedores. La verificación HTTP,
-sesión, vínculo persistido, reserva y lecturas sí son reales. Esto no acredita
-entrega SMTP/Resend ni OAuth Google en vivo; el retorno Google tiene tests locales.
-
-Sin commit/push, reservas de QA en la BD habitual, cambios a secretos, migraciones
-o dependencias. Evidencia temporal fuera de Git: pms-public-reservations-qa y
-pms-guest-history-qa. QA manual del owner pendiente; no declarar COMPLETADA.
-
-## Entorno habitual actualizado el26/10
-
-La versión que se sirve ahora está en http://localhost:3001. Se reconstruyeron
-Backend y Web desde el proyecto principal con compose.yaml y se recrearon solo
-esos dos servicios con --no-deps; ambos healthy. No se modificaron Dockerfiles,
-Compose ni puertos. Se conservaron imágenes anteriores para recuperación.
-PostgreSQL conserva el mismo contenedor y volumen persistente; antes/después:
+El26/10, antes de esta integración, se desplegó300a4f7 en el puerto3001:
+Backend/Web healthy,18/18 comprobaciones del navegador PASS con Staff coexistente,
+Guest real, historial, recarga, móvil390px y logout; cero escrituras de reservas
+para esa verificación. PostgreSQL conservó contenedor/volumen/conteos:
 2 propiedades,24 habitaciones,8 reservas,8 estancias y28 migraciones.
+Esta evidencia corresponde a esa versión previa, no a un despliegue del merge.
 
-Navegador Chrome real en3001:18/18 comprobaciones PASS. Con cookie Staff activa,
-/mis-reservas solicita acceso Guest, el formulario envía context=GUEST y devuelve
-al historial público actualizado. Recargar y cerrar sesión Guest no abre Staff;
-la sesión Staff sigue independiente. Lecturas propias200, detalle ajeno404,
-escritorio y móvil390px sin overflow, cero excepciones JS y cero5xx.
-No se crearon reservas/pagos, fixtures OTP ni cuentas en esta verificación.
-La cuenta Guest demo tiene cero vínculos en esta BD; se muestra el vacío real
-con la explicación y el acceso a vinculación. No atribuirle los datos del QA aislado.
-Capturas de escritorio/móvil revisadas; resultado en live-browser-result.json y
-deployment-result.json dentro de pms-public-reservations-3001, fuera de Git.
+La integración se valida sin recrear esos servicios ni tocar su base de datos.
+Las imágenes de3001 no se actualizan automáticamente por git commit/push.
+El preview anterior3002 está detenido; no es el entorno de aceptación del owner.
 
-Limitación de configuración confirmada: clave HMAC OTP y credenciales de
-Resend/SMTP vacías en el contenedor habitual. Se solicita autorización para una
-clave local y la ruta de configuración del proveedor, sin pedir secretos en chat.
-No se escribió .env ni se sustituyó la entrega real por un código de prueba.
-La corrección de navegación está activa; la vinculación por correo queda
-pendiente de esa configuración. No conectar cuentas solo por coincidencia de email.
+Evidencia histórica anterior al merge: Backend1049 PASS, build/lint/typecheck
+PASS y QA aislado16/16 (la entrega de correo se sustituyó solo en esa BD QA,
+no en producción). Focal Web183/185 con dos timeouts5s mock; ambos archivos12/12
+al repetir separados. General interrumpida tras130/334 archivos con40 fallos,
+mayormente timeouts; tres Staff también reproducidos en main0d1f4b7. Esos
+resultados no acreditan la integración actual ni CI general verde.
 
-## Recorrido de aceptación manual
+## QA manual de aceptación tras desplegar la integración
 
-1. Abrir http://localhost:3001 y recargar con Ctrl+F5 para renovar la versión
-   abierta antes del despliegue. Crear reserva pública y conservar su referencia.
-2. Pulsar Ver mis reservas. Incluso con Staff abierto en ese navegador debe
-   continuar al acceso Guest y regresar al historial después del login.
-3. Una vez configurados clave OTP y proveedor de correo, si aún no está vinculada,
-   usar Vincular mi reserva con su referencia y la
-   cuenta del mismo correo. Un código incorrecto no debe mostrar éxito.
-4. Verificar el código correcto, abrir Mis reservas y comprobar referencia,
-   fechas, tipos/estados y todas las estancias en listado y detalle.
-5. Recargar, comprobar móvil y cerrar sesión Guest; no debe abrir Staff.
-6. No interpretar un error de consulta como «no tienes reservas». Una reserva
-   ajena/inexistente no debe revelar datos ni mostrar éxito de vinculación.
+1. En http://localhost:3001 recargar con Ctrl+F5, crear una reserva como invitado
+   y conservar su referencia; el pago sigue siendo simulado según el proyecto.
+2. Con Staff abierto en el mismo navegador, pulsar Ver mis reservas: debe abrir
+   acceso Guest y regresar al historial público actualizado, sin ir al dashboard.
+3. Acceder con la cuenta cuyo correo está verificado. La reconciliación debe
+   recuperar reservas confirmadas compatibles sin repetir creación ni pago.
+4. Comprobar referencia, todas las estancias, fechas, estados y detalle del tipo/
+   habitación. Recargar y volver al foco deben conservar/actualizar la información.
+5. Si hace falta vínculo manual y el proveedor está configurado, solicitar C3,
+   rechazar OTP incorrecto y verificar uno correcto sin duplicar reservas/vínculos.
+6. Una consulta fallida debe permitir reintentar; una estancia ajena/inexistente
+   no debe revelar datos. Comprobar móvil y cerrar Guest sin saltar a Staff.
+7. Verificar acceso universal Staff y login tras activar una cuenta Staff.
 
-## QA aislado anterior — referencia histórica
-
-El25/10 se validó en3002 con PostgreSQL aislado y sustitución exclusiva de entrega
-de correo descrita arriba. El26/10 se detuvieron Web/API de ese preview para
-evitar confusión y liberar recursos. Ese entorno no es el que debe probar el owner.
-Sus referencias/vínculos pertenecen exclusivamente a su BD QA; no se copiaron a
-la habitual. El puerto de prueba actual es3001, con servicios/datos habituales.
-
-Estado EN_QA hasta aceptación manual y validación del gate aplicable. Sin commit,
-push, merge ni cambios a los archivos Android ajenos del árbol principal.
+Estado EN_QA hasta QA manual aplicable del owner y gate correspondiente.
+Android local permanece fuera de los cambios propios; se conservan los ajustes
+EAS/paquete y se incorpora expo-secure-store proveniente de main.

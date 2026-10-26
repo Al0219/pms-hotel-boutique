@@ -1,12 +1,12 @@
 import { type MutateOptions, useMutation } from '@tanstack/react-query';
 import { useCallback, useRef } from 'react';
 
-import { MockGuestAuthService } from '@/modules/guest-auth/data/mocks/MockGuestAuthService';
+import { guestAuthService } from '@/modules/guest-auth/data/services/guestServices';
 import { type GuestAuthService } from '@/modules/guest-auth/data/services/GuestAuthService';
 import { type GuestAuthSession } from '@/modules/guest-auth/domain/models/GuestAuthSession';
 import { type GuestLoginRequest } from '@/modules/guest-auth/domain/models/GuestLoginRequest';
 
-const defaultGuestAuthService: GuestAuthService = new MockGuestAuthService();
+const defaultGuestAuthService: GuestAuthService = guestAuthService;
 
 /** Keeps credentials out of TanStack mutation variables and clears them as soon as the call settles. */
 export function useGuestLogin(service: GuestAuthService = defaultGuestAuthService) {

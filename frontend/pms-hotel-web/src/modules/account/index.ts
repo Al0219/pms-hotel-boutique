@@ -12,4 +12,4 @@ export * from "./service/account.service";
 export { AccountSection, AccountFeedback } from './components/account-section';
 export { useAccountSummary } from './hooks/use-account-summary';
 export { ReservationHistoryDetail } from "./components/reservation-history-detail";
-export { mapRealGuestReservationPage, mapRealGuestReservationDetail, mapRealLinkChallenge, isGuestReservationUuid } from './mappers/real-guest-reservations.mapper';
+export { mapRealLinkChallenge, isGuestReservationUuid } from './mappers/real-guest-reservations.mapper';

@@ -93,7 +93,7 @@
 .swipePresentationRow:hover .swipeCell, .swipePresentationRow:focus-within .swipeCell { background: var(--color-surface-subtle); }
 .swipePresentationRow[data-staff-dragging="true"] .swipeCell { transition: none; }
 .swipeBackdrop { position: absolute; z-index: 0; inset: 0 0 0 auto; width: min(240px, 55%); visibility: hidden; transition: visibility 0s linear 160ms; }
-.swipePresentationRow[data-staff-swipe-visible="true"] .swipeBackdrop { visibility: visible; transition-delay: 0s; }
+.swipePresentationRow[data-staff-swipe-side="status"] .swipeBackdrop:not(.swipeRecoveryBackdrop), .swipePresentationRow[data-staff-swipe-side="recovery"] .swipeRecoveryBackdrop { visibility: visible; transition-delay: 0s; }
 .statusChoices { display: flex; width: 100%; height: 100%; }
 .statusChoices > button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-2); flex: 1 1 0; min-width: 0; border: 0; border-radius: 0; padding: var(--space-2); font: inherit; font-weight: var(--font-weight-semibold); cursor: pointer; overflow-wrap: anywhere; }
 .statusChoices > button > svg { flex: none; pointer-events: none; }
@@ -116,3 +116,13 @@
 .createForm input:not([type="checkbox"]), .createForm select { width: 100%; min-width: 0; font: inherit; padding: .5rem; border: 1px solid var(--color-border-default); border-radius: .375rem; background: var(--color-surface-card); color: inherit; }
 .createForm fieldset { min-width: 0; border: 0; padding: 0; }
 .createForm p { margin: 0; }
+
+.onboardingTrigger { border: 0; background: transparent; color: var(--color-text-brand); font: inherit; font-size: var(--font-size-caption); text-align: start; padding: var(--space-1); border-radius: var(--radius-sm); cursor: pointer; }
+.onboardingTrigger:focus-visible { outline: 2px solid var(--color-text-brand); outline-offset: 2px; }
+.onboardingTrigger:disabled { cursor: default; opacity: .6; }
+.invitationPage { max-width: 32rem; margin: var(--space-6) auto; padding: var(--space-3); color: var(--color-text-primary); }
+
+.swipeRecoveryBackdrop { inset: 0 auto 0 0; }
+.recoveryAction { background: var(--color-system-success-soft); color: var(--color-system-success); }
+.recoveryState { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: var(--space-2); box-sizing: border-box; text-align: center; background: var(--color-surface-subtle); font-size: var(--font-size-caption); }
+@media (max-width: 700px) { .statusChoices > .recoveryAction { white-space: normal; } }

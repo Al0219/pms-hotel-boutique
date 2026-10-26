@@ -9,3 +9,5 @@ export { GuestSessionProvider, useGuestSession } from "./components/guest-sessio
 export { GuestAccountGate } from "./components/guest-account-gate";
 export { StaffSessionProvider, StaffLogout, useStaffSession, useRevalidateStaffSession } from "./components/staff-session-provider";
 export type { StaffIdentity, StaffSession, StaffMembership } from "./model/staff-session";
+
+export { refreshGuestSession } from './service/guest-session.service';

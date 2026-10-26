@@ -15,8 +15,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -65,68 +65,50 @@ class GuestReservationHistoryIntegrationTests {
         jdbc.update("INSERT INTO room_types(id,property_id,code,name) VALUES (?,?,'KING','Deluxe King')",type,property);
         jdbc.update("INSERT INTO guest_profiles(id,guest_account_id,first_name,last_name,email,status,created_at,updated_at) VALUES (?,?,'Booking','Guest',?,'ACTIVE',now(),now())",profile,guest.guestAccountId(),guest.email());
     }
-    @Test void emptyIsRealAndCannotBeChangedByClientIdentity() throws Exception {
+    @Test void emptyIsRealAndClientIdentityNeverChangesTheAccount() throws Exception {
         mvc.perform(get(PATH).header("Authorization",bearer(guest))).andExpect(status().isOk())
-                .andExpect(header().string("Cache-Control","no-store, private"))
-                .andExpect(jsonPath("$.guestAccountId").value(guest.guestAccountId().toString()))
-                .andExpect(jsonPath("$.totalElements").value(0)).andExpect(jsonPath("$.items").isEmpty());
-        mvc.perform(get(PATH).param("accountId",UUID.randomUUID().toString()).header("Authorization",bearer(guest))).andExpect(status().isBadRequest());
+                .andExpect(header().string("Cache-Control","no-store, private")).andExpect(content().json("[]"));
+        mvc.perform(get(PATH).param("accountId",account().guestAccountId().toString()).header("Authorization",bearer(guest)))
+                .andExpect(status().isOk()).andExpect(content().json("[]"));
     }
-    @Test void persistedLinksAuthorizeMultipleStaysWithoutInventingPrivateOrFinancialFields() throws Exception {
-        UUID own = reservation("CONFIRMED",0); stay(own,"RESERVED"); stay(own,"IN_HOUSE"); link(guest,own);
-        UUID unlinked = reservation("CONFIRMED",1); stay(unlinked,"RESERVED");
-        UUID theirs = reservation("CONFIRMED",2); link(account(),theirs);
-        int before = jdbc.queryForObject("SELECT count(*) FROM guest_reservation_links",Integer.class);
+    @Test void persistedLinksAuthorizeAllStaysWithoutPrivateOrFinancialFields() throws Exception {
+        UUID own=reservation("CONFIRMED",0), first=stay(own,"RESERVED"); stay(own,"IN_HOUSE"); link(guest,own);
+        UUID unlinked=reservation("CONFIRMED",1); stay(unlinked,"RESERVED");
+        UUID theirs=reservation("CONFIRMED",2); stay(theirs,"RESERVED"); link(account(),theirs);
+        int before=jdbc.queryForObject("SELECT count(*) FROM guest_reservation_links",Integer.class);
         mvc.perform(get(PATH).header("Authorization",bearer(guest))).andExpect(status().isOk())
-                .andExpect(jsonPath("$.items.length()").value(1)).andExpect(jsonPath("$.totalElements").value(1))
-                .andExpect(jsonPath("$.items[0].reservationId").value(own.toString()))
-                .andExpect(jsonPath("$.items[0].stays.length()").value(2))
-                .andExpect(jsonPath("$.items[0].propertyTimeZone").value("America/Guatemala"))
-                .andExpect(jsonPath("$.items[0].stays[0].roomTypeName").value("Deluxe King"))
-                .andExpect(jsonPath("$.items[0].notes").doesNotExist()).andExpect(jsonPath("$.items[0].totalMinor").doesNotExist())
-                .andExpect(jsonPath("$.items[0].stays[0].occupants").doesNotExist());
-        mvc.perform(get(PATH+"/"+own).header("Authorization",bearer(guest))).andExpect(status().isOk())
-                .andExpect(jsonPath("$.reservation.reservationId").value(own.toString()))
-                .andExpect(jsonPath("$.reservation.stays.length()").value(2));
+                .andExpect(jsonPath("$.length()").value(2)).andExpect(jsonPath("$[0].reservationId").value(own.toString()))
+                .andExpect(jsonPath("$[1].reservationId").value(own.toString()))
+                .andExpect(jsonPath("$[0].reservationStatus").value("CONFIRMED"))
+                .andExpect(jsonPath("$[0].notes").doesNotExist()).andExpect(jsonPath("$[0].totalMinor").doesNotExist())
+                .andExpect(jsonPath("$[0].occupants").doesNotExist());
+        mvc.perform(get(detail(own,first)).header("Authorization",bearer(guest))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.reservationId").value(own.toString()))
+                .andExpect(jsonPath("$.roomType.name").value("Deluxe King"));
         assertEquals(before,jdbc.queryForObject("SELECT count(*) FROM guest_reservation_links",Integer.class));
     }
-    @Test void profileOrMatchingEmailIsNotAReservationLinkAndForeignIdsAreNotDisclosed() throws Exception {
-        UUID unlinked = reservation("CONFIRMED",0); UUID foreign = reservation("CONFIRMED",1); link(account(),foreign);
-        for (UUID id : new UUID[]{unlinked,foreign,UUID.randomUUID()}) mvc.perform(get(PATH+"/"+id).header("Authorization",bearer(guest)))
-                .andExpect(status().isNotFound()).andExpect(header().string("Cache-Control","no-store, private"));
+    @Test void matchingProfileAndForeignIdsDoNotAuthorizeAStay() throws Exception {
+        UUID unlinked=reservation("CONFIRMED",0), first=stay(unlinked,"RESERVED");
+        UUID foreign=reservation("CONFIRMED",1), second=stay(foreign,"RESERVED"); link(account(),foreign);
+        for (String path : new String[]{detail(unlinked,first),detail(foreign,second),detail(UUID.randomUUID(),UUID.randomUUID())})
+            mvc.perform(get(path).header("Authorization",bearer(guest))).andExpect(status().isNotFound());
     }
-    @Test void historyIncludesInactiveHotelAndPendingContainerWithNoStays() throws Exception {
-        UUID pending = reservation("PENDING",0); link(guest,pending);
+    @Test void anInactiveHotelDoesNotEraseLinkedHistory() throws Exception {
+        UUID own=reservation("CANCELLED",0); stay(own,"CANCELLED"); link(guest,own);
         jdbc.update("UPDATE properties SET status='INACTIVE' WHERE id=?",property);
         mvc.perform(get(PATH).header("Authorization",bearer(guest))).andExpect(status().isOk())
-                .andExpect(jsonPath("$.items[0].status").value("PENDING")).andExpect(jsonPath("$.items[0].stays").isEmpty());
+                .andExpect(jsonPath("$.length()").value(1)).andExpect(jsonPath("$[0].reservationStatus").value("CANCELLED"));
     }
-    @Test void paginationHasStableOrderAndOwnTotals() throws Exception {
-        UUID older = reservation("CANCELLED",0), newer = reservation("CONFIRMED",1); link(guest,older); link(guest,newer);
-        mvc.perform(get(PATH).param("page","0").param("size","1").header("Authorization",bearer(guest)))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].reservationId").value(newer.toString())).andExpect(jsonPath("$.totalElements").value(2));
-        mvc.perform(get(PATH).param("page","1").param("size","1").header("Authorization",bearer(guest)))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].reservationId").value(older.toString()));
-        mvc.perform(get(PATH).param("page","2").param("size","1").header("Authorization",bearer(guest)))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.items").isEmpty()).andExpect(jsonPath("$.totalElements").value(2));
-    }
-    @ParameterizedTest @ValueSource(strings={"-1","1.5","abc","2147483648"})
-    void rejectsInvalidPagination(String page) throws Exception {
-        mvc.perform(get(PATH).param("page",page).header("Authorization",bearer(guest))).andExpect(status().isBadRequest());
-    }
-    @Test void rejectsExtraDuplicateParametersInvalidSizesAndMalformedIds() throws Exception {
-        for (String size : new String[]{"0","51"}) mvc.perform(get(PATH).param("size",size).header("Authorization",bearer(guest))).andExpect(status().isBadRequest());
-        mvc.perform(get(PATH).param("page","0","1").header("Authorization",bearer(guest))).andExpect(status().isBadRequest());
-        mvc.perform(get(PATH+"/bad-id").header("Authorization",bearer(guest))).andExpect(status().isBadRequest());
-        mvc.perform(get(PATH+"/"+UUID.randomUUID()).param("propertyId",property.toString()).header("Authorization",bearer(guest))).andExpect(status().isBadRequest());
+    @Test void malformedStayIdsAreRejected() throws Exception {
+        mvc.perform(get(PATH+"/bad-id/stays/"+UUID.randomUUID()).header("Authorization",bearer(guest))).andExpect(status().isBadRequest());
     }
     @Test void missingStaffRevokedAndDisabledIdentitiesCannotRead() throws Exception {
         mvc.perform(get(PATH)).andExpect(status().isUnauthorized());
-        var staff = new StaffPrincipal(UUID.randomUUID(),UUID.randomUUID(),"synthetic","SUPER_ADMIN");
+        var staff=new StaffPrincipal(UUID.randomUUID(),UUID.randomUUID(),"synthetic","SUPER_ADMIN");
         mvc.perform(get(PATH).header("Authorization","Bearer "+staffJwt.issue(staff,Instant.now()))).andExpect(status().isUnauthorized());
         jdbc.update("UPDATE guest_auth_sessions SET status='REVOKED',revoked_at=now() WHERE id=?",guest.sessionId()); em.clear();
         mvc.perform(get(PATH).header("Authorization",bearer(guest))).andExpect(status().isUnauthorized());
-        var other = account(); jdbc.update("UPDATE guest_accounts SET status='DISABLED' WHERE id=?",other.guestAccountId()); em.clear();
+        var other=account(); jdbc.update("UPDATE guest_accounts SET status='DISABLED' WHERE id=?",other.guestAccountId()); em.clear();
         mvc.perform(get(PATH).header("Authorization",bearer(other))).andExpect(status().isUnauthorized());
     }
     @Test
@@ -150,8 +132,9 @@ class GuestReservationHistoryIntegrationTests {
                 .andExpect(status().isCreated()).andExpect(cookie().doesNotExist("pms_guest_access")).andReturn();
         var booking=json.readTree(booked.getResponse().getContentAsString());
         String reservationId=booking.path("reservationId").asText();
-        mvc.perform(get(PATH).header("Authorization",bearer(guest))).andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0));
-        mvc.perform(get(PATH+"/"+reservationId).header("Authorization",bearer(guest))).andExpect(status().isNotFound());
+        UUID stayId=jdbc.queryForObject("SELECT id FROM reservation_stays WHERE reservation_id=? ORDER BY id LIMIT 1",UUID.class,UUID.fromString(reservationId));
+        mvc.perform(get(PATH).header("Authorization",bearer(guest))).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
+        mvc.perform(get(detail(UUID.fromString(reservationId),stayId)).header("Authorization",bearer(guest))).andExpect(status().isNotFound());
         var challenge=mvc.perform(post("/api/v1/guest-auth/reservation-links/challenges").header("Authorization",bearer(guest))
                 .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(java.util.Map.of("confirmationCode",booking.path("confirmationCode").asText()))))
                 .andExpect(status().isAccepted()).andExpect(jsonPath("$.otp").doesNotExist()).andReturn();
@@ -160,17 +143,16 @@ class GuestReservationHistoryIntegrationTests {
         String wrong=(delivered.get().charAt(0)=='0'?"1":"0")+delivered.get().substring(1);
         mvc.perform(post("/api/v1/guest-auth/reservation-links/verify").header("Authorization",bearer(guest)).contentType(MediaType.APPLICATION_JSON)
                 .content(json.writeValueAsString(java.util.Map.of("requestId",requestId,"otp",wrong)))).andExpect(status().isUnprocessableEntity());
-        mvc.perform(get(PATH).header("Authorization",bearer(guest))).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(get(PATH).header("Authorization",bearer(guest))).andExpect(jsonPath("$.length()").value(0));
         mvc.perform(post("/api/v1/guest-auth/reservation-links/verify").header("Authorization",bearer(guest)).contentType(MediaType.APPLICATION_JSON)
                 .content(json.writeValueAsString(java.util.Map.of("requestId",requestId,"otp",delivered.get())))).andExpect(status().isNoContent()).andExpect(content().string(""));
         mvc.perform(get(PATH).header("Authorization",bearer(guest))).andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(1)).andExpect(jsonPath("$.items[0].reservationId").value(reservationId))
-                .andExpect(jsonPath("$.items[0].stays.length()").value(2));
-        mvc.perform(get(PATH+"/"+reservationId).header("Authorization",bearer(guest))).andExpect(status().isOk())
-                .andExpect(jsonPath("$.reservation.confirmationCode").value(booking.path("confirmationCode").asText()))
-                .andExpect(jsonPath("$.reservation.stays.length()").value(2));
-        mvc.perform(get(PATH+"/"+reservationId).header("Authorization",bearer(account()))).andExpect(status().isNotFound());
+                .andExpect(jsonPath("$.length()").value(2)).andExpect(jsonPath("$[0].reservationId").value(reservationId)).andExpect(jsonPath("$[1].reservationId").value(reservationId));
+        mvc.perform(get(detail(UUID.fromString(reservationId),stayId)).header("Authorization",bearer(guest))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.confirmationCode").value(booking.path("confirmationCode").asText())).andExpect(jsonPath("$.id").value(stayId.toString()));
+        mvc.perform(get(detail(UUID.fromString(reservationId),stayId)).header("Authorization",bearer(account()))).andExpect(status().isNotFound());
     }
+    private String detail(UUID reservationId,UUID stayId) { return PATH+"/"+reservationId+"/stays/"+stayId; }
     private String bearer(GuestPrincipal p) { return "Bearer "+jwt.issue(p,Instant.now()); }
     private GuestPrincipal account() {
         UUID id=UUID.randomUUID(),session=UUID.randomUUID(); String email=id+"@example.test";
@@ -183,8 +165,10 @@ class GuestReservationHistoryIntegrationTests {
         jdbc.update("INSERT INTO reservations(id,property_id,booking_guest_id,confirmation_code,status,currency,source_channel,notes,created_at,updated_at) VALUES (?,?,?,?,?,'GTQ','WEB_DIRECTA','private staff note',now()+? * interval '1 second',now())",id,property,profile,id.toString().substring(0,16),status,order);
         return id;
     }
-    private void stay(UUID reservation,String status) {
-        jdbc.update("INSERT INTO reservation_stays(id,reservation_id,property_id,room_type_id,arrival,departure,status,created_at,updated_at) VALUES (?,?,?,?,current_date,current_date+2,?,now(),now())",UUID.randomUUID(),reservation,property,type,status);
+    private UUID stay(UUID reservation,String status) {
+        UUID id=UUID.randomUUID();
+        jdbc.update("INSERT INTO reservation_stays(id,reservation_id,property_id,room_type_id,arrival,departure,status,created_at,updated_at) VALUES (?,?,?,?,current_date,current_date+2,?,now(),now())",id,reservation,property,type,status);
+        return id;
     }
     private void link(GuestPrincipal actor,UUID reservation) {
         UUID challenge=UUID.randomUUID();

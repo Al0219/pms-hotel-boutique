@@ -69,7 +69,7 @@ function swipe(target:Element,from=250,to=80) { pointer(target,'pointerdown',fro
 
 it.each(['false','true'])('only confirms allowed status commands on real BFF namespace with mocks=%s',async flag=>{
  vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API',flag);mount();await screen.findByText('mlopez');expect(detailReads).toBe(0);await choose();expect(commands).toHaveLength(0);
- expect(screen.getByRole('dialog')).toHaveTextContent('actualmente no existe reactivación');expect(screen.getAllByRole('columnheader',{hidden:true}).map(el=>el.textContent)).toEqual(['Usuario','Acceso','Asignación']);
+ expect(screen.getByRole('dialog')).toHaveTextContent('La reactivación requerirá credencial verificada');expect(screen.getAllByRole('columnheader',{hidden:true}).map(el=>el.textContent)).toEqual(['Usuario','Acceso','Asignación']);
  await confirm();await settled();expect(record.status).toBe('SUSPENDED');expect(record.version).toBe(2);expect(commands).toHaveLength(1);expect(commands[0].url.pathname).toBe(`/api/staff/admin/users/${id}/status`);expect(commands[0].url.searchParams.get('scope')).toBe('ALL_PROPERTIES');expect(commands[0].body).toEqual({status:'SUSPENDED',expectedVersion:1});
  await userEvent.click(options());expect(screen.queryByRole('button',{name:'Suspender'})).not.toBeInTheDocument();expect(screen.queryByRole('button',{name:'Reactivar'})).not.toBeInTheDocument();await userEvent.click(screen.getByRole('button',{name:'Deshabilitar'}));await screen.findByRole('dialog');expect(screen.getByRole('dialog')).toHaveTextContent('Se conservará el historial');await confirm('Deshabilitar');await waitFor(()=>expect(screen.queryByRole('button',{name:'Opciones de estado de mlopez'})).not.toBeInTheDocument());
  expect(record.status).toBe('DISABLED');expect(record.version).toBe(3);expect(commands[1].body).toEqual({status:'DISABLED',expectedVersion:2});expect(screen.queryByRole('button',{name:/Editar .* de mlopez/})).not.toBeInTheDocument();expect(within(screen.getByText('mlopez').closest('tr')!).getByText('Baja administrativa')).toBeInTheDocument();
@@ -105,7 +105,7 @@ it.each(['ACTIVE','SUSPENDED'] as const)('swipe backdrop: %s actions live behind
  expect(commands).toHaveLength(0);
  await userEvent.click(within(choices).getByRole('button',{name:'Deshabilitar'}));
  const dialog=await screen.findByRole('dialog'); expect(row.contains(dialog)).toBe(false);
- expect(dialog).toHaveTextContent('Actualmente no existe reactivación'); expect(commands).toHaveLength(0);
+ expect(dialog).toHaveTextContent('No se puede reactivar una cuenta deshabilitada'); expect(commands).toHaveLength(0);
  await userEvent.click(within(dialog).getByRole('button',{name:'Volver'})); await settled();
  expect(commands).toHaveLength(0);expect(options()).toHaveFocus();
 });
@@ -163,4 +163,74 @@ it('a status change removes the user from ACTIVE-filter results and reconciles t
 
 it('terminal completion restores keyboard focus to the row expansion after reconciliation finishes',async()=>{
  mount();await screen.findByText('mlopez');await choose('Deshabilitar');await confirm('Deshabilitar');await waitFor(()=>expect(screen.queryByRole('button',{name:'Opciones de estado de mlopez'})).not.toBeInTheDocument());await waitFor(()=>expect(screen.getByRole('button',{name:'Contraer información de mlopez'})).toHaveFocus());expect(commands).toHaveLength(1);
+});
+
+function recoveryFixture(prepared = true) {
+ record = { ...record, status: 'SUSPENDED' };
+ let sent = false;
+ const infoReads = vi.fn(() => HttpResponse.json({ organizationId: org, staffUserId: id, version: record.version,
+  credentialPrepared: prepared, activationAllowed: prepared && record.status === 'SUSPENDED', invitationAllowed: !prepared && !sent && record.status === 'SUSPENDED' }));
+ const invite = vi.fn(async ({ request }: { request: Request }) => {
+  expect(await request.json()).toEqual({ expectedVersion: record.version }); sent = true; record = { ...record, version: record.version + 1 };
+  return HttpResponse.json({ organizationId: org, staffUserId: id, version: record.version, changed: true });
+ });
+ mockServer.use(http.get(`*/api/staff/admin/users/${id}/invitation`, infoReads), http.post(`*/api/staff/admin/users/${id}/invitation`, invite));
+ return { infoReads, invite };
+}
+it.each(['mouse','touch'])('right %s swipe reveals M08 reactivation behind all three cells, never executes without confirmation', async pointerType => {
+ const { infoReads } = recoveryFixture(); mount(); const row = (await screen.findByText('mlopez')).closest('tr')!;
+ expect(infoReads).not.toHaveBeenCalled();
+ pointer(row,'pointerdown',60,50,{pointerType});pointer(row,'pointermove',190,52,{pointerType});
+ expect(row.style.getPropertyValue('--staff-swipe-x')).toBe('130px');
+ pointer(row,'pointerup',190,52,{pointerType});
+ const group = await screen.findByRole('group',{name:'Recuperación de mlopez'});
+ const action = await within(group).findByRole('button',{name:'Reactivar'});
+ expect(action.querySelector('svg')).toHaveAttribute('data-icon','UserRoundCheck');
+ expect(row).toHaveAttribute('data-staff-swipe-side','recovery'); expect(within(row).getAllByRole('cell')).toHaveLength(3);
+ expect(commands).toHaveLength(0); await userEvent.click(action);await screen.findByRole('dialog');expect(commands).toHaveLength(0);
+ await userEvent.click(screen.getByRole('button',{name:'Volver'}));expect(commands).toHaveLength(0);
+ await userEvent.click(action);await userEvent.click(within(screen.getByRole('dialog')).getByRole('button',{name:'Reactivar'}));
+ await screen.findByText('Usuario reactivado');expect(record.status).toBe('ACTIVE');expect(commands).toHaveLength(1);
+ expect(commands[0].body).toEqual({status:'ACTIVE',expectedVersion:1});expect(detailReads).toBe(0);
+});
+it('right swipe offers Mail recovery without M08 and sends only after explicit selection',async()=>{
+ const { invite }=recoveryFixture(false);mount();const row=(await screen.findByText('mlopez')).closest('tr')!;
+ swipe(row,60,210);const action=await screen.findByRole('button',{name:'Enviar invitación de recuperación'});
+ expect(action.querySelector('svg')).toHaveAttribute('data-icon','Mail');expect(invite).not.toHaveBeenCalled();
+ await userEvent.dblClick(action);await screen.findByText('Invitación de recuperación enviada');expect(invite).toHaveBeenCalledOnce();
+ expect(commands).toHaveLength(0);expect(record.status).toBe('SUSPENDED');
+});
+it('opposite gestures close the current side before revealing the other side',async()=>{
+ recoveryFixture();mount();const row=(await screen.findByText('mlopez')).closest('tr')!;
+ swipe(row,60,210);await screen.findByRole('button',{name:'Reactivar'});expect(row).toHaveAttribute('data-staff-swipe-side','recovery');
+ swipe(row,210,60);expect(row.style.getPropertyValue('--staff-swipe-x')).toBe('0px');expect(screen.queryByRole('group',{name:'Recuperación de mlopez'})).not.toBeInTheDocument();
+ swipe(row);await screen.findByRole('group',{name:'Acciones de estado de mlopez'});expect(row).toHaveAttribute('data-staff-swipe-side','status');
+ expect(screen.queryByRole('group',{name:'Recuperación de mlopez'})).not.toBeInTheDocument();
+ swipe(row,60,210);expect(row.style.getPropertyValue('--staff-swipe-x')).toBe('0px');expect(commands).toHaveLength(0);
+});
+it('touchpad and keyboard can reveal recovery and Escape returns focus without writing',async()=>{
+ recoveryFixture();mount();const row=(await screen.findByText('mlopez')).closest('tr')!;
+ fireEvent.wheel(row,{deltaX:-70,deltaY:0});await screen.findByRole('button',{name:'Reactivar'});expect(row).toHaveAttribute('data-staff-swipe-side','recovery');
+ fireEvent.wheel(row,{deltaX:70,deltaY:0});expect(row.style.getPropertyValue('--staff-swipe-x')).toBe('0px');
+ const trigger=screen.getByRole('button',{name:'Invitación y activación de mlopez'});trigger.focus();await userEvent.keyboard('{Enter}');
+ const action=await screen.findByRole('button',{name:'Reactivar'});action.focus();await userEvent.keyboard('{Escape}');
+ expect(trigger).toHaveFocus();expect(row.style.getPropertyValue('--staff-swipe-x')).toBe('0px');expect(commands).toHaveLength(0);
+});
+it('DISABLED cannot reveal recovery even with a right drag',async()=>{
+ const {infoReads}=recoveryFixture();record={...record,status:'DISABLED'};mount();const row=(await screen.findByText('mlopez')).closest('tr')!;
+ swipe(row,50,220);expect(row.style.getPropertyValue('--staff-swipe-x')).toBe('0px');expect(infoReads).not.toHaveBeenCalled();
+ expect(screen.queryByRole('button',{name:'Reactivar'})).not.toBeInTheDocument();
+});
+it.each([409,503])('recovery panel keeps %i blocked until explicit GET without automatic replay',async status=>{
+ recoveryFixture(false);const post=vi.fn(()=>reply(status,status===409?'STAFF_VERSION_CONFLICT':'STAFF_WRITE_UNAVAILABLE'));
+ mockServer.use(http.post(`*/api/staff/admin/users/${id}/invitation`,post));mount();const row=(await screen.findByText('mlopez')).closest('tr')!;
+ swipe(row,50,220);await userEvent.click(await screen.findByRole('button',{name:'Enviar invitación de recuperación'}));
+ await screen.findByRole('alert');expect(post).toHaveBeenCalledOnce();expect(screen.queryByRole('button',{name:'Enviar invitación de recuperación'})).not.toBeInTheDocument();
+ await userEvent.click(screen.getByRole('button',{name:'Actualizar usuario'}));await screen.findByRole('button',{name:'Enviar invitación de recuperación'});expect(post).toHaveBeenCalledOnce();
+});
+it('right-swipe support preserves normal email click-to-edit and ignores drags during a draft',async()=>{
+ const {infoReads}=recoveryFixture();mount();await screen.findByText('mlopez');await edit('correo');
+ const input=screen.getByLabelText('Correo laboral');expect(input).toBeEnabled();const row=input.closest('tr')!;
+ swipe(row,40,220);expect(row.style.getPropertyValue('--staff-swipe-x')).toBe('0px');expect(infoReads).not.toHaveBeenCalled();
+ await discard();await saved();expect(commands).toHaveLength(0);
 });

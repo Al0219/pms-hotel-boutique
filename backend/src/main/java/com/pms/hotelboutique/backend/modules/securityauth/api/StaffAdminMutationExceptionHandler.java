@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import static com.pms.hotelboutique.backend.modules.securityauth.application.StaffAdminMutationException.Failure.*;
 
-@RestControllerAdvice(assignableTypes=StaffAdminMutationController.class)
+@RestControllerAdvice(assignableTypes={StaffAdminMutationController.class,StaffInvitationController.class,StaffInvitationConsumeController.class})
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class StaffAdminMutationExceptionHandler {
     @ExceptionHandler(StaffAdminMutationException.class)

@@ -17,6 +17,7 @@ export interface AssignedRoom {
 }
 
 export interface ReservationStay {
+  confirmationCode?: string | null;
   id: string;
   reservationId: string;
   roomType: StayRoomType;

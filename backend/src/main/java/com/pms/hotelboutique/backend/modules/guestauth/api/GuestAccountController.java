@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/guest-auth/account")
-@Tag(name = "Guest account", description = "BFF-only; resumen propio desde sesión Guest, sin accountId del cliente.")
+@Tag(name = "Guest account", description = "BFF Web o Android nativo; resumen propio desde sesión Guest, sin accountId del cliente.")
 public class GuestAccountController {
     private final GuestAccountSummaryService summary;
     public GuestAccountController(GuestAccountSummaryService summary) { this.summary = summary; }

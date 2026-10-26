@@ -58,7 +58,7 @@ export function parseStaffAdminCommand(raw: string, resource: StaffAdminMutation
     return { workEmail, expectedVersion };
   }
   if (resource === 'status') {
-    if (typeof value.status !== 'string' || value.status === 'ACTIVE'
+    if (typeof value.status !== 'string'
       || !staffAdminStatuses.includes(value.status as StaffAdminRequestedStatus)) fail();
     return { status: value.status as StaffAdminRequestedStatus, expectedVersion };
   }

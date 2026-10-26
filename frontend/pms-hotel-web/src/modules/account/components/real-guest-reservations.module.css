@@ -12,6 +12,9 @@
 .card:hover { box-shadow: 0 8px 28px #2e353110; }
 .cardTop { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; }
 .cardTop h2 { font: 500 25px var(--font-family-display, Georgia, serif); color: #5a6b5d; margin: 6px 0; }
+.reference { color: inherit; text-decoration: none; }
+.reference:hover { text-decoration: underline; }
+.reference:focus-visible { outline: 3px solid #b7c7b5; outline-offset: 4px; }
 .badge { padding: 7px 11px; background: #e8efe7; color: #3f654c; font-size: 11px; border-radius: 30px; }
 .badge[data-state='CANCELLED'] { background: #fff0f0; color: #a14747; }
 .badge[data-state='PENDING'] { background: #fff7e4; color: #8a651d; }

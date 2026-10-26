@@ -137,10 +137,10 @@ class StaffAdminMutationHttpIntegrationTests {
     @Test void acceptsSuspensionAndDisableButNeverReactivationOrEditingDisabledAccounts()throws Exception{
         ok(command("PATCH",target,"/status",status("SUSPENDED",0),adminToken),200);
         var noop=command("PATCH",target,"/status",status("SUSPENDED",1),adminToken);ok(noop,200);assertFalse(json.readTree(noop.body()).path("changed").asBoolean());
-        ok(command("PATCH",target,"/status",status("ACTIVE",1),adminToken),400);
+        ok(command("PATCH",target,"/status",status("ACTIVE",1),adminToken),409);
         ok(command("PATCH",target,"/status",status("DISABLED",1),adminToken),200);
         ok(command("PATCH",target,"/status",status("SUSPENDED",2),adminToken),409);
-        ok(command("PATCH",target,"/status",status("ACTIVE",2),adminToken),400);
+        ok(command("PATCH",target,"/status",status("ACTIVE",2),adminToken),409);
         ok(command("PATCH",target,"",email("disabled@hotel.example",2),adminToken),409);
         ok(command("PUT",target,"/membership",membership("AUDITOR",2,p1),adminToken),409);
         ok(command("PATCH",target,"/status",status("DISABLED",2),adminToken),200);
@@ -160,7 +160,7 @@ class StaffAdminMutationHttpIntegrationTests {
         ok(command("PATCH",target,"/status",status("SUSPENDED",0),managerToken),401);assertEquals(0,version(target));
     }
     @Test void enforcesStrictBodyQueryMediaTypeSizeAndUnsupportedMethods()throws Exception{
-        for(String body:List.of("{}","{\"status\":\"SUSPENDED\",\"status\":\"DISABLED\",\"expectedVersion\":0}","{\"status\":\"SUSPENDED\",\"expectedVersion\":0,\"organizationId\":\""+otherOrg+"\"}","{\"status\":\"ACTIVE\",\"expectedVersion\":0}"))ok(command("PATCH",target,"/status",body,adminToken),400);
+        for(String body:List.of("{}","{\"status\":\"SUSPENDED\",\"status\":\"DISABLED\",\"expectedVersion\":0}","{\"status\":\"SUSPENDED\",\"expectedVersion\":0,\"organizationId\":\""+otherOrg+"\"}","{\"status\":\"UNKNOWN\",\"expectedVersion\":0}"))ok(command("PATCH",target,"/status",body,adminToken),400);
         for(String query:List.of("","scope=ALL_PROPERTIES&limit=1","scope=ALL_PROPERTIES&organizationId="+org,"scope=ALL_PROPERTIES&scope=ALL_PROPERTIES"))ok(command("PATCH",target,"/status",status("SUSPENDED",0),adminToken,query),400);
         ok(send("PATCH","/api/v1/staff-admin/users/"+target+"/status?scope=ALL_PROPERTIES",status("SUSPENDED",0),adminToken,"text/plain"),415);
         ok(command("PATCH",target,"/status"," ".repeat(65537),adminToken),413);

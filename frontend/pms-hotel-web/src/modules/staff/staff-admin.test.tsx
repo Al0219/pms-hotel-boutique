@@ -28,6 +28,10 @@ beforeEach(() => {
   reads = []; mocks.revalidate.mockReset(); mocks.replace.mockReset(); choose();
   mocks.session.mockReturnValue({ id: 'session-1', staffUserId: id, roleId: 'GERENCIA', permissions: ['STAFF_MANAGE', 'MULTI_PROPERTY_READ'], memberships: [p1, p2].map((propertyId, i) => ({ propertyId, active: true, name: `Hotel ${i + 1}`, timezone: 'America/Guatemala', currency: 'GTQ', propertyCode: null })) });
   mockServer.use(
+    http.post('*/api/staff/admin/users/:staffId/invitation', async ({ params, request }) => {
+      const body = await request.json() as { expectedVersion: number };
+      return HttpResponse.json({ organizationId: org, staffUserId: params.staffId, version: body.expectedVersion + 1, changed: true });
+    }),
     http.post('*/api/auth/staff/refresh', () => new HttpResponse(null, { status: 401 })),
     http.get('*/api/staff/admin/roles', () => HttpResponse.json(roleDTO())),
     http.get('*/api/staff/admin/users', ({ request }) => { const url = new URL(request.url); reads.push(url); return HttpResponse.json({ ...page(), scope: { kind: url.searchParams.get('scope'), propertyIds: url.searchParams.get('scope') === 'PROPERTY' ? [url.searchParams.get('propertyId')] : [p1, p2] }, limit: Number(url.searchParams.get('limit')) }); }),
@@ -287,4 +291,60 @@ it('clears search and filters and returns to the first scoped page after creatio
   for (const key of ['username', 'roleCode', 'status', 'cursor']) expect(query.has(key)).toBe(false);
   expect(query.get('scope')).toBe('PROPERTY'); expect(query.get('propertyId')).toBe(p1);
   expect(post).toHaveBeenCalledOnce(); expect(screen.getByRole('row', { name: /nuevo/ })).toHaveTextContent('Pendiente de activación');
+});
+
+const newStaffId = '55555555-5555-4555-8555-555555555555';
+const newStaff = () => ({ ...userDTO('nuevo'), id: newStaffId, workEmail: 'nuevo@hotel.test', roleCode: 'RECEPCION', propertyIds: [p1], version: 0 });
+async function fillCreation() {
+  const user = userEvent.setup(); await screen.findByText('mlopez');
+  await user.click(screen.getByRole('button', { name: 'Crear usuario' }));
+  await user.type(screen.getByLabelText('Nombre de usuario'), 'nuevo');
+  await user.type(screen.getByLabelText('Correo laboral'), 'nuevo@hotel.test');
+  return user;
+}
+it('creation automatically invites the confirmed real ID once with its version and authorized scope', async () => {
+  let release!: () => void;
+  const post = vi.fn(() => HttpResponse.json(newStaff(), { status: 201 }));
+  const invite = vi.fn(async ({ request }: { request: Request }) => {
+    expect(post).toHaveBeenCalledOnce();
+    const url = new URL(request.url);
+    expect(url.pathname).toBe(`/api/staff/admin/users/${newStaffId}/invitation`);
+    expect(url.searchParams.get('scope')).toBe('PROPERTY'); expect(url.searchParams.get('propertyId')).toBe(p1);
+    expect(await request.json()).toEqual({ expectedVersion: 0 });
+    await new Promise<void>(resolve => { release = resolve; });
+    return HttpResponse.json({ organizationId: org, staffUserId: newStaffId, version: 1, changed: true });
+  });
+  mockServer.use(http.post('*/api/staff/admin/users', post), http.post('*/api/staff/admin/users/:staffId/invitation', invite));
+  mount(); const user = await fillCreation(); await user.click(screen.getByRole('button', { name: /^Crear$/ }));
+  const sending = await screen.findByRole('button', { name: 'Enviando invitación…' });
+  expect(sending).toBeDisabled(); expect(screen.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
+  fireEvent.submit(document.getElementById('staff-create-form')!); expect(post).toHaveBeenCalledOnce();
+  release(); await screen.findByText('Usuario creado. Invitación enviada a su correo');
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument(); expect(invite).toHaveBeenCalledOnce();
+});
+it.each([400, 401, 403, 409, 503, 'network', 'invalid-ack'] as const)('creation remains confirmed after invitation %s without replaying either write', async failure => {
+  const post = vi.fn(() => HttpResponse.json(newStaff(), { status: 201 }));
+  const invite = vi.fn(() => failure === 'network' ? HttpResponse.error() : failure === 'invalid-ack' ? HttpResponse.json({ changed: true })
+    : HttpResponse.json({ code: ({ 400: 'INVALID_REQUEST', 401: 'STAFF_SESSION_REQUIRED', 403: 'STAFF_ACCESS_DENIED', 409: 'STAFF_VERSION_CONFLICT', 503: 'STAFF_WRITE_UNAVAILABLE' })[failure] }, { status: failure }));
+  mockServer.use(http.post('*/api/staff/admin/users', post), http.post('*/api/staff/admin/users/:staffId/invitation', invite),
+    http.get('*/api/staff/admin/users', ({ request }) => HttpResponse.json({ ...page(), items: [userDTO(), newStaff()], limit: Number(new URL(request.url).searchParams.get('limit')) })));
+  const view = mount(); const user = await fillCreation(); await user.click(screen.getByRole('button', { name: /^Crear$/ }));
+  await screen.findByText('Usuario creado, pero no se pudo confirmar el envío de la invitación');
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Invitación y activación de nuevo' })).toBeEnabled();
+  expect(screen.getByRole('row', { name: /nuevo/ })).toHaveTextContent('Pendiente de activación');
+  view.refresh(); expect(post).toHaveBeenCalledOnce(); expect(invite).toHaveBeenCalledOnce();
+  if ([401, 403].includes(Number(failure))) expect(mocks.revalidate).toHaveBeenCalled();
+});
+it('uncertain creation recovered by GET never automatically sends an invitation', async () => {
+  let committed = false;
+  const post = vi.fn(() => { committed = true; return HttpResponse.json({ code: 'STAFF_WRITE_UNAVAILABLE' }, { status: 503 }); });
+  const invite = vi.fn(() => HttpResponse.json({}));
+  mockServer.use(http.post('*/api/staff/admin/users', post), http.post('*/api/staff/admin/users/:staffId/invitation', invite),
+    http.get('*/api/staff/admin/users', ({ request }) => HttpResponse.json({ ...page(), items: committed ? [newStaff()] : [userDTO()], limit: Number(new URL(request.url).searchParams.get('limit')) })));
+  mount(); const user = await fillCreation(); await user.click(screen.getByRole('button', { name: /^Crear$/ }));
+  await screen.findByText(/No se pudo confirmar el resultado/);
+  await user.click(screen.getByRole('button', { name: 'Comprobar listado' }));
+  await screen.findByText('Usuario creado, pero no se pudo confirmar el envío de la invitación');
+  expect(post).toHaveBeenCalledOnce(); expect(invite).not.toHaveBeenCalled();
 });

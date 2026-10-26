@@ -1,5 +1,29 @@
 # AlanPlan — Seguimiento Backend
 
+## Integración Mis reservas con main a98250f — EN_QA, 2026-10-26
+
+- José autoriza integrar origin/main, resolver incompatibilidades, validar y
+  publicar en fix/public-my-reservations-3001; no integrar el PR a main.
+- PR166/167 incorporan activación Staff y contrato Guest Web/Android56/57.
+  Se conserva esa API y reconciliación; se retira el controlador paginado
+  duplicado de esta rama. Web reutiliza su BFF/hooks y agrupa N estancias con
+  presentación crema/oliva. OTP C3 manual y Guest/Staff separados se conservan.
+- Pruebas adaptadas a lista/detalle de estancia vigentes, sin excluir casos ni
+  cambiar límites: aislamiento, privacidad, dos estancias, C3 y activación Staff.
+  Migraciones, Android y demás módulos entrantes se conservan sin modificaciones
+  propias. Cambios locales Android resguardados para reaplicarlos tras el merge.
+- Backend ./mvnw -B verify completo Java21/PostgreSQL17: BUILD SUCCESS,1077
+  pruebas, cero fallos/errores/omitidas. Incluye23 OpenAPI,14 invitaciones Staff,
+  9 MVP Android,6 recuperación y7 regresiones de historial/C3/dos estancias.
+- Web lint/typecheck/build Linux PASS. General limpia2521/2535;13 timeouts y
+  una aserción de replay. Repetición de9 archivos243/246: checkout25/25 y vínculo
+  4/4 PASS sin cambios; persisten tres timeouts (cursor Staff, revalidación de
+  búsqueda y filtros de reservas), archivos sin modificaciones propias frente a
+  main. No declarar gate Web aprobado. Primera corrida con entorno QA incorrecto
+  conservada y diferenciada en Web70. Sin elevar límites ni alterar otros módulos.
+- Resolución lista para commit/push autorizados. Entorno habitual3001 intacto;
+  ajustes Android locales reaplicados y excluidos. QA manual/CI pendientes. EN_QA.
+
 ## Mis reservas — despliegue habitual3001, EN_QA, 2026-10-26
 
 - José solicita aplicar la corrección al entorno real: el preview anterior no
@@ -43,6 +67,222 @@
   entorno habitual y tareas anteriores preservados. QA manual del owner pendiente;
   sin commit/push. QA aislado3002 disponible;3001 conserva su versión/datos.
   Siguiente: QA manual del owner y resolver/validar gate Web antes de publicar.
+
+## 2026-10-26 — PR167: aislamiento de fixtures Backend; MVP COMPLETADA / PASS
+
+Publicación autorizada: commit1b769069c3f33fd1b5d7c6be7e4fe6e3eca9cb05,
+PR https://github.com/Al0219/pms-hotel-boutique/pull/167 hacia main, sin conflictos.
+CI inicial: Web y Stack PASS; Android falla expo-doctor20/21 por siete versiones
+patch SDK. Las actualizaciones Expo previas siguen excluidas por alcance y los
+cinco archivos locales conservan sus bytes. No se debilitan checks de Doctor.
+
+Backend inicial1070 tests/5 fallos: fixtures de las dos clases Guest nuevas
+contaminaban el esquema compartido de pruebas, afectando conteos en Booking y
+Query. Corrección limitada a esos fixtures: esquema único por clase, datasource/
+Liquibase/JPA scoped, limpieza del esquema propio y cierre de contexto. Sin
+código funcional, auth, endpoints, datos de trabajo o aserciones debilitadas.
+
+Verificación correctiva focal25 PASS: GuestAndroidMvp, GuestReservationRecovery,
+ReservationBookingService y ReservationQueryService, orden alfabético con pool2/
+minimumIdle0 igual a CI, PostgreSQL17 descartable y JVM25/release21. Comando:
+./mvnw -B --no-transfer-progress -Dsurefire.runOrder=alphabetical
+-Dtest=GuestAndroidMvpIntegrationTests,GuestReservationRecoveryIntegrationTests,ReservationBookingServiceIntegrationTests,ReservationQueryServiceIntegrationTests test.
+Evidencia /tmp/android-mvp-close-preserved/backend-ci-fix-focused.log.
+Sin suite completa/build/QA manual local. git diff --check PASS. Commit correctivo
+y push normal autorizados en el mismo PR; CI remoto se informa en su descripción.
+MVP y referencia conservan el PASS manual confirmado del usuario; los escenarios
+no confirmados permanecen pendientes. No fusionar. Siguiente: revisar CI del SHA
+correctivo; tratar la alineación SDK excluida como alcance separado.
+
+
+## 2026-10-26 — MVP Android ↔ Backend — COMPLETADA / PASS; preparación de PR
+
+Confirmación manual explícita del usuario del recorrido Web/Android y del ajuste
+visual. Alcance aceptado: login Guest, reservas reales, vinculación segura,
+selección de estancia y código de confirmación visible. Sin nueva QA manual
+atribuida al agente. Variantes no acreditadas (sesión/reinicio/red/errores,
+selección alternativa, hardware/accesibilidad y HTTPS externo) permanecen
+pendientes; no cerrar otros incrementos ni backlog por arrastre.
+
+Rama feature/android-backend-mvp, base5cc0d58/PR166, publicación normal y PR hacia
+main autorizados; no merge autorizado. Revisión del diff completo y git diff
+--check para el cierre; no repetir suites, builds ni QA. Evidencia previa por
+incremento, sin sumar repeticiones: MVP Backend42/Android105; corrección vínculos
+Backend43/Web72/Android25; referencia Backend4/Android36, typecheck/ESLint focal
+PASS. PostgreSQL17 descartable y JVM25/release21; CI remoto reportado en el PR.
+
+Cinco archivos previos preservados byte a byte en el worktree: app.json, eas.json,
+package.json, package-lock.json y Web next-env.d.ts. Commit incluye solo plugin/
+dependencia/lock de SecureStore en los tres archivos compartidos; excluye EAS,
+identificador de app/proyecto, actualizaciones Expo previas y next-env generado.
+Snapshot/control externo: /tmp/android-mvp-close-preserved. Sin secretos ni
+artefactos generados en la selección de publicación; migraciones previas intactas.
+Owner Alan; revisión cross-app de seguimiento pendiente de asignación. Contratos
+56/57 y guías Android38/Web70 registran cierre y límites de QA. Siguiente: publicar
+commit convencional/PR, revisar conflictos y CI, sin fusionar.
+
+
+## 2026-10-26 — Referencia visible Android EN_QA; recorrido real PASS manual
+
+Confirmación explícita recibida del usuario: el recorrido real de reservas
+Web/Android tiene PASS manual. Se registra ese resultado para ese recorrido;
+no se atribuyen ejecuciones manuales nuevas ni aceptación del ajuste visual.
+
+Ajuste autorizado en feature/android-backend-mvp: Inicio/Mi estadía muestra
+Reserva · confirmationCode desde el detalle Guest persistido; ausencia/null/
+blanco → Referencia no disponible. Nunca sustituye por reservationId. El detalle
+Guest agrega confirmationCode desde reservations.confirmation_code, conservando
+SQL de pertenencia, IDs y claves de cache. DTO/mapper/Domain Android propagan
+el dato; chip acotado a una línea/ellipsis, mismos colores/tarjeta. Pruebas A→B
+cubren carga y referencia ausente/distinta, sin retener el código de A.
+Sin cambios de login, vinculación, Housekeeping, Web o migraciones en este ajuste;
+los cambios locales previos se preservan. Contrato56/OpenAPI y Android38 coherentes.
+
+Validación focal: Android36 casos distintos PASS (mapper8, presentación11,
+HTTP17); no sumar repeticiones. Typecheck y ESLint focal PASS. Backend4 métodos
+focales de detalle/pertenencia/OpenAPI PASS sobre PostgreSQL17 descartable,
+JDK25/release21, copia /tmp/pms-android-reference-backend. git diff --check PASS.
+Comandos Android: npm run typecheck; npm test -- --runTestsByPath
+ tests/stay-contract.test.ts tests/account-stay-hub.test.tsx tests/android-backend-mvp.test.ts.
+Backend: ./mvnw -B --no-transfer-progress
+ '-Dtest=GuestAndroidMvpIntegrationTests#ownDetailUsesPersistedRoomAndTypeAndDoesNotReturnGuestPii+nullRoomRemainsNullAndCrossReservationStayIs404,OpenApiContractIntegrationTests#nativeGuestReadsAndRefreshHaveExactGeneratedContract+generatedPathsAndMethodsMatchRealApplicationMappings' test.
+Logs /tmp/pms-android-reference-tests.log, /tmp/pms-android-reference-presentation-final.log
+y /tmp/pms-android-reference-backend.log. Sin suite completa, build pesado,
+commit/push/PR ni cambios a la base de trabajo. Ajuste visual pendiente de
+confirmación manual del usuario; no se confunde con el PASS previo del recorrido.
+Siguiente: comprobar visualmente la referencia en Android y confirmar el ajuste.
+
+
+## 2026-10-25 — Corrección de vínculos Guest Web/Android — EN_QA
+
+Implementación autorizada en feature/android-backend-mvp; trabajo Android previo,
+EAS/package/app y next-env.d.ts conservados. Contrato57/guíaWeb70 y addendumAndroid38.
+Reserva pública/pago/recibo J6 no modificados: BFF conserva201 y luego solicita
+recuperación propia con cookie Guest. POST reconcile independiente, GuestPrincipal,
+correo verificado y CONFIRMED, no transferencia; aditivo013/procedenciaACCOUNT
+reutiliza email_verified_at para cuentas anteriores, sin nuevas tablas ni edición
+de migraciones aplicadas. Locks compatibles con FK, unicidad y auditoría existentes.
+Web listado/detalle reales en todas sus entradas, cache separada del modo mock,
+refresh/errores e invalidación Guest; Android recupera/refresca al volver por focus.
+
+Diagnóstico base real solo SELECT: última[referencia local omitida] confirmada, una estancia y sin
+link, correo compatible con cuenta verificada sin proof. No se atribuye ese código
+al usuario sin confirmación. Web→Backend→pms_hotel comprobado; URL del APK/Metro no
+confirmable. No se aplicó013 ni se crearon vínculos, reservas o pagos en esa base.
+
+Pruebas focales PASS: Backend43 casos distintos (recovery6, OpenAPI23,
+registro/migraciones/upgrade/creación/replay/OTP14); Web72 distintas (70 del conjunto
+más2 nuevas de expiración/cache; última suiteUI10 PASS); Android25 distintas,
+última focus1 repetida PASS. No sumar repeticiones. Typecheck Web/Android y ESLint
+focal PASS; git diff --check y whitespace untracked PASS. OpenAPI68 operaciones,
+53 paths/89 schemas, sin exclusiones nuevas. JVM25/release21 y PostgreSQL17 de QA
+separado; compilación en /tmp/pms-guest-links-backend por target previo de otro
+propietario. Solo PostgreSQL descartable, sin Docker E2E ni builds de distribución.
+Evidencia /tmp/pms-guest-links-{backend-tests,backend-final,history-regression,
+web-final,web-expiry-tests,android-tests-final,android-focus-final}.log;
+OpenAPI en target de la copia temporal. Jest conserva aviso de handles de suites
+existentes tras PASS; no fallo de pruebas. No commit/push/PR ni cambios a secretos.
+Owner Alan; revisión cross-app de seguimiento. QA manual Firefox/Android pendiente.
+Siguiente: arrancar Backend/Web actualizados con013 y ejecutar guíaWeb70 sobre
+la misma instancia desde Firefox y Android; abrir Mis reservas recupera elegibles.
+
+## 2026-10-25 — ANDROID-BACKEND-MVP — EN_QA
+
+Rama feature/android-backend-mvp, base origin/main5cc0d58 con PR166 integrado.
+Login/me/refresh/logout/summary Guest reutilizados; refresh nativo por header,
+SecureStore y Bearer propios. Dos GET por vínculos persistidos y joins property/
+reservation/stay; sin nuevas entidades/tablas/migraciones ni capacidades Staff.
+Servicios HTTP, DTO/mapper/hooks, restore/expiración/logout y guard sin fallback
+mock entregados. Contrato56/Android38, C1/C3/OpenAPI y conectividad local opt-in.
+Owner Alan; revisión cross-app de seguimiento, sin bloquear cierre técnico.
+
+Evidencia:42 pruebas Backend distintas PASS (Guest Android9, Account Summary10,
+OpenAPI23); última repetición32 PASS tras reforzar Guest→Staff, refresh revocado
+y schemas/nullability. HTTP TCP real login→summary→list→stay sobre PostgreSQL17
+tras seed sintético descartable, refresh nativo/cookie y logout/401 PASS.
+Ejecución JDK25 con release21, sin suite completa ni build de distribución.
+Target previo con archivos de otro propietario: compilación/pruebas en copia
+/tmp/android-backend-mvp-backend, sin modificar sus permisos. Evidencia en
+/tmp/android-backend-mvp-backend-tests.log, /tmp/android-backend-mvp-backend-final.log
+y target/openapi-generated.json de esa copia (67 operaciones,52 paths,89 schemas).
+Android10 suites/105 pruebas focales PASS, typecheck y ESLint focal PASS;
+Jest reporta aviso de handles abiertos de temporizadores en suites existentes.
+Log /tmp/android-backend-mvp-android-final.log. git diff --check y whitespace
+untracked PASS. Los5 cambios locales iniciales comprobados contra snapshot:
+Web/EAS byte a byte; app/package/lock conservados más SecureStore únicamente.
+Sin commit/push/PR, cambios a secretos o base de trabajo. QA físico Android,
+SecureStore nativo, LAN/HTTPS y confirmación manual de Alan pendientes.
+Siguiente: desplegar Backend actualizado en LAN controlada y ejecutar guíaAndroid38.
+
+## PR166 — Integración con main (2026-10-25)
+
+- Primera CI: Stack PASS; Web falló por compatibilidad del callback/backdrop y
+  Backend por6 conteos de upgrade anteriores a012. Correcciones mínimas: conservar
+  llamada booleana izquierda y montar recuperación solo habilitada; total29 con
+  presencia explícita012 sin quitar checksums/datos/triggers/idempotencia.
+- Focal local correctivo: Web105 PASS, migraciones23 PASS, typecheck/diff PASS;
+  sin suites completas locales. Publicar corrección y revisar segunda CI.
+
+- Merge normal autorizado de origin/main0d1f4b7 en feature/staff-activation-mvp,
+  realizado en worktree aislado para preservar Android/next-env.d.ts locales.
+- Dos conflictos documentales resueltos por conservación de ambas entradas;
+  OpenAPI combinado sin perder pruebas Staff/reservas. Sin cambios funcionales
+  adicionales ni alteración de contratos o aceptación manual anteriores.
+- OpenAPI focal22 PASS, typecheck y diff-check PASS; sin suites completas locales
+  ni nueva QA manual. CI pendiente; siguiente: publicar merge y revisar jobs.
+- No force push ni merge del PR a main; estados QA independientes conservados.
+
+## Reactivación y recuperación Staff MVP (2026-10-25)
+
+- Ajuste UI swipe derecho: backdrop izquierdo con Reactivar/UserRoundCheck o
+  recuperación/Mail según GET real; confirmación, teclado y swipe izquierdo intactos.
+  64 tests focales PASS, typecheck/diff PASS. Aceptación del usuario registrada; verificaciones individuales no acreditadas siguen pendientes.
+
+- **COMPLETADA / PASS manual**, aceptación explícita del usuario en feature/staff-activation-mvp. PATCH status
+  reactiva SUSPENDED con M08 válido; sin evidencia, POST invitation explícito permite
+  recuperar también cuentas antiguas. Consumo activa con contraseña/M08 en un commit.
+- Suspensión efectiva revoca enlaces pendientes conservando evidencia acreditada;
+  tokens anteriores no activan. DISABLED/SUPER_ADMIN/autoedición/scope protegidos.
+  Gmail, BFF existente, tres columnas/edición/swipe conservados; sin migraciones.
+- Backend focal38 pruebas distintas PASS (HTTP14 finales +OpenAPI21 +correo3);
+  BFF/Web34 y regresión focal3 PASS; typecheck/diff PASS. Sin suite completa/build/
+  Docker E2E ni envío Gmail real. Guía55, sección final.
+- Recuperación de cuentas antiguas, SMTP externo adicional y accesibilidad no
+  acreditada conservan QA manual pendiente; no cierre global3B-2 ni de
+  BE-006B/C, BE-014A, QA2A/2B. El MVP inicial conserva aceptación anterior.
+
+- Cierre2026-10-25: PASS manual solo para el flujo confirmado por el usuario;
+  cobertura automatizada histórica separada. En esta preparación solo revisión
+  y git diff --check; verificación completa en CI del PR. Sin merge ni cambios ajenos.
+
+## Invitación y activación inicial Staff MVP (2026-10-23)
+
+- **COMPLETADA / PASS por aceptación del usuario (2026-10-25)**; rama feature/staff-activation-mvp desde main fe6a381.
+- SMTP real y enlace256bits/30min de un uso; solo hash persistido. Consumo establece contraseña/evidencia M08 sin activar ni crear sesión. Admin confirma ACTIVE solo para altas nuevas con evidencia, membership y propiedades vigentes.
+- Migración aditiva012, GET/POST invitation y POST consume; BFF/Origin/no-store/un envío y UI en las tres columnas existentes. Correo/DISABLED invalidan preparación; locks/versión/revocación/auditoría transaccionales conservados.
+- Backend focal57 PASS; Web334/7 PASS y últimos30/2 PASS; HTTP real Next/Spring/PostgreSQL/Mailpit28 aserciones PASS; typecheck/lint focal/diff PASS. Sin suite completa/build/Docker E2E. Detalle y QA Firefox en55.
+- Manual pendiente; sin invitación/reactivación de cuentas previas. No cerrar3B-2 global, BE-006B/C, BE-014A ni QA2A/2B. Creación MVP y fases completadas conservadas. Siguiente: aceptación manual del flujo inicial.
+
+- Ajuste 2026-10-25: invitación reutiliza `SmtpEmailConfiguration`/`JavaMailSender`
+  Gmail existentes; sin PMS_STAFF_SMTP ni dependencia Mailpit. Solo capturador QA
+  detenido; PostgreSQL intacto. Tests focales15 PASS, typecheck/diff PASS. Gmail real
+  pendiente; evidencia anterior conservada como histórica. Estado EN_QA (guía55).
+
+- 2026-10-25: alta201 encadena invitación automática con ID/versión/scope reales;
+  fallo de envío conserva alta y ofrece flujo manual sin reintentos.15 tests focales
+  PASS, typecheck/diff PASS. Recepción Gmail/Firefox pendiente; EN_QA, guía55.
+
+- Cambio autorizado2026-10-25: consumo de invitación activa la cuenta inicial en
+  el mismo commit de contraseña/M08, sin paso administrativo ni autologin. Roles/
+  membership/propiedades vigentes bajo locks; versión única, revocación y auditoría.
+  Backend focal35 PASS; Web18 PASS (+repetición3 destinatario), typecheck/diff PASS.
+  Gmail/Firefox pendiente; EN_QA. No habilita reactivación antigua (guía55).
+
+- Cierre2026-10-25 autorizado por el usuario tras ajuste final: enlace de
+  confirmación a `/acceso` con marca `from=staff-activation` evita redirección
+  automática por sesión existente solo en este recorrido. Mensaje intacto, sin
+  autologin ni cambios Backend/BFF/Gmail. Solo revisión/diff-check PASS; no nuevas
+  pruebas ni QA manual atribuida. Evidencia histórica y pendientes conservados.
 
 ## Integración del PR de reservas con main — EN_QA (2026-10-24)
 

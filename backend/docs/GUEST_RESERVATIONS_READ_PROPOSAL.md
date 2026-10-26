@@ -1,70 +1,28 @@
-# Historial real del huésped — contrato aprobado
+# Historial Guest — contrato original sustituido durante integración
 
-Corrección solicitada por José el 2026-10-25: confirmación pública → Mis reservas,
-sin entrar a Staff ni presentar el prototipo como si fuera un historial real.
-Base main0d1f4b7; rama fix/public-my-reservations-flow. Android permanece aparte.
-Aprobado explícitamente por José el 2026-10-25 («sí lo apruebo»), incluyendo
-lectura propia, conexión al OTP C3 existente y presentación del historial real.
-No autoriza añadir datos financieros ni cambiar la política de auto-vinculación.
+El25/10 José aprobó un listado propio paginado y detalle por reserva en esta
+rama. El26/10 autorizó integrar main y conservar el contrato compartido que ya
+utilizan Web/Android, evitando dos mappings para el mismo GET. La implementación
+paginada de esta rama se retira; no se altera el contrato de Android.
 
-## Hallazgos y alcance
+Las fuentes vigentes son [contrato56](56_ANDROID_GUEST_MVP_CONTRACT_QA.md) y
+[recuperación57](57_GUEST_BOOKING_LINK_RECOVERY.md):
 
-- GuestReservationsPage redirige antes de terminar la restauración Guest.
-- GuestAccessPage restaura Staff incluso con retorno explícito a Mis reservas.
-- El historial antiguo usa /account/history?accountId y DTO de mock; Backend solo
-  confirma GET /api/v1/guest-auth/account/summary, no el historial completo.
-- Reutilizar C3 y AUTH-GUEST-REG-HISTORY-01: links persistidos tras verificación,
-  sin crear cuenta al reservar, vincular por correo no verificado ni usar Staff.
+- GET /api/v1/guest-auth/account/reservations devuelve una lista de estancias
+  propias vinculadas; Web agrupa N estancias por reserva sin inventar campos.
+- GET /{reservationId}/stays/{stayId} revalida pertenencia en Backend y devuelve
+  el detalle de la estancia, tipo y habitación nullable.404 ajeno/inexistente.
+- POST /reconcile recupera vínculos compatibles solo con sesión Guest y prueba
+  de correo verificado persistida. No recrea reservas ni pagos y no acepta
+  identidad seleccionada por el cliente; lectura GET sigue siendo de solo lectura.
+- Se reutilizan servicios, adaptadores SQL, BFF y hooks de main. No hay
+  GuestReservationHistoryController ni segundo mapping ni cambio de migraciones.
+- El flujo manual OTP C3 continúa separado, con su BFF Guest HttpOnly,202 opaco,
+  verificación204 y espera mínima de reenvío60s; no hay OTP simulado en producción.
 
-## Lectura aprobada
+Se conservan la presentación pública crema/oliva, el acceso Guest contextual y
+las pruebas de aislamiento, N estancias, campos privados, errores y C3. Las
+aserciones de paginación se sustituyen por pruebas del contrato compartido;
+no se deshabilitan tests ni se modifican límites para ocultar errores.
 
-Backend, solo sesión Guest vigente, identidad revalidada desde GuestPrincipal:
-
-- GET /api/v1/guest-auth/account/reservations?page=0&size=20.
-  page entero >=0; size 1..50. Respuesta: guestAccountId, page, size, totalElements,
-  items. Orden estable createdAt descendente, reservationId descendente.
-- GET /api/v1/guest-auth/account/reservations/{reservationId}.
-  Respuesta: guestAccountId y reservation con la misma proyección que un item.
-- Proyección: reservationId, confirmationCode, status del dominio vigente,
-  propertyId, propertyName, propertyTimeZone, bookingGuestName nullable y stays:
-  reservationStayId, roomTypeId, roomTypeName, arrival, departure y status vigente.
-  No inventar importes, políticas, ocupantes, notas internas ni pagos.
-  stays es un array; no fabricar estancias para un contenedor pendiente vacío.
-- Solo guest_reservation_links propios autorizan consultar Reservation y sus
-  N stays. Sin seleccionar accountId/propertyId desde el cliente ni filtrar a
-  posteriori resultados globales. Una propiedad inactiva no oculta su historial.
-- 200 real, incluido vacío;400 formato/query inválidos;401 sin sesión Guest
-  activa o con JWT Staff;404 idéntico para reserva inexistente o ajena.
-  Cache-Control private,no-store; sin escrituras, migraciones ni permisos nuevos.
-- BFF same-origin /api/auth/guest/account/reservations y /{reservationId};
-  exclusivamente cookies Guest HttpOnly, sin tokens en JS. Errores técnicos503.
-
-## Vinculación y experiencia
-
-Conectar el formulario al C3 existente mediante BFF Guest para challenges y verify,
-con Origin/JSON estricto,202 neutro y204 tras verificación real. No exponer OTP,
-simular envío ni trasladar links ajenos. Mantener límites de C3 sin inventar TTLs.
-Tras verificar, refrescar exclusivamente historial/resumen de esa sesión Guest.
-Registro con correo verificado y Google nuevo conservan su auto-link ya aprobado.
-Reservas creadas después de ese registro pueden necesitar OTP manual; no cambiar
-silenciosamente la política del alta anónima J6 ni el login para auto-vincularlas.
-
-Mis reservas y su detalle usarán el estilo crema/serif/oliva de Public01, estados
-de carga/error/vacío honestos y navegación Guest. Login universal sin retorno
-Guest conserva su comportamiento Staff. Ningún cambio a la app ni al inventario.
-
-## Validación prevista
-
-Regresión con Staff y Guest coexistentes, restauración Guest, retorno de login,
-reservas reales vinculadas, vacío auténtico, N stays, paginación, bloqueo de
-lecturas ajenas y JWT Staff, OTP fallido/exitoso y ausencia de éxito simulado.
-OpenAPI del nuevo transporte, tests Backend/PostgreSQL y pruebas Web pertinentes;
-QA integrado sin enviar correos a terceros ni alterar la BD habitual del usuario.
-
-## Evidencia del incremento (EN_QA)
-
-Backend verify completo1049 PASS (Java21/PostgreSQL17), incluidas12 pruebas del
-historial y22 de OpenAPI. Web lint/typecheck/build y recorrido real de navegador
-16/16 PASS; entrega OTP sustituida solo en QA, sin correos externos. Alcance y
-timeouts de la suite general local registrados en Web70 y AlanHandoff; no se
-declara CI Web general/remoto aprobado. QA manual del owner pendiente.
+Estado de la integración y evidencia final en AlanPlan/AlanHandoff y Web70.

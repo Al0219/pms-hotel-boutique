@@ -1,0 +1,6 @@
+# Explicit opt-in for a controlled local network. Production authentication needs HTTPS.
+# Bind to Fedora's private LAN IP for a physical phone; set 127.0.0.1 for emulator-only access.
+services:
+  backend:
+    ports:
+      - "${PMS_ANDROID_BIND_IP:-0.0.0.0}:${PMS_ANDROID_BACKEND_PORT:-18081}:8080"
