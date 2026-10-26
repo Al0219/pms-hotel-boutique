@@ -443,3 +443,34 @@ status incluye JSON null, no solo type:null. UTC y token exacto de concurrencia;
 respuestas private,no-store. Ninguna exclusión nueva. Cobertura por pruebas
 estructurales globales y StaffHousekeepingIntegrationTests; evidencia/estado
 final se registran en AlanHandoff y la guía Web64.
+
+## Extensión Guest Android nativo — 2026-10-25, EN_QA
+
+Autorizada explícitamente por Alan: [contrato56](56_ANDROID_GUEST_MVP_CONTRACT_QA.md).
+Guest sessions/me/refresh/logout/account summary admiten BFF Web o Android
+nativo seguro; Google y registro siguen BFF-only, browser sin tokens. Refresh
+nativo en X-Guest-Refresh-Token sin cookie/Origin, servicio/rotación existentes.
+Dos GET propios account/reservations y /{reservationId}/stays/{stayId}, siempre
+GuestPrincipal y vínculos persistidos/property coherente. Sin tablas/migraciones
+ni cambios Staff. OpenAPI y sus pruebas incluyen audiencia guest-bff-or-native,
+Bearer Guest y alternativas de refresh; sin exclusiones nuevas.
+
+## Corrección posterior — reservas Guest, EN_QA (2026-10-25)
+
+[Contrato57](57_GUEST_BOOKING_LINK_RECOVERY.md) reutiliza las lecturas existentes,
+agrega POST account/reservations/reconcile y reservationStatus al listado.
+Solo GuestPrincipal, correo verificado persistido y CONFIRMED; sin transferencia.
+Migración aditiva013 habilita procedencia ACCOUNT desde email_verified_at para
+cuentas anteriores sin prueba; no inventa OTP/Google ni crea tablas. Transacción
+independiente, auditoría/locks/ON CONFLICT existentes. Web confirma primero y
+recupera después; Web/Android reconcilian antes de listar. La confirmación/pago
+nunca se repite o revierte por fallo de vínculo. Amplía el alcance inicial del
+MVP56; no modifica migraciones aplicadas ni cierra QA previos. OpenAPI con paridad.
+
+## Referencia de reserva en detalle Guest — 2026-10-26
+
+GuestStay agrega confirmationCode string requerido, persistido desde Reservation,
+en el GET existente; IDs/seguridad/propiedad conservados. Prueba focal sobre
+/v3/api-docs comprueba required y paridad mappings; sin nuevas operaciones.
+Recorrido real Web/Android con PASS manual confirmado por usuario. Ajuste visual
+Android EN_QA pendiente de confirmación; no atribuye nueva ejecución manual.

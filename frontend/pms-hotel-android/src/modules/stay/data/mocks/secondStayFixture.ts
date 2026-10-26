@@ -2,6 +2,7 @@ import { type ReservationStayDto } from "@/modules/stay/data/dtos/ReservationSta
 
 /** Minimal second linked stay used only to exercise account-scoped context selection. */
 export const secondStayFixture: ReservationStayDto = {
+  confirmationCode: 'HB-2026-004982',
   id: "stay-2026-004982",
   reservationId: "HB-2026-004982",
   roomType: { id: "deluxe-twin", name: "Deluxe Twin" },

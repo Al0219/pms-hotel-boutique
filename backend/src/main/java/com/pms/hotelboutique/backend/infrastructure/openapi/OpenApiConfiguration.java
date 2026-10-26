@@ -35,6 +35,9 @@ public class OpenApiConfiguration {
                 .type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.COOKIE).name("pms_staff_refresh")
                 .description("Refresh opaco Staff reenviado por BFF; no JSON. El BFF reemplaza sus cookies HttpOnly."))
             .schemaRequirement("guestRegistrationBinding",new SecurityScheme().type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name("X-Guest-Registration-Binding").description("BFF-only continuation; independent of JWT/refresh. Never exposed to Browser."))
+            .schemaRequirement("guestNativeRefresh", new SecurityScheme()
+                .type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name("X-Guest-Refresh-Token")
+                .description("Refresh nativo Android desde SecureStore; sin Cookie ni Origin; rota con la misma sesión Guest."))
             .schemaRequirement("guestRefreshCookie", new SecurityScheme()
                 .type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.COOKIE).name("pms_guest_refresh")
                 .description("Refresh opaco Guest reenviado por BFF; independiente de Staff."));
@@ -50,6 +53,20 @@ public class OpenApiConfiguration {
             properties.put("upcomingStay", new Schema<>().description(description).anyOf(List.of(
                     new Schema<>().$ref("#/components/schemas/UpcomingStay"),
                     new Schema<>().types(Set.of("null")))));
+        };
+    }
+
+    @Bean
+    OpenApiCustomizer nativeGuestReadSchemas() {
+        return api -> {
+            var schemas = api.getComponents().getSchemas();
+            for (String name : List.of("GuestLinkedStay", "GuestStay", "GuestStayRoomType", "GuestStayRoom")) {
+                var schema = schemas.get(name);
+                if (schema != null) schema.setRequired(new java.util.ArrayList<>(schema.getProperties().keySet()));
+            }
+            var stay = schemas.get("GuestStay");
+            if (stay != null) stay.getProperties().put("room", new Schema<>().anyOf(List.of(
+                    new Schema<>().$ref("#/components/schemas/GuestStayRoom"), new Schema<>().types(Set.of("null")))));
         };
     }
 
@@ -79,6 +96,13 @@ public class OpenApiConfiguration {
             String packageName = handler.getBeanType().getPackageName();
             if (packageName.contains(".modules.securityauth.") || packageName.contains(".modules.guestauth.")) {
                 operation.addExtension("x-audience", "internal-bff");
+                if (packageName.contains(".modules.guestauth.") && (
+                        handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.guestauth.api.GuestReservationController.class)
+                        || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.guestauth.api.GuestAccountController.class)
+                        || (handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.guestauth.api.GuestAuthController.class)
+                            && !Set.of("start", "exchange").contains(handler.getMethod().getName())))) {
+                    operation.addExtension("x-audience", "guest-bff-or-native");
+                }
                 String method = handler.getMethod().getName();
                 if (method.equals("login") || method.equals("loginExplicit") || method.equals("start") || method.equals("exchange")) operation.setSecurity(List.of());
             } else if (handler.getBeanType().equals(PublicAvailabilityController.class)) {

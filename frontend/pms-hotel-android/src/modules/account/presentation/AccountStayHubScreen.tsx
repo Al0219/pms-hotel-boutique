@@ -136,7 +136,7 @@ export function AccountStayHubScreen({ service }: AccountStayHubScreenProps) {
           <Text style={accountStayHubStyles.stayCardBody}>{stayDates}</Text>
           <Text style={accountStayHubStyles.stayCardBody}>{`Check-out · ${formatStayDate(stay.departure)}`}</Text>
           <View style={accountStayHubStyles.reference}>
-            <Text style={accountStayHubStyles.referenceText}>{stay.reservationId}</Text>
+            <Text testID="account-stay-reference" numberOfLines={1} ellipsizeMode="tail" style={accountStayHubStyles.referenceText}>{stay.confirmationCode ? `Reserva · ${stay.confirmationCode}` : "Reserva · Referencia no disponible"}</Text>
           </View>
         </View>
         <Pressable accessibilityLabel={isCheckedOut ? 'Ver factura' : 'Abrir Check-out'} accessibilityRole="button" onPress={() => router.push(isCheckedOut ? '/account/invoice' : '/account/checkout')} style={accountStayHubStyles.button} testID="account-checkout-launcher"><View accessible={false} testID="account-checkout-launcher-icon"><SymbolView accessibilityElementsHidden name={isCheckedOut ? guestFeatureIcons.invoice : guestFeatureIcons.checkout} size={20} tintColor={tokens.color.white} /></View><Text style={accountStayHubStyles.buttonLabel}>{isCheckedOut ? 'Ver factura' : 'Check-out'}</Text></Pressable>

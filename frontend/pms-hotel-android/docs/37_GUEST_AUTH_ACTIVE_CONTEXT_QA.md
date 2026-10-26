@@ -29,3 +29,18 @@ Jest puede informar handles abiertos y avisos act(...) de timers o actualizacion
 ## Limitaciones frontend-first
 
 No existe persistencia Backend. Un request local puede no reaparecer después de logout/login o de A→B→A. No se agrega almacenamiento local para ocultar esta limitación.
+
+## Extensión Android ↔ Backend (2026-10-25)
+
+El [incremento real38](38_ANDROID_BACKEND_MVP.md), autorizado separadamente,
+reutiliza estos contratos/UI y extiende transporte y persistencia de sesión solo
+en modo API real. Las limitaciones frontend-first anteriores describen el modo
+mock; no son autoridad para endpoints Backend. QA físico permanece EN_QA.
+
+## Cierre del MVP real — 2026-10-26
+
+COMPLETADA / PASS por confirmación manual explícita del usuario para login Guest,
+reservas reales, vinculación, selección y referencia visible. Escenarios manuales
+no confirmados individualmente permanecen pendientes; ver cierre vigente en
+[Android38](38_ANDROID_BACKEND_MVP.md). No atribuye QA adicional al agente ni
+cierra por arrastre el backlog o las variantes de hardware/accesibilidad.

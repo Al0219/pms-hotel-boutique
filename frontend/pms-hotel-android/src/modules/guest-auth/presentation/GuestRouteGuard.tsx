@@ -1,3 +1,6 @@
+import { environment } from "@/config/environment";
+import { UniversalState } from "@/shared/components/UniversalState";
+
 import { router, usePathname } from "expo-router";
 import { type PropsWithChildren, useEffect } from "react";
 
@@ -30,16 +33,27 @@ function destination(
 export function GuestRouteGuard({ children }: PropsWithChildren) {
   const pathname = usePathname();
   const { session } = useGuestAuthSession();
-  const { activeReservationContext } = useActiveReservationContext();
+  const { activeReservationContext, clearActiveReservationContext } = useActiveReservationContext();
   const redirect = destination(
     pathname,
     Boolean(session),
-    Boolean(activeReservationContext),
+    Boolean(activeReservationContext) && (environment.useMockApi || Boolean(session)),
   );
+
+  useEffect(() => {
+    if (!environment.useMockApi && !session) clearActiveReservationContext();
+  }, [session, clearActiveReservationContext]);
+  useEffect(() => {
+    if (!environment.useMockApi && session && (pathname === '/login' || pathname === '/')) router.replace('/reservations');
+  }, [pathname, session]);
 
   useEffect(() => {
     if (redirect) router.replace(redirect);
   }, [redirect]);
 
-  return redirect ? null : children;
+  if (redirect) return null;
+  if (!environment.useMockApi && !['/', '/login', '/reservations', '/account'].includes(pathname)) {
+    return <UniversalState kind="empty" title="Función no disponible" body="Esta función todavía no está disponible. Puedes consultar tus estadías." action={{ label: 'Volver', onPress: () => router.replace(session ? '/reservations' : '/login') }} testID="guest-real-feature-unavailable" />;
+  }
+  return children;
 }

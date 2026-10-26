@@ -18,5 +18,6 @@ export function getMockAccountSummary(accountId: string, signal?: AbortSignal): 
 
 /** PROVISIONAL endpoint for guest stay history */
 export function getStayHistory(accountId: string, signal?: AbortSignal): Promise<GuestReservationListDTO> {
+  if (!getPublicEnvironment().useMockApi) throw new Error('MOCK_STAY_HISTORY_DISABLED');
   return httpRequest<GuestReservationListDTO>({ baseUrl: getPublicEnvironment().useMockApi ? "http://pms.test" : undefined, path: `/account/history?accountId=${encodeURIComponent(accountId)}`, signal });
 }

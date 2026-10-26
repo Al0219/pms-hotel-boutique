@@ -3,9 +3,9 @@ import { publicBookingRequest, publicBookingResponse } from '@/test/public-booki
 
 beforeEach(() => { vi.resetModules(); vi.stubEnv('PMS_BACKEND_INTERNAL_URL', 'http://backend:8080'); });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); });
-async function call(body = JSON.stringify(publicBookingRequest), key: string | null = 'opaque-key-123') {
+async function call(body = JSON.stringify(publicBookingRequest), key: string | null = 'opaque-key-123', authenticated = false) {
   const { POST } = await import('./route');
-  const headers = new Headers({ 'Content-Type': 'application/json', Cookie: 'pms_guest_access=guest; pms_staff_access=staff', Authorization: 'Bearer staff' });
+  const headers = new Headers({ 'Content-Type': 'application/json', Cookie: authenticated ? 'pms_guest_access=guest; pms_staff_access=staff' : 'pms_staff_access=staff', Authorization: 'Bearer staff' });
   if (key) headers.set('Idempotency-Key', key);
   return POST(new Request('http://localhost/api/v1/public/bookings', { method: 'POST', headers, body }));
 }
@@ -24,6 +24,19 @@ describe('Public booking BFF J6', () => {
     expect(init).toMatchObject({ method: 'POST', cache: 'no-store', body: JSON.stringify(publicBookingRequest) });
     expect(new Headers(init?.headers).get('Idempotency-Key')).toBe('opaque-key-123');
     expect(new Headers(init?.headers).has('Cookie')).toBe(false); expect(new Headers(init?.headers).has('Authorization')).toBe(false);
+  });
+  it.each(['ok', 'failed', 'network'])('preserves confirmation when optional Guest reconciliation is %s', async failure => {
+    const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(Response.json(publicBookingResponse, { status: 201 }));
+    if (failure === 'network') fetch.mockRejectedValueOnce(new TypeError('offline'));
+    else fetch.mockResolvedValueOnce(new Response(null, { status: failure === 'ok' ? 204 : 503 }));
+    const response = await call(JSON.stringify(publicBookingRequest), 'same-key-123', true);
+    expect(response.status).toBe(201); expect(await response.json()).toEqual(publicBookingResponse);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(new Headers(fetch.mock.calls[0][1]?.headers).has('Authorization')).toBe(false);
+    const [url, init] = fetch.mock.calls[1];
+    expect(url).toBe('http://backend:8080/api/v1/guest-auth/account/reservations/reconcile');
+    expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer guest');
+    expect(init?.body).toBeUndefined(); expect(new Headers(init?.headers).has('Cookie')).toBe(false);
   });
   it.each([[400, 'INVALID_REQUEST'], [400, 'INVALID_DATE_RANGE'], [404, 'PROPERTY_NOT_FOUND'], [409, 'PRICE_CHANGED'], [409, 'NO_AVAILABILITY'], [409, 'IDEMPOTENCY_KEY_REUSED'], [422, 'PAYMENT_DECLINED'], [500, 'BOOKING_FAILED']])('preserves %i/%s and does not expose upstream details', async (status, code) => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({ code, detail: 'private diagnostic' }, { status: Number(status) }));

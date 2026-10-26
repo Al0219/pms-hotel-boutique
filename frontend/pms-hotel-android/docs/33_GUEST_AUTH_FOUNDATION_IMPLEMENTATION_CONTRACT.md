@@ -105,3 +105,10 @@ No se invalida Promotions ni Chat por inferencia. La invalidez/limpieza real al 
 ## Pruebas de 0501
 
 Pruebas unitarias cubren sesión mínima, éxito/error/offline de Auth, credenciales inválidas, la proyección de selección, fixtures linked 0/1/múltiples/error/offline, resolución pura, set/replace/clear de contexto, set/clear de sesión y la convención de query key. No hay pruebas UI de Login ni selector en esta tarea.
+
+## Extensión Android ↔ Backend (2026-10-25)
+
+El [incremento real38](38_ANDROID_BACKEND_MVP.md), autorizado separadamente,
+reutiliza estos contratos/UI y extiende transporte y persistencia de sesión solo
+en modo API real. Las limitaciones frontend-first anteriores describen el modo
+mock; no son autoridad para endpoints Backend. QA físico permanece EN_QA.
