@@ -1,6 +1,6 @@
 /**
- * Interim values accepted by the frontend request while QA exercises its local
- * mock catalogue. They are not Backend enums or approved hotel options.
+ * The union retains provisional mock/QA values. Real MVP accepts only
+ * 10:00–11:00 and FULL_CLEANING; additional values are not hotel catalogue approval.
  */
 export type HousekeepingTimeSlot =
   | '09:00–10:00'

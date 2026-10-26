@@ -73,7 +73,9 @@ class StaffAuthAuditAttributionIntegrationTests {
                 String trigger = triggerDefinition(connection, schema);
                 migrate(schema, MASTER);
                 var upgraded = manifest(connection, schema);
-                assertEquals(checksums.size() + 7, upgraded.size());
+                // Includes the additive 005-operations-004 Housekeeping schedule.
+                assertEquals(checksums.size() + 8, upgraded.size());
+                assertTrue(upgraded.keySet().stream().anyMatch(key -> key.startsWith("005-operations-004\n")));
                 assertTrue(upgraded.keySet().stream().anyMatch(key -> key.startsWith("003-staff-auth-012\n")));
                 assertTrue(upgraded.keySet().stream().anyMatch(key -> key.startsWith("003-guest-account-evidence-013\n")));
                 checksums.forEach((key, checksum) -> assertEquals(checksum, upgraded.get(key)));

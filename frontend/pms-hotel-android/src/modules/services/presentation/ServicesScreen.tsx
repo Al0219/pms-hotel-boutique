@@ -1,3 +1,4 @@
+import { environment } from '@/config/environment';
 import { buildLateCheckoutSessionRequestInput } from '@/modules/services/domain/buildLateCheckoutSessionRequestInput';
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
@@ -136,7 +137,28 @@ function ServiceNavigationCard({
 }
 
 /** Services presentation: local selection plus Query-owned remote/mutation state. */
-export function ServicesScreen({ service, stayService, nowMs }: ServicesScreenProps) {
+export function ServicesScreen(props: ServicesScreenProps) {
+  return environment.useMockApi ? <MockServicesScreen {...props} /> : <RealServicesLauncher stayService={props.stayService} />;
+}
+
+/** Existing launcher cards only: no mock catalogue or paid-service mutations in real mode. */
+function RealServicesLauncher({ stayService }: Pick<ServicesScreenProps, 'stayService'>) {
+  const query = useCurrentStay(stayService);
+  const stay = deriveRemoteState(query, () => false);
+  const allowed = stay.kind === 'success' && ['RESERVED', 'IN_HOUSE'].includes(stay.data.status);
+  return <View style={servicesStyles.screen} testID="services-screen">
+    <GuestRootHeader title="Servicios" />
+    <ScrollView contentContainerStyle={servicesStyles.content} style={servicesStyles.scroll}>
+      <ServiceNavigationCard disabled={!allowed} icon={guestFeatureIcons.housekeeping} label="Limpieza" onPress={() => router.push('/services/housekeeping')} testID="services-housekeeping-launcher" />
+      <ServiceNavigationCard icon={guestFeatureIcons.requests} label="Mis servicios" onPress={() => router.push('/services/requests')} testID="services-requests-launcher" />
+      {stay.kind === 'loading' ? <ServicesStateCard title="Cargando mi estadía" body="Espera un momento." testID="services-stay-loading" /> : null}
+      {stay.kind === 'error' || stay.kind === 'offline' ? <ServicesStateCard title={stay.kind === 'offline' ? 'Sin conexión' : 'No pudimos cargar tu estadía'} body="Reintenta para consultar tu estancia." offline={stay.kind === 'offline'} onRetry={() => void query.refetch()} testID="services-stay-error" /> : null}
+      {stay.kind === 'success' && !allowed ? <ServicesStateCard title="Estancia no disponible para limpieza" body="Puedes consultar tus solicitudes en Mis servicios." testID="services-stay-completed" /> : null}
+    </ScrollView><GuestNavigationShell />
+  </View>;
+}
+
+function MockServicesScreen({ service, stayService, nowMs }: ServicesScreenProps) {
   const appClock = useAppClock();
   const getNowMs = nowMs ?? appClock.nowMs;
   const catalogQuery = useServicesCatalog(service);

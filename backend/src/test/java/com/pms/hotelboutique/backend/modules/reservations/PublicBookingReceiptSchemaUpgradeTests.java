@@ -35,7 +35,9 @@ class PublicBookingReceiptSchemaUpgradeTests {
                 }
                 migrate(connection, schema, "classpath:db/changelog/db.changelog-master.yaml");
                 Map<String, String> after = manifest(connection, schema);
-                assertEquals(before.size() + 6, after.size());
+                // Includes the additive 005-operations-004 Housekeeping schedule.
+                assertEquals(before.size() + 7, after.size());
+                assertTrue(after.keySet().stream().anyMatch(key -> key.startsWith("005-operations-004\n")));
                 assertTrue(after.keySet().stream().anyMatch(key -> key.startsWith("003-staff-auth-012\n")));
                 assertTrue(after.keySet().stream().anyMatch(key -> key.startsWith("003-guest-account-evidence-013\n")));
                 before.forEach((key, checksum) -> assertEquals(checksum, after.get(key), key));

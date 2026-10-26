@@ -1,5 +1,6 @@
 'use client';
-import { useRef, useState } from 'react';
+import { GuestCleaningRequests } from './guest-cleaning-requests';
+import { useRef, useState, type ReactNode } from 'react';
 import { useStaffSession } from '@/modules/auth';
 import { usePropertyScope } from '@/modules/properties';
 import { HttpStatusError } from '@/lib/http/errors';
@@ -16,17 +17,21 @@ export function StaffHousekeepingPage() {
   if (!ready) return <p role="status">Preparando la propiedad de tu sesión…</p>;
   if (!scope || scope.kind !== 'PROPERTY') return <section className={styles.page}><h1>Housekeeping</h1><p>Selecciona un hotel en el menú para consultar su tablero de limpieza.</p></section>;
   const propertyId = scope.propertyIds[0], property = session.memberships.find(item => item.active && item.propertyId === propertyId);
-  return <HousekeepingWorkspace key={`${session.id}:${propertyId}`} propertyId={propertyId} sessionId={session.id} propertyName={property?.name ?? 'Hotel seleccionado'} timezone={property?.timezone ?? 'UTC'} />;
+  return <GuestCleaningRequests key={`${session.id}:${propertyId}`} propertyId={propertyId} sessionId={session.id}>
+    {(requestsCard, requestsDialogOpen) => <HousekeepingWorkspace propertyId={propertyId} sessionId={session.id}
+      propertyName={property?.name ?? 'Hotel seleccionado'} timezone={property?.timezone ?? 'UTC'}
+      requestsCard={requestsCard} requestsDialogOpen={requestsDialogOpen} />}
+  </GuestCleaningRequests>;
 }
 const actionLabels = { DIRTY: 'Volver a limpieza', CLEAN: 'Marcar limpia', INSPECTED: 'Marcar inspeccionada' };
 const statusLabel = (room: StaffHousekeepingRoom) => room.status ? CLEANING_STATUS_LABELS[room.status] : 'Sin seguimiento';
 const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
 
-export function HousekeepingWorkspace({ propertyId, sessionId, propertyName, timezone }: { propertyId: string; sessionId: string; propertyName: string; timezone: string }) {
+export function HousekeepingWorkspace({ propertyId, sessionId, propertyName, timezone, requestsCard, requestsDialogOpen = false }: { propertyId: string; sessionId: string; propertyName: string; timezone: string; requestsCard?: ReactNode; requestsDialogOpen?: boolean }) {
   const [search, setSearch] = useState(''), [status, setStatus] = useState('ALL'), [dnd, setDnd] = useState('ALL'), [type, setType] = useState('ALL');
   const [selected, setSelected] = useState<string | null>(null), [page, setPage] = useState(0);
   const [pending, setPending] = useState<HousekeepingChange | null>(null), [reason, setReason] = useState(''), [notice, setNotice] = useState('');
-  const { query, mutation } = useStaffHousekeeping(propertyId, sessionId, pending !== null);
+  const { query, mutation } = useStaffHousekeeping(propertyId, sessionId, pending !== null || requestsDialogOpen);
   const submitting = useRef(false), busy = mutation.isPending || query.isFetching;
   async function refresh() { if (submitting.current) return; setPending(null); setNotice(''); mutation.reset(); await query.refetch(); }
   function open(change: HousekeepingChange) { if (busy || mutation.isError) return; setNotice(''); setReason(''); mutation.reset(); setPending(change); }
@@ -51,7 +56,7 @@ export function HousekeepingWorkspace({ propertyId, sessionId, propertyName, tim
   const mutationError = mutation.isError ? <div role="alert" className={styles.alert}><p>{errorMessage}</p><button className={styles.secondary} onClick={() => void refresh()}>Actualizar datos</button></div> : null;
   const label = pending ? pending.action === 'tracking' ? 'Iniciar seguimiento' : pending.action === 'dnd' ? pending.dnd ? 'Activar No molestar' : 'Desactivar No molestar' : pending.room.status === 'INSPECTED' && pending.toStatus === 'DIRTY' ? 'Rechazar inspección' : actionLabels[pending.toStatus] : '';
   return <section className={styles.page}>{header}
-    <div className={styles.metrics} aria-label="Resumen de limpieza">{[['Habitaciones',rooms.length],['Por limpiar',rooms.filter(r => r.status === 'DIRTY').length],['Por inspeccionar',rooms.filter(r => r.status === 'CLEAN').length],['Inspeccionadas',rooms.filter(r => r.status === 'INSPECTED').length],['Sin seguimiento',rooms.filter(r => !r.tracked).length]].map(([name,count]) => <div className={styles.metric} key={name}><span>{name}</span><strong>{count}</strong></div>)}</div>
+    <div className={styles.metrics} aria-label="Resumen de limpieza">{[['Habitaciones',rooms.length],['Por limpiar',rooms.filter(r => r.status === 'DIRTY').length],['Por inspeccionar',rooms.filter(r => r.status === 'CLEAN').length],['Inspeccionadas',rooms.filter(r => r.status === 'INSPECTED').length],['Sin seguimiento',rooms.filter(r => !r.tracked).length]].map(([name,count]) => <div className={styles.metric} key={name}><span>{name}</span><strong>{count}</strong></div>)}{requestsCard}</div>
     <p className={styles.hint}>La limpieza se gestiona por separado de la ocupación y de los bloqueos OOO/OOS. «Sin seguimiento» no indica que una habitación esté limpia o sucia.</p>
     <div className={styles.filters} aria-label="Filtros de Housekeeping">
       <label>Buscar habitación<input value={search} placeholder="Número o tipo de habitación" onChange={event => { setSearch(event.target.value); setPage(0); }} /></label>

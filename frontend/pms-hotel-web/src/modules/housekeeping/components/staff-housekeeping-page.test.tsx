@@ -1,7 +1,8 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
-const mocks=vi.hoisted(() => ({hook:vi.fn(),session:vi.fn(),scope:vi.fn(),change:vi.fn(),refresh:vi.fn()}));
+const mocks=vi.hoisted(() => ({hook:vi.fn(),session:vi.fn(),scope:vi.fn(),change:vi.fn(),refresh:vi.fn(),requests:vi.fn()}));
+vi.mock('./guest-cleaning-requests', () => ({ GuestCleaningRequests: mocks.requests }));
 vi.mock('../hooks/use-staff-housekeeping',() => ({useStaffHousekeeping:mocks.hook}));
 vi.mock('@/modules/auth',() => ({useStaffSession:mocks.session}));
 vi.mock('@/modules/properties',() => ({usePropertyScope:mocks.scope}));
@@ -11,7 +12,7 @@ const room={propertyId,roomId:'33333333-3333-4333-8333-333333333333',roomCode:'1
 const untracked={...room,roomId:'55555555-5555-4555-8555-555555555555',roomCode:'102',tracked:false,status:null,dnd:null,updatedAt:null};
 const props={propertyId,sessionId:'staff-1',propertyName:'Hotel propio',timezone:'America/Guatemala'};
 beforeEach(() => {
-  mocks.hook.mockReset();mocks.change.mockReset().mockResolvedValue(room);mocks.refresh.mockReset();
+  mocks.requests.mockReset().mockImplementation(({ children }) => children(<button type="button">Limpiezas solicitadas</button>, false));mocks.hook.mockReset();mocks.change.mockReset().mockResolvedValue(room);mocks.refresh.mockReset();
   mocks.session.mockReturnValue({id:'staff-1',permissions:['OPERATIONS_MANAGE'],memberships:[{propertyId,active:true,name:'Hotel propio',timezone:'America/Guatemala'}]});
   mocks.scope.mockReturnValue({ready:true,scope:{kind:'PROPERTY',propertyIds:[propertyId]}});
   mocks.hook.mockReturnValue({query:{data:{propertyId,rooms:[room,untracked]},isPending:false,isFetching:false,isError:false,fetchStatus:'idle',refetch:mocks.refresh},mutation:{mutateAsync:mocks.change,reset:vi.fn(),isPending:false,isError:false}});
@@ -20,7 +21,7 @@ it('does not mount data access without permission or a specific authorized hotel
   mocks.session.mockReturnValue({permissions:[],memberships:[]});const view=render(<StaffHousekeepingPage />);
   expect(screen.getByRole('alert')).toHaveTextContent('permiso');expect(mocks.hook).not.toHaveBeenCalled();
   mocks.session.mockReturnValue({permissions:['OPERATIONS_MANAGE'],memberships:[]});mocks.scope.mockReturnValue({ready:true,scope:{kind:'ALL_PROPERTIES',propertyIds:[propertyId]}});
-  view.rerender(<StaffHousekeepingPage />);expect(screen.getByText(/Selecciona un hotel/)).toBeInTheDocument();expect(mocks.hook).not.toHaveBeenCalled();
+  view.rerender(<StaffHousekeepingPage />);expect(screen.getByText(/Selecciona un hotel/)).toBeInTheDocument();expect(mocks.hook).not.toHaveBeenCalled();expect(mocks.requests).not.toHaveBeenCalled();
 });
 it('filters real rooms and distinguishes untracked from cleaning state',() => {
   render(<HousekeepingWorkspace {...props} />);fireEvent.change(screen.getByLabelText('Estado de limpieza'),{target:{value:'UNTRACKED'}});
@@ -61,4 +62,19 @@ it('shows the persisted cleaning reason in the room description',() => {
   const detail = screen.getByRole('complementary',{name:'Detalle de limpieza'});
   expect(within(detail).getByRole('heading',{name:'Motivo de devolución a limpieza'})).toBeInTheDocument();
   expect(within(detail).getByText(/Baño sin limpiar/)).toHaveTextContent('Revisar lavabo');
+});
+
+it('scopes the separate Guest request reader to the authorized session and property', () => {
+  render(<StaffHousekeepingPage />);
+  expect(mocks.requests.mock.calls[0][0]).toMatchObject({ propertyId, sessionId: 'staff-1' });
+  const metrics = screen.getByLabelText('Resumen de limpieza');
+  expect(metrics.children).toHaveLength(6);
+  expect(within(metrics).getByRole('button', { name: 'Limpiezas solicitadas' })).toBeInTheDocument();
+  expect(screen.queryByRole('table')).not.toBeInTheDocument();
+});
+
+it('keeps the room board stable by pausing its automatic refresh while the requests dialog is open', () => {
+  mocks.requests.mockImplementation(({ children }) => children(<button type="button">Limpiezas solicitadas</button>, true));
+  render(<StaffHousekeepingPage />);
+  expect(mocks.hook).toHaveBeenLastCalledWith(propertyId, props.sessionId, true);
 });

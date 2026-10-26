@@ -1,5 +1,73 @@
 # AlanPlan — Seguimiento Backend
 
+## 2026-10-26 — PR168: corrección focal de conteos de upgrade CI
+
+MVP publicado en fa908d1; PR168 hacia main, abierto y sin conflictos.
+CI de ese SHA: Android, Web y Docker Stack PASS; Backend1084 tests/3 failures,
+0 errors/skipped, únicamente conteos de manifests30→31 por005-operations-004.
+Se ajustan los deltas en PublicBookingReceiptSchemaUpgradeTests,
+StaffAuthAuditAppendOnlyIntegrationTests y StaffAuthAuditAttributionIntegrationTests,
+y se exige presencia del nuevo changeset. Checksums, datos históricos, triggers
+e idempotencia de reaplicación conservan sus aserciones; no se modifica código
+funcional, contratos ni migraciones.
+
+Verificación correctiva: solo los tres métodos fallidos,3 PASS sobre PostgreSQL17
+descartable en18553. Comando/log en /tmp/housekeeping-pr-close/
+backend-ci-fix-focused.log. Sin suite completa/build pesado/Docker E2E local.
+git diff --check PASS; cinco archivos locales originales intactos. Commit
+correctivo y push normal en el mismo PR autorizados por el alcance de cierre.
+CI del SHA correctivo se informa en la descripción del PR, sin merge.
+Housekeeping funcional sigue COMPLETADA / PASS manual; UX Staff conserva PASS
+técnico / EN_QA visual. No se atribuyen pruebas manuales adicionales al usuario.
+
+## 2026-10-26 — Housekeeping MVP real: COMPLETADA / PASS manual; UX Staff EN_QA visual
+
+Confirmación explícita del usuario: crear limpieza real desde Android, consultarla
+en Firefox Staff, persistencia al cerrar/reabrir Expo Go y ausencia de duplicados.
+Se cierra exclusivamente este recorrido funcional. La mejora posterior de tarjeta
+«Limpiezas solicitadas» y modal conserva PASS técnico / EN_QA visual: no se atribuye
+al usuario QA visual de la modal, responsive, foco ni teclado.
+
+Rama feature/android-housekeeping-real-mvp, worktree /tmp/pms-android-housekeeping;
+HEAD/base main a98250f (PR167 integrado), origin/main actualizado e idéntico al
+inicio de publicación. Commit convencional, push normal y PR hacia main autorizados;
+no merge. Cinco cambios originales preservados byte a byte. Solo documentación
+de cierre modificada en este turno; funcionalidades aceptadas intactas.
+
+Guest POST/GET housekeeping-requests y Staff GET por propiedad documentados en
+contrato58. ServiceRequest existente, migración005-operations-004 aditiva,
+idempotencia transaccional y vínculos Guest/Staff/scope existentes. Android HTTP
+real sin fallback ni acciones locales sobre solicitudes persistidas. Staff usa
+una query para KPI OPEN+IN_PROGRESS y modal con todos los estados, actualización,
+accesibilidad técnica y grid6/3/2; tabla fija inferior retirada. Sin cambios
+respecto a estados físicos de habitación, cargos ni servicios ajenos.
+
+Evidencia existente: Backend52 PASS; Android87 PASS; Web Housekeeping21 PASS;
+Web mejora UX21 PASS (grupos históricos separados, no sumar por solapamientos).
+Typecheck Android/Web, ESLint focal y OpenAPI/paridad mappings PASS. Cierre:
+revisión completa y git diff --check, sin repetir suites, builds ni Docker E2E.
+CI remoto se consultará después de publicar y se informará en el PR.
+
+Pendientes: QA visual Firefox de tarjeta/modal, responsive6/3/2 y teclado/foco;
+variantes manuales no confirmadas de red/errores, sesión, fecha/zona horaria,
+autorización adversa y cambios de cuenta/propiedad/estancia. Cobertura automática
+no equivale a PASS manual de esas variantes. Siguiente: revisar CI y completar
+QA visual antes de autorizar merge; mantener PR abierto sin fusionar.
+
+## PR169 — sincronización con main03e476e, EN_QA (2026-10-26)
+
+- GitHub confirma PR169 con452c626 publicado; nuevo PR168 de Housekeeping/Android
+  adelanta main a03e476e y provoca solo conflictos en AlanPlan/AlanHandoff.
+- Continúa la integración/publicación autorizada. Ambos historiales conservados;
+  entradas entrantes de main primero para reducir colisiones por nuevas entradas.
+  Código, migración y contratos58 entrantes se conservan exactamente como main.
+  Ajustes locales Android intactos por SHA256 y excluidos de los cambios propios.
+- Backend focal Guest/Housekeeping/OpenAPI/upgrades: BUILD SUCCESS,82 pruebas,
+  cero fallos/errores/omitidas (Java21/PostgreSQL17 descartable). Web focal165/12
+  PASS, lint/typecheck/build Linux PASS. Sin repetir ni aprobar la suite general.
+  La evidencia anterior1077 PASS corresponde a a98250f, no a esta combinación.
+  Gate general Web y QA manual siguen pendientes. No recrear servicios de3001.
+
 ## Integración Mis reservas con main a98250f — EN_QA, 2026-10-26
 
 - José autoriza integrar origin/main, resolver incompatibilidades, validar y

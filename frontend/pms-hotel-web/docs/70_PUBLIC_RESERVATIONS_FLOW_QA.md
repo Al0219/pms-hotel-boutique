@@ -61,6 +61,17 @@ en los servicios habituales como parte de esta integración.
 
 ## Validación de integración
 
+Sincronización posterior con main03e476e (PR168 Housekeeping/Android): GitHub
+confirma PR169 en452c626 y conflicto nuevo por avance de main, no push perdido.
+Solo AlanPlan/AlanHandoff colisionan; ambos historiales se conservan, con entradas
+main primero. Código y migración entrantes idénticos a main; Android local intacto.
+Backend focal Guest/Housekeeping/OpenAPI/upgrades:82 PASS, cero fallos/errores/
+omitidas. Web focal165/12 PASS; lint/typecheck/build Linux PASS. No repetir ni
+declarar aprobada la suite general Web. No recrear servicios de3001.
+Evidencia de esta sincronización: pms-guest-main-sync-03e476e fuera de Git.
+
+Resultados anteriores contra main a98250f (no equivalen a la suite general de03e):
+
 - ESLint PASS y TypeScript PASS; correcciones de tipos de los tests adaptados.
 - Backend ./mvnw -B verify completo con Java21/PostgreSQL17 aislados: BUILD
   SUCCESS,1077 pruebas, cero fallos/errores/omitidas. Incluye23 OpenAPI,14

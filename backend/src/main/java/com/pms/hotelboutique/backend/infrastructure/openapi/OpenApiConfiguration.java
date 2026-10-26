@@ -99,6 +99,7 @@ public class OpenApiConfiguration {
                 if (packageName.contains(".modules.guestauth.") && (
                         handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.guestauth.api.GuestReservationController.class)
                         || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.guestauth.api.GuestAccountController.class)
+                        || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.guestauth.api.GuestHousekeepingController.class)
                         || (handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.guestauth.api.GuestAuthController.class)
                             && !Set.of("start", "exchange").contains(handler.getMethod().getName())))) {
                     operation.addExtension("x-audience", "guest-bff-or-native");
@@ -110,7 +111,8 @@ public class OpenApiConfiguration {
                 operation.setSecurity(List.of());
             } else if (packageName.contains(".modules.inventory.") || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.reservations.api.StaffReservationController.class)
                     || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.reservations.api.StaffReservationCreationController.class)
-                    || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.operations.api.StaffHousekeepingController.class)) {
+                    || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.operations.api.StaffHousekeepingController.class)
+                    || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.operations.api.StaffHousekeepingRequestsController.class)) {
                 operation.addExtension("x-audience", "staff");
             }
             return operation;

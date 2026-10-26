@@ -1,5 +1,24 @@
 # housekeeping
 
+## Housekeeping funcional COMPLETADA / PASS; UX Staff EN_QA visual (2026-10-26)
+
+La solicitud del usuario autoriza una consulta de solo lectura que reutiliza
+DataTable, Modal y el scope Staff de la página existente. La tarjeta superior
+«Limpiezas solicitadas» cuenta OPEN/IN_PROGRESS del endpoint real; su modal
+«Solicitudes de limpieza» muestra todos los estados, con Actualizar solicitudes.
+Reemplaza la tabla fija inferior y mantiene una sola query por sesión/propiedad.
+Abrir/cerrar no genera lecturas adicionales; actualizar refresca tabla y contador.
+El modal conserva Escape, trampa de foco, retorno a la tarjeta y scroll propio.
+Grid responsive: seis columnas desktop, tres tablet y dos móvil. El contador es
+independiente de los estados físicos de limpieza de habitaciones. Contrato Backend58;
+BFF GET /api/staff/housekeeping/requests con cookie Staff, DTO/mapper/hook propios,
+sin polling nuevo ni transiciones sobre solicitudes o habitaciones. La query
+vive fuera del refresco del tablero físico y cambia con sesión/propiedad.
+El usuario confirmó el recorrido funcional Android → Firefox y persistencia
+al reabrir Expo Go sin duplicados. QA visual de este ajuste pendiente en Firefox. Tests focales de tarjeta/modal/
+tabla y composición21 PASS; typecheck Web, ESLint focal y diff-check PASS. La guía
+Android41 describe el recorrido de datos compartido, cuyo contrato no cambia.
+
 ## Integración real — 2026-10-21
 
 José implementa frontend y backend de la primera entrega autorizada de
