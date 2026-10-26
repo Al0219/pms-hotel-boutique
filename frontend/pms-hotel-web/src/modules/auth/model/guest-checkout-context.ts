@@ -1,11 +1,12 @@
-import { checkoutReturn } from './checkout-return';
+import { checkoutReturn, guestAccessReturn } from './checkout-return';
 
 const storageKey = 'pms:guest-checkout-return';
 export const guestCheckoutContextEvent = 'pms:guest-checkout-context';
 
 /** Only allowed Guest navigation crosses external Google access; no guest data or credentials. */
 function safeSearchReturn(value?: string): string | undefined {
-  if (value === '/cuenta/reservas/vincular') return value;
+  const guestDestination = guestAccessReturn(value);
+  if (guestDestination && !guestDestination.startsWith('/reserva/checkout?')) return guestDestination;
   const destination = checkoutReturn(value);
   if (!destination) return undefined;
   const url = new URL(destination, 'https://pms.invalid');

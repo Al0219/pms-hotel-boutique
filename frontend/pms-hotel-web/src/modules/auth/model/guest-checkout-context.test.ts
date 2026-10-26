@@ -14,7 +14,7 @@ describe('Non-sensitive checkout return across Google navigation', () => {
     expect(readGuestCheckoutReturn()).toBeUndefined();
     sessionStorage.setItem('pms:guest-checkout-return', '//evil.example/reserva/checkout?adults=2');
     expect(readGuestCheckoutReturn()).toBeUndefined();
-    rememberGuestCheckoutReturn('/mis-reservas'); expect(sessionStorage.length).toBe(0);
+    rememberGuestCheckoutReturn('/dashboard'); expect(sessionStorage.length).toBe(0);
   });
   it('allows authentication to proceed even when browser storage is blocked', () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('Storage blocked'); });
@@ -26,6 +26,13 @@ describe('Non-sensitive checkout return across Google navigation', () => {
     rememberGuestCheckoutReturn('/cuenta/reservas/vincular');
     expect(readGuestCheckoutReturn()).toBe('/cuenta/reservas/vincular');
     rememberGuestCheckoutReturn('/cuenta/reservas/vincular?accountId=someone-else');
+    expect(readGuestCheckoutReturn()).toBeUndefined();
+  });
+  it.each(['/mis-reservas', '/cuenta', '/cuenta/reservas', '/cuenta/historial', '/cuenta/reservas/33333333-3333-4333-8333-333333333333'])('retains the exact non-sensitive Guest destination %s', destination => {
+    rememberGuestCheckoutReturn(destination);
+    expect(readGuestCheckoutReturn()).toBe(destination);
+    expect(sessionStorage.length).toBe(1);
+    rememberGuestCheckoutReturn(`${destination}?email=private@example.test`);
     expect(readGuestCheckoutReturn()).toBeUndefined();
   });
 });
