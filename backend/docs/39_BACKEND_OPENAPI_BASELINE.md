@@ -1,5 +1,16 @@
 # 39 — Baseline OpenAPI/Swagger Backend
 
+## Historial propio Guest — lectura aprobada (2026-10-25)
+
+GET `/api/v1/guest-auth/account/reservations` y `/{reservationId}` documentan
+la página propia y su detalle mediante GuestReservationHistoryPage/Detail/Item/Stay.
+Audiencia internal-bff, guestBearerAuth y sesión Guest activa revalidada;
+sin accountId/propertyId del navegador. Solo vínculos persistidos autorizan la
+lectura; 404 genérico para ID ajeno/inexistente y private,no-store. Sin importes,
+notas internas ni permisos Staff nuevos. OpenApiContractIntegrationTests comprueba
+operaciones, seguridad, proyección y paridad de mappings. Contrato y reglas:
+[historial Guest aprobado](GUEST_RESERVATIONS_READ_PROPOSAL.md).
+
 ## Alta de reservas Staff — contrato55 (2026-10-23)
 
 Dos operaciones nuevas: GET `/api/v1/reservations/creation-options` y POST

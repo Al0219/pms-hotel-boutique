@@ -651,6 +651,22 @@ class OpenApiContractIntegrationTests {
         assertEquals(50,schema.path("properties").path("workEmail").path("maxLength").asInt());
     }
 
+    @Test
+    void guestHistoryDocumentsOwnLinkedReadsAndNoInventedFinancialData() throws Exception {
+        var doc = document();
+        var page = operation(doc,"/api/v1/guest-auth/account/reservations","get");
+        var detail = operation(doc,"/api/v1/guest-auth/account/reservations/{reservationId}","get");
+        assertSuccessSchema(page,"200","GuestReservationHistoryPage");
+        assertSuccessSchema(detail,"200","GuestReservationHistoryDetail");
+        assertEquals("internal-bff",page.path("x-audience").asText());
+        assertTrue(page.path("security").get(0).has("guestBearerAuth"));
+        assertTrue(detail.path("responses").has("404"));
+        var schemas = doc.path("components").path("schemas");
+        assertEquals(Set.of("guestAccountId","page","size","totalElements","items"),strings(schemas.path("GuestReservationHistoryPage").path("required")));
+        assertFalse(schemas.path("GuestReservationHistoryItem").path("properties").has("totalMinor"));
+        assertFalse(schemas.path("GuestReservationHistoryItem").path("properties").has("notes"));
+    }
+
     private JsonNode operation(JsonNode doc, String path, String method) {
         var result = doc.path("paths").path(path).path(method);
         assertFalse(result.isMissingNode(), method + " " + path);

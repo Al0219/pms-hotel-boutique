@@ -22,10 +22,10 @@ export function useGuestSessionController(){
    await logout.mutateAsync();
    await client.cancelQueries({queryKey:sessionKey});await client.cancelQueries({queryKey:['guest']});
    client.removeQueries({queryKey:['guest']});client.setQueryData(sessionKey,null);
-   router?.replace('/acceso');return true;
+   router?.replace('/acceso?returnTo=%2Fcuenta');return true;
   }catch{return false;}finally{closing.current=false;}
  }
- return {account,accessMethod:null,status:session.isPending?'checking' as const:session.isError?'error' as const:account?'signed-in' as const:'signed-out' as const,
+ return {account,sessionId:invalid?null:session.data?.id??null,accessMethod:null,status:session.isPending?'checking' as const:session.isError?'error' as const:account?'signed-in' as const:'signed-out' as const,
   isPending:logout.isPending,error:session.error??logout.error,resetError:logout.reset,
   retrySession:()=>{if(!closing.current)void session.refetch();},
   // Kept for legacy callers; canonical authentication never creates a fixture identity.

@@ -1,0 +1,54 @@
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { http, HttpResponse } from 'msw';
+import { GuestSessionProvider } from '@/modules/auth';
+import { mockServer } from '@/data/mocks/server';
+import { GuestReservationsPage } from './guest-reservations-page';
+
+const router = vi.hoisted(() => ({ replace: vi.fn() }));
+vi.mock('next/navigation', () => ({ useRouter: () => router }));
+const clients: QueryClient[] = [];
+const guest = { guestAccountId: '11111111-1111-4111-8111-111111111111', sessionId: '22222222-2222-4222-8222-222222222222', email: 'guest@example.test', context: 'GUEST' };
+beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'false'); router.replace.mockClear();
+  mockServer.use(http.get('*/api/auth/guest/account/reservations', () => HttpResponse.json({
+    guestAccountId: guest.guestAccountId, page: 0, size: 20, totalElements: 0, items: [],
+  })));
+});
+afterEach(() => { cleanup(); clients.splice(0).forEach(client => client.clear()); vi.unstubAllEnvs(); });
+function mount() {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } }); clients.push(client);
+  return render(<QueryClientProvider client={client}><GuestSessionProvider><GuestReservationsPage /></GuestSessionProvider></QueryClientProvider>);
+}
+
+describe('Guest reservation access restoration', () => {
+  it('waits for a valid Guest session instead of sending a restoring customer back to login', async () => {
+    let restore!: () => void;
+    const pending = new Promise<void>(resolve => { restore = resolve; });
+    const read = vi.fn(async () => { await pending; return HttpResponse.json(guest); });
+    mockServer.use(http.get('*/api/auth/guest/session', read));
+    mount();
+    await waitFor(() => expect(read).toHaveBeenCalledOnce());
+    const prematureRedirects = [...router.replace.mock.calls];
+    restore();
+    await screen.findByRole('heading', { name: 'Mis reservas' });
+    expect(prematureRedirects).toHaveLength(0);
+    expect(router.replace).not.toHaveBeenCalled();
+  });
+  it('keeps a recoverable session failure on the Guest screen instead of opening another auth context', async () => {
+    mockServer.use(http.get('*/api/auth/guest/session', () => new HttpResponse(null, { status: 503 })));
+    mount();
+    expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos comprobar tu sesión');
+    expect(screen.getByRole('button', { name: 'Reintentar sesión' })).toBeInTheDocument();
+    expect(router.replace).not.toHaveBeenCalled();
+  });
+  it('opens contextual Guest access only after a definitive signed-out result', async () => {
+    mockServer.use(http.get('*/api/auth/guest/session', () => new HttpResponse(null, { status: 401 })),
+      http.post('*/api/auth/guest/refresh', () => new HttpResponse(null, { status: 401 })));
+    mount();
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/acceso?returnTo=%2Fmis-reservas'));
+    expect(router.replace).not.toHaveBeenCalledWith('/dashboard');
+    expect(screen.queryByRole('heading', { name: 'Mis reservas' })).not.toBeInTheDocument();
+  });
+});

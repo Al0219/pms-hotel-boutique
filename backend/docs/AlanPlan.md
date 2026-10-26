@@ -1,5 +1,49 @@
 # AlanPlan — Seguimiento Backend
 
+## Mis reservas — despliegue habitual3001, EN_QA, 2026-10-26
+
+- José solicita aplicar la corrección al entorno real: el preview anterior no
+  actualizaba3001. Cambios trasladados al árbol principal en la rama local
+  fix/public-my-reservations-3001, conservando Android y sin alterar main.
+- Imágenes Backend/Web reconstruidas y activadas con compose.yaml habitual;
+  ambos healthy. Mismo contenedor/volumen PostgreSQL y conteos preservados:
+  2 propiedades,24 habitaciones,8 reservas,8 estancias,28 migraciones.
+- Navegador real en3001:18/18 PASS; cookie Staff coexistente, acceso Guest,
+  historial propio, vínculo accesible, recarga, móvil y logout separados.
+  Sin altas de reservas/pagos ni fixtures en la BD habitual. Guía Web70.
+- OTP y correo sin configurar en el contenedor: autorización de clave local y
+  ubicación de configuración del proveedor solicitadas; no modificar secretos.
+  QA manual y gate Web general siguen pendientes. Sin commit/push.
+
+## Mis reservas público — EN_QA, 2026-10-25
+
+- José autoriza revisar/corregir el flujo principal Web en frontend y Backend.
+  main0d1f4b7 no contiene lectura HTTP del historial Guest completo:42 ofrece
+  únicamente resumen; C3 permite OTP y AUTH-GUEST-REG-HISTORY-01 aporta links.
+- José aprueba GUEST_RESERVATIONS_READ_PROPOSAL.md: GET propio paginado/detalle,
+  links persistidos como autorización, GuestPrincipal activo y N stays separados.
+  Implementados sin selector de cuenta/property, importes, notas internas ni
+  cambios a Auth, pagos, migraciones o permisos. OpenAPI actualizado y validado.
+- Web conecta historial/detalle y OTP C3 mediante cookies Guest HttpOnly/BFF;
+  acceso contextual no restaura Staff, espera sesión y conserva retorno Google.
+  Reenvío respeta60s sin inventar expiresAt ni éxito ante respuesta incierta.
+- Backend Java21/PostgreSQL17: verify completo BUILD SUCCESS,1049 pruebas,
+  cero fallos/errores/omitidas; incluye alta pública anónima→OTP→historial con
+  dos estancias y rechazo de otra cuenta. Web lint/typecheck/build PASS;
+  navegador real16/16 PASS, sin excepciones JS ni5xx, escritorio/móvil390px.
+  Entrega de correo sustituida solo por fixture QA; verificación C3 real.
+- Web focal183/185: dos timeouts5s de recorridos mock heredados; nueva UI12/12
+  PASS. Repetición de ambos archivos12/12 PASS; repetición conjunta del26/10
+  vuelve a183/185. Límites5s y aserciones originales conservados.
+  General interrumpida tras130/334 archivos con40 fallos, mayormente timeouts;
+  tres de Staff reproducidos en copia exacta de main0d1f4b7. Sin cambiar límites,
+  excluir pruebas ni tocar Staff para ocultarlos. Gate Web general no aprobado.
+  El fallo adicional de Private09 pasa aislado, sin cambios en ese módulo.
+- Rama/worktree fix/public-my-reservations-flow desde main0d1f4b7. Android local,
+  entorno habitual y tareas anteriores preservados. QA manual del owner pendiente;
+  sin commit/push. QA aislado3002 disponible;3001 conserva su versión/datos.
+  Siguiente: QA manual del owner y resolver/validar gate Web antes de publicar.
+
 ## Integración del PR de reservas con main — EN_QA (2026-10-24)
 
 - José autoriza integrar origin/main fe6a381 (PR164, alta de usuarios Staff) en

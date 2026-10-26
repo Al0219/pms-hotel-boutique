@@ -7,11 +7,14 @@ import { http, HttpResponse } from 'msw';
 import { mockServer } from '@/data/mocks/server';
 import { GuestAccessPage } from './guest-access-page';
 import { GuestSessionProvider } from './guest-session-provider';
-import { rememberGuestCheckoutReturn } from '../model/guest-checkout-context';
+import { readGuestCheckoutReturn, rememberGuestCheckoutReturn } from '../model/guest-checkout-context';
+import { mapStaffSession } from '../mappers/staff-session.mapper';
+import { staffSessionKey } from '../hooks/staff-session-query';
 const clients: QueryClient[] = [];
 const navigation = { replace: vi.fn(), push: vi.fn(), back: vi.fn(), forward: vi.fn(), refresh: vi.fn(), prefetch: vi.fn(), bfcacheId: 'unified-login' };
 const password = 'SyntheticPassword2026!';
 const checkout = '/reserva/checkout?checkIn=2026-11-01&checkOut=2026-11-03&adults=2&roomsCount=1';
+const activeStaff = { staffUserId: 'staff', sessionId: 'staff-session', username: 'staff-demo', roleCode: 'RECEPCION', permissions: [], memberships: [] };
 beforeEach(() => {
   vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'false');
   mockServer.use(http.get('*/api/auth/guest/session', () => new HttpResponse(null, { status: 401 })),
@@ -19,8 +22,12 @@ beforeEach(() => {
     http.post('*/api/auth/staff/refresh', () => new HttpResponse(null, { status: 401 })));
 });
 afterEach(() => { cleanup(); clients.splice(0).forEach(c => c.clear()); vi.unstubAllEnvs(); vi.clearAllMocks(); sessionStorage.clear(); localStorage.clear(); });
-async function setup(returnTo?: string, pendingRequestId?: string) {
+async function setup(returnTo?: string, pendingRequestId?: string, withStaffSession = false) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } }); clients.push(client);
+  if (withStaffSession) {
+    client.setQueryData(staffSessionKey, mapStaffSession(activeStaff));
+    mockServer.use(http.get('*/api/auth/staff/session', () => HttpResponse.json(activeStaff)));
+  }
   render(<AppRouterContext.Provider value={navigation}><QueryClientProvider client={client}><GuestSessionProvider><GuestAccessPage returnTo={returnTo} pendingRequestId={pendingRequestId} /></GuestSessionProvider></QueryClientProvider></AppRouterContext.Provider>);
   await screen.findByRole('heading', { name: 'Accede a tu cuenta' });
   return userEvent.setup();
@@ -31,6 +38,58 @@ function submit() {
   fireEvent.submit(screen.getByLabelText('Correo electrónico').closest('form')!);
 }
 describe('Canonical universal login', () => {
+  it.each(['/mis-reservas', '/cuenta', '/cuenta/reservas', '/cuenta/historial', '/cuenta/reservas/vincular', checkout])('does not resume Staff while accessing the Guest destination %s', async returnTo => {
+    await setup(returnTo, undefined, true);
+    expect(screen.getByRole('heading', { name: 'Accede a tu cuenta' })).toBeInTheDocument();
+    expect(navigation.replace).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('Correo electrónico'), { target: { value: 'guest@example.test' } });
+    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: password } });
+    expect(screen.getByRole('button', { name: 'Iniciar sesión' })).toBeEnabled();
+  });
+  it('still resumes Staff from universal access without a Guest return', async () => {
+    await setup(undefined, undefined, true);
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith('/dashboard'));
+  });
+  it('keeps the saved Guest reservation return after external access instead of resuming Staff', async () => {
+    rememberGuestCheckoutReturn('/mis-reservas');
+    const bodies: unknown[] = [];
+    mockServer.use(http.post('*/api/auth/login', async ({ request }) => {
+      const body = await request.json() as { context?: string }; bodies.push(body);
+      return HttpResponse.json({ authenticated: true, context: body.context === 'GUEST' ? 'GUEST' : 'STAFF' }, { status: 201 });
+    }));
+    await setup(undefined, undefined, true);
+    expect(navigation.replace).not.toHaveBeenCalled();
+    submit();
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith('/mis-reservas'));
+    expect(navigation.replace).not.toHaveBeenCalledWith('/dashboard');
+    expect(bodies).toEqual([{ email: 'person@example.test', password, context: 'GUEST' }]);
+    expect(sessionStorage.length).toBe(0);
+  });
+  it('preserves the saved Guest reservation return when retrying Google without returnTo query', async () => {
+    rememberGuestCheckoutReturn('/mis-reservas');
+    await setup(undefined, undefined, true);
+    fireEvent.click(screen.getByRole('link', { name: 'Continuar con Google' }));
+    expect(readGuestCheckoutReturn()).toBe('/mis-reservas');
+    expect(navigation.replace).not.toHaveBeenCalled();
+  });
+  it('requests Guest authentication explicitly for Mis reservas instead of selecting Staff', async () => {
+    const bodies: unknown[] = [];
+    mockServer.use(http.post('*/api/auth/login', async ({ request }) => {
+      const body = await request.json() as { context?: string };
+      bodies.push(body);
+      return HttpResponse.json({ authenticated: true, context: body.context === 'GUEST' ? 'GUEST' : 'STAFF' }, { status: 201 });
+    }));
+    await setup('/mis-reservas'); submit();
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith('/mis-reservas'));
+    expect(navigation.replace).not.toHaveBeenCalledWith('/dashboard');
+    expect(bodies).toEqual([{ email: 'person@example.test', password, context: 'GUEST' }]);
+  });
+  it.each([{ authenticated: true, context: 'STAFF' }, { authenticated: false, contexts: ['STAFF', 'GUEST'] }])('rejects a non-Guest response to an explicit Guest login without opening the private panel %#', async response => {
+    mockServer.use(http.post('*/api/auth/login', () => HttpResponse.json(response, { status: 201 })));
+    await setup('/mis-reservas'); submit();
+    expect(await screen.findByRole('alert')).toHaveTextContent('El acceso no está disponible');
+    expect(navigation.replace).not.toHaveBeenCalled();
+  });
   it('prevents normal typing of a 51st character into either login input', async () => {
     const user = await setup();
     await user.type(screen.getByLabelText('Correo electrónico'), 'x'.repeat(51));

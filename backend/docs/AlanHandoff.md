@@ -1,3 +1,42 @@
+## 2026-10-26 — Mis reservas aplicado en3001: EN_QA
+
+José confirma que3001 seguía usando imágenes anteriores; el preview aislado no
+actualizaba ese entorno. Corrección trasladada al proyecto principal en la rama
+local fix/public-my-reservations-3001 y desplegada mediante compose.yaml habitual.
+Backend/Web healthy; PostgreSQL conserva contenedor, volumen y datos:2 propiedades,
+24 habitaciones,8 reservas,8 estancias,28 migraciones. Android intacto.
+Navegador real3001:18/18 PASS, Guest/Staff separados incluso con ambas cookies,
+historial propio, recarga, móvil y logout. Cero escrituras de reservas/pagos en QA
+habitual. Se detuvo únicamente el preview Web/API3002 para evitar confusión.
+Clave OTP y proveedor de correo vacíos en el entorno; preguntas de autorización
+y ubicación de configuración pendientes. No crear secretos ni simular el vínculo.
+Evidencia/recorrido en Web70; QA manual y gate Web general pendientes. Sin commit,
+push, merge, migraciones ni cambios de dependencias/configuración de Compose.
+
+## 2026-10-25 — Mis reservas: contrato aprobado e implementación EN_QA
+
+José prioriza flujo principal Web completo. Se confirma salto indebido a Staff,
+restauración Guest prematura y pérdida de retorno Google; corregidos en worktree
+fix/public-my-reservations-flow desde main0d1f4b7, sin tocar Android local.
+José aprueba GUEST_RESERVATIONS_READ_PROPOSAL.md. Implementados listado/detalle
+propios Guest con links persistidos y N stays, sin importes/notas ni selector de
+cuenta/property; OpenAPI actualizado. Web conecta lectura y C3 mediante BFF/cookies
+Guest, sin inventar TTL, IDs o confirmaciones. Acceso/retorno Google y cierre Guest
+permanecen en contexto público aunque exista sesión Staff; reenvío mínimo60s.
+Backend verify completo Java21/PostgreSQL17:1049 PASS, cero fallos/errores/omitidas,
+incluido recorrido anónimo→OTP real→historial y rechazo de otra cuenta. Web
+lint/typecheck/build PASS; navegador16/16 PASS (1440px/390px), sin JS/5xx. Correo
+reemplazado solo por fixture de entrega en BD QA; C3 verifica realmente el código.
+Focal183/185 con dos timeouts5s mock; nueva UI12/12 PASS. Repetición de ambos
+archivos12/12 PASS; conjunto del26/10 otra vez183/185. Límites5s y aserciones
+originales conservados. General interrumpida
+tras130/334 archivos y40 fallos (mayormente timeouts); tres de Staff en main0d1f4b7,
+sin cambios de límites/validaciones ni otros módulos. Gate general no aprobado.
+Private09 también pasa aislado, sin cambios funcionales ni de sus tests.
+QA manual del owner pendiente. Preview aislado3002;3001 preservado. Sin migraciones,
+secretos, dependencias, commit/push ni cambios al entorno habitual. EN_QA.
+Siguiente: aceptación manual y validación del gate Web antes de publicar.
+
 ## 2026-10-24 — Integración autorizada con main fe6a381: EN_QA
 
 José autoriza integrar PR164 en feature/staff-reservations-real y publicar tras

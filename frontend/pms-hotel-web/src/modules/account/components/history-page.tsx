@@ -6,8 +6,12 @@ import { AccountFeedback, AccountSection } from './account-section';
 import { useGuestReservations } from '../hooks/use-guest-reservations';
 import { ReservationLinkForm } from './reservation-link-form';
 import styles from './history-page.module.css';
+import { RealGuestReservationsPage } from './real-guest-reservations';
 
 export function HistoryPage({ title = 'Reservas e historial' }: { title?: string } = {}) {
+  return getPublicEnvironment().useMockApi ? <MockHistoryPage title={title} /> : <RealGuestReservationsPage />;
+}
+function MockHistoryPage({ title }: { title: string }) {
   const query = useGuestReservations();
   const offline = query.fetchStatus === 'paused';
   const error = offline ? new HttpNetworkError() : query.error;
