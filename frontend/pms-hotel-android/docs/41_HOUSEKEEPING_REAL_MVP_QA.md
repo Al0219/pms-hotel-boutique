@@ -130,7 +130,7 @@ Backend: GuestHousekeepingIntegrationTests11, GuestHousekeepingScheduleTests3,
 ServiceRequestServiceIntegrationTests5, StaffServiceRequestServiceIntegrationTests4,
 OpenApiContractIntegrationTests23, GuestRegistrationMigrationIntegrationTests2,
 UnifiedLoginMigrationIntegrationTests4. Base vacía, upgrade, checksums preservados
-e idempotencia Liquibase comprobados. Los dos cambios de conteos históricos
+e idempotencia Liquibase comprobados. Los ajustes de conteos históricos
 reflejan únicamente el changeset aditivo nuevo.
 
 Reproducción focal Android (comando ejecutado):
@@ -184,5 +184,14 @@ cubiertos técnicamente; QA visual no acreditado todavía.
 Evidencia UX existente:21 PASS en guest-cleaning-requests.test.tsx y
 staff-housekeeping-page.test.tsx; typecheck Web, ESLint focal y diff-check PASS.
 No sumar esos21 a Web Housekeeping21 como si fueran pruebas únicas: son grupos
-de validación de fases distintas con solapamientos. No se repiten suites para
+de validación de fases distintas con solapamientos. No se repiten suites completas para
 preparar el commit/PR.
+
+## Corrección focal tras CI del PR168
+
+El SHA inicial fa908d1 pasó Android/Web/Stack CI. Backend detectó únicamente tres
+conteos de upgrade desactualizados30→31. Se ajustan deltas y se comprueba la
+presencia de005-operations-004 sin quitar checksums, datos históricos, triggers
+ni reaplicación idempotente. Tres métodos correctivos PASS en PostgreSQL
+descartable; sin cambios funcionales ni nuevas pruebas manuales. Resultados del
+SHA correctivo se consultan en el PR; QA visual Staff pendiente y no merge.

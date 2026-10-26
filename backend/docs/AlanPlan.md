@@ -1,5 +1,25 @@
 # AlanPlan — Seguimiento Backend
 
+## 2026-10-26 — PR168: corrección focal de conteos de upgrade CI
+
+MVP publicado en fa908d1; PR168 hacia main, abierto y sin conflictos.
+CI de ese SHA: Android, Web y Docker Stack PASS; Backend1084 tests/3 failures,
+0 errors/skipped, únicamente conteos de manifests30→31 por005-operations-004.
+Se ajustan los deltas en PublicBookingReceiptSchemaUpgradeTests,
+StaffAuthAuditAppendOnlyIntegrationTests y StaffAuthAuditAttributionIntegrationTests,
+y se exige presencia del nuevo changeset. Checksums, datos históricos, triggers
+e idempotencia de reaplicación conservan sus aserciones; no se modifica código
+funcional, contratos ni migraciones.
+
+Verificación correctiva: solo los tres métodos fallidos,3 PASS sobre PostgreSQL17
+descartable en18553. Comando/log en /tmp/housekeeping-pr-close/
+backend-ci-fix-focused.log. Sin suite completa/build pesado/Docker E2E local.
+git diff --check PASS; cinco archivos locales originales intactos. Commit
+correctivo y push normal en el mismo PR autorizados por el alcance de cierre.
+CI del SHA correctivo se informa en la descripción del PR, sin merge.
+Housekeeping funcional sigue COMPLETADA / PASS manual; UX Staff conserva PASS
+técnico / EN_QA visual. No se atribuyen pruebas manuales adicionales al usuario.
+
 ## 2026-10-26 — Housekeeping MVP real: COMPLETADA / PASS manual; UX Staff EN_QA visual
 
 Confirmación explícita del usuario: crear limpieza real desde Android, consultarla
