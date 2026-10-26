@@ -1,5 +1,10 @@
 package com.pms.hotelboutique.backend.modules.guestauth;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.TestInstance;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import com.pms.hotelboutique.backend.modules.guestauth.application.*;
 import com.pms.hotelboutique.backend.modules.guestauth.infrastructure.security.GuestJwtService;
 import com.pms.hotelboutique.backend.modules.reservations.application.*;
@@ -23,7 +28,23 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class GuestReservationRecoveryIntegrationTests {
+    private static final String SCHEMA = "guest_recovery_" + UUID.randomUUID().toString().replace("-", "");
+
+    @DynamicPropertySource
+    static void isolatedSchema(DynamicPropertyRegistry properties) {
+        properties.add("spring.datasource.hikari.connection-init-sql",
+                () -> "CREATE SCHEMA IF NOT EXISTS " + SCHEMA + "; SET search_path TO " + SCHEMA);
+        properties.add("spring.liquibase.default-schema", () -> SCHEMA);
+        properties.add("spring.liquibase.liquibase-schema", () -> SCHEMA);
+        properties.add("spring.jpa.properties.hibernate.default_schema", () -> SCHEMA);
+    }
+
+    @AfterAll
+    void removeOwnedSchema() { jdbc.execute("DROP SCHEMA " + SCHEMA + " CASCADE"); }
+
     private static final String PATH="/api/v1/guest-auth/account/reservations";
     private static final UUID PROPERTY=UUID.fromString("3dcd0a8e-5c6a-46e7-8d51-7c95d86b232d");
     @Autowired MockMvc mvc;

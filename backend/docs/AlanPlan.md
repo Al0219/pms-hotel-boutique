@@ -1,5 +1,32 @@
 # AlanPlan — Seguimiento Backend
 
+## 2026-10-26 — PR167: aislamiento de fixtures Backend; MVP COMPLETADA / PASS
+
+Publicación autorizada: commit1b769069c3f33fd1b5d7c6be7e4fe6e3eca9cb05,
+PR https://github.com/Al0219/pms-hotel-boutique/pull/167 hacia main, sin conflictos.
+CI inicial: Web y Stack PASS; Android falla expo-doctor20/21 por siete versiones
+patch SDK. Las actualizaciones Expo previas siguen excluidas por alcance y los
+cinco archivos locales conservan sus bytes. No se debilitan checks de Doctor.
+
+Backend inicial1070 tests/5 fallos: fixtures de las dos clases Guest nuevas
+contaminaban el esquema compartido de pruebas, afectando conteos en Booking y
+Query. Corrección limitada a esos fixtures: esquema único por clase, datasource/
+Liquibase/JPA scoped, limpieza del esquema propio y cierre de contexto. Sin
+código funcional, auth, endpoints, datos de trabajo o aserciones debilitadas.
+
+Verificación correctiva focal25 PASS: GuestAndroidMvp, GuestReservationRecovery,
+ReservationBookingService y ReservationQueryService, orden alfabético con pool2/
+minimumIdle0 igual a CI, PostgreSQL17 descartable y JVM25/release21. Comando:
+./mvnw -B --no-transfer-progress -Dsurefire.runOrder=alphabetical
+-Dtest=GuestAndroidMvpIntegrationTests,GuestReservationRecoveryIntegrationTests,ReservationBookingServiceIntegrationTests,ReservationQueryServiceIntegrationTests test.
+Evidencia /tmp/android-mvp-close-preserved/backend-ci-fix-focused.log.
+Sin suite completa/build/QA manual local. git diff --check PASS. Commit correctivo
+y push normal autorizados en el mismo PR; CI remoto se informa en su descripción.
+MVP y referencia conservan el PASS manual confirmado del usuario; los escenarios
+no confirmados permanecen pendientes. No fusionar. Siguiente: revisar CI del SHA
+correctivo; tratar la alineación SDK excluida como alcance separado.
+
+
 ## 2026-10-26 — MVP Android ↔ Backend — COMPLETADA / PASS; preparación de PR
 
 Confirmación manual explícita del usuario del recorrido Web/Android y del ajuste
