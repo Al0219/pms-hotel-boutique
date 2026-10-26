@@ -1,5 +1,39 @@
 # AlanPlan — Seguimiento Backend
 
+## 2026-10-26 — Housekeeping MVP real: COMPLETADA / PASS manual; UX Staff EN_QA visual
+
+Confirmación explícita del usuario: crear limpieza real desde Android, consultarla
+en Firefox Staff, persistencia al cerrar/reabrir Expo Go y ausencia de duplicados.
+Se cierra exclusivamente este recorrido funcional. La mejora posterior de tarjeta
+«Limpiezas solicitadas» y modal conserva PASS técnico / EN_QA visual: no se atribuye
+al usuario QA visual de la modal, responsive, foco ni teclado.
+
+Rama feature/android-housekeeping-real-mvp, worktree /tmp/pms-android-housekeeping;
+HEAD/base main a98250f (PR167 integrado), origin/main actualizado e idéntico al
+inicio de publicación. Commit convencional, push normal y PR hacia main autorizados;
+no merge. Cinco cambios originales preservados byte a byte. Solo documentación
+de cierre modificada en este turno; funcionalidades aceptadas intactas.
+
+Guest POST/GET housekeeping-requests y Staff GET por propiedad documentados en
+contrato58. ServiceRequest existente, migración005-operations-004 aditiva,
+idempotencia transaccional y vínculos Guest/Staff/scope existentes. Android HTTP
+real sin fallback ni acciones locales sobre solicitudes persistidas. Staff usa
+una query para KPI OPEN+IN_PROGRESS y modal con todos los estados, actualización,
+accesibilidad técnica y grid6/3/2; tabla fija inferior retirada. Sin cambios
+respecto a estados físicos de habitación, cargos ni servicios ajenos.
+
+Evidencia existente: Backend52 PASS; Android87 PASS; Web Housekeeping21 PASS;
+Web mejora UX21 PASS (grupos históricos separados, no sumar por solapamientos).
+Typecheck Android/Web, ESLint focal y OpenAPI/paridad mappings PASS. Cierre:
+revisión completa y git diff --check, sin repetir suites, builds ni Docker E2E.
+CI remoto se consultará después de publicar y se informará en el PR.
+
+Pendientes: QA visual Firefox de tarjeta/modal, responsive6/3/2 y teclado/foco;
+variantes manuales no confirmadas de red/errores, sesión, fecha/zona horaria,
+autorización adversa y cambios de cuenta/propiedad/estancia. Cobertura automática
+no equivale a PASS manual de esas variantes. Siguiente: revisar CI y completar
+QA visual antes de autorizar merge; mantener PR abierto sin fusionar.
+
 ## 2026-10-26 — PR167: aislamiento de fixtures Backend; MVP COMPLETADA / PASS
 
 Publicación autorizada: commit1b769069c3f33fd1b5d7c6be7e4fe6e3eca9cb05,

@@ -1,0 +1,29 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-operations-004
+      author: alan
+      changes:
+        - addColumn:
+            tableName: service_requests
+            columns:
+              - column: { name: service_date, type: date }
+              - column: { name: time_slot, type: varchar(32) }
+              - column: { name: cleaning_type, type: varchar(32) }
+              - column: { name: guest_request_key, type: varchar(100) }
+        - addUniqueConstraint:
+            tableName: service_requests
+            columnNames: stay_id, guest_request_key
+            constraintName: uq_sr_guest_retry
+        - sql:
+            sql: >-
+              ALTER TABLE service_requests ADD CONSTRAINT ck_sr_guest_schedule CHECK
+              ((service_date IS NULL AND time_slot IS NULL AND cleaning_type IS NULL AND guest_request_key IS NULL)
+              OR (category = 'HOUSEKEEPING' AND stay_id IS NOT NULL AND reservation_id IS NOT NULL
+              AND service_date IS NOT NULL AND time_slot IS NOT NULL AND cleaning_type IS NOT NULL AND guest_request_key IS NOT NULL))
+      rollback:
+        - sql: ALTER TABLE service_requests DROP CONSTRAINT ck_sr_guest_schedule
+        - dropUniqueConstraint: { tableName: service_requests, constraintName: uq_sr_guest_retry }
+        - dropColumn: { tableName: service_requests, columnName: guest_request_key }
+        - dropColumn: { tableName: service_requests, columnName: cleaning_type }
+        - dropColumn: { tableName: service_requests, columnName: time_slot }
+        - dropColumn: { tableName: service_requests, columnName: service_date }

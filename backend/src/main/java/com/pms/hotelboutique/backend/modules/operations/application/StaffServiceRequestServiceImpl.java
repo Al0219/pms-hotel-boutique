@@ -73,6 +73,26 @@ public class StaffServiceRequestServiceImpl implements StaffServiceRequestServic
                 .map(ServiceRequestService.ServiceRequestView::from).toList();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<HousekeepingRequestView> listHousekeeping(StaffPrincipal principal, UUID propertyId) {
+        access(principal, propertyId);
+        return jdbc.sql("""
+            SELECT sr.id,sr.property_id,r.confirmation_code,room.code room_code,sr.service_date,
+                   sr.time_slot,sr.cleaning_type,sr.detail,sr.status
+            FROM service_requests sr
+            JOIN reservations r ON r.id=sr.reservation_id AND r.property_id=sr.property_id
+            JOIN reservation_stays s ON s.id=sr.stay_id AND s.reservation_id=r.id AND s.property_id=sr.property_id
+            LEFT JOIN rooms room ON room.id=sr.room_id AND room.property_id=sr.property_id
+            WHERE sr.property_id=:property AND sr.category='HOUSEKEEPING' AND sr.service_date IS NOT NULL
+            ORDER BY sr.created_at DESC,sr.id
+            """).param("property", propertyId).query((rs, row) -> new HousekeepingRequestView(
+                rs.getObject("id", UUID.class), rs.getObject("property_id", UUID.class), rs.getString("confirmation_code"),
+                rs.getString("room_code"), rs.getObject("service_date", java.time.LocalDate.class),
+                rs.getString("time_slot"), rs.getString("cleaning_type"), rs.getString("detail"),
+                com.pms.hotelboutique.backend.modules.operations.domain.ServiceRequest.Status.valueOf(rs.getString("status")))).list();
+    }
+
     private Access access(StaffPrincipal principal, UUID propertyId) {
         if (principal == null) {
             throw new StaffAuthenticationException();

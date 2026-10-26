@@ -1,3 +1,5 @@
+import { environment } from '@/config/environment';
+import { useActiveReservationContext } from '@/modules/guest-auth/presentation/ActiveReservationContextProvider';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useRef, useState } from 'react';
@@ -19,6 +21,9 @@ import { deriveRemoteState } from '@/state/remoteState';
 import { ServiceDatePicker, TimeWheelPicker, formatGuestDate, type TimeSlotOption } from '@/shared/components';
 import { useAppClock } from '@/shared/time';
 import { tokens } from '@/shared/theme/tokens';
+
+const availableTimeSlots = environment.useMockApi ? housekeepingQaTimeSlots : housekeepingQaTimeSlots.filter(slot => slot === '10:00–11:00');
+const availableCleaningTypes = environment.useMockApi ? housekeepingQaCleaningTypes : housekeepingQaCleaningTypes.filter(type => type.value === 'FULL_CLEANING');
 
 export interface HousekeepingScreenProps {
   service?: HousekeepingService;
@@ -53,7 +58,11 @@ function returnToServices() {
 }
 
 /** Form configuration is local; Stay Query and submission Mutation own remote state. */
-export function HousekeepingScreen({ service, stayService, nowMs }: HousekeepingScreenProps) {
+export function HousekeepingScreen(props: HousekeepingScreenProps) {
+  const { activeReservationContext: context } = useActiveReservationContext();
+  return <HousekeepingForm key={`${context?.reservationId}:${context?.reservationStayId}`} {...props} />;
+}
+function HousekeepingForm({ service, stayService, nowMs }: HousekeepingScreenProps) {
   const appClock = useAppClock();
   const getNowMs = nowMs ?? appClock.nowMs;
   const query = useCurrentStay(stayService);
@@ -63,8 +72,8 @@ export function HousekeepingScreen({ service, stayService, nowMs }: Housekeeping
   const { isCheckedOut } = useCheckoutStatus();
   const { showServiceRequestSuccess } = useGuestNotice();
   const { editRequestId } = useLocalSearchParams<{ editRequestId?: string }>();
-  const [serviceDate, setServiceDate] = useState(() => getInitialServiceDate(getNowMs(), housekeepingQaTimeSlots));
-  const [timeSlot, setTimeSlot] = useState<HousekeepingTimeSlot>(() => getNearestServiceTime(getInitialServiceDate(getNowMs(), housekeepingQaTimeSlots), housekeepingQaTimeSlots, getNowMs()) as HousekeepingTimeSlot ?? housekeepingQaTimeSlots[0]);
+  const [serviceDate, setServiceDate] = useState(() => getInitialServiceDate(getNowMs(), availableTimeSlots));
+  const [timeSlot, setTimeSlot] = useState<HousekeepingTimeSlot>(() => getNearestServiceTime(getInitialServiceDate(getNowMs(), availableTimeSlots), availableTimeSlots, getNowMs()) as HousekeepingTimeSlot ?? availableTimeSlots[0]);
   const [cleaningType, setCleaningType] = useState<HousekeepingCleaningType>('FULL_CLEANING');
   const [notes, setNotes] = useState('');
   const [typePickerVisible, setTypePickerVisible] = useState(false);
@@ -76,7 +85,7 @@ export function HousekeepingScreen({ service, stayService, nowMs }: Housekeeping
   const inFlight = useRef(false);
   const scroll = useRef<ScrollView>(null);
   const editLoaded = useRef<string | null>(null);
-  const editedRequest = typeof editRequestId === 'string' ? requests.find((request) => request.sessionRequestId === editRequestId && request.details?.type === 'HOUSEKEEPING') : undefined;
+  const editedRequest = environment.useMockApi && typeof editRequestId === 'string' ? requests.find((request) => request.sessionRequestId === editRequestId && request.details?.type === 'HOUSEKEEPING') : undefined;
 
   useEffect(() => {
     const details = editedRequest?.details;
@@ -84,8 +93,8 @@ export function HousekeepingScreen({ service, stayService, nowMs }: Housekeeping
     editLoaded.current = editedRequest.sessionRequestId;
     const timer = setTimeout(() => {
       if (details.serviceDate) setServiceDate(details.serviceDate);
-      if (housekeepingQaTimeSlots.includes(details.timeSlot as HousekeepingTimeSlot)) setTimeSlot(details.timeSlot as HousekeepingTimeSlot);
-      if (housekeepingQaCleaningTypes.some((item) => item.value === details.cleaningType)) setCleaningType(details.cleaningType as HousekeepingCleaningType);
+      if (availableTimeSlots.includes(details.timeSlot as HousekeepingTimeSlot)) setTimeSlot(details.timeSlot as HousekeepingTimeSlot);
+      if (availableCleaningTypes.some((item) => item.value === details.cleaningType)) setCleaningType(details.cleaningType as HousekeepingCleaningType);
       setNotes(details.notes ?? '');
     }, 0);
     return () => clearTimeout(timer);
@@ -93,15 +102,15 @@ export function HousekeepingScreen({ service, stayService, nowMs }: Housekeeping
 
   useEffect(() => {
     if (stay.kind !== 'success') return;
-    const firstAvailable = getFirstAvailableServiceDate(getNowMs(), housekeepingQaTimeSlots, stay.data.arrival, stay.data.departure, getEffectiveCheckoutAt(stay.data, requests));
+    const firstAvailable = getFirstAvailableServiceDate(getNowMs(), availableTimeSlots, stay.data.arrival, stay.data.departure, getEffectiveCheckoutAt(stay.data, requests));
     const nearest = isServiceDateWithinStay(serviceDate, getNowMs(), stay.data.arrival, stay.data.departure)
-      ? getNearestServiceTime(serviceDate, housekeepingQaTimeSlots, getNowMs(), timeSlot, stay.data.arrival, stay.data.departure, getEffectiveCheckoutAt(stay.data, requests))
+      ? getNearestServiceTime(serviceDate, availableTimeSlots, getNowMs(), timeSlot, stay.data.arrival, stay.data.departure, getEffectiveCheckoutAt(stay.data, requests))
       : null;
     if (nearest) return;
     const timer = setTimeout(() => {
       if (firstAvailable) {
         setServiceDate(firstAvailable);
-        setTimeSlot(getNearestServiceTime(firstAvailable, housekeepingQaTimeSlots, getNowMs(), undefined, stay.data.arrival, stay.data.departure, getEffectiveCheckoutAt(stay.data, requests)) as HousekeepingTimeSlot);
+        setTimeSlot(getNearestServiceTime(firstAvailable, availableTimeSlots, getNowMs(), undefined, stay.data.arrival, stay.data.departure, getEffectiveCheckoutAt(stay.data, requests)) as HousekeepingTimeSlot);
       } else if (!isServiceDateWithinStay(serviceDate, getNowMs(), stay.data.arrival, stay.data.departure)) setServiceDate(stay.data.departure);
     }, 0);
     return () => clearTimeout(timer);
@@ -114,14 +123,14 @@ export function HousekeepingScreen({ service, stayService, nowMs }: Housekeeping
 
   const serviceDateWithinStay = stay.kind === 'success' && isServiceDateWithinStay(serviceDate, getNowMs(), stay.data.arrival, stay.data.departure);
   const stayDateWindow = stay.kind === 'success' ? getStayServiceDateWindow(stay.data.arrival, stay.data.departure, getNowMs()) : null;
-  const noAvailability = stay.kind === 'success' && getFirstAvailableServiceDate(getNowMs(), housekeepingQaTimeSlots, stay.data.arrival, stay.data.departure, getEffectiveCheckoutAt(stay.data, requests)) === null;
+  const noAvailability = stay.kind === 'success' && getFirstAvailableServiceDate(getNowMs(), availableTimeSlots, stay.data.arrival, stay.data.departure, getEffectiveCheckoutAt(stay.data, requests)) === null;
   const timeSlotAllowed = stay.kind === 'success' && isServiceWithinEffectiveCheckout({ arrival: stay.data.arrival, effectiveCheckoutAtMs: getEffectiveCheckoutAt(stay.data, requests), endTime: timeSlot.split('–')[1] ?? timeSlot, nowMs: getNowMs(), serviceDate, startTime: timeSlot });
   const lifecycle = stay.kind === 'success' ? getGuestStayActionStatus({ isCheckedOut, nowMs: getNowMs(), requests, stay: stay.data }) : isCheckedOut ? 'CHECKED_OUT' : 'ACTIVE';
 
   function selectServiceDate(nextDate: string) {
     setDatePickerVisible(false);
     setServiceDate(nextDate);
-    const nearest = stay.kind === 'success' ? getNearestServiceTime(nextDate, housekeepingQaTimeSlots, getNowMs(), timeSlot, stay.data.arrival, stay.data.departure, getEffectiveCheckoutAt(stay.data, requests)) as HousekeepingTimeSlot | null : null;
+    const nearest = stay.kind === 'success' ? getNearestServiceTime(nextDate, availableTimeSlots, getNowMs(), timeSlot, stay.data.arrival, stay.data.departure, getEffectiveCheckoutAt(stay.data, requests)) as HousekeepingTimeSlot | null : null;
     if (nearest) setTimeSlot(nearest);
   }
 
@@ -142,15 +151,15 @@ export function HousekeepingScreen({ service, stayService, nowMs }: Housekeeping
     }, {
       onSuccess: () => {
         const input = { kind: 'HOUSEKEEPING' as const, origin: 'SERVICES' as const, status: 'REQUESTED' as const, summary: `${formatGuestDate(serviceDate)} · ${timeSlot}`, title: 'Limpieza', details: { type: 'HOUSEKEEPING' as const, serviceDate, cleaningType, timeSlot, ...(trimmedNotes ? { notes: trimmedNotes } : {}) } };
-        if (editedRequest) updateRequest(editedRequest.sessionRequestId, input); else addRequest(input); showServiceRequestSuccess(editedRequest ? 'UPDATED' : 'CREATED'); router.replace('/account');
+        if (environment.useMockApi) { if (editedRequest) updateRequest(editedRequest.sessionRequestId, input); else addRequest(input); } showServiceRequestSuccess(editedRequest ? 'UPDATED' : 'CREATED'); router.replace('/account');
       },
       onSettled: () => { inFlight.current = false; },
     });
   }
 
   const offline = submission.isError && submission.error instanceof NetworkError;
-  const selectedCleaningType = housekeepingQaCleaningTypes.find((type) => type.value === cleaningType)!;
-  const timeSlotOptions: readonly TimeSlotOption[] = housekeepingQaTimeSlots.map((slot) => ({ value: slot, label: slot }));
+  const selectedCleaningType = availableCleaningTypes.find((type) => type.value === cleaningType)!;
+  const timeSlotOptions: readonly TimeSlotOption[] = availableTimeSlots.map((slot) => ({ value: slot, label: slot }));
 
   useEffect(() => {
     if (Platform.OS !== 'android') return;
@@ -215,13 +224,13 @@ export function HousekeepingScreen({ service, stayService, nowMs }: Housekeeping
       <GuestNavigationShell />
       <Modal animationType="slide" onRequestClose={() => setTypePickerVisible(false)} transparent visible={typePickerVisible}>
         <View style={housekeepingStyles.modalBackdrop}><View accessibilityViewIsModal style={housekeepingStyles.modalSheet} testID="housekeeping-type-picker"><Text accessibilityRole="header" style={styles.stateTitle}>Tipos disponibles</Text>
-          {housekeepingQaCleaningTypes.map((type) => <Pressable accessibilityRole="radio" accessibilityState={{ selected: draftCleaningType === type.value }} key={type.value}
+          {availableCleaningTypes.map((type) => <Pressable accessibilityRole="radio" accessibilityState={{ selected: draftCleaningType === type.value }} key={type.value}
             onPress={() => setDraftCleaningType(type.value)} style={[housekeepingStyles.typeOption, draftCleaningType === type.value && styles.serviceCardSelected]} testID={`housekeeping-type-option-${type.value}`}><Text style={styles.serviceLabel}>{type.label}</Text></Pressable>)}
           <View style={housekeepingStyles.modalActions}><Button label="Cancelar" onPress={() => setTypePickerVisible(false)} testID="housekeeping-type-cancel" /><Button label="Aceptar" onPress={() => { setCleaningType(draftCleaningType); setTypePickerVisible(false); }} testID="housekeeping-type-confirm" /></View>
         </View></View>
       </Modal>
       <ServiceDatePicker maximumDate={stayDateWindow ? parseServiceDate(stayDateWindow.maximumDate) ?? undefined : undefined} minimumDate={stayDateWindow ? parseServiceDate(stayDateWindow.minimumDate) ?? new Date(getNowMs()) : new Date(getNowMs())} onCancel={() => setDatePickerVisible(false)} onConfirm={selectServiceDate} testID="housekeeping-date-picker" value={serviceDate} visible={datePickerVisible && stayDateWindow !== null} />
-      <TimeWheelPicker isValueDisabled={(value) => stay.kind !== 'success' || !isServiceWithinEffectiveCheckout({ arrival: stay.data.arrival, effectiveCheckoutAtMs: getEffectiveCheckoutAt(stay.data, requests), endTime: value.split('–')[1] ?? value, nowMs: getNowMs(), serviceDate, startTime: value })} mode="slots" onCancel={() => setTimePickerVisible(false)} onConfirm={(value) => { if (stay.kind === 'success' && housekeepingQaTimeSlots.includes(value as HousekeepingTimeSlot) && isServiceWithinEffectiveCheckout({ arrival: stay.data.arrival, effectiveCheckoutAtMs: getEffectiveCheckoutAt(stay.data, requests), endTime: value.split('–')[1] ?? value, nowMs: getNowMs(), serviceDate, startTime: value })) { setScheduleError(false); setTimeSlot(value as HousekeepingTimeSlot); } setTimePickerVisible(false); }} options={timeSlotOptions} testID="housekeeping-time-picker" title="Elegir horario" value={timeSlot} visible={timePickerVisible} />
+      <TimeWheelPicker isValueDisabled={(value) => stay.kind !== 'success' || !isServiceWithinEffectiveCheckout({ arrival: stay.data.arrival, effectiveCheckoutAtMs: getEffectiveCheckoutAt(stay.data, requests), endTime: value.split('–')[1] ?? value, nowMs: getNowMs(), serviceDate, startTime: value })} mode="slots" onCancel={() => setTimePickerVisible(false)} onConfirm={(value) => { if (stay.kind === 'success' && availableTimeSlots.includes(value as HousekeepingTimeSlot) && isServiceWithinEffectiveCheckout({ arrival: stay.data.arrival, effectiveCheckoutAtMs: getEffectiveCheckoutAt(stay.data, requests), endTime: value.split('–')[1] ?? value, nowMs: getNowMs(), serviceDate, startTime: value })) { setScheduleError(false); setTimeSlot(value as HousekeepingTimeSlot); } setTimePickerVisible(false); }} options={timeSlotOptions} testID="housekeeping-time-picker" title="Elegir horario" value={timeSlot} visible={timePickerVisible} />
     </View>
   );
 }

@@ -54,3 +54,15 @@ La programación session-only incorpora `serviceDate` local (`YYYY-MM-DD`) más 
 ## UX regression IMP-AND-0113
 
 La confirmación exitosa de Limpieza registra o actualiza la solicitud de sesión y navega a Cuenta con el aviso de una sola vez. Los errores conservan el formulario y permiten reintento. La regresión UX incluida en `IMP-AND-0113` fue validada con QA manual y revisión WEB-3 PASS; no altera el estado COMPLETADA de este contrato.
+
+## Integración Backend real posterior (2026-10-26)
+
+El contrato anterior conserva la evidencia histórica frontend/mock. La solicitud
+del usuario autorizó una integración separada, ahora COMPLETADA / PASS manual
+funcional, documentada en
+[41_HOUSEKEEPING_REAL_MVP_QA.md](41_HOUSEKEEPING_REAL_MVP_QA.md) y el contrato
+Backend58. En real solo se admiten los defaults MVP10:00–11:00/FULL_CLEANING,
+con contexto autorizado y programación persistida; no se ratifican las opciones
+QA adicionales. Mis servicios lee Backend y no simula cambios locales.
+
+La mejora UX posterior Staff de tarjeta/modal permanece PASS técnico / EN_QA visual.
