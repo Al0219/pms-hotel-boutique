@@ -12,4 +12,9 @@ public interface StaffServiceRequestService {
     ServiceRequestService.ServiceRequestView get(StaffPrincipal principal, UUID propertyId, UUID requestId);
 
     List<ServiceRequestService.ServiceRequestView> list(StaffPrincipal principal, UUID propertyId);
+    List<HousekeepingRequestView> listHousekeeping(StaffPrincipal principal, UUID propertyId);
+
+    record HousekeepingRequestView(UUID id, UUID propertyId, String confirmationCode, @io.swagger.v3.oas.annotations.media.Schema(nullable = true) String roomCode,
+            java.time.LocalDate serviceDate, String timeSlot, String cleaningType,
+            @io.swagger.v3.oas.annotations.media.Schema(nullable = true, maxLength = 500) String notes, com.pms.hotelboutique.backend.modules.operations.domain.ServiceRequest.Status status) { }
 }

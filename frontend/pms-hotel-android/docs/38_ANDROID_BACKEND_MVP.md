@@ -211,3 +211,13 @@ Android36 pruebas focales distintas PASS (mapper8, presentación11, HTTP17),
 typecheck/ESLint focal/diff PASS. Backend4 métodos de detalle/ownership/OpenAPI
 PASS. Sin suites completas, builds pesados, commit, push o PR. Ajuste visual
 **EN_QA**, pendiente de confirmación del usuario; evidencia en AlanHandoff.
+
+## Incremento posterior: Housekeeping real (COMPLETADA / PASS funcional)
+
+[Guía41](41_HOUSEKEEPING_REAL_MVP_QA.md) habilita Servicios, Limpieza y Mis
+servicios con Backend real. El bloqueo general de servicios descrito arriba
+es histórico del MVP Guest; los demás módulos siguen bloqueados en modo real.
+No cambia el PASS manual del recorrido Guest anterior.
+
+El usuario confirmó crear/consultar/reabrir sin duplicados. La mejora UX Staff
+de tarjeta/modal conserva PASS técnico / EN_QA visual por separado.

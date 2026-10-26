@@ -1,5 +1,18 @@
 # 39 — Baseline OpenAPI/Swagger Backend
 
+## Android Housekeeping real MVP (2026-10-26) — COMPLETADA / PASS funcional
+
+Contrato58 agrega POST/GET Guest de housekeeping-requests por reserva/estancia y
+GET Staff de service-requests/housekeeping por propiedad. Bearer Guest propio,
+Bearer Staff con SERVICE_REQUEST_INTAKE u OPERATIONS_MANAGE y scope existente;
+JSON estricto, programación estructurada, Idempotency-Key y private/no-store.
+Solo defaults MVP, sin modificar estados físicos HK ni agregar exclusiones.
+Documento generado y paridad con mappings: **71 operaciones,55 paths,92 schemas,
+15 tags**. OpenApiContractIntegrationTests23 PASS más contrato/HTTP Guest11 PASS.
+El esquema documenta notas nullable/máximo500, room nullable en Staff, errores,
+respuestas201/200 de replay y audiencia guest-bff-or-native/staff. PASS manual
+funcional confirmado por usuario; UX Staff PASS técnico / EN_QA visual; ver [contrato58](58_ANDROID_HOUSEKEEPING_REAL_MVP.md).
+
 ## Alta de reservas Staff — contrato55 (2026-10-23)
 
 Dos operaciones nuevas: GET `/api/v1/reservations/creation-options` y POST

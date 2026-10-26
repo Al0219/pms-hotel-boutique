@@ -9,6 +9,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, UUID> {
 
+    Optional<ServiceRequest> findByStayIdAndGuestRequestKey(UUID stayId, String guestRequestKey);
+
+    List<ServiceRequest> findByPropertyIdAndStayIdAndCategoryOrderByCreatedAtDesc(UUID propertyId, UUID stayId, ServiceRequest.Category category);
+
     Optional<ServiceRequest> findByIdAndPropertyId(UUID id, UUID propertyId);
 
     List<ServiceRequest> findByPropertyIdIn(Set<UUID> propertyIds);
