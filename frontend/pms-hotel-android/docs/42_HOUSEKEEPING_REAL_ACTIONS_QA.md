@@ -1,5 +1,73 @@
 # Housekeeping real actions — guía QA42
 
+## Corrección final: refresco de estados Android — COMPLETADA / PASS
+
+Rama `fix/android-housekeeping-status-refresh`, worktree
+`/tmp/pms-housekeeping-refresh`, base main566c7f0/PR170 fusionado.
+El recorrido Housekeeping previo tiene PASS técnico/manual confirmado por el
+usuario. **Este refresco automático tiene PASS técnico (54 pruebas) y PASS manual
+confirmado explícitamente por el usuario.** No se atribuyen pruebas manuales
+adicionales al agente ni se extrapola la confirmación a otros módulos.
+
+Único cambio funcional: useHousekeepingRequests mantiene su query key
+`['guest-housekeeping', accountId, reservationId, reservationStayId]` y activa
+refetchInterval de10s cuando hay sesión Guest vigente, estancia seleccionada,
+modo real, pantalla enfocada, AppState active y alguna OPEN/IN_PROGRESS.
+Se pausa durante la consulta compartida y se reinicia desde su resultado, evitando
+cadencias duplicadas entre vistas de la misma query. Sin retries automáticos:
+error de red mantiene el último dato en cache con estado de error, y el siguiente
+intento queda en la cadencia normal; no se inventan estados.
+
+Al finalizar/cancelar todas, perder foco, cambiar contexto o cerrar sesión, el
+polling se detiene. useFocusEffect conserva la lectura al enfocar; al regresar
+a primer plano vuelve a consultar inmediatamente solo si está enfocada. Botón
+manual y presentación/filtros existentes intactos. Refrescos de fondo no ponen
+la query nuevamente en isPending ni muestran loaders completos. No store nuevo,
+provider session-only, focusManager global ni sincronización de otros servicios.
+AppState listener y timers de QueryObserver se limpian al desmontar. Mock no
+instala este listener ni ejecuta consultas/polling reales.
+
+Verificación focal: **54 PASS** en housekeeping-status-refresh (13 nuevas),
+housekeeping-real-actions, housekeeping-real y housekeeping (41 de regresión).
+Typecheck Android, ESLint focal --max-warnings=0 y git diff --check PASS.
+Sin suites completas/builds; Backend/Web/PostgreSQL/contratos/endpoints/mocks
+funcionales sin cambios. Cinco archivos originales intactos por SHA256; logs en
+`/tmp/housekeeping-refresh-preservation/`. Cierre autorizado: commit
+`fix(android): auto-refresh housekeeping request status`, push normal y PR hacia
+main. No fusionar; revisar conflictos y los cuatro workflows remotos. En este
+cierre solo se revisan diff/preservación y whitespace; no se repiten las54
+pruebas ni builds tras una actualización exclusivamente documental.
+
+Guía de reproducción (refresco con PASS manual confirmado):
+
+1. Conservar Backend y Firefox Staff actuales. Ejecutar Expo Go desde este
+   worktree con EXPO_PUBLIC_USE_MOCK_API=false y la URL Backend ya configurada
+   (IP LAN de Fedora o HTTPS, nunca localhost del teléfono). Si se usa HTTP LAN
+   controlado, mantener EXPO_PUBLIC_ALLOW_LOCAL_HTTP=true. Recargar Metro/Expo.
+2. Guest con estancia seleccionada y solicitud OPEN: permanecer en Cuenta→Mis
+   servicios; Firefox Staff Iniciar limpieza. Sin navegar ni tocar Actualizar,
+   debe mostrar En proceso dentro de unos10s más latencia de red. Repetir en
+   Servicios→Mis servicios.
+3. Staff completar: desaparece de Activos, aparece en Completados y sigue en
+   Todos, sin editar/cancelar. No reiniciar Expo ni navegar fuera para actualizar.
+4. Enviar Android a segundo plano, cambiar estado desde Staff y volver: consulta
+   inmediata. Dejar todas finalizadas, salir de pantalla, cambiar estancia/cuenta
+   o cerrar sesión: no debe seguir consultando ese contexto ni filtrar tarjetas.
+5. Desconectar/reconectar red: sin éxito ficticio ni ráfaga de reintentos; volver
+   a primer plano o pulsar Actualizar permite recuperar la lectura real.
+
+Comandos ejecutados desde frontend/pms-hotel-android:
+
+```bash
+npm run test -- --runTestsByPath tests/housekeeping-status-refresh.test.tsx tests/housekeeping-real-actions.test.tsx tests/housekeeping-real.test.tsx tests/housekeeping.test.tsx
+npm run typecheck
+npx eslint --max-warnings=0 src/modules/services/housekeeping/presentation/hooks/useHousekeepingRequests.ts tests/housekeeping-status-refresh.test.tsx tests/housekeeping-real-actions.test.tsx
+```
+
+Los apartados siguientes conservan la evidencia histórica del incremento anterior;
+sus restricciones de no polling quedan ampliadas únicamente para Housekeeping
+visible con solicitudes activas según este ajuste autorizado.
+
 Compatibilidad: main859ef21 (PR169) integrado mediante merge normal; las
 aserciones de privacidad Guest se conservan junto a timezone requerido.
 
