@@ -2115,6 +2115,9 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
   Publicación commit/push autorizada2026-10-27. Verificar integración contra
   origin/main51d6e32 sin cambiar de rama ni fusionar main; contrato renumerado61
   y limpieza financiera separada para conservar Room Service en la combinación.
+  Commit funcional ae88d50 publicado; simulación con51d6e32 sin conflictos,
+  typecheck/lint PASS y48 casos compartidos PASS (threads, mismos timeouts).
+  No merge/rebase ni cambios en main; QA manual/CI general siguen pendientes.
 
 ### BD2-FP-000 — Fase 0: revisión y contratos
 

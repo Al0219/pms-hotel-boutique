@@ -199,3 +199,10 @@ declarar QA manual ni CI general PASS. origin/main51d6e32 añade Room Service;
 se asigna61 a este contrato para conservar el60 de ese módulo. La limpieza de
 cachés financieros queda separada de la lista compartida, conservando su
 comportamiento y permitiendo incorporar las claves de otros módulos sin conflicto.
+
+Publicado el commit funcional ae88d50 en origin/feature/staff-folio-payments.
+Combinación simulada con origin/main51d6e32: sin conflictos, conserva Folio y
+Room Service; typecheck y lint PASS. Regresión compartida48 PASS en cinco archivos
+(worker threads; assertions y timeouts originales). El primer intento con forks
+tuvo cuatro timeouts/esperas; no se presenta como PASS. Sin merge/rebase ni
+modificaciones a main. QA manual y CI general continúan pendientes.

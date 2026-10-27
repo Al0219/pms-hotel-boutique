@@ -5321,3 +5321,7 @@ José autoriza commit/push2026-10-27. origin/main avanzó a51d6e32 con Room Serv
 contrato financiero renumerado61, sin tocar el60 del compañero. Limpieza financiera
 separada de la lista compartida de caches para evitar conflicto y conservar
 ambos módulos en la integración. Mantener EN_QA; no atribuir PASS manual/CI general.
+Publicado ae88d50 en origin/feature/staff-folio-payments. Simulación main51d6e32
+sin conflictos y conserva ambos caches; typecheck/lint PASS y48 pruebas PASS en
+threads tras esperas/timeouts con forks, sin cambiar assertions/timeouts. Sin
+merge/rebase ni cambios en main. Evidencia temporal publication-* fuera de Git.
