@@ -2237,6 +2237,37 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
 
 ## BD2 — Folio/Payments y lifecycle de reservas
 
+### Folio mínimo Staff — EN_QA (2026-10-26)
+
+- José autoriza retomar el cierre full stack del flujo principal. Rama
+  feature/staff-folio-payments desde main566c7f0; coordinación BD1/BD3.
+  Incremento limitado de BD2-FP-002/003 y WEB0302/0401, sin cerrar S4 global.
+- Reutilizar StaffFolioService, FolioService, FolioTransactionGuard y
+  LocalOperationService disponibles. RECEPCION ya tiene FOLIO_PAYMENT_OPERATE.
+  José confirma «permitamos abono y pago total»: contrato61 aprobado para lecturas
+  scoped y pago contable recibido, positivo, hasta el saldo y en moneda del folio.
+  Sin PSP, nuevos permisos ni APIs financieras derivadas de mocks.
+- Puerto3001 saludable pero imágenes antiguas: Swagger50 paths sin Housekeeping
+  reciente; manifiesto Web todavía con detalle Guest paginado anterior. Corregido:
+  imágenes main566c7f0 reconstruidas/activadas en3001, tres servicios healthy,
+  Swagger58 paths y rutas actuales Guest/Housekeeping verificadas. Mismos
+  contenedor/volumen PostgreSQL y9 reservas/9 stays/7 folios/13 movimientos;
+  migraciones existentes28→31. Build/lecturas HTTP/diff PASS, sin PII.
+- API/BFF y panel en detalle de reserva sobre los puertos vigentes;
+  bloqueo compartido con checkout, recibo idempotente y movimientos append-only.
+  verify focal111 PASS, Web afectado78 PASS, lint/typecheck/build PASS y Chrome
+  real13 PASS en3001, sin registrar pagos durante el smoke. Base de datos intacta.
+  Suite Web global2613/2616:3 fallos ajenos; timeout administrativo reproducido en
+  main, otros dos casos pasan aislados. Evidencia/límites en contrato61. Sin
+  migraciones nuevas, secretos, dependencias, commit/push ni Android.
+  Pendientes QA manual del owner y CI general; no cerrar S4 ni marcar COMPLETADA.
+  Publicación commit/push autorizada2026-10-27. Verificar integración contra
+  origin/main51d6e32 sin cambiar de rama ni fusionar main; contrato renumerado61
+  y limpieza financiera separada para conservar Room Service en la combinación.
+  Commit funcional ae88d50 publicado; simulación con51d6e32 sin conflictos,
+  typecheck/lint PASS y48 casos compartidos PASS (threads, mismos timeouts).
+  No merge/rebase ni cambios en main; QA manual/CI general siguen pendientes.
+
 ### BD2-FP-000 — Fase 0: revisión y contratos
 
 - **Estado:** COMPLETADA — preparación documental, aceptación y revisión local PASS.

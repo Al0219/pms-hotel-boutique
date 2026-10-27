@@ -5435,3 +5435,42 @@ sesiones al modificar el acceso.
   2026-10-20. No se declara completado ningún otro reporte o KPI.
 - **Siguiente:** publicación solo con autorización independiente; sin
   commit/push/merge.
+
+## 2026-10-26 — Folio mínimo Staff: contrato61 aprobado, EN_QA
+
+José autoriza cerrar el flujo principal en feature/staff-folio-payments desde
+main566c7f0. Se reutilizarán StaffFolioService/FolioService, C2, guard financiero
+e idempotencia existentes; Recepción ya tiene FOLIO_PAYMENT_OPERATE. Fila Web0401
+y extensión0302 consultadas, sin editar XLSX ni declarar cerrado S4 completo.
+José confirma abonos y pago total: positivos, misma moneda y hasta saldo actual.
+Documento61 registra alcance limitado y recuperación de reintentos. API/BFF y
+panel de folio en detalle Staff implementados sobre el libro existente;
+sin PSP, migraciones nuevas, secretos, dependencias, commit/push ni Android.
+
+Diagnóstico3001: servicios healthy, pero Swagger50 paths sin las rutas recientes
+de Housekeeping y BFF con detalle Guest paginado antiguo. Imágenes activas7eb4a3f/
+de963c4 corresponden al despliegue anterior. Configuración Compose/runtime coincide;
+se conservan imágenes de recuperación y volumen PostgreSQL. Baseline solo conteos:
+2 propiedades/24 rooms/9 reservas/9 stays/7 folios/13 movimientos/1 cuenta/0 links/
+28 migraciones. Despliegue actualizado desde main566c7f0: ambas imágenes build PASS,
+activadas en3001 y tres servicios healthy. Swagger58 paths y manifiesto confirman
+recuperación Guest y acciones Housekeeping actuales; HTTP público200 y privado401
+sin sesión. Mismos contenedor/volumen PostgreSQL y todos los conteos de negocio;
+migraciones existentes28→31. No reservas nuevas, pagos ni secretos modificados.
+Incremento financiero: verify focal final111 PASS; Web afectado78 PASS;
+lint/typecheck/build PASS. Suite general Web2613/2616, sin ocultar3 fallos
+ajenos: timeout administrativo también en main y dos fallos que pasan aislados.
+Detalle verificable en contrato61, sin cambios en esos módulos/tests.
+Docker3001 actualizado otra vez con el incremento: tres servicios healthy,
+misma BD/volumen/conteos. Chrome real13 PASS con Recepción, sin reservas ni pagos
+nuevos durante smoke. Pagos/rollback/concurrencia solo en DB descartable.
+Pendientes QA manual owner/CI general; no COMPLETADA ni S4 completo.
+Evidencia temporal pms-staff-folio-payments/pms-staff-folio-qa, fuera de Git.
+José autoriza commit/push2026-10-27. origin/main avanzó a51d6e32 con Room Service;
+contrato financiero renumerado61, sin tocar el60 del compañero. Limpieza financiera
+separada de la lista compartida de caches para evitar conflicto y conservar
+ambos módulos en la integración. Mantener EN_QA; no atribuir PASS manual/CI general.
+Publicado ae88d50 en origin/feature/staff-folio-payments. Simulación main51d6e32
+sin conflictos y conserva ambos caches; typecheck/lint PASS y48 pruebas PASS en
+threads tras esperas/timeouts con forks, sin cambiar assertions/timeouts. Sin
+merge/rebase ni cambios en main. Evidencia temporal publication-* fuera de Git.

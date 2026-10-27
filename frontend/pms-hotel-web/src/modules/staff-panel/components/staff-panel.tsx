@@ -3,9 +3,17 @@
 import Link from 'next/link';
 import { useReservationCenter } from '@/modules/reservations';
 import { useRooms } from '@/modules/rooms';
+import { SvgIcon } from '@/shared/components/svg-icon';
+import { StaffPanelOverview } from './staff-panel-overview';
 import styles from './staff-panel.module.css';
 
-export function StaffPanel({ propertyId, sessionId }: {
+const shortcuts = [
+  { href: '/reservas', icon: 'reservations', title: 'Reservas', text: 'Consulta huéspedes, asigna habitaciones y gestiona cada estadía.', action: 'Ver reservas' },
+  { href: '/staff/habitaciones', icon: 'room', title: 'Habitaciones', text: 'Revisa el inventario y el estado de las habitaciones del hotel.', action: 'Ver habitaciones' },
+  { href: '/calendario', icon: 'calendar', title: 'Calendario', text: 'Organiza llegadas, salidas y asignaciones en una sola vista.', action: 'Abrir calendario' },
+] as const;
+
+export function StaffPanel({ propertyId, sessionId, propertyName }: {
   propertyId: string; sessionId: string; propertyName: string;
 }) {
   const reservations = useReservationCenter(propertyId, '/api/staff/reservations', sessionId);
@@ -13,24 +21,39 @@ export function StaffPanel({ propertyId, sessionId }: {
   const loading = reservations.isFetching || rooms.isFetching;
   const failed = reservations.isError || rooms.isError;
   const available = !loading && !failed && reservations.isSuccess && rooms.isSuccess;
+  function refresh() { void reservations.refetch(); void rooms.refetch(); }
+
   return <section className={styles.page}>
-    <header><p className={styles.overline}>HOTEL BOUTIQUE · STAFF</p><h1>Panel de recepción</h1></header>
-    {loading ? <p role="status">Cargando datos de la propiedad…</p> : failed ? <div role="alert">
-      <p>No se pudieron consultar los datos del panel.</p>
-      <button onClick={() => { void reservations.refetch(); void rooms.refetch(); }}>Reintentar</button>
-    </div> : available ? <>
-      <dl className={styles.metrics} aria-label="Resumen de la propiedad">
-        <div><dt>Reservas registradas</dt><dd>{reservations.data.reservations.length}</dd></div>
-        <div><dt>Estadías registradas</dt><dd>{reservations.data.reservations.reduce((total, item) => total + (item.roomCount ?? 0), 0)}</dd></div>
-        <div><dt>Habitaciones físicas</dt><dd>{rooms.data.length}</dd></div>
-      </dl>
-      {reservations.data.reservations.length === 0 && <p>No hay reservas registradas en esta propiedad.</p>}
-      {rooms.data.length === 0 && <p>No hay habitaciones físicas registradas en esta propiedad.</p>}
-    </> : <p role="status">Preparando datos del panel…</p>}
-    <nav className={styles.cards} aria-label="Accesos del panel">
-      <Link className={styles.card} href="/reservas"><h2>Reservas</h2><p>Busca por código o huésped y revisa los detalles de cada estadía.</p><span className={styles.action}>Ver reservas →</span></Link>
-      <Link className={styles.card} href="/staff/habitaciones"><h2>Habitaciones</h2><p>Consulta las habitaciones físicas y sus tipos.</p><span className={styles.action}>Ver habitaciones →</span></Link>
-      <Link className={styles.card} href="/calendario"><h2>Calendario</h2><p>Consulta las fechas de llegada y salida para organizar la recepción.</p><span className={styles.action}>Abrir calendario →</span></Link>
-    </nav>
+    <header className={styles.hero}>
+      <div>
+        <p className={styles.overline}>HOTEL BOUTIQUE · STAFF</p>
+        <h1>Panel de recepción</h1>
+        <p className={styles.heroDescription}>Una mirada a tu hotel, un mejor inicio para cada estadía.</p>
+        <span className={styles.property}><SvgIcon name="location" />{propertyName}</span>
+      </div>
+      <div className={styles.heroActions}>
+        <button className={styles.refresh} onClick={refresh} disabled={loading}>
+          {loading ? 'Actualizando…' : 'Actualizar datos'}
+        </button>
+        <Link className={styles.primaryAction} href="/reservas">Gestionar reservas <SvgIcon name="arrow" /></Link>
+      </div>
+    </header>
+    {loading ? <div className={styles.loading} role="status">
+      <span className={styles.spinner} aria-hidden="true" />Cargando datos de la propiedad…
+    </div> : failed ? <div className={styles.error} role="alert">
+      <strong>No se pudieron consultar los datos del panel.</strong>
+      <p>Intenta actualizar para recuperar la información de tu hotel.</p>
+      <button className={styles.secondaryAction} onClick={refresh}>Reintentar</button>
+    </div> : available ? <StaffPanelOverview reservations={reservations.data.reservations} rooms={rooms.data} />
+      : <p role="status">Preparando datos del panel…</p>}
+    <section aria-labelledby="panel-shortcuts" className={styles.shortcutSection}>
+      <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>TU ESPACIO DE TRABAJO</p><h2 id="panel-shortcuts">¿Por dónde empezamos?</h2></div></div>
+      <nav className={styles.cards} aria-label="Accesos del panel">
+        {shortcuts.map(item => <Link key={item.href} className={styles.card} href={item.href}>
+          <span className={styles.icon}><SvgIcon name={item.icon} /></span>
+          <h3>{item.title}</h3><p>{item.text}</p><span className={styles.action}>{item.action} <SvgIcon name="arrow" /></span>
+        </Link>)}
+      </nav>
+    </section>
   </section>;
 }
