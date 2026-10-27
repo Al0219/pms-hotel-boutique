@@ -13,7 +13,7 @@ class HousekeepingActionRuleTests {
   row.startProgress(service.minusSeconds(3000));assertThrows(ResponseStatusException.class,()->GuestHousekeepingService.requireModifiable(row,service.minusSeconds(2000)));
  }
  @Test void unchangedScheduleAllowsNotesUntil25MinutesButNewScheduleStillRequires30() {
-  var date=LocalDate.parse("2030-01-01");var c=new GuestHousekeepingService.Context(UUID.randomUUID(),null,null,date,date.plusDays(2),"IN_HOUSE","CONFIRMED","America/Guatemala");var now=Instant.parse("2030-01-01T15:34:00Z");
+  var date=LocalDate.parse("2030-01-01");var c=new GuestServiceContext.Context(UUID.randomUUID(),null,null,date,date.plusDays(2),"IN_HOUSE","CONFIRMED","America/Guatemala");var now=Instant.parse("2030-01-01T15:34:00Z");
   assertDoesNotThrow(()->GuestHousekeepingService.validateSchedule(c,date,now,25*60));
   assertThrows(ResponseStatusException.class,()->GuestHousekeepingService.validateSchedule(c,date,now,30*60));
  }

@@ -11,7 +11,7 @@ export interface RoomServiceCartState {
   items: readonly RoomServiceCartLine[];
 }
 
-/** Frontend/mock business rule; it is not inventory or Backend stock. */
+/** Quantity1–5 is authorized for the real MVP too; it does not represent physical stock. */
 export const ROOM_SERVICE_MIN_ITEM_QUANTITY = 1;
 export const ROOM_SERVICE_MAX_ITEM_QUANTITY = 5;
 
@@ -75,4 +75,9 @@ export function calculateRoomServiceTotal(menu: RoomServiceMenu, cart: RoomServi
     const item = menu.items.find((menuItem) => menuItem.fixtureKey === line.itemFixtureKey);
     return total + (item ? item.priceAmount * line.quantity : 0);
   }, 0);
+}
+
+/** Existing products retain their server snapshot prices when editing; new products use the current menu. */
+export function withRoomServiceSnapshotPrices(menu:RoomServiceMenu,lines:readonly {productId:string;productName:string;unitPriceMinor:number}[]):RoomServiceMenu {
+ return {items:menu.items.map(item=>{const saved=lines.find(line=>line.productId===item.fixtureKey);return saved?{...item,name:saved.productName,priceAmount:saved.unitPriceMinor/100}:item;})};
 }

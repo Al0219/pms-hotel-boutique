@@ -6,8 +6,8 @@ import org.springframework.web.server.ResponseStatusException;
 import static org.junit.jupiter.api.Assertions.*;
 class HousekeepingSlotScheduleTests {
  private final LocalDate date=LocalDate.parse("2030-01-02");
- private GuestHousekeepingService.Context context(LocalDate checkout,String zone) {
-  return new GuestHousekeepingService.Context(UUID.randomUUID(),null,null,date.minusDays(1),checkout,"IN_HOUSE","CONFIRMED",zone);
+ private GuestServiceContext.Context context(LocalDate checkout,String zone) {
+  return new GuestServiceContext.Context(UUID.randomUUID(),null,null,date.minusDays(1),checkout,"IN_HOUSE","CONFIRMED",zone);
  }
  @Test void allFiveSlotsResolveTheirActualStartInPropertyTimezone() {
   var c=context(date.plusDays(2),"America/Guatemala");

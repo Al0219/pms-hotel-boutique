@@ -7,12 +7,14 @@ export const staffNavigation = [
   { href: '/calendario', label: 'Calendario', icon: 'calendar', roles: ['SUPER_ADMIN', 'GERENCIA', 'RECEPCION'] },
   { href: '/staff/habitaciones', label: 'Habitaciones', icon: 'room', roles: ['SUPER_ADMIN', 'GERENCIA', 'RECEPCION'] },
   { href: '/housekeeping', label: 'Housekeeping', icon: 'room', roles: ['SUPER_ADMIN', 'GERENCIA', 'OPERACIONES'] },
+  { href: '/room-service', label: 'Room Service', icon: 'room', roles: ['SUPER_ADMIN', 'GERENCIA', 'OPERACIONES', 'RECEPCION'] },
   { href: '/reportes', label: 'Reportes', icon: 'dashboard', roles: ['SUPER_ADMIN', 'GERENCIA'] },
 ] as const;
 export function canonicalStaffRole(roleId: string) { return roleId === 'superadmin' ? 'SUPER_ADMIN' : roleId.toUpperCase(); }
 /** Same effective navigation rules as main; reused for safe denied-route recovery. */
 export function canAccessStaffNavigation(entry: typeof staffNavigation[number], session: StaffSession): boolean {
   if (entry.href === '/reportes') return session.permissions.includes('COMMERCIAL_MANAGE') || session.permissions.includes('RESERVATION_MANAGE');
+  if (entry.href === '/room-service') return session.permissions.includes('OPERATIONS_MANAGE') || session.permissions.includes('SERVICE_REQUEST_INTAKE');
   if (entry.href === '/housekeeping') return session.permissions.includes('OPERATIONS_MANAGE');
   return (entry.roles as readonly string[]).includes(canonicalStaffRole(session.roleId));
 }

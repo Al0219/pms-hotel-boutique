@@ -121,7 +121,7 @@ it.each(['/services', '/services/housekeeping', '/services/requests'])('allows t
   const view = await setup();await waitFor(() => expect(view.getByTestId('housekeeping-requests-real')).toBeTruthy());
 });
 it('keeps other service routes blocked in real mode', async () => {
-  (usePathname as jest.Mock).mockReturnValue('/services/room-service');
+  (usePathname as jest.Mock).mockReturnValue('/services/amenities');
   const view = await setup();expect(view.getByTestId('guest-real-feature-unavailable')).toBeTruthy();
 });
 it('shows only existing real launchers and never loads the mock paid catalogue', async () => {
@@ -129,6 +129,6 @@ it('shows only existing real launchers and never loads the mock paid catalogue',
   const view = await setup(false, <ServicesScreen stayService={stayService} />);
   await waitFor(() => expect(view.getByTestId('services-housekeeping-launcher').props.accessibilityState.disabled).toBe(false));
   await waitFor(() => expect(view.getByTestId('housekeeping-requests-real')).toBeTruthy());
-  expect(view.getByTestId('services-requests-launcher')).toBeTruthy();expect(view.queryByTestId('services-room-service-launcher')).toBeNull();
+  expect(view.getByTestId('services-requests-launcher')).toBeTruthy();expect(view.getByTestId('services-room-service-launcher')).toBeTruthy();
   expect(catalogue).not.toHaveBeenCalled();
 });

@@ -1,0 +1,56 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-operations-005
+      author: alan
+      changes:
+        - sql:
+            splitStatements: true
+            sql: |
+              ALTER TABLE service_requests DROP CONSTRAINT ck_sr_category;
+              ALTER TABLE service_requests ADD CONSTRAINT ck_sr_category CHECK (category IN ('CONCIERGE','VALET','HOUSEKEEPING','ROOM_SERVICE','MAINTENANCE','OTHER'));
+              ALTER TABLE service_requests ADD CONSTRAINT uq_sr_id_stay UNIQUE(id,stay_id);
+              CREATE TABLE room_service_products (
+                id uuid PRIMARY KEY, property_id uuid NOT NULL REFERENCES properties(id),
+                code varchar(64) NOT NULL, name varchar(160) NOT NULL,
+                currency varchar(3) NOT NULL DEFAULT 'GTQ' CHECK(currency='GTQ'),
+                unit_price_minor bigint NOT NULL CHECK(unit_price_minor>=0 AND unit_price_minor<=100000000),
+                available boolean NOT NULL DEFAULT true, periods text[] NOT NULL,
+                updated_at timestamptz NOT NULL DEFAULT now(), UNIQUE(property_id,code),
+                CHECK(btrim(name)<>'' AND cardinality(periods)>0 AND periods <@ ARRAY['BREAKFAST','LUNCH','DINNER','BEVERAGES']::text[])
+              );
+              CREATE TABLE room_service_orders (
+                id uuid PRIMARY KEY, stay_id uuid NOT NULL REFERENCES reservation_stays(id),
+                request_key varchar(100) NOT NULL, initial_payload_hash varchar(64) NOT NULL,
+                current_payload_hash varchar(64) NOT NULL, service_date date NOT NULL,
+                delivery_time time NOT NULL, currency varchar(3) NOT NULL CHECK(currency='GTQ'),
+                total_minor bigint NOT NULL CHECK(total_minor>=0), UNIQUE(stay_id,request_key),
+                FOREIGN KEY(id,stay_id) REFERENCES service_requests(id,stay_id)
+              );
+              CREATE TABLE room_service_order_lines (
+                order_id uuid NOT NULL REFERENCES room_service_orders(id),
+                product_id uuid NOT NULL REFERENCES room_service_products(id),
+                product_name varchar(160) NOT NULL, meal_period varchar(16) NOT NULL CHECK(meal_period IN ('BREAKFAST','LUNCH','DINNER','BEVERAGES')),
+                quantity smallint NOT NULL CHECK(quantity BETWEEN 1 AND 5),
+                unit_price_minor bigint NOT NULL CHECK(unit_price_minor>=0),
+                line_total_minor bigint NOT NULL CHECK(line_total_minor=quantity*unit_price_minor),
+                PRIMARY KEY(order_id,product_id)
+              );
+              INSERT INTO room_service_products(id,property_id,code,name,unit_price_minor,periods)
+              SELECT md5(p.id::text || ':' || v.code)::uuid,p.id,v.code,v.name,v.price,v.periods
+              FROM properties p CROSS JOIN (VALUES
+                ('continental-breakfast','Desayuno continental',7500,ARRAY['BREAKFAST']),
+                ('typical-breakfast','Desayuno típico',8500,ARRAY['BREAKFAST']),
+                ('club-sandwich','Club sándwich',9000,ARRAY['LUNCH','DINNER']),
+                ('house-burger','Hamburguesa de la casa',9500,ARRAY['LUNCH','DINNER']),
+                ('coffee','Café',2000,ARRAY['BEVERAGES']),
+                ('natural-juice','Jugo natural',2500,ARRAY['BEVERAGES'])
+              ) AS v(code,name,price,periods);
+      rollback:
+        - sql:
+            sql: |
+              DROP TABLE room_service_order_lines;
+              DROP TABLE room_service_orders;
+              DROP TABLE room_service_products;
+              ALTER TABLE service_requests DROP CONSTRAINT uq_sr_id_stay;
+              ALTER TABLE service_requests DROP CONSTRAINT ck_sr_category;
+              ALTER TABLE service_requests ADD CONSTRAINT ck_sr_category CHECK(category IN ('CONCIERGE','VALET','HOUSEKEEPING','MAINTENANCE','OTHER'));

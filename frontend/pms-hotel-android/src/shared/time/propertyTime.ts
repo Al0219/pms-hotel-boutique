@@ -1,7 +1,10 @@
+const propertyFormatters = new Map<string,Intl.DateTimeFormat>();
 /** IANA property calendar, independent of the phone timezone. Invalid metadata fails closed. */
 export function propertyDateTimeParts(instantMs: number, timezone: string): Record<string, string> | null {
   try {
-    return Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).formatToParts(instantMs).map(part => [part.type, part.value]));
+    let formatter=propertyFormatters.get(timezone);
+    if(!formatter){formatter=new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });propertyFormatters.set(timezone,formatter);}
+    return Object.fromEntries(formatter.formatToParts(instantMs).map(part => [part.type, part.value]));
   } catch { return null; }
 }
 export function propertyCalendarDate(instantMs: number, timezone: string): string | null {

@@ -11,3 +11,6 @@ databaseChangeLog:
   - include:
       file: 004-guest-housekeeping.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 005-room-service.yaml
+      relativeToChangelogFile: true
