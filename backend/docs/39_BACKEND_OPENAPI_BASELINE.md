@@ -509,3 +509,13 @@ OPEN→IN_PROGRESS→DONE. Audiencias, auth/permisos, cuerpos cerrados y errores
 documentados; cantidades enteras1–5 y precios/totales snapshot en GTQ del servidor.
 OpenAPI generado81 operaciones/64paths/104schemas/15tags, paridad mappings PASS.
 Migración aditiva005-operations-005, sin exclusiones nuevas ni datos mock reales.
+
+## Amenidades real MVP — COMPLETADA / PASS manual confirmado
+
+[Contrato61](61_AMENITIES_REAL_MVP.md): cinco operaciones Guest propias y dos Staff
+por propiedad. Catálogo persistido de cinco artículos, líneas/cantidades sin
+campos financieros; cuerpos cerrados, permisos INTAKE/OPS existentes, CAS,
+idempotencia, cutoff y checkout normal. OpenAPI generado88 operaciones/70paths/
+112schemas/15tags; paridad mappings comprobada, audiencias Guest nativa/Staff
+y sin exclusiones nuevas. Migración aditiva005-operations-006. QA manual del
+núcleo confirmado por el usuario. Ajuste visual posterior sin cambios de API.

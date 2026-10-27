@@ -31,9 +31,11 @@ it('counts only OPEN/IN_PROGRESS and opens the complete read-only table exclusiv
   expect(trigger()).toHaveAccessibleName('Limpiezas solicitadas: 2');
   expect(screen.queryByRole('table')).not.toBeInTheDocument();
   await user.click(screen.getByText('Limpiezas solicitadas'));
+  await user.selectOptions(within(dialog()).getByLabelText('Estado'),'ALL');
   expect(dialog()).toHaveAttribute('aria-modal', 'true');
   expect(within(dialog()).getByRole('table', { name: 'Solicitudes Guest de limpieza' })).toBeInTheDocument();
-  for (const label of ['Solicitado', 'En proceso', 'Completado', 'Cancelado']) expect(within(dialog()).getByText(label)).toBeInTheDocument();
+  expect(within(dialog()).getAllByRole('columnheader').map(el=>el.textContent)).toEqual(['Reserva / Habitación','Servicio','Fecha / Horario','Notas','Acciones']);
+  for (const label of ['Solicitado', 'En proceso', 'Completado', 'Cancelado']) expect(within(dialog()).getByLabelText(`Estado: ${label}`)).toBeInTheDocument();
   expect(within(dialog()).getByText('HKREAL3 · Por asignar')).toBeInTheDocument();
   expect(within(dialog()).getAllByText('Limpieza completa')).toHaveLength(4);
   expect(within(dialog()).getAllByText('2030-01-02 · 10:00–11:00')).toHaveLength(4);
@@ -91,7 +93,7 @@ it('shares one actual query between KPI and modal and refreshes both with one ex
   mocks.read.mockResolvedValue(allStatuses.map(row => ({ ...row, status: 'DONE' })));
   await user.click(within(dialog()).getByRole('button', { name: 'Actualizar solicitudes' }));
   await waitFor(() => expect(trigger()).toHaveAccessibleName('Limpiezas solicitadas: 0'));
-  expect(mocks.read).toHaveBeenCalledTimes(2);expect(within(dialog()).getAllByText('Completado')).toHaveLength(4);
+  await user.selectOptions(within(dialog()).getByLabelText('Estado'),'DONE');expect(mocks.read).toHaveBeenCalledTimes(2);expect(within(dialog()).getAllByText('Completado')).toHaveLength(4);
   view.unmount();client.clear();
 });
 it('closes the modal and clears the displayed previous property/account when the authorized context changes', async () => {
@@ -133,12 +135,12 @@ it('confirms real Staff transitions and refreshes the shared table and pending c
   await userEvent.click(trigger());await userEvent.click(within(dialog()).getByRole('button', { name: 'Iniciar limpieza' }));
   expect(mocks.transition).not.toHaveBeenCalled();
   await userEvent.click(screen.getByRole('button', { name: 'Iniciar limpieza' }));
-  await waitFor(() => expect(within(dialog()).getByText('En proceso')).toBeInTheDocument());
+  await waitFor(() => expect(within(dialog()).getByLabelText('Estado: En proceso')).toBeInTheDocument());
   expect(trigger()).toHaveAccessibleName('Limpiezas solicitadas: 1');
   await userEvent.click(within(dialog()).getByRole('button', { name: 'Marcar como completada' }));
   await userEvent.click(screen.getByRole('button', { name: 'Marcar como completada' }));
   await waitFor(() => expect(trigger()).toHaveAccessibleName('Limpiezas solicitadas: 0'));
-  expect(within(dialog()).getByText('Completado')).toBeInTheDocument();
+  await userEvent.selectOptions(within(dialog()).getByLabelText('Estado'),'DONE');expect(within(dialog()).getByText('Completado')).toBeInTheDocument();
   expect(within(dialog()).queryByRole('button', { name: 'Marcar como completada' })).not.toBeInTheDocument();
   expect(mocks.transition).toHaveBeenCalledTimes(2);expect(mocks.read).toHaveBeenCalledTimes(3);
   view.unmount();client.clear();
@@ -169,4 +171,12 @@ it('requires a refresh after a concurrent change instead of replaying an obsolet
 
 it.each(['09:00–10:00','10:00–11:00','11:00–12:00','12:00–13:00','14:00–15:00'])('preserves actual service slot %s in Staff table models', timeSlot => {
  expect(mapGuestCleaningRequests([{ ...dto, timeSlot }],propertyId)[0]).toMatchObject({ timeSlot, status: 'OPEN' });
+});
+
+it('retains the presentation filters while returning from the Staff confirmation',async()=>{
+ render(<GuestCleaningRequests propertyId={propertyId} sessionId="staff" canManage/>);await userEvent.click(trigger());
+ await userEvent.type(within(dialog()).getByLabelText('Buscar'),'HKREAL0');await userEvent.click(within(dialog()).getByRole('button',{name:'Iniciar limpieza'}));
+ await userEvent.click(within(screen.getByRole('dialog',{name:'Iniciar limpieza'})).getByRole('button',{name:'Volver'}));
+ expect(within(dialog()).getByLabelText('Buscar')).toHaveValue('HKREAL0');expect(within(dialog()).getByLabelText('Estado')).toHaveValue('PENDING');
+ expect(within(dialog()).queryByText('HKREAL1 · 204')).not.toBeInTheDocument();
 });

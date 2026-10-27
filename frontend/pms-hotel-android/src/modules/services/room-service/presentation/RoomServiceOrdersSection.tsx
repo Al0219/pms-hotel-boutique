@@ -1,3 +1,4 @@
+import { ServiceRequestDisclosure, ServiceRequestDisclosureGroup } from '@/modules/service-requests/presentation/ServiceRequestDisclosure';
 import {filterPersistedServiceRequests,type ServiceRequestFilter} from '@/modules/service-requests/domain/serviceRequestPresentation';
 import { useRef,useState } from 'react';
 import { Pressable,Text,View } from 'react-native';
@@ -27,18 +28,20 @@ export function RoomServiceOrdersContent({query,filter='ALL',showFeedback=true}:
  if(showFeedback&&query.isPending)return <Text testID="room-service-orders-loading">Cargando pedidos Room Service…</Text>;
  if(showFeedback&&query.isError&&!target)return <View testID="room-service-orders-error"><Text>{query.error instanceof NetworkError?'Sin conexión. Conéctate para consultar tus pedidos.':'No pudimos consultar tus pedidos.'}</Text>{refresh}</View>;
  const rows=filterPersistedServiceRequests(query.data??[],filter);
- return <View testID="room-service-orders-real">{showFeedback?refresh:null}{cancellation.isError&&!target?<Text>No pudimos cancelar el pedido. Actualiza y reintenta.</Text>:null}
+ return <ServiceRequestDisclosureGroup scope={filter}><View testID="room-service-orders-real">{showFeedback?refresh:null}{cancellation.isError&&!target?<Text>No pudimos cancelar el pedido. Actualiza y reintenta.</Text>:null}
  {!rows.length?showFeedback?<Text style={styles.empty}>Sin pedidos Room Service.</Text>:null:rows.map(row=>{
   const editable=row.status==='OPEN'&&clock.nowMs()<Date.parse(row.modifiableUntil);
-  const card=<View key={row.id} style={styles.card} testID={`room-service-order-${row.id}`}><Pressable style={styles.cardBody} accessibilityRole={editable?'button':undefined} accessibilityLabel={editable?'Editar pedido Room Service':undefined} disabled={!editable||cancellation.isPending} onPress={()=>router.push({pathname:'/services/room-service',params:{editRequestId:row.id,returnTo:'requests'}})}>
-   <Text style={styles.title}>Room Service</Text><Text style={styles.summary}>{formatGuestDate(row.serviceDate)} · {row.deliveryTime}</Text>
-   {row.items.map(line=><Text key={line.productId} style={styles.summary}>{line.productName} × {line.quantity} · Q {(line.lineTotalMinor/100).toFixed(2)}</Text>)}
-   <Text style={styles.summary}>Total · Q {(row.totalMinor/100).toFixed(2)}</Text>{row.notes?<Text style={styles.summary}>{row.notes}</Text>:null}<Text style={styles.status}>{labels[row.status]}</Text>
-  </Pressable></View>;
+  const card=<ServiceRequestDisclosure key={row.id} id={`room-service:${row.id}`} title="Room Service"
+    summary={`${formatGuestDate(row.serviceDate)} · ${row.deliveryTime}`} total={`Q ${(row.totalMinor/100).toFixed(2)}`}
+    status={labels[row.status]} testID={`room-service-order-${row.id}`}
+    edit={editable?{label:'Editar pedido Room Service',disabled:cancellation.isPending,onPress:()=>router.push({pathname:'/services/room-service',params:{editRequestId:row.id,returnTo:'requests'}})}:undefined}>
+    {row.items.map(line=><Text key={line.productId} style={styles.summary}>{line.productName} × {line.quantity} · Q {(line.lineTotalMinor/100).toFixed(2)}</Text>)}
+    {row.notes?<Text style={styles.summary}>{row.notes}</Text>:null}
+  </ServiceRequestDisclosure>;
   return editable?<SwipeToDelete key={row.id} enabled={!cancellation.isPending} deleteLabel="Cancelar pedido" testID={`room-service-order-swipe-${row.id}`} onDelete={()=>{if(clock.nowMs()<Date.parse(row.modifiableUntil)){cancellation.reset();setTarget(row);}}}>{card}</SwipeToDelete>:card;
  })}
  <ConfirmationModal visible={target!==null} title="Cancelar pedido" body={cancellation.isError?'No pudimos confirmar la cancelación. Revisa tu conexión y reintenta.':'El pedido permanecerá en tu historial con estado Cancelado.'} confirmLabel={cancellation.isPending?'Cancelando…':cancellation.isError?'Reintentar':'Cancelar pedido'} destructive testID="room-service-cancel-confirmation"
  onCancel={()=>{if(!pending.current){setTarget(null);cancellation.reset();}}} onConfirm={()=>{
   if(!target||pending.current)return;pending.current=true;cancellation.mutate(target,{onSuccess:()=>setTarget(null),onError:error=>{if(error instanceof HttpError&&error.status===409)setTarget(null);},onSettled:()=>{pending.current=false;}});
- }}/></View>;
+ }}/></View></ServiceRequestDisclosureGroup>;
 }

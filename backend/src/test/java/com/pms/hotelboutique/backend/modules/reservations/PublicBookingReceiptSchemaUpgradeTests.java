@@ -35,10 +35,11 @@ class PublicBookingReceiptSchemaUpgradeTests {
                 }
                 migrate(connection, schema, "classpath:db/changelog/db.changelog-master.yaml");
                 Map<String, String> after = manifest(connection, schema);
-                // Includes additive Housekeeping004 and Room Service005; prior checksums stay immutable.
-                assertEquals(before.size() + 8, after.size());
+                // Includes additive Housekeeping004, Room Service005 and Amenities006; prior checksums stay immutable.
+                assertEquals(before.size() + 9, after.size());
                 assertTrue(after.keySet().stream().anyMatch(key -> key.startsWith("005-operations-004\n")));
                 assertTrue(after.keySet().stream().anyMatch(key -> key.startsWith("005-operations-005\n")));
+                assertTrue(after.keySet().stream().anyMatch(key -> key.startsWith("005-operations-006\n")));
                 assertTrue(after.keySet().stream().anyMatch(key -> key.startsWith("003-staff-auth-012\n")));
                 assertTrue(after.keySet().stream().anyMatch(key -> key.startsWith("003-guest-account-evidence-013\n")));
                 before.forEach((key, checksum) -> assertEquals(checksum, after.get(key), key));

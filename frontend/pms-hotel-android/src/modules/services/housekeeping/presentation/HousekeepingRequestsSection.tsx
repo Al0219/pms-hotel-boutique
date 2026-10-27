@@ -1,3 +1,4 @@
+import { ServiceRequestDisclosure, ServiceRequestDisclosureGroup } from '@/modules/service-requests/presentation/ServiceRequestDisclosure';
 import { filterPersistedServiceRequests,type ServiceRequestFilter } from '@/modules/service-requests/domain/serviceRequestPresentation';
 import { useEffect, useRef, useState } from 'react';
 import { router } from 'expo-router';
@@ -35,18 +36,20 @@ export function HousekeepingRequestsContent({query,filter='ALL',showFeedback=tru
   if (showFeedback && query.isPending) return <Text accessibilityLiveRegion="polite" testID="housekeeping-requests-loading">Cargando solicitudes de limpieza…</Text>;
   if (showFeedback && query.isError && !target) return <View testID="housekeeping-requests-error"><Text>{query.error instanceof NetworkError ? 'Sin conexión. Conéctate para consultar tus solicitudes.' : 'No pudimos consultar tus solicitudes de limpieza.'}</Text>{refresh}</View>;
   const rows = filterPersistedServiceRequests(query.data??[],filter);
-  return <View testID="housekeeping-requests-real">{showFeedback?refresh:null}
+  return <ServiceRequestDisclosureGroup scope={filter}><View testID="housekeeping-requests-real">{showFeedback?refresh:null}
     {cancellation.isError && !target ? <Text accessibilityLiveRegion="polite" testID="housekeeping-cancel-error">{conflict ? 'La solicitud cambió o ya no admite cancelación. Actualiza las solicitudes.' : offline ? 'Sin conexión. Reintenta la cancelación.' : 'No pudimos cancelar la solicitud. Reintenta.'}</Text> : null}
     {rows.length === 0 ? showFeedback?<Text style={styles.empty}>Sin solicitudes de limpieza.</Text>:null : rows.map(item => {
       const editable = canModifyPersistedHousekeeping(item, clock.nowMs());
-      const card = <View key={item.id} style={styles.card} testID={`housekeeping-request-${item.id}`}><Pressable accessibilityRole={editable ? 'button' : undefined} accessibilityLabel={editable ? 'Editar solicitud de limpieza' : undefined} disabled={!editable || cancellation.isPending}
-        onPress={() => router.push({ pathname: '/services/housekeeping', params: { editRequestId: item.id, returnTo: 'requests' } })} style={styles.cardBody} testID={`housekeeping-edit-${item.id}`}>
-        <Text style={styles.title}>Limpieza completa</Text><Text style={styles.summary}>{formatGuestDate(item.serviceDate)} · {item.timeSlot}</Text>{item.notes ? <Text style={styles.summary}>{item.notes}</Text> : null}<Text style={styles.status}>{housekeepingStatusLabels[item.status]}</Text>
-      </Pressable></View>;
+      const card = <ServiceRequestDisclosure key={item.id} id={`housekeeping:${item.id}`} title="Limpieza completa"
+        summary={`${formatGuestDate(item.serviceDate)} · ${item.timeSlot}`} status={housekeepingStatusLabels[item.status]} testID={`housekeeping-request-${item.id}`}
+        edit={editable ? { label:'Editar solicitud de limpieza',testID:`housekeeping-edit-${item.id}`,disabled:cancellation.isPending,
+          onPress:() => router.push({ pathname:'/services/housekeeping',params:{ editRequestId:item.id,returnTo:'requests' } }) } : undefined}>
+        {item.notes ? <Text style={styles.summary}>{item.notes}</Text> : null}
+      </ServiceRequestDisclosure>;
       return editable ? <SwipeToDelete key={item.id} deleteLabel="Cancelar solicitud" enabled={!cancellation.isPending} onDelete={() => { if (canModifyPersistedHousekeeping(item, clock.nowMs())) { cancellation.reset(); setTarget(item); } }} testID={`housekeeping-swipe-${item.id}`}>{card}</SwipeToDelete> : card;
     })}
     <ConfirmationModal visible={target !== null} title="Cancelar solicitud" body={cancellation.isError ? offline ? 'Sin conexión. Conéctate y reintenta.' : 'No pudimos confirmar la cancelación. Reintenta.' : '¿Quieres cancelar esta solicitud de limpieza? Permanecerá en tu historial.'}
       confirmLabel={cancellation.isPending ? 'Cancelando…' : cancellation.isError ? 'Reintentar cancelación' : 'Cancelar solicitud'} destructive testID="housekeeping-cancel-confirmation"
       onCancel={() => { if (!cancellation.isPending) { setTarget(null); cancellation.reset(); } }} onConfirm={confirmCancel} />
-  </View>;
+  </View></ServiceRequestDisclosureGroup>;
 }

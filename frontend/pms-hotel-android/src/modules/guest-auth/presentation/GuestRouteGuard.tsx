@@ -52,7 +52,7 @@ export function GuestRouteGuard({ children }: PropsWithChildren) {
   }, [redirect]);
 
   if (redirect) return null;
-  if (!environment.useMockApi && !['/', '/login', '/reservations', '/account', '/services', '/services/housekeeping', '/services/room-service', '/services/requests'].includes(pathname)) {
+  if (!environment.useMockApi && !['/', '/login', '/reservations', '/account', '/services', '/services/housekeeping', '/services/room-service', '/services/amenities', '/services/requests'].includes(pathname)) {
     return <UniversalState kind="empty" title="Función no disponible" body="Esta función todavía no está disponible. Puedes consultar tus estadías." action={{ label: 'Volver', onPress: () => router.replace(session ? '/reservations' : '/login') }} testID="guest-real-feature-unavailable" />;
   }
   return children;

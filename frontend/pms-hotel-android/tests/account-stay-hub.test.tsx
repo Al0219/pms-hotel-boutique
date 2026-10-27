@@ -70,11 +70,14 @@ describe("Account / Stay Hub V3", () => {
       expect(rendered.getByTestId("account-stay-hub-screen")).toBeTruthy(),
     );
 
-    expect(rendered.getByText("Mi estadía")).toBeTruthy();
+    expect(rendered.queryByText("Mi estadía")).toBeNull();
+    expect(rendered.queryByText("Tu reserva vinculada")).toBeNull();
     expect(rendered.queryByTestId("account-rewards-launcher")).toBeNull();
     expect(rendered.queryByTestId("account-promotions-launcher")).toBeNull();
     expect(rendered.getByText("Habitación 204")).toBeTruthy();
     expect(rendered.getByText("Deluxe King")).toBeTruthy();
+    expect(rendered.getByText(/Check-out ·/)).toBeTruthy();
+    expect(rendered.getByTestId("account-checkout-launcher")).toBeTruthy();
     expect(rendered.getByText("Reserva · HB-2026-004281")).toBeTruthy();
     expect(rendered.queryByText("REMOTE_STATUS")).toBeNull();
     expect(rendered.queryByTestId("account-stay-status")).toBeNull();
@@ -227,4 +230,13 @@ describe('Account reference presentation', () => {
     expect(view.queryByText('Reserva · REFERENCE-A')).toBeNull();
     expect(getCurrentStay).toHaveBeenLastCalledWith({ reservationId: 'reservation-b', reservationStayId: 'stay-b' });
   });
+});
+
+it('removes the two Inicio headings while retaining reservation data and checkout navigation',async()=>{
+ const service={getCurrentStay:jest.fn(async()=>currentStayFixture)};const AccountRoute=createAccountRoute(service);
+ const ui=await renderRouter({account:AccountRoute,'account/checkout':()=> <Text testID="checkout-destination">Check-out</Text>},{initialUrl:'/account'});
+ await waitFor(()=>expect(ui.getByTestId('account-stay-reference')).toHaveTextContent('Reserva · HB-2026-004281'));
+ expect(ui.queryByText('Mi estadía')).toBeNull();expect(ui.queryByText('Tu reserva vinculada')).toBeNull();
+ expect(ui.getByText('Habitación 204')).toBeTruthy();expect(ui.getByText('Deluxe King')).toBeTruthy();expect(ui.getByText(/^28 .+–18 .+/)).toBeTruthy();expect(ui.getByText(/^Check-out · 18 /)).toBeTruthy();
+ await fireEvent.press(ui.getByTestId('account-checkout-launcher'));await waitFor(()=>expect(ui.getByTestId('checkout-destination')).toBeTruthy());expect(service.getCurrentStay).toHaveBeenCalledTimes(1);
 });

@@ -1,3 +1,4 @@
+import { ServiceRequestDisclosureGroup } from '@/modules/service-requests/presentation/ServiceRequestDisclosure';
 import {GuestServiceRequestsList} from '@/modules/service-requests/presentation/GuestServiceRequestsList';
 import { environment } from '@/config/environment';
 import { router } from 'expo-router';
@@ -71,7 +72,7 @@ export function AccountStayHubScreen({ service }: AccountStayHubScreenProps) {
   const { isCheckedOut } = useCheckoutStatus();
   const completeSessionRequest = useCompleteSessionServiceRequest();
   const { dismissNotice, notice } = useGuestNotice();
-  const displayedRequests=environment.useMockApi?requests:requests.filter(item=>item.kind!=='HOUSEKEEPING'&&item.kind!=='ROOM_SERVICE');
+  const displayedRequests=environment.useMockApi?requests:requests.filter(item=>item.kind!=='HOUSEKEEPING'&&item.kind!=='ROOM_SERVICE'&&item.kind!=='AMENITIES');
   const activeRequests = filterServiceRequests(displayedRequests, 'ACTIVE');
   const submittedConfirmationVisible = notice?.type === 'SERVICE_REQUEST_SUCCESS';
 
@@ -131,8 +132,6 @@ export function AccountStayHubScreen({ service }: AccountStayHubScreenProps) {
     <View style={accountStayHubStyles.screen} testID="account-stay-hub-screen">
       <GuestRootHeader title="Inicio" />
       <ScrollView contentContainerStyle={accountStayHubStyles.content} style={accountStayHubStyles.scroll}>
-        <Text accessibilityRole="header" style={accountStayHubStyles.sectionTitle}>Mi estadía</Text>
-        <Text style={accountStayHubStyles.subtitle}>Tu reserva vinculada</Text>
         <View style={accountStayHubStyles.stayCard}>
           <Text style={accountStayHubStyles.stayCardEyebrow}>{roomText}</Text>
           <Text style={accountStayHubStyles.stayCardTitle}>{stay.roomType.name}</Text>
@@ -145,11 +144,11 @@ export function AccountStayHubScreen({ service }: AccountStayHubScreenProps) {
         <Pressable accessibilityLabel={isCheckedOut ? 'Ver factura' : 'Abrir Check-out'} accessibilityRole="button" onPress={() => router.push(isCheckedOut ? '/account/invoice' : '/account/checkout')} style={accountStayHubStyles.button} testID="account-checkout-launcher"><View accessible={false} testID="account-checkout-launcher-icon"><SymbolView accessibilityElementsHidden name={isCheckedOut ? guestFeatureIcons.invoice : guestFeatureIcons.checkout} size={20} tintColor={tokens.color.white} /></View><Text style={accountStayHubStyles.buttonLabel}>{isCheckedOut ? 'Ver factura' : 'Check-out'}</Text></Pressable>
         <View style={accountStayHubStyles.requestsSection} testID="account-session-requests">
           <Text accessibilityRole="header" style={accountStayHubStyles.sectionTitle}>Mis servicios</Text>
-          {!environment.useMockApi ? <GuestServiceRequestsList filter="ACTIVE" additionalCount={displayedRequests.length} additionalFilteredCount={activeRequests.length}/> : null}
-          {activeRequests.length === 0 ? environment.useMockApi ? <Text style={accountStayHubStyles.subtitle}>Aún no tienes servicios solicitados.</Text> : null : activeRequests.slice(0, 3).map((request) => <SessionServiceRequestCard key={request.sessionRequestId} onComplete={completeSessionRequest} onRemove={removeRequest} onEdit={(item) => {
+          {!environment.useMockApi ? <GuestServiceRequestsList showRefresh={false} filter="ACTIVE" additionalCount={displayedRequests.length} additionalFilteredCount={activeRequests.length}/> : null}
+          <ServiceRequestDisclosureGroup>{activeRequests.length === 0 ? environment.useMockApi ? <Text style={accountStayHubStyles.subtitle}>Aún no tienes servicios solicitados.</Text> : null : activeRequests.slice(0, 3).map((request) => <SessionServiceRequestCard key={request.sessionRequestId} onComplete={completeSessionRequest} onRemove={removeRequest} onEdit={(item) => {
             const target = sessionServiceRequestEditPath(item);
             router.push({ pathname: target, params: { editRequestId: item.sessionRequestId, editMode: item.kind, returnTo: 'account' } });
-          }} request={request} requests={requests} />)}
+          }} request={request} requests={requests} />)}</ServiceRequestDisclosureGroup>
           {(!environment.useMockApi || requests.length > 0) ? <Pressable accessibilityRole="button" onPress={() => router.push('/services/requests')} style={accountStayHubStyles.button} testID="account-session-requests-all"><Text style={accountStayHubStyles.buttonLabel}>Ver todos</Text></Pressable> : null}
         </View>
       </ScrollView>

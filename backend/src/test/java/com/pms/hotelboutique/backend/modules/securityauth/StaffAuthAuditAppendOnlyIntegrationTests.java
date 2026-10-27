@@ -163,10 +163,11 @@ class StaffAuthAuditAppendOnlyIntegrationTests {
                 migrate(schema, MASTER);
                 var upgradedManifest = manifest(connection, schema);
                 // Upgrade includes AUTH-01/AUTH-02 and the additive Staff invitation migration.
-                // Includes additive Housekeeping004 and Room Service005; prior checksums stay immutable.
-                assertEquals(previousManifest.size() + 10, upgradedManifest.size());
+                // Includes additive Housekeeping004, Room Service005 and Amenities006; prior checksums stay immutable.
+                assertEquals(previousManifest.size() + 11, upgradedManifest.size());
                 assertTrue(upgradedManifest.keySet().stream().anyMatch(key -> key.startsWith("005-operations-004\n")));
                 assertTrue(upgradedManifest.keySet().stream().anyMatch(key -> key.startsWith("005-operations-005\n")));
+                assertTrue(upgradedManifest.keySet().stream().anyMatch(key -> key.startsWith("005-operations-006\n")));
                 assertTrue(upgradedManifest.keySet().stream().anyMatch(key -> key.startsWith("003-staff-auth-012\n")));
                 assertTrue(upgradedManifest.keySet().stream().anyMatch(key -> key.startsWith("003-guest-account-evidence-013\n")));
                 previousManifest.forEach((key, checksum) -> assertEquals(checksum, upgradedManifest.get(key)));

@@ -1,11 +1,12 @@
+import { ServiceRequestDisclosure } from './ServiceRequestDisclosure';
 import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { type SessionServiceRequest } from '@/modules/service-requests/domain/SessionServiceRequest';
 import { canCancelLateCheckoutRequest, canCompleteServiceRequest, canModifyServiceRequest, getLateCheckoutCancellationBlockReason, getServiceRequestCompletionEligibleAt } from '@/modules/service-requests/domain/serviceRequestPresentation';
-import { SessionServiceRequestDetailsModal } from '@/modules/service-requests/presentation/SessionServiceRequestDetailsModal';
+import { SessionServiceRequestDetails, SessionServiceRequestDetailsModal } from '@/modules/service-requests/presentation/SessionServiceRequestDetailsModal';
 import { sessionServiceRequestStyles as styles } from '@/modules/service-requests/presentation/sessionServiceRequestStyles';
-import { ConfirmationModal, SwipeToDelete, getSwipeToDeleteRevealDistance } from '@/shared/components';
+import { ConfirmationModal, SwipeToDelete, getSwipeToDeleteRevealDistance, formatGuestDate } from '@/shared/components';
 import { useAppClock } from '@/shared/time';
 
 export function sessionServiceRequestStatusText(status: SessionServiceRequest['status']): string {
@@ -49,8 +50,27 @@ export function SessionServiceRequestCard({ nowMs, onComplete, onEdit, onRemove,
   const [detailsVisible, setDetailsVisible] = useState(false);
   const confirmRemove = () => { if (!readOnly) setDeleteConfirmVisible(true); };
   const confirmComplete = () => { if (!readOnly) setCompletionConfirmVisible(true); };
-  if (completed) return <><Pressable accessibilityLabel={`Ver detalles de ${request.title}`} accessibilityRole="button" onPress={() => setDetailsVisible(true)} style={styles.card} testID={`session-service-request-${request.sessionRequestId}`}><View style={styles.cardBody}><Text style={styles.title}>{request.title}</Text>{request.summary ? <Text style={styles.summary}>{request.summary}</Text> : null}<Text style={styles.status}>{sessionServiceRequestStatusText(request.status)}</Text></View></Pressable><SessionServiceRequestDetailsModal onClose={() => setDetailsVisible(false)} request={request} visible={detailsVisible} /></>;
-  return <>{onRemove && removable ? <SwipeToDelete deleteLabel={`Eliminar ${request.title}`} onDelete={confirmRemove} testID={`session-service-request-${request.sessionRequestId}`}><View style={styles.card}>
+  const expandable = ['HOUSEKEEPING','ROOM_SERVICE','AMENITIES'].includes(request.kind);
+  const scheduledDetails=request.details;
+  const schedule=scheduledDetails?.type==='HOUSEKEEPING'
+    ? `${scheduledDetails.serviceDate?`${formatGuestDate(scheduledDetails.serviceDate)} · `:''}${scheduledDetails.timeSlot}`
+    : scheduledDetails?.type==='ROOM_SERVICE'||scheduledDetails?.type==='AMENITIES'
+      ? `${scheduledDetails.serviceDate?`${formatGuestDate(scheduledDetails.serviceDate)} · `:''}${scheduledDetails.deliveryTime}`
+      : (request.summary??'').replace(/(?:^|\s*·\s*)\d+\s+artículos?(?=\s*·|$)/gi,'').trim();
+  const recordedExtras=scheduledDetails?.type==='HOUSEKEEPING'
+    ? !!(scheduledDetails.cleaningType||scheduledDetails.notes)
+    : scheduledDetails?.type==='ROOM_SERVICE'||scheduledDetails?.type==='AMENITIES'
+      ? scheduledDetails.items.length>0||!!scheduledDetails.notes : !!scheduledDetails;
+  const hasCapturedDetails=!!(recordedExtras||request.billingSnapshot||request.summary&&request.summary!==schedule);
+  const inlineCard = expandable ? <ServiceRequestDisclosure id={`session:${request.sessionRequestId}`} title={request.title} summary={schedule} status={sessionServiceRequestStatusText(request.status)}
+    total={request.kind==='ROOM_SERVICE' ? request.billingSnapshot?.priceText : undefined}
+    testID={`session-service-request-card-${request.sessionRequestId}`}
+    edit={editable ? {label:editLabel,testID:`edit-session-service-request-${request.sessionRequestId}`,onPress:()=>onEdit?.(request)} : undefined}
+    actions={completable ? <Pressable accessibilityHint={completionHint} accessibilityLabel={completionLabel} accessibilityRole="button" accessibilityState={{disabled:!completionAllowed}} disabled={!completionAllowed} onPress={confirmComplete} style={[styles.completeButton,!completionAllowed&&styles.completeButtonDisabled]} testID={`complete-session-service-request-${request.sessionRequestId}`}><Text style={styles.completeLabel}>✓</Text></Pressable> : null}>
+    {hasCapturedDetails ? <SessionServiceRequestDetails request={request}/> : null}
+  </ServiceRequestDisclosure> : null;
+  if (completed && !expandable) return <><Pressable accessibilityLabel={`Ver detalles de ${request.title}`} accessibilityRole="button" onPress={() => setDetailsVisible(true)} style={styles.card} testID={`session-service-request-${request.sessionRequestId}`}><View style={styles.cardBody}><Text style={styles.title}>{request.title}</Text>{request.summary ? <Text style={styles.summary}>{request.summary}</Text> : null}<Text style={styles.status}>{sessionServiceRequestStatusText(request.status)}</Text></View></Pressable><SessionServiceRequestDetailsModal onClose={() => setDetailsVisible(false)} request={request} visible={detailsVisible} /></>;
+  return <>{inlineCard ? onRemove && removable ? <SwipeToDelete deleteLabel={`Eliminar ${request.title}`} onDelete={confirmRemove} testID={`session-service-request-${request.sessionRequestId}`}>{inlineCard}</SwipeToDelete> : inlineCard : onRemove && removable ? <SwipeToDelete deleteLabel={`Eliminar ${request.title}`} onDelete={confirmRemove} testID={`session-service-request-${request.sessionRequestId}`}><View style={styles.card}>
       <Pressable accessibilityLabel={editable ? editLabel : undefined} accessibilityRole={editable ? 'button' : undefined} onPress={editable ? () => onEdit?.(request) : undefined} style={styles.cardBody} testID={`edit-session-service-request-${request.sessionRequestId}`}>
         <Text style={styles.title}>{request.title}</Text>{request.summary ? <Text style={styles.summary}>{request.summary}</Text> : null}<Text style={styles.status}>{sessionServiceRequestStatusText(request.status)}</Text>
       </Pressable>

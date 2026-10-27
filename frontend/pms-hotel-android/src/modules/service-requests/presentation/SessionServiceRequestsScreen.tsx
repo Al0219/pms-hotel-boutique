@@ -1,3 +1,4 @@
+import { ServiceRequestDisclosureGroup } from '@/modules/service-requests/presentation/ServiceRequestDisclosure';
 import {GuestServiceRequestsList} from './GuestServiceRequestsList';
 import { environment } from '@/config/environment';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -31,7 +32,7 @@ export function SessionServiceRequestsScreen({ nowMs, stayService }: { nowMs?: (
   const readOnly = lifecycle === 'CHECKOUT_DUE' || lifecycle === 'CHECKED_OUT';
   const { editRequestId, returnTo } = useLocalSearchParams<{ editRequestId?: string; returnTo?: string }>();
   const [filter, setFilter] = useState<ServiceRequestFilter>('ACTIVE');
-  const displayedRequests=environment.useMockApi?requests:requests.filter(item=>item.kind!=='HOUSEKEEPING'&&item.kind!=='ROOM_SERVICE');
+  const displayedRequests=environment.useMockApi?requests:requests.filter(item=>item.kind!=='HOUSEKEEPING'&&item.kind!=='ROOM_SERVICE'&&item.kind!=='AMENITIES');
   const filteredRequests = filterServiceRequests(displayedRequests, filter);
   const editingRequest = !readOnly && typeof editRequestId === 'string' ? requests.find((request) => request.sessionRequestId === editRequestId && request.status !== 'COMPLETED') : undefined;
   const supportsInlineEdit = Boolean(editingRequest && editingRequest.kind === 'HOTEL_ASSIGNED');
@@ -71,11 +72,11 @@ export function SessionServiceRequestsScreen({ nowMs, stayService }: { nowMs?: (
         {serviceRequestFilters.map((option) => <Pressable accessibilityRole="radio" accessibilityState={{ selected: filter === option.value }} key={option.value} onPress={() => setFilter(option.value)} style={[styles.filterChip, filter === option.value && styles.filterChipSelected]} testID={`session-service-request-filter-${option.value}`}><Text style={styles.filterLabel}>{option.label}</Text></Pressable>)}
       </ScrollView>
       {!environment.useMockApi ? <GuestServiceRequestsList filter={filter} additionalCount={displayedRequests.length} additionalFilteredCount={filteredRequests.length}/> : null}
-      {filteredRequests.length === 0 ? environment.useMockApi ? <Text style={styles.empty}>{serviceRequestFilters.find((option) => option.value === filter)?.emptyText}</Text> : null : filteredRequests.map((request) => <SessionServiceRequestCard key={request.sessionRequestId} nowMs={getNowMs()} onComplete={(item) => { if (lifecycle === 'ACTIVE') completeSessionRequest(item); }} onRemove={(sessionRequestId) => lifecycle === 'ACTIVE' ? removeRequest(sessionRequestId) : false} onEdit={(item) => {
+      <ServiceRequestDisclosureGroup scope={filter}>{filteredRequests.length === 0 ? environment.useMockApi ? <Text style={styles.empty}>{serviceRequestFilters.find((option) => option.value === filter)?.emptyText}</Text> : null : filteredRequests.map((request) => <SessionServiceRequestCard key={request.sessionRequestId} nowMs={getNowMs()} onComplete={(item) => { if (lifecycle === 'ACTIVE') completeSessionRequest(item); }} onRemove={(sessionRequestId) => lifecycle === 'ACTIVE' ? removeRequest(sessionRequestId) : false} onEdit={(item) => {
         if (lifecycle !== 'ACTIVE') return;
         const target = sessionServiceRequestEditPath(item);
         router.push({ pathname: target, params: { editRequestId: item.sessionRequestId, editMode: item.kind, returnTo: 'requests' } });
-      }} readOnly={readOnly} request={request} requests={requests} />)}
+      }} readOnly={readOnly} request={request} requests={requests} />)}</ServiceRequestDisclosureGroup>
     </ScrollView>
     <Modal animationType="slide" onRequestClose={closeEditor} transparent visible={!readOnly && supportsInlineEdit}>
       <View style={styles.screen}>

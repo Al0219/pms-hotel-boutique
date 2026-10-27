@@ -14,7 +14,8 @@ export const AMENITIES_MAX_ITEM_QUANTITY = 5;
 
 export function areAmenitiesRequestItemsValid(items: readonly AmenitiesRequestItem[]): boolean {
   return items.length > 0 && items.every((item) => (
-    item.quantity >= AMENITIES_MIN_ITEM_QUANTITY
+    Number.isInteger(item.quantity)
+    && item.quantity >= AMENITIES_MIN_ITEM_QUANTITY
     && item.quantity <= AMENITIES_MAX_ITEM_QUANTITY
   ));
 }
