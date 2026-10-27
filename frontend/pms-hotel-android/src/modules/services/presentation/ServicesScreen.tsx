@@ -151,6 +151,7 @@ function RealServicesLauncher({ stayService }: Pick<ServicesScreenProps, 'staySe
     <ScrollView contentContainerStyle={servicesStyles.content} style={servicesStyles.scroll}>
       <ServiceNavigationCard disabled={!allowed} icon={guestFeatureIcons.housekeeping} label="Limpieza" onPress={() => router.push('/services/housekeeping')} testID="services-housekeeping-launcher" />
       <ServiceNavigationCard disabled={!allowed} icon={guestFeatureIcons.roomService} label="Room Service" onPress={()=>router.push('/services/room-service')} testID="services-room-service-launcher" />
+      <ServiceNavigationCard disabled={!allowed} icon={guestFeatureIcons.amenities} label="Amenidades" onPress={()=>router.push('/services/amenities')} testID="services-amenities-launcher" />
       <ServiceNavigationCard icon={guestFeatureIcons.requests} label="Mis servicios" onPress={() => router.push('/services/requests')} testID="services-requests-launcher" />
       {stay.kind === 'loading' ? <ServicesStateCard title="Cargando mi estadía" body="Espera un momento." testID="services-stay-loading" /> : null}
       {stay.kind === 'error' || stay.kind === 'offline' ? <ServicesStateCard title={stay.kind === 'offline' ? 'Sin conexión' : 'No pudimos cargar tu estadía'} body="Reintenta para consultar tu estancia." offline={stay.kind === 'offline'} onRetry={() => void query.refetch()} testID="services-stay-error" /> : null}

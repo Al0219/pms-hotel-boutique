@@ -30,10 +30,26 @@ La implementación usa una ruta delgada `app/(guest)/services/amenities.tsx`, un
 
 El summary usa fecha, hora y suma de quantities, por ejemplo `16 sep · 14:30 · 3 artículos`. El request no conserva el catálogo completo ni información financiera.
 
-## Backend pendiente
+## Backend al cierre UI/mock (histórico)
 
 No hay Backend, HTTP real, persistencia, disponibilidad operacional, precios, cargos, IDs Backend ni lifecycle autoritativo. Un Backend futuro debe definir identidad/scope, catálogo autoritativo, disponibilidad, permisos, persistencia y toda semántica financiera si llega a aplicar.
 
 ## UX regression IMP-AND-0113
 
 El carrito usa swipe para eliminar con confirmación, sin CTA de edición permanente. Un draft o una edición modificada solicita confirmación antes de salir del módulo, pero las transiciones internas no. El éxito navega a Cuenta con aviso de una sola vez; el reintento se muestra únicamente ante error u offline. QA manual y revisión WEB-3: PASS.
+
+## Ampliación real autorizada — 2026-10-26
+
+Amenidades real MVP queda separado del cierre UI/mock anterior y en EN_QA.
+Contrato persistido/Backend: [61](../../../backend/docs/61_AMENITIES_REAL_MVP.md);
+comandos y aceptación manual: [QA44](44_AMENITIES_REAL_MVP_QA.md). Catálogo real
+por propiedad, cinco artículos sin precios/cargos; Guest idempotencia/historial/
+edición/cancelación y Staff OPS/INTAKE, Mis servicios y polling compartido10s.
+La UX y mocks anteriores se conservan. QA manual real aún pendiente.
+
+## Confirmación y ajuste UX — 2026-10-26
+
+El usuario confirmó PASS técnico/manual de Amenidades real MVP: COMPLETADA.
+El ajuste posterior de cards desplegables e Inicio queda EN_QA visual, sin
+modificar las reglas funcionales de Amenidades ni de los otros servicios.
+Ver [QA44](44_AMENITIES_REAL_MVP_QA.md).

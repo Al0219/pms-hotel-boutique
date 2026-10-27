@@ -18,13 +18,23 @@ function formatItems(request: SessionServiceRequest): readonly string[] {
 
 /** Read-only view of the information captured in the session request. */
 export function SessionServiceRequestDetailsModal({ onClose, request, visible }: { onClose: () => void; request: SessionServiceRequest; visible: boolean }) {
-  const details = request.details;
-  const items = formatItems(request);
   return <Modal animationType="slide" onRequestClose={onClose} transparent visible={visible}>
     <View style={styles.confirmBackdrop}>
       <View accessibilityViewIsModal style={styles.confirmCard} testID={`session-service-request-details-${request.sessionRequestId}`}>
         <Text accessibilityRole="header" style={styles.screenTitle}>{request.title}</Text>
         <Text style={styles.status}>Estado: Completado</Text>
+        <SessionServiceRequestDetails request={request}/>
+        <Pressable accessibilityRole="button" onPress={onClose} style={[styles.editorButton, styles.editorButtonPrimary]} testID={`session-service-request-details-close-${request.sessionRequestId}`}><Text style={[styles.editorButtonLabel, styles.editorButtonLabelPrimary]}>Cerrar</Text></Pressable>
+      </View>
+    </View>
+  </Modal>;
+}
+
+/** Existing read-only detail content, also used inline by the service list. */
+export function SessionServiceRequestDetails({ request }: { request: SessionServiceRequest }) {
+  const details = request.details;
+  const items = formatItems(request);
+  return <>
         {request.summary ? <Detail label="Detalle" value={request.summary} /> : null}
         {request.origin === 'CHAT' ? <Detail label="Origen" value="Chat" /> : null}
         {details?.type === 'HOUSEKEEPING' ? <><Detail label="Fecha" value={details.serviceDate} /><Detail label="Franja" value={details.timeSlot} /><Detail label="Tipo de limpieza" value={details.cleaningType} /><Detail label="Notas" value={details.notes} /></> : null}
@@ -33,8 +43,5 @@ export function SessionServiceRequestDetailsModal({ onClose, request, visible }:
         {details?.type === 'TRANSFER' ? <><Detail label="Destino" value={details.destinationKey} /><Detail label="Pickup" value={details.pickupKey} /><Detail label="Fecha y hora" value={new Date(details.scheduledAtMs).toLocaleString('es-GT')} /><Detail label="Pasajeros" value={String(details.passengers)} /></> : null}
         {details?.type === 'LATE_CHECKOUT' ? <><Detail label="Fecha" value={details.serviceDate} /><Detail label="Hora autorizada" value={details.checkoutUntil} /></> : null}
         {request.billingSnapshot ? <><Detail label={request.billingSnapshot.amountNature === 'ESTIMATED' ? 'Tarifa estimada' : 'Importe'} value={request.billingSnapshot.priceText} />{request.billingSnapshot.lineItems?.map((line) => <Text key={`${line.label}-${line.priceText}`} style={styles.summary}>{line.quantity ? `${line.label} × ${line.quantity}` : line.label} · {line.priceText}</Text>)}</> : null}
-        <Pressable accessibilityRole="button" onPress={onClose} style={[styles.editorButton, styles.editorButtonPrimary]} testID={`session-service-request-details-close-${request.sessionRequestId}`}><Text style={[styles.editorButtonLabel, styles.editorButtonLabelPrimary]}>Cerrar</Text></Pressable>
-      </View>
-    </View>
-  </Modal>;
+  </>;
 }

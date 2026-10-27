@@ -37,3 +37,5 @@ export { NotificationBell } from "@/components/NotificationBell";
 
 export { EntityListSurface, EntityListFooter, EntityFilterField, ENTITY_LIST_TABLE_MIN_WIDTH } from './entity-list-surface';
 export { EntityPagination, useEntityPagination } from './entity-pagination';
+
+export { OperationalRequestTable, useOperationalRequestFilters } from './operational-request-table';

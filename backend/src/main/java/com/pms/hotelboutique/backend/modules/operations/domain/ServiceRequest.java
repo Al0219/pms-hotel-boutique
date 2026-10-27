@@ -27,6 +27,7 @@ public class ServiceRequest {
         VALET,
         HOUSEKEEPING,
         ROOM_SERVICE,
+        AMENITIES,
         MAINTENANCE,
         OTHER
     }

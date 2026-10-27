@@ -4,9 +4,10 @@ import {router} from 'expo-router';
 import {NetworkError} from '@/data/remote/http/HttpError';
 import {GuestServiceRequestsList} from '@/modules/service-requests/presentation/GuestServiceRequestsList';
 import type {ServiceRequestFilter} from '@/modules/service-requests/domain/serviceRequestPresentation';
-const mockHousekeeping=jest.fn(),mockRoomService=jest.fn();
+const mockHousekeeping=jest.fn(),mockRoomService=jest.fn(),mockAmenities=jest.fn();
 jest.mock('@/config/environment',()=>({environment:{useMockApi:false},requireApiBaseUrl:()=> 'https://pms.example.test'}));
 jest.mock('expo-router',()=>({...jest.requireActual('expo-router'),router:{push:jest.fn()}}));
+jest.mock('@/modules/services/amenities/presentation/hooks/useAmenitiesRequests',()=>({useAmenitiesRequests:(...args:unknown[])=>mockAmenities(...args)}));
 jest.mock('@/modules/services/housekeeping/presentation/hooks/useHousekeepingRequests',()=>({useHousekeepingRequests:(...args:unknown[])=>mockHousekeeping(...args)}));
 jest.mock('@/modules/services/room-service/presentation/hooks/useRoomServiceOrders',()=>({useRoomServiceOrders:(...args:unknown[])=>mockRoomService(...args)}));
 jest.mock('@/modules/services/housekeeping/presentation/hooks/useCancelHousekeeping',()=>({useCancelHousekeeping:()=>({isPending:false,isError:false,error:null,reset:jest.fn(),mutate:jest.fn()})}));
@@ -15,8 +16,8 @@ const hk={id:'hk',reservationId:'reservation',stayId:'stay',serviceDate:'2030-01
 const order={id:'order',reservationId:'reservation',stayId:'stay',confirmationCode:'ROOM000001',serviceDate:'2030-01-02',deliveryTime:'10:00',totalMinor:2000,notes:null,status:'OPEN',createdAt:'2030-01-01T00:00:00Z',updatedAt:'2030-01-01T00:00:00Z',modifiableUntil:'2030-01-02T15:35:00Z',items:[{productId:'coffee',productName:'Café',mealPeriod:'BEVERAGES',quantity:1,unitPriceMinor:2000,lineTotalMinor:2000}]};
 function state(data:unknown[]=[],extra:Record<string,unknown>={}){return {data,isPending:false,isFetching:false,isError:false,error:null,fetchStatus:'idle',refetch:jest.fn().mockResolvedValue({data}),...extra};}
 let client:QueryClient;
-function tree(filter:ServiceRequestFilter='ALL',additionalCount=0,additionalFilteredCount=0){return <QueryClientProvider client={client}><GuestServiceRequestsList filter={filter} additionalCount={additionalCount} additionalFilteredCount={additionalFilteredCount}/></QueryClientProvider>;}
-beforeEach(()=>{jest.clearAllMocks();client=new QueryClient({defaultOptions:{queries:{retry:false,gcTime:0},mutations:{gcTime:0}}});mockHousekeeping.mockReturnValue(state());mockRoomService.mockReturnValue(state());});
+function tree(filter:ServiceRequestFilter='ALL',additionalCount=0,additionalFilteredCount=0,showRefresh=true){return <QueryClientProvider client={client}><GuestServiceRequestsList filter={filter} additionalCount={additionalCount} additionalFilteredCount={additionalFilteredCount} showRefresh={showRefresh}/></QueryClientProvider>;}
+beforeEach(()=>{mockAmenities.mockReturnValue(state());jest.clearAllMocks();client=new QueryClient({defaultOptions:{queries:{retry:false,gcTime:0},mutations:{gcTime:0}}});mockHousekeeping.mockReturnValue(state());mockRoomService.mockReturnValue(state());});
 afterEach(()=>client.clear());
 const obsolete=[/Actualizar solicitudes de limpieza/,/Sin solicitudes de limpieza/,/Actualizar pedidos Room Service/,/Sin pedidos Room Service/];
 it('shows one global empty and one discreet refresh only after both successful empty reads',async()=>{
@@ -67,4 +68,54 @@ it('updates global filter feedback when polling moves the last active service to
 });
 it('counts any other existing service supplied by the caller before deciding empty feedback',async()=>{
  const ui=await render(tree('ALL',1,1));expect(ui.queryByTestId('guest-services-empty')).toBeNull();await ui.rerender(tree('ACTIVE',1,0));expect(ui.getByText('No tienes servicios activos.')).toBeTruthy();
+});
+
+it('includes amenities in global emptiness, filters and the single shared refresh',async()=>{
+ const amenity={...order,id:'amenity',items:[{itemId:'towels',itemName:'Toallas adicionales',quantity:2}]};
+ const query=state([amenity]);mockAmenities.mockReturnValue(query);
+ const ui=await render(tree('ACTIVE'));expect(ui.getByText('Amenidades')).toBeTruthy();expect(ui.queryByText('Toallas adicionales × 2')).toBeNull();expect(ui.queryByText('2 artículos')).toBeNull();await fireEvent.press(ui.getByTestId('amenities-request-amenity-toggle'));expect(ui.getByText('Toallas adicionales × 2')).toBeTruthy();expect(ui.queryByTestId('guest-services-empty')).toBeNull();
+ await fireEvent.press(ui.getByTestId('guest-services-refresh'));expect(query.refetch).toHaveBeenCalledTimes(1);
+ mockAmenities.mockReturnValue(state([{...amenity,status:'DONE'}]));await ui.rerender(tree('ACTIVE'));expect(ui.getByText('No tienes servicios activos.')).toBeTruthy();await ui.rerender(tree('COMPLETED'));expect(ui.getByText('Completado')).toBeTruthy();
+});
+it('never reports empty when the amenities query has failed, paused or is fetching',async()=>{
+ mockAmenities.mockReturnValue(state([],{isError:true,error:new NetworkError()}));const ui=await render(tree());expect(ui.getByTestId('guest-services-error')).toBeTruthy();expect(ui.queryByTestId('guest-services-empty')).toBeNull();
+ mockAmenities.mockReturnValue(state([],{fetchStatus:'paused'}));await ui.rerender(tree());expect(ui.getByTestId('guest-services-error')).toBeTruthy();
+ mockAmenities.mockReturnValue(state([],{isFetching:true}));await ui.rerender(tree());expect(ui.getByTestId('guest-services-loading')).toBeTruthy();expect(ui.queryByTestId('guest-services-empty')).toBeNull();
+});
+
+const amenity={...order,id:'amenity',notes:'Entregar en puerta',items:[{itemId:'towels',itemName:'Toallas adicionales',quantity:2},{itemId:'pillow',itemName:'Almohada adicional',quantity:1}]};
+function allServices(){mockHousekeeping.mockReturnValue(state([{...hk,notes:'Limpieza sin perfume'}]));mockRoomService.mockReturnValue(state([{...order,notes:'Sin azúcar'}]));mockAmenities.mockReturnValue(state([amenity]));}
+it('restores direct card editing and reserves expansion to the measured chevron without extra actions',async()=>{
+ allServices();const ui=await render(tree());
+ expect(ui.getByTestId('housekeeping-request-hk-toggle')).toBeTruthy();
+
+ await fireEvent.press(ui.getByTestId('housekeeping-request-hk-toggle'));expect(router.push).not.toHaveBeenCalled();
+ expect(ui.getByTestId('housekeeping-edit-hk')).toHaveStyle({height:192});
+ await fireEvent.press(ui.getByTestId('housekeeping-edit-hk'));expect(router.push).toHaveBeenCalledWith({pathname:'/services/housekeeping',params:{editRequestId:'hk',returnTo:'requests'}});
+ expect(ui.getAllByLabelText('Editar solicitud de limpieza')).toHaveLength(1);
+});
+it('keeps expansion through OPEN to IN_PROGRESS sync, without granting edit or changing refresh and filters',async()=>{
+ mockRoomService.mockReturnValue(state([order]));const ui=await render(tree('ACTIVE'));
+ await fireEvent.press(ui.getByTestId('room-service-order-order-toggle'));
+ expect(ui.getByTestId('room-service-order-order-body')).toHaveStyle({height:192});
+ await fireEvent.press(ui.getByTestId('guest-services-refresh'));for(const hook of [mockHousekeeping,mockRoomService,mockAmenities])expect(hook().refetch).toHaveBeenCalledTimes(1);
+ mockRoomService.mockReturnValue(state([{...order,status:'IN_PROGRESS'}]));await ui.rerender(tree('ACTIVE'));
+
+ expect(ui.getByTestId('room-service-order-order-toggle')).toHaveProp('accessibilityState',{expanded:true});expect(ui.queryByLabelText('Editar pedido Room Service')).toBeNull();
+ mockRoomService.mockReturnValue(state([{...order,status:'DONE'}]));await ui.rerender(tree('ACTIVE'));expect(ui.queryByTestId('room-service-order-order')).toBeNull();await ui.rerender(tree('COMPLETED'));expect(ui.getByText('Completado')).toBeTruthy();
+});
+
+it('hides only the manual refresh for Inicio while retaining queries and synchronized cards',async()=>{
+ mockRoomService.mockReturnValue(state([order]));
+ const ui=await render(tree('ACTIVE',0,0,false));
+ expect(ui.queryByText('Actualizar servicios')).toBeNull();
+ expect(ui.queryByRole('button',{name:'Actualizar servicios'})).toBeNull();
+ expect(ui.queryByTestId('guest-services-refresh')).toBeNull();
+ expect(ui.getByText('Solicitado')).toBeTruthy();
+ for(const hook of [mockHousekeeping,mockRoomService,mockAmenities])expect(hook).toHaveBeenCalledTimes(1);
+ mockRoomService.mockReturnValue(state([{...order,status:'IN_PROGRESS'}]));
+ await ui.rerender(tree('ACTIVE',0,0,false));
+ expect(ui.getByText('En proceso')).toBeTruthy();
+ expect(ui.queryByLabelText('Editar pedido Room Service')).toBeNull();
+ expect(ui.queryByText('Actualizar servicios')).toBeNull();
 });

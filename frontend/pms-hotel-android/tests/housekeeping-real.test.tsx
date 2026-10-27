@@ -105,9 +105,9 @@ it('shows every persisted status with real OPEN actions and no Guest completion 
   const view = await setup();
   for (const label of ['Solicitado', 'En proceso', 'Completado', 'Cancelado']) await waitFor(() => expect(view.getByText(label)).toBeTruthy());
   expect(view.getByTestId('housekeeping-edit-OPEN').props.accessibilityState.disabled).toBe(false);
-  expect(view.getByTestId('housekeeping-edit-IN_PROGRESS').props.accessibilityState.disabled).toBe(true);
-  expect(view.getByTestId('housekeeping-edit-DONE').props.accessibilityState.disabled).toBe(true);
-  expect(view.getByTestId('housekeeping-edit-CANCELLED').props.accessibilityState.disabled).toBe(true);
+  expect(view.queryByTestId('housekeeping-edit-IN_PROGRESS')).toBeNull();
+  expect(view.queryByTestId('housekeeping-edit-DONE')).toBeNull();
+  expect(view.queryByTestId('housekeeping-edit-CANCELLED')).toBeNull();
   expect(view.queryByLabelText(/Marcar.*completado/)).toBeNull();
 });
 it('shows list errors without presenting mock data', async () => {
@@ -116,12 +116,12 @@ it('shows list errors without presenting mock data', async () => {
   expect(view.getByText(/Sin conexión/)).toBeTruthy();expect(view.queryByTestId('housekeeping-request-request-real')).toBeNull();
 });
 
-it.each(['/services', '/services/housekeeping', '/services/requests'])('allows the real %s journey through the existing route guard', async path => {
+it.each(['/services', '/services/housekeeping', '/services/requests', '/services/amenities'])('allows the real %s journey through the existing route guard', async path => {
   (usePathname as jest.Mock).mockReturnValue(path);jest.spyOn(nativeGuestClient, 'request').mockResolvedValue([]);
   const view = await setup();await waitFor(() => expect(view.getByTestId('housekeeping-requests-real')).toBeTruthy());
 });
 it('keeps other service routes blocked in real mode', async () => {
-  (usePathname as jest.Mock).mockReturnValue('/services/amenities');
+  (usePathname as jest.Mock).mockReturnValue('/services/late-checkout');
   const view = await setup();expect(view.getByTestId('guest-real-feature-unavailable')).toBeTruthy();
 });
 it('shows only existing real launchers and never loads the mock paid catalogue', async () => {
@@ -129,6 +129,6 @@ it('shows only existing real launchers and never loads the mock paid catalogue',
   const view = await setup(false, <ServicesScreen stayService={stayService} />);
   await waitFor(() => expect(view.getByTestId('services-housekeeping-launcher').props.accessibilityState.disabled).toBe(false));
   await waitFor(() => expect(view.getByTestId('housekeeping-requests-real')).toBeTruthy());
-  expect(view.getByTestId('services-requests-launcher')).toBeTruthy();expect(view.getByTestId('services-room-service-launcher')).toBeTruthy();
+  expect(view.getByTestId('services-amenities-launcher')).toBeTruthy();expect(view.getByTestId('services-requests-launcher')).toBeTruthy();expect(view.getByTestId('services-room-service-launcher')).toBeTruthy();
   expect(catalogue).not.toHaveBeenCalled();
 });

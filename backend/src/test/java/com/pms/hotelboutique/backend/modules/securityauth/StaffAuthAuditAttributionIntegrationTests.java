@@ -74,9 +74,10 @@ class StaffAuthAuditAttributionIntegrationTests {
                 migrate(schema, MASTER);
                 var upgraded = manifest(connection, schema);
                 // Includes additive Housekeeping004 and Room Service005; prior checksums stay immutable.
-                assertEquals(checksums.size() + 9, upgraded.size());
+                assertEquals(checksums.size() + 10, upgraded.size());
                 assertTrue(upgraded.keySet().stream().anyMatch(key -> key.startsWith("005-operations-004\n")));
                 assertTrue(upgraded.keySet().stream().anyMatch(key -> key.startsWith("005-operations-005\n")));
+                assertTrue(upgraded.keySet().stream().anyMatch(key -> key.startsWith("005-operations-006\n")));
                 assertTrue(upgraded.keySet().stream().anyMatch(key -> key.startsWith("003-staff-auth-012\n")));
                 assertTrue(upgraded.keySet().stream().anyMatch(key -> key.startsWith("003-guest-account-evidence-013\n")));
                 checksums.forEach((key, checksum) -> assertEquals(checksum, upgraded.get(key)));

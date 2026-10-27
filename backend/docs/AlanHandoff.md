@@ -1,3 +1,102 @@
+## 2026-10-27 — Amenidades real MVP y UX Android/Web — COMPLETADA / PASS manual
+
+El usuario confirma aprobación del desarrollo y QA de Amenidades, Android y Web Staff,
+incluido el último ajuste de Inicio Android que elimina «Actualizar servicios» y
+mantiene la sincronización automática. No se repitió QA visual por instrucción.
+
+Entrega preparada en `feature/amenities-real-mvp`, basada en `origin/main` `51d6e32`.
+Incluye API Guest/Staff, catálogo por propiedad, migración aditiva `005-operations-006`,
+OpenAPI, Android real y mock con Mis servicios, Web Staff y mejoras UX aprobadas.
+Se preservaron los cinco originales locales; el archivo `next-env.d.ts` generado
+por Next se excluyó. Sin funcionalidades adicionales.
+
+Evidencia automatizada existente: Backend 1144/1144 PASS; Android 55 suites/543 tests
+PASS antes del último ajuste, y 4 suites/52 tests focalizados PASS después; Web 2631
+PASS; lint/typecheck/build y paridad OpenAPI PASS; diff-check PASS. QA manual Android
+Expo Go y Web Firefox: PASS confirmado por el usuario. La CI del PR queda por verificar.
+
+Siguiente: commit convencional, push y PR a `main`; revisar checks y reportar fallos.
+No hacer merge sin autorización.
+
+## 2026-10-27 — Mis servicios: desbordamiento medido y gestos originales — EN_QA visual
+
+Ajuste UX autorizado en `/tmp/pms-amenities`, rama `feature/amenities-real-mvp`.
+ServiceRequestDisclosure compartido mide el contenido natural sin límite vertical
+al ancho real y compara con la altura colapsada uniforme, ajustada por fontScale.
+Chevron solo con desbordamiento; cuerpo toca→edita según elegibilidad original,
+chevron independiente→expande/contrae sin editar. Una expandida por listado;
+contenido completo inline, sin agregar botones/acciones dentro de la expansión.
+Swipe/cancelación, estados, filtros y polling permanecen. Controles mock de
+completado ya existentes permanecen fuera del contenido expandible. Inicio
+conserva el ajuste previo, sin cambios adicionales en este turno.
+
+Pruebas Android: focalizadas8/103 PASS; suite completa55/538 PASS; lint/typecheck
+y export Android PASS. Se prueban límites exactos de altura, ancho variable, fuente grande,
+readonly/disabled, separación editar/expandir, exclusividad y swipe expandido.
+Sin cambios de lógica funcional, hooks, DTO/mappers/dominio, Backend, Web,
+dependencias ni migraciones. Amenidades mantiene su PASS técnico/manual previo.
+QA visual de este ajuste pendiente; guía44 al final. Sin commit/push/PR.
+Siguiente: verificar cards cortas/largas, rotación/TalkBack y gestos con Expo Go.
+
+## 2026-10-26 — Amenidades PASS manual; ajuste UX Mis servicios/Inicio — EN_QA visual
+
+El usuario confirma **PASS técnico y manual de Amenidades real MVP**: núcleo
+COMPLETADA. Autoriza únicamente ajustes de presentación antes del commit en la
+misma rama `feature/amenities-real-mvp`, worktree `/tmp/pms-amenities`.
+
+Card compartida para Housekeeping/Room Service/Amenidades reales y mock: cabecera
+compacta de altura uniforme, chevron derecho y detalles inline; una expandida
+por listado. Acciones elegibles dentro de detalles, swipe/confirmación, filtros,
+refresh único y polling10s existentes conservados. La selección visual persiste
+al sincronizar OPEN→IN_PROGRESS. Inicio elimina solo «Mi estadía» y «Tu reserva
+vinculada», conservando habitación/tipo/fechas/referencia y navegación Check-out.
+Sin cambios de lógica funcional, HTTP/DTO/mappers/dominio/hooks, Backend/Web,
+dependencias ni migraciones. Cambios previos preservados; sin commit/push/PR.
+
+Pruebas Android: lint/typecheck y export Android PASS; suite completa54/533 PASS;
+focales3/35 PASS sobre ambas solicitudes, exclusividad entre tipos/solicitudes, readonly,
+acciones y regresión de estados/polling/cancelación. Revisión visual del ajuste:
+**PENDIENTE**, separada del PASS manual de Amenidades ya confirmado. Guía:
+[QA44](../../frontend/pms-hotel-android/docs/44_AMENITIES_REAL_MVP_QA.md).
+Siguiente: comprobar visualmente cards/expansión/Inicio con Expo Go y confirmar
+PASS/FAIL del ajuste. No publicar todavía.
+
+## 2026-10-26 — Amenidades real MVP — EN_QA / PASS técnico
+
+Rama `feature/amenities-real-mvp`, worktree `/tmp/pms-amenities`, base main
+`51d6e32` (Room Service PR172). Ampliación persistida autorizada sobre
+IMP-AND-0113, cuyo cierre UI/mock conserva COMPLETADA (ANDROID-1 / WEB-3;
+dependencias0107/0103 cerradas). Backend: Alan; revisión cross-app colaborativa.
+Contrato [61](61_AMENITIES_REAL_MVP.md), QA manual/comandos
+[Android44](../../frontend/pms-hotel-android/docs/44_AMENITIES_REAL_MVP_QA.md).
+
+Catálogo PostgreSQL por propiedad con cinco artículos/UUIDs, provisión para
+propiedades existentes y futuras mediante migración aditiva005-operations-006.
+Sin precios/cargos/folio. Guest idempotencia/historial/editar/cancelar, contexto
+propio, locks/CAS, auditoría, anticipación30min, cutoff25min y checkout normal12:00
+en timezone de propiedad. Staff INTAKE/OPS y OPEN→IP→DONE. Android real/mocks y
+Mis servicios con filtros, vacío coordinado, refresh único y polling compartido10s.
+Web Staff `/amenities` y BFF de sesión/propiedad; sin cambios de implementación
+Housekeeping/Room Service, sin dependencias nuevas ni migraciones previas editadas.
+
+Pruebas: verify Java21/PostgreSQL17 **1144/1144 PASS**, incluida migración desde
+main/checksums/datos históricos/reaplicación, concurrencia/seguridad y OpenAPI.
+Paridad OpenAPI88ops/70paths/112schemas/15tags, sin exclusiones nuevas. Android
+suite54/527 PASS y focalizadas finales2/29 PASS (incluyen aislamiento retardado
+adicional); lint/typecheck, Expo Doctor21/21 y export Android PASS. Web344/2622
+PASS con maxWorkers2, lint/typecheck/build PASS. Ajustadas solo expectativas
+aditivas de migración y guard compartido que antes bloqueaba Amenidades.
+`git diff --check` PASS. Cinco archivos originales verificados SHA-2565/5 intactos;
+árbol original mantiene exactamente sus cinco cambios. Sin commit/push/PR.
+
+QA manual real: **PENDIENTE**, no atribuido al agente. No se migró ni arrancó el
+Backend contra la BD del hotel; pruebas en PostgreSQL descartable sin puerto.
+Evidencia: `/tmp/pms-amenities-*.log`, `backend/target/openapi-generated.json`,
+`backend/target/surefire-reports/`. La suite Android muestra advertencias de
+act/handles al finalizar, sin pruebas fallidas; no se silencian con forceExit.
+Siguiente: ejecutar QA44 con Expo Go y Firefox y confirmar PASS/FAIL; mantener
+EN_QA hasta la confirmación explícita del usuario. No publicar todavía.
+
 ## 2026-10-26 — Room Service real MVP — COMPLETADA / PASS manual
 
 El usuario confirma PASS técnico y manual del recorrido Room Service. Se autoriza

@@ -291,12 +291,13 @@ describe("Session service requests — IMP-AND-0112", () => {
     await fireEvent.press(
       ui.getByTestId("session-service-request-filter-COMPLETED"),
     );
+
     await fireEvent.press(
-      ui.getByTestId("session-service-request-session-request-1"),
+      ui.getByTestId("session-service-request-card-session-request-1-toggle"),
     );
     expect(
-      ui.getByTestId("session-service-request-details-session-request-1"),
-    ).toBeTruthy();
+      ui.getByTestId("session-service-request-card-session-request-1-body"),
+    ).toHaveStyle({height:192});
     ui.unmount();
   });
 
@@ -333,6 +334,7 @@ describe("Session service requests — IMP-AND-0112", () => {
         serviceDate: "2026-09-11",
         deliveryTime: "11:00",
         items: [],
+        notes: "Dejar en recepción",
       },
     };
     const active: AddSessionServiceRequestInput = {
@@ -355,12 +357,13 @@ describe("Session service requests — IMP-AND-0112", () => {
     await fireEvent.press(
       ui.getByTestId("session-service-request-filter-COMPLETED"),
     );
+
     await fireEvent.press(
-      ui.getByTestId("session-service-request-session-request-1"),
+      ui.getByTestId("session-service-request-card-session-request-1-toggle"),
     );
     expect(
-      ui.getByTestId("session-service-request-details-session-request-1"),
-    ).toBeTruthy();
+      ui.getByTestId("session-service-request-card-session-request-1-body"),
+    ).toHaveStyle({height:192});
     ui.unmount();
   });
 
@@ -443,7 +446,7 @@ describe("Session service requests — IMP-AND-0112", () => {
     );
   });
 
-  it("uses the complete editable card for edit without a visible Edit button", async () => {
+  it("uses the card itself to edit without adding an Edit button", async () => {
     const onEdit = jest.fn();
     const request = {
       ...sampleRequest,
@@ -456,7 +459,8 @@ describe("Session service requests — IMP-AND-0112", () => {
     );
 
     expect(rendered.queryByText("Editar")).toBeNull();
-    fireEvent.press(rendered.getByLabelText("Editar Limpieza"));
+    expect(onEdit).not.toHaveBeenCalled();
+    await fireEvent.press(rendered.getByLabelText("Editar Limpieza"));
     expect(onEdit).toHaveBeenCalledWith(request);
   });
 
@@ -984,8 +988,9 @@ describe("Session service requests — IMP-AND-0112", () => {
 
     for (const request of requests.filter(
       (request) => request.kind !== "LATE_CHECKOUT",
-    ))
+    )) {
       await fireEvent.press(rendered.getByLabelText(`Editar ${request.title}`));
+    }
     expect(onEdit).toHaveBeenCalledTimes(requests.length - 1);
     expect(rendered.queryByLabelText("Editar Late check-out")).toBeNull();
     await rendered.unmount();
@@ -1199,7 +1204,9 @@ describe("Session service requests — IMP-AND-0112", () => {
         </ActiveReservationContextProvider>
       </QueryClientProvider>,
     );
-    await waitFor(() => expect(empty.getByText("Mi estadía")).toBeTruthy());
+    await waitFor(() => expect(empty.getByTestId("account-stay-hub-screen")).toBeTruthy());
+    expect(empty.queryByText("Mi estadía")).toBeNull();
+    expect(empty.queryByText("Tu reserva vinculada")).toBeNull();
     expect(
       empty.getByText("Aún no tienes servicios solicitados."),
     ).toBeTruthy();
