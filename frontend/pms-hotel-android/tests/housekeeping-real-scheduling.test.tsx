@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, waitFor, within } from '@testing-library/react-native';
+import { fireEvent, render, userEvent, waitFor, within } from '@testing-library/react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { nativeGuestClient } from '@/modules/guest-auth/data/http/NativeGuestClient';
 import { GuestAuthSessionProvider } from '@/modules/guest-auth/presentation/GuestAuthSessionProvider';
@@ -43,12 +43,13 @@ it('shows five real options, preserves default10, disables passed slots and reta
 });
 it('allows future dates, retains valid selection and replaces a slot that exceeds checkout', async () => {
  const ui=await setup(at('19:00:00'));await waitFor(() => expect(within(ui.getByTestId('housekeeping-time-selector')).getByText('14:00–15:00')).toBeTruthy());
- async function date(day:string) { await fireEvent.press(ui.getByTestId('housekeeping-date-selector'));await fireEvent.press(ui.getByTestId(`housekeeping-date-picker-day-${day}`));await fireEvent.press(ui.getByTestId('housekeeping-date-picker-confirm')); }
+ const user = userEvent.setup();
+ async function date(day:string) { await user.press(ui.getByTestId('housekeeping-date-selector'));await user.press(ui.getByTestId(`housekeeping-date-picker-day-${day}`));await user.press(ui.getByTestId('housekeeping-date-picker-confirm')); }
  await date('2030-01-03');expect(within(ui.getByTestId('housekeeping-time-selector')).getByText('14:00–15:00')).toBeTruthy();
  await fireEvent.press(ui.getByTestId('housekeeping-time-selector'));
  for (const slot of housekeepingQaTimeSlots) expect(ui.getByTestId(`housekeeping-time-picker-option-${slot}`).props.accessibilityState.disabled).toBe(false);
  await fireEvent.press(ui.getByTestId('housekeeping-time-picker-cancel'));
- await date('2030-01-04');expect(within(ui.getByTestId('housekeeping-time-selector')).getByText('09:00–10:00')).toBeTruthy();
+ await date('2030-01-04');await waitFor(() => expect(within(ui.getByTestId('housekeeping-time-selector')).getByText('09:00–10:00')).toBeTruthy());
  await fireEvent.press(ui.getByTestId('housekeeping-time-selector'));
  for(const slot of ['12:00–13:00','14:00–15:00']) expect(ui.getByTestId(`housekeeping-time-picker-option-${slot}`).props.accessibilityState.disabled).toBe(true);
 });
