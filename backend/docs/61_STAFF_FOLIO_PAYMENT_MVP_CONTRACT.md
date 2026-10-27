@@ -4,7 +4,11 @@ Estado: CONTRATO CONFIRMADO por José el 2026-10-26: «permitamos abono y pago t
 Solicitud: cerrar el ciclo de reservas tomadas desde recepción; rama
 feature/staff-folio-payments desde main566c7f0. Owner de este incremento: José,
 autorizado a retomar el trabajo full stack. Coordinación de contratos BD1/BD3.
-Implementación de este incremento: EN_QA; no completa entregas financieras anteriores.
+Implementación de este incremento mínimo: COMPLETADA. José confirma aceptación
+manual del recorrido Staff el2026-10-27 («todo ese flujo ya quedó»), después de
+los checks del PR previamente reportados aprobados y del QA integrado Web71.
+No completa entregas financieras anteriores ni el folio avanzado. Las notas
+de EN_QA/pendientes posteriores a este encabezado son evidencia histórica.
 
 ## Fuentes y alcance
 
@@ -135,7 +139,10 @@ manifiesto. PostgreSQL conserva contenedor/volumen y conteos de negocio:
 HTTP público200 y lecturas privadas401 sin sesión. Esto no acredita todavía
 un pago Staff implementado ni su QA.
 
-## QA manual del incremento — pendiente del owner
+## QA manual del incremento — aceptado por el owner el2026-10-27
+
+Confirmación de José para el recorrido documentado en Web71. No se atribuye a su
+respuesta una ejecución individual de cada escenario adverso o variante siguiente.
 
 1. En http://localhost:3001 acceder como Recepción o Super Admin. Abrir Reservas,
    seleccionar propiedad y una reserva tomada desde Staff que tenga un folio real
@@ -163,6 +170,17 @@ No incluye cobros PSP, cargos nuevos, reembolsos, conciliación bancaria ni las
 páginas financieras generales anteriores basadas en mocks.
 
 ## Evidencia del incremento — 2026-10-26
+
+QA integrado posterior,2026-10-27: [Web71](../../frontend/pms-hotel-web/docs/71_STAFF_RESERVATION_FLOW_QA.md),
+rama test/staff-reservation-flow-qa desde main81accce.46 comprobaciones distintas
+de navegador/HTTP y14 SQL PASS sobre una sola reserva real QA. Abono325.00 y
+liquidación325.00 frente a cargo650.00: saldo0. El abono sobrevive a respuesta
+perdida y recarga, recuperando misma clave/cuerpo/movimiento sin duplicarse.
+Checkout rechazado antes de pagar y después del abono; permitido tras liquidar,
+con Room DIRTY/motivo y posterior limpieza/inspección. Historial financiero previo
+intacto. Validación técnica por etapas; esperas/selectores del harness corregidos,
+sin cambios de código ni nuevos pagos/altas para reintentar. No nueva corrida
+Maven/CI ni aceptación manual del owner. Se conserva EN_QA.
 
 - Backend: verify focal final111/111 PASS, incluidos17 HTTP financieros, guard/
   idempotencia, reversos internos existentes,40 lifecycle y24 OpenAPI/paridad.
