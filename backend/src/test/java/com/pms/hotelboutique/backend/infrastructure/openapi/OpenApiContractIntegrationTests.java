@@ -35,6 +35,28 @@ class OpenApiContractIntegrationTests {
     @Autowired @Qualifier("requestMappingHandlerMapping") RequestMappingHandlerMapping mappings;
 
     @Test
+    void staffFolioHasScopedMoneyAndIdempotentPaymentContract() throws Exception {
+        var doc = document(); String base = "/api/v1/properties/{propertyId}/folios";
+        for (String suffix : List.of("", "/{folioId}", "/{folioId}/movements", "/{folioId}/payments")) {
+            var op = operation(doc, base + suffix, suffix.endsWith("payments") ? "post" : "get");
+            assertEquals("staff", op.path("x-audience").asText());
+            assertTrue(op.path("security").get(0).has("bearerAuth"));
+            if (suffix.endsWith("payments")) assertCodes(op, "201", "400", "401", "403", "404", "409");
+            else assertCodes(op, "200", "400", "401", "403", "404");
+        }
+        var payment = operation(doc, base + "/{folioId}/payments", "post");
+        assertSuccessSchema(payment, "201", "StaffFolioPaymentReceipt");
+        assertTrue(java.util.stream.StreamSupport.stream(payment.path("parameters").spliterator(), false)
+                .anyMatch(p -> p.path("name").asText().equals("Idempotency-Key") && p.path("required").asBoolean()));
+        var schemas = doc.path("components").path("schemas");
+        assertFalse(schemas.path("StaffFolioPaymentRequest").path("additionalProperties").asBoolean(true));
+        assertFalse(schemas.path("StaffFolioMoney").path("additionalProperties").asBoolean(true));
+        assertEquals("string", schemas.path("StaffFolioMoney").path("properties").path("amount").path("type").asText());
+        assertEquals(Set.of("folio", "balance", "movementCount"), strings(schemas.path("StaffFolioDetail").path("required")));
+        assertFalse(schemas.path("StaffFolioPaymentReceipt").path("properties").has("balance"));
+    }
+
+    @Test
     void generatedPathsAndMethodsMatchRealApplicationMappings() throws Exception {
         String raw = mvc.perform(get("/v3/api-docs")).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         var doc = json.readTree(raw);

@@ -5,6 +5,7 @@ import Link from 'next/link';
 
 import { HttpNetworkError } from "@/lib/http/errors";
 import { RoomMove, StayExtension } from "@/modules/stays";
+import { StaffReservationFolioPanel } from '@/modules/folio';
 
 import { useReservationDetail } from "../hooks/use-reservation-detail";
 import type { ReservationDetailData, ReservationStayDetail, StayTravelState } from "../model/reservation-detail";
@@ -133,9 +134,10 @@ interface ReservationDetailProps {
   reservationId?: string;
   sessionId?: string;
   canManage?: boolean;
+  folioAccess?: { actorId: string; sessionId: string };
 }
 
-export function ReservationDetail({ propertyId, endpoint, reservationId, sessionId, canManage = false }: Readonly<ReservationDetailProps>) {
+export function ReservationDetail({ propertyId, endpoint, reservationId, sessionId, canManage = false, folioAccess }: Readonly<ReservationDetailProps>) {
   const { data: detail, error, isLoading, refetch } = useReservationDetail(propertyId, endpoint, reservationId);
   const [cancelling, setCancelling] = useState(false);
   const [markingNoShow, setMarkingNoShow] = useState(false);
@@ -344,6 +346,8 @@ export function ReservationDetail({ propertyId, endpoint, reservationId, session
           <p className={styles.folioHint}>El folio completo se consulta vía el módulo Folio (API pública).</p>
         </section>}
       </div>
+      {endpoint === staffReservationsEndpoint && folioAccess && <StaffReservationFolioPanel propertyId={propertyId}
+        reservationId={reservationId} actorId={folioAccess.actorId} sessionId={folioAccess.sessionId} />}
     </div>
   );
 }

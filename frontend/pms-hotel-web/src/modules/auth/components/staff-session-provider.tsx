@@ -11,6 +11,7 @@ import { staffPreviewEnabled } from '@/lib/staff-preview';
 import { staffPreviewKey, staffPreviewQuery } from '../hooks/staff-preview-query';
 import { closeStaffPreview, openStaffPreview } from '../service/staff-preview.service';
 import styles from './staff-preview.module.css';
+import { clearStaffPendingOperations } from '@/lib/staff-pending-operations';
 
 const StaffContext = createContext<StaffSession | null>(null);
 const StaffActions = createContext<{ logout: () => void; busy: boolean; error: boolean } | null>(null);
@@ -43,6 +44,9 @@ export function StaffSessionProvider({ children, signedOutRedirect = "/", requir
 }
 
 async function clearStaffCaches(client: QueryClient, sessionKey: typeof staffSessionKey | typeof staffPreviewKey) {
+  clearStaffPendingOperations();
+  await client.cancelQueries({ queryKey: ["staff-folio"] });
+  client.removeQueries({ queryKey: ["staff-folio"] });
   await client.cancelQueries({ queryKey: sessionKey });
   client.setQueryData(sessionKey, null);
   // Dashboard/calendar caches are Staff-owned; Guest/public queries stay intact.
