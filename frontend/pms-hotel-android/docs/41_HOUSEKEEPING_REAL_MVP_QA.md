@@ -1,5 +1,8 @@
 # Housekeeping Android real — QA MVP
 
+Ampliación posterior: [acciones reales EN_QA](42_HOUSEKEEPING_REAL_ACTIONS_QA.md). El estado y las
+limitaciones de solo lectura de este documento describen el alcance previo PR168.
+
 **Housekeeping funcional: COMPLETADA / PASS manual del usuario.** Confirmados:
 crear limpieza real en Android, consultarla desde Firefox Staff, persistencia al
 cerrar/reabrir Expo Go y ausencia de duplicados. **Mejora UX Staff: PASS técnico /

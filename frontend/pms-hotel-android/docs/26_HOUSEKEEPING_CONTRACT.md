@@ -1,5 +1,12 @@
 # 26 — Housekeeping / Limpieza
 
+Ampliación real autorizada (contrato Backend59 / guía42): las cinco franjas de
+housekeepingQaTimeSlots, incluidas12:00–13:00, están habilitadas en real con
+validación de zona de propiedad/estancia/30min/checkout. FULL_CLEANING sigue único
+tipo real. No catálogo definitivo; las descripciones mock históricas de abajo
+no sustituyen este contrato. Acciones PASS manual; nuevas franjas EN_QA manual.
+
+
 **Tarea:** IMP-AND-0110 — MOB-21. **Estado final:** COMPLETADA.
 
 ## Autoridad y alcance
@@ -20,7 +27,7 @@ interface HousekeepingRequest {
 }
 ```
 
-`housekeepingQaTimeSlots` contiene provisionalmente `09:00–10:00`, `10:00–11:00`, `11:00–12:00` y `14:00–15:00`; `housekeepingQaCleaningTypes` contiene `FULL_CLEANING` y `LIGHT_CLEANING`, con `10:00–11:00` y `FULL_CLEANING` como defaults. Los valores son frontend/mock y no un contrato Backend. `TOWELS_AND_AMENITIES` fue retirado del flujo visible de Limpieza: los artículos pertenecen a Amenidades (`IMP-AND-0113`).
+`housekeepingQaTimeSlots` contiene provisionalmente `09:00–10:00`, `10:00–11:00`, `11:00–12:00`, `12:00–13:00` y `14:00–15:00`; `housekeepingQaCleaningTypes` contiene `FULL_CLEANING` y `LIGHT_CLEANING`, con `10:00–11:00` y `FULL_CLEANING` como defaults. Los valores son frontend/mock y no un contrato Backend. `TOWELS_AND_AMENITIES` fue retirado del flujo visible de Limpieza: los artículos pertenecen a Amenidades (`IMP-AND-0113`).
 
 `ReservationStay` se reutiliza exclusivamente para resolver y presentar la estadía actual, incluida la habitación asignada o `Habitación por asignar`. La identidad y el scope de un futuro request Backend todavía no están definidos: el mock frontend no fija esa decisión. Esta reconstrucción no envía IDs de Reservation, Stay ni Room.
 

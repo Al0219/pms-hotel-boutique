@@ -42,7 +42,7 @@ public class GuestReservationReadAdapter implements GuestReservationReadPort {
     public Optional<Stay> find(UUID accountId, UUID reservationId, UUID stayId) {
         return jdbc.sql("""
                 SELECT r.id reservation_id,s.id stay_id,r.confirmation_code,rt.id type_id,rt.name type_name,
-                       room.id room_id,room.code room_code,s.arrival,s.departure,s.status
+                       room.id room_id,room.code room_code,s.arrival,s.departure,s.status,p.timezone
                 """ + OWN_STAYS + " AND r.id=:reservationId AND s.id=:stayId")
                 .param("accountId", accountId).param("reservationId", reservationId).param("stayId", stayId)
                 .query((rs, row) -> new Stay(rs.getObject("stay_id", UUID.class),
@@ -50,6 +50,6 @@ public class GuestReservationReadAdapter implements GuestReservationReadPort {
                         new RoomType(rs.getObject("type_id", UUID.class), rs.getString("type_name")),
                         rs.getObject("room_id") == null ? null : new Room(rs.getObject("room_id", UUID.class), rs.getString("room_code")),
                         rs.getObject("arrival", LocalDate.class), rs.getObject("departure", LocalDate.class),
-                        rs.getString("status"))).optional();
+                        rs.getString("status"), rs.getString("timezone"))).optional();
     }
 }

@@ -1,5 +1,53 @@
 # AlanPlan — Seguimiento Backend
 
+## 2026-10-26 — Housekeeping actions PASS manual; franjas EN_QA; publicación autorizada
+
+El usuario confirma edición, swipe cancelación, inicio/finalización Staff,
+persistencia/estados y restricciones. Franjas ampliadas09/10/11/12/14 con sus
+finales reales: whitelist, due_at UTC por zona de propiedad,30min, checkout12:00,
+cutoff25min persistido. Android conserva selección válida/fechas futuras y formulario;
+GuestStay.timezone permite cálculos IANA independientes del teléfono. FULL_CLEANING
+único tipo real. Esquema compatible, sin migraciones/dependencias nuevas.
+Backend55 PASS; Android78 PASS; Web regresión afectada22 PASS (previo50, no sumar).
+Typechecks, ESLint focal, OpenAPI74/58/96/15 y diff-check. Guía42/contrato59.
+QA manual de franjas/fechas/zona distinta pendiente; no extrapolar PASS anterior.
+Commit convencional/push normal/PR autorizados, no merge. Preservar cinco archivos
+originales. main remoto incorporó PR169; comprobar compatibilidad e integrar
+normalmente si hay conflictos. Consultar CI remoto y corregir fallos específicos.
+
+## 2026-10-26 — Housekeeping real actions MVP — EN_QA
+
+Implementado sobre main03e476e/PR168 en feature/housekeeping-real-actions-mvp,
+worktree /tmp/pms-housekeeping-actions. Guest edita/cancela propias OPEN antes
+del cutoff25min; Staff OPERATIONS_MANAGE gestiona OPEN→IN_PROGRESS→DONE.
+Bloqueos, CAS updatedAt y no-op/replay evitan sobrescrituras/auditoría repetida.
+Auditoría Guest/Staff sin notas; identidad y propiedad revalidadas. Sin DELETE,
+Guest DONE, alteraciones hk_room_states, tablas, migraciones ni dependencias nuevas.
+Android reutiliza formulario/swipe/confirmación y queries reales; mock intacto.
+Staff reutiliza modal/tabla y refresca contador. Contrato59 y guía Android42.
+
+Backend49 PASS (PostgreSQL17 descartable); Android41 PASS; Web50 PASS.
+Typechecks Android/Web, ESLint focal sin warnings, OpenAPI74ops/58paths/96schemas/15tags
+y paridad de mappings, git diff --check PASS. Logs y hashes de cinco originales
+en /tmp/housekeeping-actions-preservation/. Sin suites completas, builds pesados
+ni Docker E2E. Cinco archivos originales intactos; sin commit/push/PR.
+
+El PASS manual anterior acredita únicamente creación/lectura/persistencia/sin
+duplicados. Pendientes QA manual de nuevas acciones, cutoff/errores/carreras y
+visual de modal/responsive/foco; no se atribuyen resultados nuevos al usuario.
+Siguiente: ejecutar guía42 Android/Firefox y confirmar PASS antes de publicar.
+
+## 2026-10-26 — Housekeeping real actions MVP — EN_PROGRESO
+
+Autorizado por solicitud explícita: edición/cancelación Guest OPEN antes del
+cutoff25min y ciclo Staff OPEN→IN_PROGRESS→DONE con OPERATIONS_MANAGE. Rama
+feature/housekeeping-real-actions-mvp, base main03e476e/PR168, worktree aislado
+/tmp/pms-housekeeping-actions. Cinco archivos originales y worktrees previos
+intactos. Contrato59: locks y CAS updatedAt existentes, sin tablas/dependencias/
+migraciones nuevas. No Guest DONE, no DELETE ni cambios físicos de habitación.
+Reutilizar formulario, swipe/confirmación Android y modal/tabla Staff. Siguiente:
+implementar/verificar focalmente y entregar EN_QA; sin commit/push/PR.
+
 ## 2026-10-26 — PR168: corrección focal de conteos de upgrade CI
 
 MVP publicado en fa908d1; PR168 hacia main, abierto y sin conflictos.

@@ -13,6 +13,7 @@ export interface AssignedRoomDto {
  * el contrato de wire real está en GuestStayDto y Backend contrato56.
  */
 export interface ReservationStayDto {
+  timezone?: string;
   confirmationCode?: string | null;
   id: string | null | undefined;
   reservationId: string | null | undefined;

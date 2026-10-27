@@ -93,7 +93,7 @@ class OpenApiContractIntegrationTests {
         assertFalse(refresh.has("requestBody"));
         var schemas = doc.path("components").path("schemas");
         assertEquals(Set.of("reservationId", "stayId", "confirmationCode", "propertyName", "reservationStatus", "arrival", "departure", "roomCode", "status"), strings(schemas.path("GuestLinkedStay").path("required")));
-        assertEquals(Set.of("id", "reservationId", "confirmationCode", "roomType", "room", "arrival", "departure", "status"), strings(schemas.path("GuestStay").path("required")));
+        assertEquals(Set.of("id", "reservationId", "confirmationCode", "roomType", "room", "arrival", "departure", "status", "timezone"), strings(schemas.path("GuestStay").path("required")));
         var room = schemas.path("GuestStay").path("properties").path("room").path("anyOf");
         assertEquals("#/components/schemas/GuestStayRoom", room.get(0).path("$ref").asText());
         assertEquals("null", room.get(1).path("type").asText());

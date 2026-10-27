@@ -487,3 +487,16 @@ en el GET existente; IDs/seguridad/propiedad conservados. Prueba focal sobre
 /v3/api-docs comprueba required y paridad mappings; sin nuevas operaciones.
 Recorrido real Web/Android con PASS manual confirmado por usuario. Ajuste visual
 Android EN_QA pendiente de confirmación; no atribuye nueva ejecución manual.
+
+## Housekeeping real actions — 2026-10-26, EN_QA
+
+[Contrato59](59_HOUSEKEEPING_REAL_ACTIONS_MVP.md): PUT Guest solicitud propia y
+POST cancelación, PUT Staff status con OPERATIONS_MANAGE y propiedad autorizada.
+CAS updatedAt, cutoff Guest25min, ciclos limitados, errores/auth/headers documentados.
+Respuesta Guest agrega updatedAt/modifiableUntil y listado Staff updatedAt.
+OpenAPI generado: **74 operaciones /58 paths /96 schemas /15 tags**; paridad
+con mappings PASS y sin exclusiones nuevas. No tablas ni migraciones nuevas.
+
+Ampliación de programación del mismo contrato59: cinco valores permitidos en
+timeSlot de create/edit; GuestStay.timezone requerido desde propiedad autorizada.
+Conteos74/58/96/15 conservados; paridad mappings y campos requeridos verificados.

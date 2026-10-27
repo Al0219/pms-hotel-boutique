@@ -1,5 +1,16 @@
 # housekeeping
 
+## Acciones reales — 2026-10-26, EN_QA
+
+Ampliación autorizada: en la modal existente, OPERATIONS_MANAGE puede confirmar
+OPEN→IN_PROGRESS→DONE. INTAKE solo lectura; DONE/CANCELLED sin acciones.
+BFF PUT requests/{requestId}/status con cookie Staff, validación de origen propio
+y body cerrado; Backend revalida permiso/propiedad y CAS updatedAt. Sin estado
+optimista: refresco de query única actualiza tabla y contador; conflicto obliga
+a actualizar y error de red permite reintento. No cambia la habitación física.
+Contrato Backend59 y guía Android42; QA manual/visual pendiente. La sección
+siguiente conserva la evidencia histórica de creación/lectura del PR168.
+
 ## Housekeeping funcional COMPLETADA / PASS; UX Staff EN_QA visual (2026-10-26)
 
 La solicitud del usuario autoriza una consulta de solo lectura que reutiliza

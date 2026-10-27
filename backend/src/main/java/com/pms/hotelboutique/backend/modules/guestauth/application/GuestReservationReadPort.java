@@ -18,7 +18,8 @@ public interface GuestReservationReadPort {
 
     @Schema(name = "GuestStay")
     record Stay(UUID id, UUID reservationId, String confirmationCode, RoomType roomType,
-            @Schema(nullable = true) Room room, LocalDate arrival, LocalDate departure, String status) { }
+            @Schema(nullable = true) Room room, LocalDate arrival, LocalDate departure, String status,
+            @Schema(description = "IANA timezone from the authorized property", requiredMode = Schema.RequiredMode.REQUIRED) String timezone) { }
     @Schema(name = "GuestStayRoomType")
     record RoomType(UUID id, String name) { }
     @Schema(name = "GuestStayRoom")

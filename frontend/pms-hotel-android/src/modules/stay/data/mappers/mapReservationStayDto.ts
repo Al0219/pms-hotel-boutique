@@ -60,6 +60,7 @@ export function mapReservationStayDto(dto: ReservationStayDto | null | undefined
   const reservationStay = requireDtoField(dto, 'reservationStay');
 
   return {
+    ...(reservationStay.timezone ? { timezone: reservationStay.timezone } : {}),
     confirmationCode: mapConfirmationCode(reservationStay.confirmationCode),
     id: requireNonBlankString(reservationStay.id, 'reservationStay.id'),
     reservationId: requireNonBlankString(reservationStay.reservationId, 'reservationStay.reservationId'),

@@ -24,7 +24,7 @@ jest.mock('expo-router', () => ({ ...jest.requireActual('expo-router'), router: 
 const context = { reservationId: 'reservation-real', reservationStayId: 'stay-real' };
 const input = { serviceDate: '2030-01-01', timeSlot: '10:00–11:00' as const, cleaningType: 'FULL_CLEANING' as const, notes: 'Silencio' };
 const dto: HousekeepingRequestDto = { id: 'request-real', reservationId: context.reservationId, stayId: context.reservationStayId,
-  ...input, notes: 'Silencio', status: 'OPEN', createdAt: '2030-01-01T08:00:00Z' };
+  ...input, notes: 'Silencio', status: 'OPEN', createdAt: '2030-01-01T08:00:00Z', updatedAt: '2030-01-01T08:00:00Z', modifiableUntil: '2030-01-01T15:35:00Z' };
 function deferred<T>() { let resolve!: (value: T) => void; const promise = new Promise<T>(done => { resolve = done; }); return { promise, resolve }; }
 function Probe() {
   const { requests } = useSessionServiceRequests();
@@ -32,7 +32,7 @@ function Probe() {
   const { beginSession } = useGuestAuthSession();
   return <><Text testID="local-count">{requests.length}</Text><Pressable testID="switch-stay" onPress={() => setActiveReservationContext({ reservationId: 'second', reservationStayId: 'second-stay' })}><Text>Cambiar estancia</Text></Pressable><Pressable testID="switch-account" onPress={() => beginSession({ accountId: 'second-account' })}><Text>Cambiar cuenta</Text></Pressable></>;
 }
-const stayService = { getCurrentStay: async () => ({ ...currentStayFixture, id: context.reservationStayId, reservationId: context.reservationId, arrival: '2030-01-01', departure: '2030-01-04', status: 'IN_HOUSE' }) };
+const stayService = { getCurrentStay: async () => ({ ...currentStayFixture, timezone: 'America/Guatemala', id: context.reservationStayId, reservationId: context.reservationId, arrival: '2030-01-01', departure: '2030-01-04', status: 'IN_HOUSE' }) };
 async function setup(form = false, content?: React.ReactNode) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false, gcTime: 0 } } });
   const view = await render(<QueryClientProvider client={queryClient}><GuestAuthSessionProvider initialSession={{ accountId: 'own-account' }}><ActiveReservationContextProvider initialActiveReservationContext={context}><SessionServiceRequestsProvider><GuestRouteGuard><Probe />{content}{form ? <HousekeepingScreen nowMs={() => new Date(2030, 0, 1, 8).getTime()} stayService={stayService} /> : null}<HousekeepingRequestsSection /></GuestRouteGuard></SessionServiceRequestsProvider></ActiveReservationContextProvider></GuestAuthSessionProvider></QueryClientProvider>);
@@ -84,7 +84,8 @@ it('keeps form on offline/rejection, reuses the intent key on manual retry and s
   expect(view.getByTestId('housekeeping-notes')).toHaveProp('value', 'Silencio');
   expect(view.queryByTestId('housekeeping-submit-success')).toBeNull();
   await fireEvent.press(view.getByTestId('housekeeping-submit'));
-  await waitFor(() => expect(attempts).toBe(3));
+  await waitFor(() => expect(view.getByTestId('housekeeping-submit-success')).toBeTruthy());
+  expect(attempts).toBe(3);
   const keys = request.mock.calls.filter(([, init]) => init?.method === 'POST').map(([, init]) => (init!.headers as Record<string, string>)['Idempotency-Key']);
   expect(new Set(keys).size).toBe(1);
 });
@@ -96,14 +97,18 @@ it('does not expose an old stay or account list after context changes, including
   await waitFor(() => expect(view.getByText('Sin solicitudes de limpieza.')).toBeTruthy());
   expect(view.queryByTestId('housekeeping-request-request-real')).toBeNull();
   await fireEvent.press(view.getByTestId('switch-account'));
-  await waitFor(() => expect(view.queryClient.getQueryCache().find({ queryKey: ['guest-housekeeping', 'second-account', 'second', 'second-stay'] })).toBeTruthy());
+  await waitFor(() => expect(view.queryClient.getQueryCache().find({ queryKey: ['guest-housekeeping', 'second-account', 'second', 'second-stay'] })?.state.status).toBe('success'));
   expect(view.queryByTestId('housekeeping-request-request-real')).toBeNull();
 });
-it('shows every persisted status read-only with no simulated edit/cancel/complete controls', async () => {
+it('shows every persisted status with real OPEN actions and no Guest completion control', async () => {
   jest.spyOn(nativeGuestClient, 'request').mockResolvedValue((['OPEN', 'IN_PROGRESS', 'DONE', 'CANCELLED'] as const).map(status => ({ ...dto, id: status, status })));
   const view = await setup();
   for (const label of ['Solicitado', 'En proceso', 'Completado', 'Cancelado']) await waitFor(() => expect(view.getByText(label)).toBeTruthy());
-  expect(view.queryByLabelText(/Editar|Cancelar|completado/)).toBeNull();
+  expect(view.getByTestId('housekeeping-edit-OPEN').props.accessibilityState.disabled).toBe(false);
+  expect(view.getByTestId('housekeeping-edit-IN_PROGRESS').props.accessibilityState.disabled).toBe(true);
+  expect(view.getByTestId('housekeeping-edit-DONE').props.accessibilityState.disabled).toBe(true);
+  expect(view.getByTestId('housekeeping-edit-CANCELLED').props.accessibilityState.disabled).toBe(true);
+  expect(view.queryByLabelText(/Marcar.*completado/)).toBeNull();
 });
 it('shows list errors without presenting mock data', async () => {
   jest.spyOn(nativeGuestClient, 'request').mockRejectedValue(new NetworkError());

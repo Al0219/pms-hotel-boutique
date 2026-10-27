@@ -17,6 +17,7 @@ export interface AssignedRoom {
 }
 
 export interface ReservationStay {
+  timezone?: string;
   confirmationCode?: string | null;
   id: string;
   reservationId: string;

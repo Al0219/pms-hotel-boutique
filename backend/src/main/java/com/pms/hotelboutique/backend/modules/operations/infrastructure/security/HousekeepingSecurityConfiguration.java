@@ -22,7 +22,7 @@ public class HousekeepingSecurityConfiguration {
     @Bean
     @Order(1)
     SecurityFilterChain housekeepingChain(HttpSecurity http, StaffJwtService jwt, StaffAuthService sessions) throws Exception {
-        return http.securityMatcher("/api/v1/properties/*/service-requests/housekeeping", "/api/v1/properties/*/housekeeping/rooms", "/api/v1/properties/*/housekeeping/rooms/*",
+        return http.securityMatcher("/api/v1/properties/*/service-requests/housekeeping/*/status", "/api/v1/properties/*/service-requests/housekeeping", "/api/v1/properties/*/housekeeping/rooms", "/api/v1/properties/*/housekeeping/rooms/*",
                         "/api/v1/properties/*/housekeeping/rooms/*/tracking", "/api/v1/properties/*/housekeeping/rooms/*/status",
                         "/api/v1/properties/*/housekeeping/rooms/*/dnd")
                 .csrf(AbstractHttpConfigurer::disable)
