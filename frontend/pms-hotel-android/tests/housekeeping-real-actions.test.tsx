@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
-import { PanResponder, Text, type GestureResponderEvent, type PanResponderGestureState } from 'react-native';
+import { AppState, PanResponder, Text, type GestureResponderEvent, type PanResponderGestureState } from 'react-native';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { FetchTransport } from '@/data/remote/http/FetchTransport';
 import { HttpError, NetworkError } from '@/data/remote/http/HttpError';
@@ -26,8 +26,9 @@ async function setup(edit = false, nowMs = () => new Date(2030, 0, 1, 8).getTime
   const view = await render(<QueryClientProvider client={queryClient}><GuestAuthSessionProvider initialSession={{ accountId: 'own-account' }}><ActiveReservationContextProvider initialActiveReservationContext={context}><SessionServiceRequestsProvider><Probe />{edit ? <HousekeepingScreen nowMs={nowMs} stayService={stayService} /> : <SessionServiceRequestsScreen stayService={stayService} nowMs={nowMs} />}</SessionServiceRequestsProvider></ActiveReservationContextProvider></GuestAuthSessionProvider></QueryClientProvider>);
   return { ...view, queryClient };
 }
-beforeEach(() => { jest.clearAllMocks();(useLocalSearchParams as jest.Mock).mockReturnValue({}); });
-afterEach(() => jest.restoreAllMocks());
+const originalAppState = AppState.currentState;
+beforeEach(() => { AppState.currentState = 'active';jest.clearAllMocks();(useLocalSearchParams as jest.Mock).mockReturnValue({}); });
+afterEach(() => { AppState.currentState = originalAppState;jest.restoreAllMocks(); });
 async function revealCancellation(view: Awaited<ReturnType<typeof setup>>, create: jest.SpyInstance) {
   await waitFor(() => expect(view.getByTestId('housekeeping-swipe-request-real')).toBeTruthy());
   await act(async () => { const config = create.mock.calls.at(-1)![0] as Parameters<typeof PanResponder.create>[0];config.onPanResponderRelease?.({} as GestureResponderEvent, { dx: -1000 } as PanResponderGestureState); });
