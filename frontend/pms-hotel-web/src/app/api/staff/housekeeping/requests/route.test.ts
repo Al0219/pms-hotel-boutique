@@ -4,7 +4,7 @@ const backend = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/bff/staff-auth', () => ({ backendStaffRequest: backend, staffAccessCookie: 'pms_staff_access' }));
 import { GET } from './route';
 const propertyId = '22222222-2222-4222-8222-222222222222';
-const dto = { id: '33333333-3333-4333-8333-333333333333', propertyId, confirmationCode: 'HKREAL1234', roomCode: null, serviceDate: '2030-01-02', timeSlot: '10:00–11:00', cleaningType: 'FULL_CLEANING', notes: null, status: 'OPEN' };
+const dto = { id: '33333333-3333-4333-8333-333333333333', propertyId, confirmationCode: 'HKREAL1234', roomCode: null, serviceDate: '2030-01-02', timeSlot: '10:00–11:00', cleaningType: 'FULL_CLEANING', notes: null, status: 'OPEN', updatedAt: '2030-01-01T08:00:00Z' };
 const request = (params = `propertyId=${propertyId}`, cookie = 'pms_staff_access=synthetic-staff; pms_guest_access=synthetic-guest') => new NextRequest(`http://localhost:3001/api/staff/housekeeping/requests?${params}`, { headers: { cookie } });
 beforeEach(() => backend.mockReset());
 it('forwards only Staff credentials and allowlisted data with no-store', async () => {

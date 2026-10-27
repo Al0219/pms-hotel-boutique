@@ -109,3 +109,10 @@ nunca un UUID como código. Cambio de estancia conserva la separación de querie
 El usuario confirmó PASS manual del recorrido real Web/Android; este ajuste visual
 permanece EN_QA y no tiene nueva prueba manual atribuida. Cuatro comprobaciones
 Backend focales PASS de detalle/ownership y documento generado/paridad.
+
+## Extensión compatible de programación Housekeeping (contrato59)
+
+GET Guest estancia propia agrega timezone IANA requerido, derivado de la
+propiedad autorizada. No cambia identidad, scopes, IDs ni otros datos de estancia.
+Android lo consume para programación/fechas de Housekeeping sin asumir zona del
+teléfono. Contrato59/guía42 registran cinco franjas autorizadas y QA pendiente.

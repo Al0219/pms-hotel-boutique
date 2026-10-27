@@ -99,7 +99,7 @@ class GuestHousekeepingIntegrationTests {
     }
     @Test void rejectsIdentityInjectionBadDatesNotesAndUnapprovedOptions() throws Exception {
         for (var change: Map.of("propertyId", PROPERTY.toString(), "guestAccountId",guest.guestAccountId().toString(),
-                "roomId",UUID.randomUUID().toString(),"notes","x".repeat(501),"timeSlot","09:00–10:00",
+                "roomId",UUID.randomUUID().toString(),"notes","x".repeat(501),"timeSlot","08:00–09:00",
                 "cleaningType","LIGHT_CLEANING","serviceDate",date.plusDays(3).toString()).entrySet()) {
             var body=new java.util.HashMap<String,Object>(body()); body.put(change.getKey(),change.getValue());
             mvc.perform(create(UUID.randomUUID().toString(),body)).andExpect(status().isBadRequest());

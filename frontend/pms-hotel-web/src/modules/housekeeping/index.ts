@@ -13,3 +13,5 @@ export type { RoomCleaning, RoomCleaningStatus } from "./model/room-cleaning";
 export type { CleaningTransitionResult, DiscrepancyResolution } from "./model/room-cleaning-transition";
 
 export { projectGuestCleaningRequests } from './mappers/guest-cleaning-request.mapper';
+
+export { projectHousekeepingTransition } from './mappers/guest-cleaning-request.mapper';

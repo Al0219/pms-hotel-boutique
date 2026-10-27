@@ -4,8 +4,8 @@ import {
 } from '@/modules/services/housekeeping/domain/HousekeepingRequest';
 
 /**
- * Temporary frontend-only examples for manual QA. Product and WEB-3 must
- * replace these lists when the hotel catalogue is confirmed.
+ * The five slots are authorized for the real MVP; this is not an administrative hotel catalogue.
+ * Additional cleaning types remain frontend/mock QA examples.
  */
 export const housekeepingQaTimeSlots: readonly HousekeepingTimeSlot[] = [
   '09:00–10:00',

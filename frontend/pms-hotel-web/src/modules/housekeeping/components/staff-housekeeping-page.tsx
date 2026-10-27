@@ -17,7 +17,7 @@ export function StaffHousekeepingPage() {
   if (!ready) return <p role="status">Preparando la propiedad de tu sesión…</p>;
   if (!scope || scope.kind !== 'PROPERTY') return <section className={styles.page}><h1>Housekeeping</h1><p>Selecciona un hotel en el menú para consultar su tablero de limpieza.</p></section>;
   const propertyId = scope.propertyIds[0], property = session.memberships.find(item => item.active && item.propertyId === propertyId);
-  return <GuestCleaningRequests key={`${session.id}:${propertyId}`} propertyId={propertyId} sessionId={session.id}>
+  return <GuestCleaningRequests key={`${session.id}:${propertyId}`} propertyId={propertyId} sessionId={session.id} canManage={session.permissions.includes('OPERATIONS_MANAGE')}>
     {(requestsCard, requestsDialogOpen) => <HousekeepingWorkspace propertyId={propertyId} sessionId={session.id}
       propertyName={property?.name ?? 'Hotel seleccionado'} timezone={property?.timezone ?? 'UTC'}
       requestsCard={requestsCard} requestsDialogOpen={requestsDialogOpen} />}

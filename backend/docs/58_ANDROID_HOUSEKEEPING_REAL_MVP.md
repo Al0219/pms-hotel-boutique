@@ -1,5 +1,8 @@
 # Android Housekeeping real MVP — contrato y QA
 
+Ampliación posterior: [acciones reales EN_QA](59_HOUSEKEEPING_REAL_ACTIONS_MVP.md). El estado y las
+limitaciones de solo lectura de este documento describen el alcance previo PR168.
+
 Estado funcional: **COMPLETADA / PASS manual del usuario** (2026-10-26): creación
 real desde Android, consulta Firefox Staff, persistencia al cerrar/reabrir Expo Go
 y ausencia de duplicados. Mejora UX Staff: **PASS técnico / EN_QA visual**;
@@ -48,10 +51,10 @@ permiso/scope. Android no presenta éxito ante rechazo.
 
 ## Programación MVP
 
-Solo se admiten `10:00–11:00` y `FULL_CLEANING` en modo real. La autorización
-actual cubre los defaults existentes, no un catálogo oficial del hotel. Tipos y
-franjas adicionales siguen exclusivamente como opciones provisionales mock/QA;
-los selectores y estilos se conservan, con opciones reales limitadas al MVP.
+Ampliación autorizada en contrato59: franjas09:00–10:00,10:00–11:00,11:00–12:00,
+12:00–13:00 y14:00–15:00, con FULL_CLEANING como único tipo real. Default10:00
+cuando es válido. No es catálogo administrativo definitivo; otros tipos siguen
+solo mock/QA. Reglas de fecha/checkout/anticipación y zona de propiedad conservadas.
 
 Reserva CONFIRMED y estancia RESERVED o IN_HOUSE; se rechazan CANCELLED,
 NO_SHOW, CHECKED_OUT y reservas no confirmadas. Fecha inclusiva entre llegada y

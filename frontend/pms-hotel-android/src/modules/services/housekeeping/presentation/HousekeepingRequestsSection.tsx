@@ -1,16 +1,47 @@
+import { useEffect, useRef, useState } from 'react';
+import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
-import { NetworkError } from '@/data/remote/http/HttpError';
-import { formatGuestDate } from '@/shared/components';
+import { HttpError, NetworkError } from '@/data/remote/http/HttpError';
+import { ConfirmationModal, SwipeToDelete, formatGuestDate } from '@/shared/components';
+import { useAppClock } from '@/shared/time';
 import { sessionServiceRequestStyles as styles } from '@/modules/service-requests/presentation/sessionServiceRequestStyles';
-import { housekeepingStatusLabels } from '../domain/PersistedHousekeepingRequest';
+import { canModifyPersistedHousekeeping, housekeepingStatusLabels, type PersistedHousekeepingRequest } from '../domain/PersistedHousekeepingRequest';
 import { useHousekeepingRequests } from './hooks/useHousekeepingRequests';
+import { useCancelHousekeeping } from './hooks/useCancelHousekeeping';
 
-/** Persisted read-only cards: never inserted into the session-only request provider. */
+/** Backend is the sole authority; Guest can edit/cancel OPEN requests, never mark them DONE. */
 export function HousekeepingRequestsSection({ filter = 'ALL' }: { filter?: 'ALL' | 'ACTIVE' | 'COMPLETED' | 'REQUESTED' | 'ASSIGNED' }) {
   const query = useHousekeepingRequests();
-  const refresh = <Pressable accessibilityRole="button" disabled={query.isFetching} onPress={() => void query.refetch()} testID="housekeeping-requests-refresh"><Text style={styles.summary}>Actualizar solicitudes de limpieza</Text></Pressable>;
+  const cancellation = useCancelHousekeeping();
+  const clock = useAppClock();
+  const [target, setTarget] = useState<PersistedHousekeepingRequest | null>(null);
+  const [, tick] = useState(0);
+  const inFlight = useRef(false);
+  useEffect(() => { const timer = setInterval(() => tick(value => value + 1), 30_000); return () => clearInterval(timer); }, []);
+  const conflict = cancellation.error instanceof HttpError && cancellation.error.status === 409;
+  const offline = cancellation.error instanceof NetworkError;
+  const refresh = <Pressable accessibilityRole="button" disabled={query.isFetching} onPress={() => { cancellation.reset(); void query.refetch(); }} testID="housekeeping-requests-refresh"><Text style={styles.summary}>Actualizar solicitudes de limpieza</Text></Pressable>;
+  function confirmCancel() {
+    if (!target || inFlight.current) return;
+    if (!canModifyPersistedHousekeeping(target, clock.nowMs())) { setTarget(null); void query.refetch(); return; }
+    inFlight.current = true;
+    cancellation.mutate(target, { onSuccess: () => setTarget(null), onError: error => { if (error instanceof HttpError && error.status === 409) setTarget(null); }, onSettled: () => { inFlight.current = false; } });
+  }
   if (query.isPending) return <Text accessibilityLiveRegion="polite" testID="housekeeping-requests-loading">Cargando solicitudes de limpieza…</Text>;
-  if (query.isError) return <View testID="housekeeping-requests-error"><Text>{query.error instanceof NetworkError ? 'Sin conexión. Conéctate para consultar tus solicitudes.' : 'No pudimos consultar tus solicitudes de limpieza.'}</Text>{refresh}</View>;
+  if (query.isError && !target) return <View testID="housekeeping-requests-error"><Text>{query.error instanceof NetworkError ? 'Sin conexión. Conéctate para consultar tus solicitudes.' : 'No pudimos consultar tus solicitudes de limpieza.'}</Text>{refresh}</View>;
   const rows = (query.data ?? []).filter(item => filter === 'ALL' || (filter === 'ACTIVE' ? ['OPEN', 'IN_PROGRESS'].includes(item.status) : filter === 'COMPLETED' ? item.status === 'DONE' : filter === 'REQUESTED' ? item.status === 'OPEN' : false));
-  return <View testID="housekeeping-requests-real">{refresh}{rows.length === 0 ? <Text style={styles.empty}>Sin solicitudes de limpieza.</Text> : rows.map(item => <View key={item.id} style={styles.card} testID={`housekeeping-request-${item.id}`}><View style={styles.cardBody}><Text style={styles.title}>Limpieza completa</Text><Text style={styles.summary}>{formatGuestDate(item.serviceDate)} · {item.timeSlot}</Text>{item.notes ? <Text style={styles.summary}>{item.notes}</Text> : null}<Text style={styles.status}>{housekeepingStatusLabels[item.status]}</Text></View></View>)}</View>;
+  return <View testID="housekeeping-requests-real">{refresh}
+    {cancellation.isError && !target ? <Text accessibilityLiveRegion="polite" testID="housekeeping-cancel-error">{conflict ? 'La solicitud cambió o ya no admite cancelación. Actualiza las solicitudes.' : offline ? 'Sin conexión. Reintenta la cancelación.' : 'No pudimos cancelar la solicitud. Reintenta.'}</Text> : null}
+    {rows.length === 0 ? <Text style={styles.empty}>Sin solicitudes de limpieza.</Text> : rows.map(item => {
+      const editable = canModifyPersistedHousekeeping(item, clock.nowMs());
+      const card = <View key={item.id} style={styles.card} testID={`housekeeping-request-${item.id}`}><Pressable accessibilityRole={editable ? 'button' : undefined} accessibilityLabel={editable ? 'Editar solicitud de limpieza' : undefined} disabled={!editable || cancellation.isPending}
+        onPress={() => router.push({ pathname: '/services/housekeeping', params: { editRequestId: item.id, returnTo: 'requests' } })} style={styles.cardBody} testID={`housekeeping-edit-${item.id}`}>
+        <Text style={styles.title}>Limpieza completa</Text><Text style={styles.summary}>{formatGuestDate(item.serviceDate)} · {item.timeSlot}</Text>{item.notes ? <Text style={styles.summary}>{item.notes}</Text> : null}<Text style={styles.status}>{housekeepingStatusLabels[item.status]}</Text>
+      </Pressable></View>;
+      return editable ? <SwipeToDelete key={item.id} deleteLabel="Cancelar solicitud" enabled={!cancellation.isPending} onDelete={() => { if (canModifyPersistedHousekeeping(item, clock.nowMs())) { cancellation.reset(); setTarget(item); } }} testID={`housekeeping-swipe-${item.id}`}>{card}</SwipeToDelete> : card;
+    })}
+    <ConfirmationModal visible={target !== null} title="Cancelar solicitud" body={cancellation.isError ? offline ? 'Sin conexión. Conéctate y reintenta.' : 'No pudimos confirmar la cancelación. Reintenta.' : '¿Quieres cancelar esta solicitud de limpieza? Permanecerá en tu historial.'}
+      confirmLabel={cancellation.isPending ? 'Cancelando…' : cancellation.isError ? 'Reintentar cancelación' : 'Cancelar solicitud'} destructive testID="housekeeping-cancel-confirmation"
+      onCancel={() => { if (!cancellation.isPending) { setTarget(null); cancellation.reset(); } }} onConfirm={confirmCancel} />
+  </View>;
 }

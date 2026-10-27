@@ -18,5 +18,17 @@ export class HttpHousekeepingService implements HousekeepingService {
         cleaningType: input.cleaningType, ...(notes ? { notes } : {}) }),
     });
   }
+  updateRequest(input: HousekeepingRequest, context: ActiveReservationContext, requestId: string, expectedUpdatedAt: string) {
+    const notes = input.notes?.trim();
+    return this.client.request<HousekeepingRequestDto>(`${path(context)}/${encodeURIComponent(requestId)}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ serviceDate: input.serviceDate, timeSlot: input.timeSlot, cleaningType: input.cleaningType, notes: notes || null, expectedUpdatedAt }),
+    });
+  }
+  cancelRequest(context: ActiveReservationContext, requestId: string, expectedUpdatedAt: string) {
+    return this.client.request<HousekeepingRequestDto>(`${path(context)}/${encodeURIComponent(requestId)}/cancel`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expectedUpdatedAt }),
+    });
+  }
   listRequests(context: ActiveReservationContext) { return this.client.request<HousekeepingRequestDto[]>(path(context)); }
 }
