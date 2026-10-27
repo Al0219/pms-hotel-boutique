@@ -24,9 +24,9 @@ function handlers(rows=[row]) {
 }
 it.each([false,true])('lists the real reservation without provisional history (legacy history route=%s)',async history=>{
  handlers();mount(history);expect(await screen.findByRole('link',{name:'REAL-CONFIRMED'})).toBeInTheDocument();
- expect(screen.getByText('Hotel PostgreSQL')).toBeInTheDocument();expect(screen.getByText('CONFIRMED')).toBeInTheDocument();
+ expect(screen.getByText('Hotel PostgreSQL')).toBeInTheDocument();expect(screen.getByText('Confirmada')).toBeInTheDocument();
  expect(screen.queryByText(/Responsable:|Política:|Ocupantes|HB-2026/)).not.toBeInTheDocument();
- fireEvent.click(screen.getByRole('button',{name:`Ver estancia ${s}`}));expect(await screen.findByRole('heading',{name:'Tipo real persistido'})).toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button',{name:'Ver estancia 1'}));expect(await screen.findByRole('heading',{name:'Tipo real persistido'})).toBeInTheDocument();
 });
 it('groups multiple stays of one reservation without duplicate reservations',async()=>{
  handlers([row,{...row,stayId:'33333333-3333-4333-8333-333333333333'}]);mount();
@@ -35,12 +35,12 @@ it('groups multiple stays of one reservation without duplicate reservations',asy
 it('recovers and refetches newly linked reservations when returning focus',async()=>{
  let visible=false, reconciles=0;
  mockServer.use(http.post('*/api/auth/guest/account/reservations/reconcile',()=>{reconciles++;return new HttpResponse(null,{status:204});}),http.get('*/api/auth/guest/account/reservations',()=>HttpResponse.json(visible?[row]:[])));
- mount();await screen.findByText('No tienes reservas vinculadas');visible=true;focusManager.setFocused(false);focusManager.setFocused(true);
+ mount();await screen.findByText('Aún no hay reservas vinculadas a esta cuenta.');visible=true;focusManager.setFocused(false);focusManager.setFocused(true);
  await screen.findByRole('link',{name:'REAL-CONFIRMED'});expect(reconciles).toBe(2);
 });
 it('fails visibly when reconciliation fails and never falls back to history',async()=>{
  const lists=vi.fn();mockServer.use(http.post('*/api/auth/guest/account/reservations/reconcile',()=>new HttpResponse(null,{status:503})),http.get('*/api/auth/guest/account/reservations',()=>{lists();return HttpResponse.json([]);}));
- mount();expect(await screen.findByRole('alert')).toHaveTextContent('No se pudieron cargar');expect(lists).not.toHaveBeenCalled();expect(screen.queryByText('No tienes reservas vinculadas')).not.toBeInTheDocument();
+ mount();expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos consultar');expect(lists).not.toHaveBeenCalled();expect(screen.queryByText('Aún no hay reservas vinculadas a esta cuenta.')).not.toBeInTheDocument();
 });
 it('uses a single Guest refresh on expired session and then retries own reads',async()=>{
  let attempts=0;mockServer.use(http.post('*/api/auth/guest/account/reservations/reconcile',()=>new HttpResponse(null,{status:++attempts===1?401:204})),http.get('*/api/auth/guest/account/reservations',()=>HttpResponse.json([row])));
@@ -50,7 +50,7 @@ it('rejects the provisional history service in real mode before any request',()=
  expect(()=>getStayHistory('arbitrary-account')).toThrow('MOCK_STAY_HISTORY_DISABLED');
 });
 it('maps inconsistent or duplicate stay data to a visible error',async()=>{
- handlers([row,row]);mount();await waitFor(()=>expect(screen.getByRole('alert')).toHaveTextContent('No se pudieron cargar'));
+ handlers([row,row]);mount();await waitFor(()=>expect(screen.getByRole('alert')).toHaveTextContent('No pudimos consultar'));
 });
 
 it('delegates an expired Guest refresh to the canonical session controller', async()=>{
@@ -63,4 +63,27 @@ it('never renders a cached provisional reservation while real mode is loading', 
  client.setQueryData(['guest','reservations','real-account'],[{id:'MOCK-CACHED',propertyName:'Fixture hotel',stays:[]}]);
  handlers();mount();expect(screen.queryByText('MOCK-CACHED')).not.toBeInTheDocument();
  await screen.findByRole('link',{name:'REAL-CONFIRMED'});expect(screen.queryByText('Fixture hotel')).not.toBeInTheDocument();
+});
+
+it('keeps loading separate from an empty history and retries a failed real read', async()=>{
+ let release!:()=>void; const pending=new Promise<void>(resolve=>{release=resolve;}); let failed=true;
+ mockServer.use(http.post('*/api/auth/guest/account/reservations/reconcile',()=>new HttpResponse(null,{status:204})),
+ http.get('*/api/auth/guest/account/reservations',async()=>{await pending;return failed?new HttpResponse(null,{status:503}):HttpResponse.json([row]);}));
+ mount();await screen.findByText('Consultando tus reservas…');expect(screen.queryByText('Aún no hay reservas vinculadas a esta cuenta.')).not.toBeInTheDocument();
+ release();expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos consultar');
+ failed=false;fireEvent.click(screen.getByRole('button',{name:'Reintentar consulta'}));await screen.findByRole('link',{name:row.confirmationCode});
+});
+
+it('keeps an unavailable stay private without discarding the linked reservation',async()=>{
+ handlers();mockServer.use(http.get(`*/api/auth/guest/account/reservations/${r}/stays/${s}`,()=>new HttpResponse(null,{status:404})));
+ mount();fireEvent.click(await screen.findByRole('button',{name:'Ver estancia 1'}));
+ expect(await screen.findByRole('alert')).toHaveTextContent('Esta estancia no está disponible en tu cuenta.');
+ expect(screen.getByRole('link',{name:row.confirmationCode})).toBeInTheDocument();expect(screen.queryByText('Tipo real persistido')).not.toBeInTheDocument();
+});
+
+it('offers verification for an honest empty history without fabricating a reservation',async()=>{
+ handlers([]);mount();await screen.findByText('Aún no hay reservas vinculadas a esta cuenta.');
+ expect(screen.getByRole('link',{name:'Vincular mi reserva'})).toHaveAttribute('href','/cuenta/reservas/vincular');
+ expect(screen.getByText(/Si acabas de reservar como invitado/)).toBeInTheDocument();
+ expect(screen.queryByRole('link',{name:row.confirmationCode})).not.toBeInTheDocument();
 });

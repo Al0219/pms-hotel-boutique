@@ -45,6 +45,9 @@ it('allows future dates, retains valid selection and replaces a slot that exceed
  const ui=await setup(at('19:00:00'));await waitFor(() => expect(within(ui.getByTestId('housekeeping-time-selector')).getByText('14:00–15:00')).toBeTruthy());
  async function date(day:string) { await fireEvent.press(ui.getByTestId('housekeeping-date-selector'));await fireEvent.press(ui.getByTestId(`housekeeping-date-picker-day-${day}`));await fireEvent.press(ui.getByTestId('housekeeping-date-picker-confirm')); }
  await date('2030-01-03');expect(within(ui.getByTestId('housekeeping-time-selector')).getByText('14:00–15:00')).toBeTruthy();
+ await fireEvent.press(ui.getByTestId('housekeeping-time-selector'));
+ for (const slot of housekeepingQaTimeSlots) expect(ui.getByTestId(`housekeeping-time-picker-option-${slot}`).props.accessibilityState.disabled).toBe(false);
+ await fireEvent.press(ui.getByTestId('housekeeping-time-picker-cancel'));
  await date('2030-01-04');expect(within(ui.getByTestId('housekeeping-time-selector')).getByText('09:00–10:00')).toBeTruthy();
  await fireEvent.press(ui.getByTestId('housekeeping-time-selector'));
  for(const slot of ['12:00–13:00','14:00–15:00']) expect(ui.getByTestId(`housekeeping-time-picker-option-${slot}`).props.accessibilityState.disabled).toBe(true);

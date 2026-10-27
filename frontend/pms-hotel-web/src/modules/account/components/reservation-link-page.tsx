@@ -2,12 +2,11 @@
 
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { getPublicEnvironment } from '@/lib/env';
 import { useGuestSession } from '@/modules/auth';
 import { ReservationLinkForm } from './reservation-link-form';
 import styles from './reservation-link-page.module.css';
 
-/** The account route layout owns Guest access. Linking remains frontend-only. */
+/** The account layout owns Guest access; the form selects the confirmed or mock transport. */
 export function ReservationLinkPage() {
   const { account } = useGuestSession();
   const heading = useRef<HTMLHeadingElement>(null);
@@ -36,7 +35,7 @@ export function ReservationLinkPage() {
           <Link href="/mis-reservas">Ver mis reservas <span aria-hidden="true">→</span></Link>
         </aside>
       </div>
-      {getPublicEnvironment().useMockApi && <p className={styles.note}>Vincular una reserva no crea una nueva ni modifica sus fechas, habitaciones o cargos.</p>}
+      <p className={styles.note}>Vincular una reserva no crea una nueva ni modifica sus fechas, habitaciones o cargos.</p>
     </div>
   </section>;
 }

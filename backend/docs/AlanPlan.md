@@ -102,6 +102,88 @@ autorización adversa y cambios de cuenta/propiedad/estancia. Cobertura automát
 no equivale a PASS manual de esas variantes. Siguiente: revisar CI y completar
 QA visual antes de autorizar merge; mantener PR abierto sin fusionar.
 
+## PR169 — sincronización con main03e476e, EN_QA (2026-10-26)
+
+- GitHub confirma PR169 con452c626 publicado; nuevo PR168 de Housekeeping/Android
+  adelanta main a03e476e y provoca solo conflictos en AlanPlan/AlanHandoff.
+- Continúa la integración/publicación autorizada. Ambos historiales conservados;
+  entradas entrantes de main primero para reducir colisiones por nuevas entradas.
+  Código, migración y contratos58 entrantes se conservan exactamente como main.
+  Ajustes locales Android intactos por SHA256 y excluidos de los cambios propios.
+- Backend focal Guest/Housekeeping/OpenAPI/upgrades: BUILD SUCCESS,82 pruebas,
+  cero fallos/errores/omitidas (Java21/PostgreSQL17 descartable). Web focal165/12
+  PASS, lint/typecheck/build Linux PASS. Sin repetir ni aprobar la suite general.
+  La evidencia anterior1077 PASS corresponde a a98250f, no a esta combinación.
+  Gate general Web y QA manual siguen pendientes. No recrear servicios de3001.
+
+## Integración Mis reservas con main a98250f — EN_QA, 2026-10-26
+
+- José autoriza integrar origin/main, resolver incompatibilidades, validar y
+  publicar en fix/public-my-reservations-3001; no integrar el PR a main.
+- PR166/167 incorporan activación Staff y contrato Guest Web/Android56/57.
+  Se conserva esa API y reconciliación; se retira el controlador paginado
+  duplicado de esta rama. Web reutiliza su BFF/hooks y agrupa N estancias con
+  presentación crema/oliva. OTP C3 manual y Guest/Staff separados se conservan.
+- Pruebas adaptadas a lista/detalle de estancia vigentes, sin excluir casos ni
+  cambiar límites: aislamiento, privacidad, dos estancias, C3 y activación Staff.
+  Migraciones, Android y demás módulos entrantes se conservan sin modificaciones
+  propias. Cambios locales Android resguardados para reaplicarlos tras el merge.
+- Backend ./mvnw -B verify completo Java21/PostgreSQL17: BUILD SUCCESS,1077
+  pruebas, cero fallos/errores/omitidas. Incluye23 OpenAPI,14 invitaciones Staff,
+  9 MVP Android,6 recuperación y7 regresiones de historial/C3/dos estancias.
+- Web lint/typecheck/build Linux PASS. General limpia2521/2535;13 timeouts y
+  una aserción de replay. Repetición de9 archivos243/246: checkout25/25 y vínculo
+  4/4 PASS sin cambios; persisten tres timeouts (cursor Staff, revalidación de
+  búsqueda y filtros de reservas), archivos sin modificaciones propias frente a
+  main. No declarar gate Web aprobado. Primera corrida con entorno QA incorrecto
+  conservada y diferenciada en Web70. Sin elevar límites ni alterar otros módulos.
+- Resolución lista para commit/push autorizados. Entorno habitual3001 intacto;
+  ajustes Android locales reaplicados y excluidos. QA manual/CI pendientes. EN_QA.
+
+## Mis reservas — despliegue habitual3001, EN_QA, 2026-10-26
+
+- José solicita aplicar la corrección al entorno real: el preview anterior no
+  actualizaba3001. Cambios trasladados al árbol principal en la rama local
+  fix/public-my-reservations-3001, conservando Android y sin alterar main.
+- Imágenes Backend/Web reconstruidas y activadas con compose.yaml habitual;
+  ambos healthy. Mismo contenedor/volumen PostgreSQL y conteos preservados:
+  2 propiedades,24 habitaciones,8 reservas,8 estancias,28 migraciones.
+- Navegador real en3001:18/18 PASS; cookie Staff coexistente, acceso Guest,
+  historial propio, vínculo accesible, recarga, móvil y logout separados.
+  Sin altas de reservas/pagos ni fixtures en la BD habitual. Guía Web70.
+- OTP y correo sin configurar en el contenedor: autorización de clave local y
+  ubicación de configuración del proveedor solicitadas; no modificar secretos.
+  QA manual y gate Web general siguen pendientes. Sin commit/push.
+
+## Mis reservas público — EN_QA, 2026-10-25
+
+- José autoriza revisar/corregir el flujo principal Web en frontend y Backend.
+  main0d1f4b7 no contiene lectura HTTP del historial Guest completo:42 ofrece
+  únicamente resumen; C3 permite OTP y AUTH-GUEST-REG-HISTORY-01 aporta links.
+- José aprueba GUEST_RESERVATIONS_READ_PROPOSAL.md: GET propio paginado/detalle,
+  links persistidos como autorización, GuestPrincipal activo y N stays separados.
+  Implementados sin selector de cuenta/property, importes, notas internas ni
+  cambios a Auth, pagos, migraciones o permisos. OpenAPI actualizado y validado.
+- Web conecta historial/detalle y OTP C3 mediante cookies Guest HttpOnly/BFF;
+  acceso contextual no restaura Staff, espera sesión y conserva retorno Google.
+  Reenvío respeta60s sin inventar expiresAt ni éxito ante respuesta incierta.
+- Backend Java21/PostgreSQL17: verify completo BUILD SUCCESS,1049 pruebas,
+  cero fallos/errores/omitidas; incluye alta pública anónima→OTP→historial con
+  dos estancias y rechazo de otra cuenta. Web lint/typecheck/build PASS;
+  navegador real16/16 PASS, sin excepciones JS ni5xx, escritorio/móvil390px.
+  Entrega de correo sustituida solo por fixture QA; verificación C3 real.
+- Web focal183/185: dos timeouts5s de recorridos mock heredados; nueva UI12/12
+  PASS. Repetición de ambos archivos12/12 PASS; repetición conjunta del26/10
+  vuelve a183/185. Límites5s y aserciones originales conservados.
+  General interrumpida tras130/334 archivos con40 fallos, mayormente timeouts;
+  tres de Staff reproducidos en copia exacta de main0d1f4b7. Sin cambiar límites,
+  excluir pruebas ni tocar Staff para ocultarlos. Gate Web general no aprobado.
+  El fallo adicional de Private09 pasa aislado, sin cambios en ese módulo.
+- Rama/worktree fix/public-my-reservations-flow desde main0d1f4b7. Android local,
+  entorno habitual y tareas anteriores preservados. QA manual del owner pendiente;
+  sin commit/push. QA aislado3002 disponible;3001 conserva su versión/datos.
+  Siguiente: QA manual del owner y resolver/validar gate Web antes de publicar.
+
 ## 2026-10-26 — PR167: aislamiento de fixtures Backend; MVP COMPLETADA / PASS
 
 Publicación autorizada: commit1b769069c3f33fd1b5d7c6be7e4fe6e3eca9cb05,

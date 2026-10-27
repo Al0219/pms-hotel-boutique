@@ -99,7 +99,7 @@ describe('Guest reservation link demonstration', () => {
 
 
 describe('Reservation link access for a real Guest session', () => {
-  it('shows an unavailable state without offering an unconnected form in real mode', async () => {
+  it('offers the connected OTP form in real mode without showing any mock verification code', async () => {
     vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'false');
     mockServer.use(http.get('*/api/auth/guest/session', () => HttpResponse.json({
       guestAccountId: 'real-guest', sessionId: 'real-session', email: 'real@example.test', context: 'GUEST',
@@ -107,9 +107,10 @@ describe('Reservation link access for a real Guest session', () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
     clients.push(client);
     render(<QueryClientProvider client={client}><GuestSessionProvider><ReservationLinkForm /></GuestSessionProvider></QueryClientProvider>);
-    expect(await screen.findByRole('status')).toHaveTextContent('La vinculación no está disponible');
-    expect(screen.queryByLabelText('Referencia de reserva')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Solicitar código de verificación' })).not.toBeInTheDocument();
+    expect(await screen.findByLabelText('Referencia de reserva')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Solicitar código de verificación' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Código de verificación')).not.toBeInTheDocument();
+    expect(screen.queryByText('Reserva vinculada a tu cuenta.')).not.toBeInTheDocument();
     expect(screen.queryByText(/código de prueba|demostración/i)).not.toBeInTheDocument();
   });
 });

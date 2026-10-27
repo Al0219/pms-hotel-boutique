@@ -1,5 +1,8 @@
 # Housekeeping real: edición Guest y ciclo Staff — contrato59
 
+Compatibilidad: main859ef21 (PR169) integrado mediante merge normal; las
+aserciones de privacidad Guest se conservan junto a timezone requerido.
+
 **EN_QA** (2026-10-26). Rama `feature/housekeeping-real-actions-mvp`, base
 `main`03e476e con PR168 integrado; worktree `/tmp/pms-housekeeping-actions`.
 Implementación autorizada explícitamente por el usuario. El PASS manual anterior

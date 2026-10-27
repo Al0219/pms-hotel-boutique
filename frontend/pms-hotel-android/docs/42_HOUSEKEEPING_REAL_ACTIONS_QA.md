@@ -1,5 +1,8 @@
 # Housekeeping real actions — guía QA42
 
+Compatibilidad: main859ef21 (PR169) integrado mediante merge normal; las
+aserciones de privacidad Guest se conservan junto a timezone requerido.
+
 **EN_QA; PASS técnico.** El usuario ya confirmó creación Android→PostgreSQL→Staff,
 persistencia al reabrir y ausencia de duplicados en PR168. Edición/cancelación/inicio/finalización y restricciones tienen PASS manual
 confirmado; horarios ampliados y QA visual no acreditado siguen pendientes.

@@ -136,6 +136,78 @@ opciones QA adicionales siguen mock. Anticipación30min, checkout12:00 y timezon
 persistida de propiedad. No modifica estados físicos HK ni funcionalidades aprobadas.
 Siguiente: verificaciones focales/OpenAPI y entrega EN_QA para PASS manual del usuario.
 
+## 2026-10-26 — PR169: nueva sincronización con main03e476e, EN_QA
+
+PR169 sí contiene452c626. Main avanza con PR168 y solo AlanPlan/AlanHandoff
+vuelven a entrar en conflicto. Integración/publicación ya autorizadas; se conservan
+ambos historiales con entradas main primero. Código/contratos/migración58 idénticos
+al origen y Android local intacto por SHA256, fuera de los cambios propios.
+Backend focal Guest/Housekeeping/OpenAPI/upgrades BUILD SUCCESS:82 pruebas, cero
+fallos/errores/omitidas, Java21/PostgreSQL17 descartable. Web focal165/12 PASS y
+lint/typecheck/build Linux PASS. Sin repetir/aprobar la suite general; no reutilizar
+el PASS1077 anterior como evidencia del nuevo árbol. QA manual/gate Web pendientes.
+Sin recrear contenedores habituales ni modificar la BD de3001.
+
+## 2026-10-26 — Integración autorizada de Mis reservas con main a98250f: EN_QA
+
+José autoriza merge normal, validación y commit/push de nuestra rama. PR166/167
+traen activación Staff y API Guest compartida56/57: se reutilizan su controlador,
+adaptador, BFF y hooks, retirando el segundo GET incompatible de esta rama.
+Se conservan diseño público, acceso Guest contextual y OTP manual C3; invalidación
+de caché OTP adaptada a las claves reales account-scoped. Las pruebas de lectura
+y dos estancias/C3 usan el contrato vigente; regresiones adicionales de activación
+Staff sin cambiar reglas, dependencias, timeouts ni workflow. Documentación original
+marcada sustituida, no contrato paginado vigente. Backend verify completo Java21/
+PostgreSQL17 BUILD SUCCESS:1077 pruebas, cero fallos/errores/omitidas;23 OpenAPI,
+14 invitaciones Staff,9 MVP Android,6 recuperación y7 regresiones C3/historial.
+Web lint/typecheck/build Linux PASS. General limpia2521/2535:13 timeouts y una
+aserción de replay. Repetición9 archivos243/246; checkout25/25 y vínculo4/4 PASS
+sin modificar código. Tres timeouts persisten (cursor Staff, búsqueda y filtros
+de reservas), archivos sin modificaciones propias frente a main. Gate Web general
+no aprobado; evidencia de corrida inicial con entorno QA incorrecto diferenciada
+en Web70. Sin elevar límites/excluir tests ni cambios propios a migraciones,
+Android/Staff o servicios habituales. Android local reaplicado y excluido.
+Listo para commit/push autorizados; faltan QA manual y CI. EN_QA, no completar.
+
+## 2026-10-26 — Mis reservas aplicado en3001: EN_QA
+
+José confirma que3001 seguía usando imágenes anteriores; el preview aislado no
+actualizaba ese entorno. Corrección trasladada al proyecto principal en la rama
+local fix/public-my-reservations-3001 y desplegada mediante compose.yaml habitual.
+Backend/Web healthy; PostgreSQL conserva contenedor, volumen y datos:2 propiedades,
+24 habitaciones,8 reservas,8 estancias,28 migraciones. Android intacto.
+Navegador real3001:18/18 PASS, Guest/Staff separados incluso con ambas cookies,
+historial propio, recarga, móvil y logout. Cero escrituras de reservas/pagos en QA
+habitual. Se detuvo únicamente el preview Web/API3002 para evitar confusión.
+Clave OTP y proveedor de correo vacíos en el entorno; preguntas de autorización
+y ubicación de configuración pendientes. No crear secretos ni simular el vínculo.
+Evidencia/recorrido en Web70; QA manual y gate Web general pendientes. Sin commit,
+push, merge, migraciones ni cambios de dependencias/configuración de Compose.
+
+## 2026-10-25 — Mis reservas: contrato aprobado e implementación EN_QA
+
+José prioriza flujo principal Web completo. Se confirma salto indebido a Staff,
+restauración Guest prematura y pérdida de retorno Google; corregidos en worktree
+fix/public-my-reservations-flow desde main0d1f4b7, sin tocar Android local.
+José aprueba GUEST_RESERVATIONS_READ_PROPOSAL.md. Implementados listado/detalle
+propios Guest con links persistidos y N stays, sin importes/notas ni selector de
+cuenta/property; OpenAPI actualizado. Web conecta lectura y C3 mediante BFF/cookies
+Guest, sin inventar TTL, IDs o confirmaciones. Acceso/retorno Google y cierre Guest
+permanecen en contexto público aunque exista sesión Staff; reenvío mínimo60s.
+Backend verify completo Java21/PostgreSQL17:1049 PASS, cero fallos/errores/omitidas,
+incluido recorrido anónimo→OTP real→historial y rechazo de otra cuenta. Web
+lint/typecheck/build PASS; navegador16/16 PASS (1440px/390px), sin JS/5xx. Correo
+reemplazado solo por fixture de entrega en BD QA; C3 verifica realmente el código.
+Focal183/185 con dos timeouts5s mock; nueva UI12/12 PASS. Repetición de ambos
+archivos12/12 PASS; conjunto del26/10 otra vez183/185. Límites5s y aserciones
+originales conservados. General interrumpida
+tras130/334 archivos y40 fallos (mayormente timeouts); tres de Staff en main0d1f4b7,
+sin cambios de límites/validaciones ni otros módulos. Gate general no aprobado.
+Private09 también pasa aislado, sin cambios funcionales ni de sus tests.
+QA manual del owner pendiente. Preview aislado3002;3001 preservado. Sin migraciones,
+secretos, dependencias, commit/push ni cambios al entorno habitual. EN_QA.
+Siguiente: aceptación manual y validación del gate Web antes de publicar.
+
 ## 2026-10-26 — PR167: aislamiento de fixtures Backend; MVP COMPLETADA / PASS
 
 Publicación autorizada: commit1b769069c3f33fd1b5d7c6be7e4fe6e3eca9cb05,
