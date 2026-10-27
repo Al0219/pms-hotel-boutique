@@ -23,6 +23,16 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe('Staff property composition', () => {
+  it('offers real folio access only to an identified Staff actor with the existing finance permission', () => {
+    const view = render(<StaffReservationsWorkspace reservationId="R1" />);
+    expect(mocks.detail).toHaveBeenLastCalledWith(expect.objectContaining({ folioAccess: undefined }));
+    mocks.session.mockReturnValue({ ...sessionFixture, staffUserId: 'actor-real', permissions: ['FOLIO_PAYMENT_OPERATE'] });
+    view.rerender(<StaffReservationsWorkspace reservationId="R1" />);
+    expect(mocks.detail).toHaveBeenLastCalledWith(expect.objectContaining({ folioAccess: { actorId: 'actor-real', sessionId: 'staff-1' } }));
+    mocks.session.mockReturnValue({ ...sessionFixture, permissions: ['FOLIO_PAYMENT_OPERATE'] });
+    view.rerender(<StaffReservationsWorkspace reservationId="R1" />);
+    expect(mocks.detail).toHaveBeenLastCalledWith(expect.objectContaining({ folioAccess: undefined }));
+  });
   it.each([null, { kind: 'ALL_PROPERTIES', propertyIds: ['GT-HB-01', 'GT-HB-03'] }])('requires one explicit authorized property', scope => {
     mocks.scope.mockReturnValue({ ready: true, scope });
     render(<StaffReservationsWorkspace />);

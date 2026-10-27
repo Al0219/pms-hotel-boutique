@@ -24,7 +24,8 @@ export function StaffReservationsWorkspace({ reservationId, endpoint }: { reserv
   const canAssign = session.permissions.includes('RESERVATION_MANAGE');
   const resource = endpoint ?? '/api/staff/reservations';
   return <StaffPropertyWorkspace>{(propertyId, sessionId) => reservationId
-    ? <ReservationDetail key={`${sessionId}:${propertyId}:${reservationId}`} reservationId={reservationId} propertyId={propertyId} endpoint={resource} sessionId={sessionId} canManage={canAssign} />
+    ? <ReservationDetail key={`${sessionId}:${propertyId}:${reservationId}`} reservationId={reservationId} propertyId={propertyId} endpoint={resource} sessionId={sessionId} canManage={canAssign}
+        folioAccess={session.staffUserId && session.permissions.includes('FOLIO_PAYMENT_OPERATE') ? { actorId: session.staffUserId, sessionId } : undefined} />
     : <ReservationCenter key={`${sessionId}:${propertyId}`} propertyId={propertyId} endpoint={resource} canCreate={canAssign} />}</StaffPropertyWorkspace>;
 }
 

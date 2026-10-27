@@ -110,7 +110,8 @@ public class OpenApiConfiguration {
             } else if (handler.getBeanType().equals(PublicAvailabilityController.class)) {
                 operation.addExtension("x-audience", "public");
                 operation.setSecurity(List.of());
-            } else if (packageName.contains(".modules.inventory.") || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.reservations.api.StaffReservationController.class)
+            } else if (packageName.contains(".modules.inventory.") || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.reservations.api.StaffFolioController.class)
+                    || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.reservations.api.StaffReservationController.class)
                     || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.reservations.api.StaffReservationCreationController.class)
                     || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.operations.api.StaffHousekeepingController.class)
                     || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.operations.api.StaffHousekeepingRequestsController.class)
@@ -118,6 +119,17 @@ public class OpenApiConfiguration {
                 operation.addExtension("x-audience", "staff");
             }
             return operation;
+        };
+    }
+
+    @Bean
+    OpenApiCustomizer staffFolioSchemas() {
+        return api -> {
+            for (String name : List.of("StaffFolioMoney", "StaffFolioHeader", "StaffFolioPage", "StaffFolioDetail",
+                    "StaffFolioMovement", "StaffFolioMovementPage", "StaffFolioPaymentReceipt")) {
+                var schema = api.getComponents().getSchemas().get(name);
+                if (schema != null) schema.setRequired(new java.util.ArrayList<>(schema.getProperties().keySet()));
+            }
         };
     }
 

@@ -2,6 +2,8 @@
  * Public API for the folio module (WEB-4).
  * Export only intentionally public Domain Models, mappers, services and components.
  */
+export { StaffReservationFolioPanel } from './components/staff-reservation-folio-panel';
+export { isFolioUuid, mapLedgerMoney, mapStaffFolioPage, mapStaffFolioDetail, mapStaffMovementPage, mapStaffPaymentReceipt } from './mappers/staff-folio.mapper';
 
 export type {
   ChargeRoutingRule,
