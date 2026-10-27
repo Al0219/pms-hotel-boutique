@@ -2237,7 +2237,38 @@ externo y autorización; integración y concurrencia tras acordar la admisión a
 
 ## BD2 — Folio/Payments y lifecycle de reservas
 
-### Folio mínimo Staff — EN_QA (2026-10-26)
+### QA integrado de Reserva Staff — COMPLETADA (2026-10-27)
+
+- José autoriza comprobar el recorrido completo después de publicar el dashboard.
+  Rama `test/staff-reservation-flow-qa`, base origin/main81accce (PR174 integrado).
+  Incremento de validación de los contratos50/52/54/55/61; owner José.
+- Alcance: alta real, asignación/inspección, entrada, abono y pago total, bloqueo
+  de salida con deuda, checkout y limpieza posterior. Comprobar idempotencia,
+  saldos exactos y auditoría sin modificar registros financieros históricos.
+- Entorno habitual Docker3001; datos QA explícitos, habitación libre y sesiones
+  existentes Recepción/Super Admin. Backend/volumen/configuración conservados.
+  Inspección inicial y ejecución HTTP/navegador/SQL PASS.
+- Evidencia:46 comprobaciones funcionales distintas y14 SQL, por etapas sobre
+  una sola reserva QA KYEMCQY6HB. Cargo650.00, abono325.00, liquidación325.00,
+  saldo0; checkout confirma CHECKED_OUT/DIRTY y limpieza final INSPECTED.
+  Respuesta de abono interrumpida y recuperada tras recargar: mismo pago, sin
+  duplicados. Rechazos DIRTY/inspección/deuda y permisos reales comprobados.
+  ATS4→3→4, un cargo/dos pagos, cinco recibos; historial financiero previo
+  intacto y GuestAccount/migraciones sin cambios. Guía [Web71](../../frontend/pms-hotel-web/docs/71_STAFF_RESERVATION_FLOW_QA.md).
+- José confirma QA manual: «todo ese flujo ya quedó». Aceptación del recorrido y
+  del Folio mínimo61 PASS; conserva los límites de una propiedad/stay y GTQ.
+  No cierra el folio avanzado ni variantes públicas/multi-room. Checks del PR
+  financiero previamente reportados aprobados por José; sin nueva corrida CI/Maven.
+  Solo documentación, sin commit/push de este incremento. Siguiente recomendado:
+  verificar el puente reserva pública → Mis reservas Guest → recepción Staff,
+  y después N stays; requiere autorización independiente antes de ejecutarlo.
+
+### Folio mínimo Staff — COMPLETADA (cierre2026-10-27)
+
+Cierre actual: QA integrado46+14 PASS y aceptación manual confirmada por José
+el2026-10-27; checks del PR del código reportados aprobados previamente. Se cierra
+solo el MVP del contrato61. Los pendientes EN_QA/CI siguientes son históricos;
+no se atribuye una nueva ejecución general local ni se cierra S4/FP global.
 
 - José autoriza retomar el cierre full stack del flujo principal. Rama
   feature/staff-folio-payments desde main566c7f0; coordinación BD1/BD3.

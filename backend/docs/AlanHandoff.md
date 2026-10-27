@@ -5436,6 +5436,53 @@ sesiones al modificar el acceso.
 - **Siguiente:** publicación solo con autorización independiente; sin
   commit/push/merge.
 
+## 2026-10-27 — Cierre aceptado: Reserva Staff y Folio mínimo61
+
+José autoriza publicar este cierre mediante commit/push normal, sin merge.
+La revisión del historial de reservas invitadas se autoriza como incremento
+posterior separado; no forma parte del commit documental de cierre Staff.
+
+José confirma «todo ese flujo ya quedó» después del QA integrado46+14 PASS y
+los checks del PR financiero previamente reportados aprobados. Aceptación y DoD
+del recorrido de una propiedad/stay en GTQ: PASS; Web71 y Folio mínimo61 pasan
+a COMPLETADA. No se atribuye ejecución manual individual de variantes adversas
+ni se cierran folio avanzado, N stays, Guest/público u otras entregas BD2-FP.
+Solo documentación, rama test/staff-reservation-flow-qa / base81accce, sin nueva
+corrida CI/Maven ni commit/push. La evidencia histórica EN_QA se conserva abajo.
+Siguiente recomendado: puente reserva pública → historial Guest → recepción
+Staff y luego multi-room; no iniciar esos incrementos sin autorización.
+
+## 2026-10-27 — QA integrado de Reserva Staff — EN_QA / PASS técnico
+
+Recorrido real3001:46 comprobaciones funcionales distintas y14 SQL PASS, por
+etapas y sobre una sola reserva QA KYEMCQY6HB / habitación201. Alta confirmada,
+cargo650.00, asignación/inspección/entrada, abono325.00 y liquidación325.00;
+saldo0, salida CHECKED_OUT, limpieza automática DIRTY con motivo y posterior
+INSPECTED. Recuperación de abono tras perder respuesta201 y recargar conserva
+clave/cuerpo/movimiento; no pagos duplicados. Un cargo/dos pagos, cinco recibos
+idempotentes, actores Staff y eventos de entrada/salida únicos. ATS4→3→4;
+historial de16 movimientos previos intacto, sin GuestAccount ni migraciones nuevos.
+Pruebas negativas de suciedad/inspección/deuda y permiso HK de Recepción PASS.
+Dos interrupciones del harness (espera busy y etiqueta de fila) se corrigieron
+sin cambios de producto ni nuevas reservas/pagos; reportes originales conservados.
+Guía y límites: [Web71](../../frontend/pms-hotel-web/docs/71_STAFF_RESERVATION_FLOW_QA.md).
+Evidencia fuera de Git: pms-staff-reservation-flow-qa. Solo documentación;
+no nuevos build/Maven/CI ni commit/push. Rama/base y autorización a continuación.
+QA manual del owner pendiente; no cerrar Folio61 ni otras entregas. Siguiente:
+José repite el recorrido manual de Web71 y confirma su resultado.
+
+### Inicio del incremento
+
+José autoriza validar alta → asignación → entrada → abono → pago total → salida
+y limpieza. Rama `test/staff-reservation-flow-qa` desde origin/main81accce,
+que ya integra PR174 del dashboard. Contratos50/52/54/55/61 vigentes; reutilizar
+implementaciones existentes, sin reglas ni APIs nuevas. Owner José; coordinación
+de Reservas/Folio/seguridad preservada. Docker3001 saludable, working tree inicial
+limpio. Se usarán datos QA identificados y una habitación sin estancia activa;
+sin alterar reservas previas ni borrar movimientos/auditoría. HTTP/navegador/SQL
+pendientes. Aceptación manual del owner y cierre financiero61 no se presuponen.
+Sin commit/push de este incremento. La evidencia técnica posterior se registra arriba.
+
 ## 2026-10-26 — Folio mínimo Staff: contrato61 aprobado, EN_QA
 
 José autoriza cerrar el flujo principal en feature/staff-folio-payments desde
