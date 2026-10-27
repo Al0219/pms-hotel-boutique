@@ -9,3 +9,4 @@ export { SessionServiceRequestDetailsModal } from './presentation/SessionService
 export { initialSessionServiceRequestsState, SessionServiceRequestsProvider, sessionServiceRequestsReducer, useSessionServiceRequests } from './presentation/SessionServiceRequestsProvider';
 export { useCompleteSessionServiceRequest } from './presentation/useCompleteSessionServiceRequest';
 export { SessionServiceRequestsScreen } from './presentation/SessionServiceRequestsScreen';
+export { useGuestServiceRequests } from './presentation/useGuestServiceRequests';

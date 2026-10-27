@@ -12,9 +12,10 @@ export const roomServiceCategoryPeriod: Readonly<Record<RoomServiceCategory, Roo
 
 export interface RoomServiceAvailabilityWindow { startTime: string; endTime: string; }
 
-/** Frontend mock menu item. fixtureKey is not a Backend product ID. */
+/** Shared UI menu. fixtureKey stays for compatibility: mock key in mock mode, persisted product UUID in real mode. */
 export interface RoomServiceMenuItem {
   fixtureKey: string;
+  available?: boolean;
   /** One product can be offered in several periods; category remains legacy mock compatibility only. */
   periods?: readonly RoomServicePeriod[];
   category?: RoomServiceCategory;

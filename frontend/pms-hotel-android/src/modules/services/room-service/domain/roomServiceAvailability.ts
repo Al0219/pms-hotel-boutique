@@ -38,7 +38,7 @@ export function isRoomServicePeriodAvailableAt(period: RoomServicePeriod, servic
 }
 
 export function isRoomServiceItemAvailable(item: RoomServiceMenuItem, serviceDate: string, deliveryTime: string, context?: RoomServiceCheckoutDayContext): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(serviceDate) && getItemPeriods(item).some((period) => isRoomServicePeriodAvailableAt(period, serviceDate, deliveryTime, context));
+  return item.available!==false && /^\d{4}-\d{2}-\d{2}$/.test(serviceDate) && getItemPeriods(item).some((period) => isRoomServicePeriodAvailableAt(period, serviceDate, deliveryTime, context));
 }
 
 function intersectWindows(left: RoomServiceAvailabilityWindow, right: RoomServiceAvailabilityWindow): RoomServiceAvailabilityWindow | null {
@@ -63,6 +63,6 @@ export function hasIncompatibleRoomServiceCartPeriods(menu: RoomServiceMenu, car
 export function isRoomServiceCartAvailableAt(menu: RoomServiceMenu, cart: RoomServiceCartState, serviceDate: string, deliveryTime: string, context?: RoomServiceCheckoutDayContext): boolean {
   return getRoomServiceCartAvailabilityWindows(menu, cart).some((window) => isRoomServiceTimeInWindow(deliveryTime, window)) && cart.items.every((line) => {
     const item = menu.items.find((candidate) => candidate.fixtureKey === line.itemFixtureKey);
-    return item ? getItemPeriods(item, line.mealPeriod).some((period) => isRoomServicePeriodAvailableAt(period, serviceDate, deliveryTime, context)) : false;
+    return item && item.available!==false ? getItemPeriods(item, line.mealPeriod).some((period) => isRoomServicePeriodAvailableAt(period, serviceDate, deliveryTime, context)) : false;
   });
 }

@@ -5,8 +5,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
 import static org.junit.jupiter.api.Assertions.*;
 class GuestHousekeepingScheduleTests {
-    private GuestHousekeepingService.Context context(String zone) {
-        return new GuestHousekeepingService.Context(UUID.randomUUID(),null,null,LocalDate.parse("2030-01-01"),
+    private GuestServiceContext.Context context(String zone) {
+        return new GuestServiceContext.Context(UUID.randomUUID(),null,null,LocalDate.parse("2030-01-01"),
             LocalDate.parse("2030-01-03"),"IN_HOUSE","CONFIRMED",zone);
     }
     @Test void exactThirtyMinutesAndCheckoutDayAreAcceptedInPropertyTimezone() {

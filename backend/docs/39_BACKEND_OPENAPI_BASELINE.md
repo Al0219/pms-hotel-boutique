@@ -500,3 +500,12 @@ con mappings PASS y sin exclusiones nuevas. No tablas ni migraciones nuevas.
 Ampliación de programación del mismo contrato59: cinco valores permitidos en
 timeSlot de create/edit; GuestStay.timezone requerido desde propiedad autorizada.
 Conteos74/58/96/15 conservados; paridad mappings y campos requeridos verificados.
+
+## Room Service real MVP — EN_QA
+
+[Contrato60](60_ROOM_SERVICE_REAL_MVP.md): cinco operaciones Guest propias para
+catálogo/pedidos/edición/cancelación y dos Staff por propiedad para lectura/ciclo
+OPEN→IN_PROGRESS→DONE. Audiencias, auth/permisos, cuerpos cerrados y errores
+documentados; cantidades enteras1–5 y precios/totales snapshot en GTQ del servidor.
+OpenAPI generado81 operaciones/64paths/104schemas/15tags, paridad mappings PASS.
+Migración aditiva005-operations-005, sin exclusiones nuevas ni datos mock reales.

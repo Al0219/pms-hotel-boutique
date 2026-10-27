@@ -23,7 +23,7 @@ export function StaffShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const role = canonicalStaffRole(session.roleId);
   const staffAdmin = pathname === "/seguridad/usuarios" || pathname.startsWith("/seguridad/usuarios/");
-  const supportsScope = staffAdmin || pathname === "/dashboard" || pathname === "/multi-property" || pathname.startsWith("/multi-property/disponibilidad/") || pathname === '/reservas' || pathname.startsWith('/reservas/') || pathname === '/calendario' || pathname === '/staff/habitaciones' || pathname === '/reportes' || pathname === '/housekeeping';
+  const supportsScope = staffAdmin || pathname === "/dashboard" || pathname === "/multi-property" || pathname.startsWith("/multi-property/disponibilidad/") || pathname === '/reservas' || pathname.startsWith('/reservas/') || pathname === '/calendario' || pathname === '/staff/habitaciones' || pathname === '/reportes' || pathname === '/housekeeping' || pathname === '/room-service';
   const propertyId = process.env.NEXT_PUBLIC_PROPERTY_ID;
   return <div className={`${styles.shell} ${pathname === "/reportes" ? styles.reportsShell : ""}`}>
     <aside className={styles.sidebar} aria-label="Private shell sidebar">

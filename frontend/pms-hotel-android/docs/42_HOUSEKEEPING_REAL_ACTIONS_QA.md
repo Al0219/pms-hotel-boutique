@@ -1,5 +1,10 @@
 # Housekeeping real actions — guía QA42
 
+Actualización vigente: [Room Service real MVP, EN_QA](43_ROOM_SERVICE_REAL_MVP_QA.md)
+implementa catálogo/precios/pedidos persistidos, Guest acciones, Staff ciclo y
+refresco visible. Las menciones históricas de Room Service bloqueado/solo mock
+quedan ampliadas por contrato Backend60; mock y Housekeeping mantienen sus reglas.
+
 ## Corrección final: refresco de estados Android — COMPLETADA / PASS
 
 Rama `fix/android-housekeeping-status-refresh`, worktree

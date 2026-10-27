@@ -106,9 +106,9 @@ it('allows unchanged-schedule notes at 28 minutes using the server cutoff rather
   expect(view.getByTestId('housekeeping-submit').props.accessibilityState.disabled).toBe(false);
 });
 it('reads a Staff-completed state on focus and retains it in completed history', async () => {
-  let rows = [dto];jest.spyOn(nativeGuestClient, 'request').mockImplementation(async () => rows);
+  let rows = [dto];jest.spyOn(nativeGuestClient, 'request').mockImplementation(async path => path.includes('room-service') ? [] : rows);
   const view = await setup();await waitFor(() => expect(view.getByText('Solicitado')).toBeTruthy());
-  rows = [{ ...dto, status: 'DONE' }];await act(async () => { (useFocusEffect as jest.Mock).mock.calls.at(-1)![0](); });
+  rows = [{ ...dto, status: 'DONE' }];await act(async () => { (useFocusEffect as jest.Mock).mock.calls.forEach(([focus]) => focus()); });
   await waitFor(() => expect(view.queryByTestId('housekeeping-request-request-real')).toBeNull());
   await fireEvent.press(view.getByTestId('session-service-request-filter-COMPLETED'));await waitFor(() => expect(view.getByText('Completado')).toBeTruthy());
   expect(view.queryByLabelText(/Marcar.*completado/)).toBeNull();

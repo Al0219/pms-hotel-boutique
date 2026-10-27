@@ -1,3 +1,4 @@
+import { filterPersistedServiceRequests,type ServiceRequestFilter } from '@/modules/service-requests/domain/serviceRequestPresentation';
 import { useEffect, useRef, useState } from 'react';
 import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
@@ -10,8 +11,12 @@ import { useHousekeepingRequests } from './hooks/useHousekeepingRequests';
 import { useCancelHousekeeping } from './hooks/useCancelHousekeeping';
 
 /** Backend is the sole authority; Guest can edit/cancel OPEN requests, never mark them DONE. */
-export function HousekeepingRequestsSection({ filter = 'ALL' }: { filter?: 'ALL' | 'ACTIVE' | 'COMPLETED' | 'REQUESTED' | 'ASSIGNED' }) {
-  const query = useHousekeepingRequests();
+export function HousekeepingRequestsSection({filter='ALL'}:{filter?:ServiceRequestFilter}) {
+  const query=useHousekeepingRequests();
+  return <HousekeepingRequestsContent query={query} filter={filter}/>;
+}
+/** The composed list supplies the existing query, so cards add no observer or HTTP read. */
+export function HousekeepingRequestsContent({query,filter='ALL',showFeedback=true}:{query:ReturnType<typeof useHousekeepingRequests>;filter?:ServiceRequestFilter;showFeedback?:boolean}) {
   const cancellation = useCancelHousekeeping();
   const clock = useAppClock();
   const [target, setTarget] = useState<PersistedHousekeepingRequest | null>(null);
@@ -27,12 +32,12 @@ export function HousekeepingRequestsSection({ filter = 'ALL' }: { filter?: 'ALL'
     inFlight.current = true;
     cancellation.mutate(target, { onSuccess: () => setTarget(null), onError: error => { if (error instanceof HttpError && error.status === 409) setTarget(null); }, onSettled: () => { inFlight.current = false; } });
   }
-  if (query.isPending) return <Text accessibilityLiveRegion="polite" testID="housekeeping-requests-loading">Cargando solicitudes de limpieza…</Text>;
-  if (query.isError && !target) return <View testID="housekeeping-requests-error"><Text>{query.error instanceof NetworkError ? 'Sin conexión. Conéctate para consultar tus solicitudes.' : 'No pudimos consultar tus solicitudes de limpieza.'}</Text>{refresh}</View>;
-  const rows = (query.data ?? []).filter(item => filter === 'ALL' || (filter === 'ACTIVE' ? ['OPEN', 'IN_PROGRESS'].includes(item.status) : filter === 'COMPLETED' ? item.status === 'DONE' : filter === 'REQUESTED' ? item.status === 'OPEN' : false));
-  return <View testID="housekeeping-requests-real">{refresh}
+  if (showFeedback && query.isPending) return <Text accessibilityLiveRegion="polite" testID="housekeeping-requests-loading">Cargando solicitudes de limpieza…</Text>;
+  if (showFeedback && query.isError && !target) return <View testID="housekeeping-requests-error"><Text>{query.error instanceof NetworkError ? 'Sin conexión. Conéctate para consultar tus solicitudes.' : 'No pudimos consultar tus solicitudes de limpieza.'}</Text>{refresh}</View>;
+  const rows = filterPersistedServiceRequests(query.data??[],filter);
+  return <View testID="housekeeping-requests-real">{showFeedback?refresh:null}
     {cancellation.isError && !target ? <Text accessibilityLiveRegion="polite" testID="housekeeping-cancel-error">{conflict ? 'La solicitud cambió o ya no admite cancelación. Actualiza las solicitudes.' : offline ? 'Sin conexión. Reintenta la cancelación.' : 'No pudimos cancelar la solicitud. Reintenta.'}</Text> : null}
-    {rows.length === 0 ? <Text style={styles.empty}>Sin solicitudes de limpieza.</Text> : rows.map(item => {
+    {rows.length === 0 ? showFeedback?<Text style={styles.empty}>Sin solicitudes de limpieza.</Text>:null : rows.map(item => {
       const editable = canModifyPersistedHousekeeping(item, clock.nowMs());
       const card = <View key={item.id} style={styles.card} testID={`housekeeping-request-${item.id}`}><Pressable accessibilityRole={editable ? 'button' : undefined} accessibilityLabel={editable ? 'Editar solicitud de limpieza' : undefined} disabled={!editable || cancellation.isPending}
         onPress={() => router.push({ pathname: '/services/housekeeping', params: { editRequestId: item.id, returnTo: 'requests' } })} style={styles.cardBody} testID={`housekeeping-edit-${item.id}`}>

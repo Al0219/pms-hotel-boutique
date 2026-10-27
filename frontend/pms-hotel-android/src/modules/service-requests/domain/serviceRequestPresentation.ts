@@ -270,3 +270,9 @@ export function canModifyServiceRequest(request: SessionServiceRequest, nowMs: n
   const scheduledAtMs = getServiceRequestScheduledAtMs(request, nowMs);
   return scheduledAtMs === null || nowMs < scheduledAtMs - serviceRequestModificationCutoffMs;
 }
+
+/** Persisted services keep Backend statuses; filtering never turns them into session-only requests. */
+export function filterPersistedServiceRequests<T extends {status:string}>(rows:readonly T[],filter:ServiceRequestFilter):T[] {
+ return rows.filter(row=>filter==='ALL'||(filter==='ACTIVE'?['OPEN','IN_PROGRESS'].includes(row.status):filter==='REQUESTED'?row.status==='OPEN':filter==='COMPLETED'?row.status==='DONE':false));
+}
+export const noRegisteredServicesText = 'No tienes servicios registrados';

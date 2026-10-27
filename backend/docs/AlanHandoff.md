@@ -1,3 +1,53 @@
+## 2026-10-26 — Room Service real MVP — COMPLETADA / PASS manual
+
+El usuario confirma PASS técnico y manual del recorrido Room Service. Se autoriza
+commit, push normal y PR hacia main; no merge. Último ajuste Android: feedback
+único Housekeeping/Room Service, actualización manual compartida y vacíos generales
+coordinados con filtros/carga/error. Conserva polling, acciones y caches existentes.
+13 casos nuevos; regresión focal de seis archivos:81 PASS. Typecheck/ESLint focal
+PASS. Backend59/Web58 previos siguen válidos; no se repiten suites completas.
+Ajuste visual final: PASS técnico / EN_QA visual, sin atribuir QA manual adicional.
+Escenarios adversos no confirmados siguen pendientes según guía43/contrato60.
+Cinco archivos originales preservados fuera del worktree aislado.
+
+## 2026-10-26 — Room Service real MVP — EN_QA
+
+Implementado sobre main8aed2f6/PR171 en feature/android-room-service-real-mvp,
+worktree /tmp/pms-room-service. Contrato60/guíaAndroid43: catálogo por propiedad
+con seis productos GTQ, ServiceRequest ROOM_SERVICE y metadata/líneas snapshot,
+Guest creación/listado/edición/cancelación idempotentes, locks/CAS/audit y ciclo
+Staff con OPS/scope. No precios ni identidad del cliente; no pagos/folio ni
+estados físicos. Zona de propiedad, comidas,30min/cutoff25 y checkout normal;
+late checkout simulado no autoriza. Migración aditiva005-operations-005, historial
+aplicado intacto. Se extraen contexto/polling de Housekeeping sin cambiar reglas.
+Android conserva UX/mock y añade HTTP/historial/acciones/refresco10s; Web Staff
+/room-service con BFF seguro, tabla, confirmaciones, scope y logout cache.
+
+Backend59 PASS únicos (incluye OpenAPI y upgrades/checksums/reaplicación), Android65
+PASS, Web58 PASS; typechecks y ESLint focal PASS. OpenAPI81/64/104/15 y paridad,
+git diff --check. PostgreSQL17 descartable18555, no BD del hotel ni suites completas,
+builds pesados o Docker E2E. Logs/hashes: /tmp/room-service-preservation/.
+Cinco originales preservados; sin commit/push/PR. Housekeeping anterior PASS
+manual confirmado; Room Service y variantes/visual/red siguen EN_QA manual.
+Siguiente: guía43 en Expo Go/Firefox y confirmación explícita antes de publicar.
+
+## 2026-10-26 — Room Service real MVP — EN_PROGRESO
+
+Solicitud explícita: Android→Backend→PostgreSQL→Web Staff, catálogo seis productos
+persistidos por propiedad/preciosGTQ, snapshots, pedidos idempotentes, edición y
+cancelación OPEN/cutoff25min, ciclo Staff con OPERATIONS_MANAGE. Rama
+feature/android-room-service-real-mvp, main8aed2f6 con PR171 fusionado, worktree
+/tmp/pms-room-service. Cinco originales preservados por hashes fuera del repo.
+Dependencias: IMP-AND-0111 UI/mock COMPLETADA y Housekeeping real PASS manual;
+autorización actual amplía a persistencia real sin alterar el XLSX. Android-1 y
+Web-3 conservan ownership de UI; Backend sigue sus contratos/operación existentes.
+Contrato60/guíaAndroid43 documentan el incremento autorizado; sigue EN_QA hasta
+confirmación manual. Migración aditiva005-operations-005, ServiceRequest categoría
+ROOM_SERVICE y catálogo/metadata/líneas estructuradas; sin cargos, folio ni pagos.
+Reusar vínculo/contexto Guest, transiciones/auditoría y polling visible de
+Housekeeping. No aceptar late checkout simulado como derecho servidor. Sin nuevas
+dependencias, commit, push ni PR. Siguiente: pruebas focales y QA manual integrado.
+
 ## 2026-10-26 — Housekeeping actions PASS manual; franjas EN_QA; publicación autorizada
 
 El usuario confirma edición, swipe cancelación, inicio/finalización Staff,
