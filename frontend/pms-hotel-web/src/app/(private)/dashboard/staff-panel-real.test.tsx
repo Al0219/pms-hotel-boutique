@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockServer } from '@/data/mocks/server';
@@ -32,6 +32,51 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); clients.splice(0).forEach(client => client.clear()); vi.unstubAllEnvs(); });
 describe('Staff Panel real data', () => {
+  it('summarizes operational parent states without confusing stays or inventory with availability', async () => {
+    const first = staffReservationFixture();
+    first.stays.push({ ...first.stays[0], stayId: '66666666-6666-6666-6666-666666666666', status: 'CHECKED_OUT' });
+    first.stays[0].status = 'IN_HOUSE';
+    const cancelled = { ...staffReservationFixture(), reservationId: '99999999-9999-9999-9999-999999999999', confirmationCode: 'CANCELLED-BOOKING', status: 'CANCELLED' };
+    mockServer.use(http.get('*/api/staff/reservations', () => HttpResponse.json([first, cancelled])));
+    mount(); await screen.findByLabelText('Resumen de la propiedad');
+    expect(counts()).toEqual(['2', '3', '2']);
+    const states = screen.getByRole('region', { name: 'Estado de las reservas' });
+    expect(within(states).getByText('En estancia')).toBeInTheDocument();
+    expect(within(states).getByText('Cancelada')).toBeInTheDocument();
+    expect(within(states).getAllByText('de 2')).toHaveLength(2);
+    const inventory = screen.getByRole('region', { name: 'Habitaciones por tipo' });
+    expect(within(inventory).getByText('Deluxe real')).toBeInTheDocument();
+    expect(within(inventory).getByText(/El inventario físico no indica disponibilidad/)).toBeInTheDocument();
+    expect(screen.queryByText(/RevPAR|ADR|Ingresos|Ocupación/)).not.toBeInTheDocument();
+  });
+  it('shows only the latest five records in API order with actionable reservation links', async () => {
+    const list = Array.from({ length: 6 }, (_, index) => ({ ...staffReservationFixture(),
+      reservationId: `${String(index + 1).repeat(8)}-aaaa-aaaa-aaaa-aaaaaaaaaaaa`, confirmationCode: `BOOKING-${index + 1}` }));
+    list[0].responsibleGuest = null;
+    list[0].stays = [];
+    mockServer.use(http.get('*/api/staff/reservations', () => HttpResponse.json(list)));
+    mount(); await screen.findByLabelText('Resumen de la propiedad');
+    const recent = screen.getByRole('table');
+    expect(within(recent).getAllByRole('row')).toHaveLength(6);
+    expect(within(recent).queryByText('BOOKING-6')).not.toBeInTheDocument();
+    expect(within(recent).getByText('Huésped sin registrar')).toBeInTheDocument();
+    expect(within(recent).getByText('Duración sin registrar')).toBeInTheDocument();
+    expect(within(recent).getByRole('link', { name: 'Abrir reserva BOOKING-1' })).toHaveAttribute('href', `/reservas/${list[0].reservationId}`);
+    expect(within(recent).getAllByRole('row')[1]).toHaveTextContent('BOOKING-1');
+  });
+  it('refreshes both sources explicitly and hides all previous sections while waiting', async () => {
+    mount(); await screen.findByLabelText('Resumen de la propiedad');
+    let release!: () => void; const gate = new Promise<void>(resolve => { release = resolve; });
+    mockServer.use(http.get('*/api/staff/reservations', async () => { await gate; return HttpResponse.json([]); }));
+    fireEvent.click(screen.getByRole('button', { name: 'Actualizar datos' }));
+    await waitFor(() => expect(screen.queryByRole('table')).not.toBeInTheDocument());
+    expect(screen.queryByLabelText('Resumen de la propiedad')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Actualizando…' })).toBeDisabled();
+    await act(async () => release());
+    await screen.findByText('No hay reservas registradas en esta propiedad.');
+    expect(counts()).toEqual(['0', '0', '2']);
+    expect(reads.filter(url => new URL(url).pathname.endsWith('/rooms'))).toHaveLength(2);
+  });
   it.each(['false', 'true'])('uses real reads with mocks=%s and counts parents independently of N stays', async flag => {
     vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', flag); mount(); await screen.findByLabelText('Resumen de la propiedad');
     expect(counts()).toEqual(['2', '2', String(staffInventoryFixture().rooms.length)]);
