@@ -23,7 +23,7 @@ export const publicHotelContent = {
 export const publicHotelInformation = {
   gallery: { title: 'Galería', text: 'Explora las fotografías de nuestras habitaciones y descubre los espacios que acompañarán tu próxima estadía.' },
   offers: { title: 'Ofertas especiales', text: 'Consulta tus fechas para conocer las tarifas disponibles. Los códigos promocionales requieren validación antes de confirmar una reserva.' },
-  faq: { title: 'Preguntas frecuentes', text: 'Puedes buscar disponibilidad sin iniciar sesión. Para consultar tus reservas necesitas acceder a tu cuenta. Las tarifas y condiciones se muestran en los resultados para las fechas seleccionadas.' },
+  faq: { title: 'Preguntas frecuentes', text: 'Puedes buscar disponibilidad y reservar sin iniciar sesión. Consulta una reserva con el correo y el código de tu comprobante, sin crear una cuenta. Para ver todas tus reservas e historial, crea una cuenta o inicia sesión. Las tarifas y condiciones se muestran en los resultados para las fechas seleccionadas.' },
   privacy: { title: 'Política de privacidad', text: 'La política de privacidad del hotel está pendiente de publicación. Solicita al hotel información sobre el tratamiento de tus datos antes de enviar información personal.' },
   terms: { title: 'Términos y condiciones', text: 'Los términos y condiciones del hotel están pendientes de publicación. Consulta las condiciones de la tarifa antes de confirmar tu reserva.' },
   cookies: { title: 'Política de cookies', text: 'La información sobre cookies del hotel está pendiente de publicación. Las funciones de acceso a la cuenta utilizan cookies de sesión.' },

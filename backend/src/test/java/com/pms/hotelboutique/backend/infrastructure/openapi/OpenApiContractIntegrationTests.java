@@ -219,12 +219,13 @@ class OpenApiContractIntegrationTests {
             boolean guestAuth = route.startsWith("/api/v1/guest-auth/");
             boolean publicAvailability = route.equals("/api/v1/public/availability") && method.getKey().equals("get");
             boolean publicBooking = route.equals("/api/v1/public/bookings") && method.getKey().equals("post");
+            boolean lookup = route.startsWith("/api/v1/public/reservation-lookup/");
             boolean nativeGuest = guestAuth && (route.equals("/api/v1/guest-auth/sessions") || route.equals("/api/v1/guest-auth/refresh")
                     || route.equals("/api/v1/guest-auth/me") || route.equals("/api/v1/guest-auth/session") || route.equals("/api/v1/guest-auth/logout")
                     || route.startsWith("/api/v1/guest-auth/account/"));
-            assertEquals(publicAvailability || publicBooking ? "public" : nativeGuest ? "guest-bff-or-native" : staffAuth || guestAuth ? "internal-bff" : "staff", op.path("x-audience").asText());
+            assertEquals(publicAvailability || publicBooking ? "public" : nativeGuest ? "guest-bff-or-native" : staffAuth || guestAuth || lookup ? "internal-bff" : "staff", op.path("x-audience").asText());
             boolean anonymous = route.endsWith("/google/start") || route.endsWith("/google/exchange")
-                    || route.equals("/api/v1/staff-auth/invitations/consume") || route.equals("/api/v1/auth/sessions") || route.equals("/api/v1/guest-auth/sessions") || route.equals("/api/v1/staff-auth/sessions") || route.equals("/api/v1/staff-auth/login") || route.equals("/api/v1/guest-auth/registrations") || publicAvailability || publicBooking;
+                    || route.equals("/api/v1/staff-auth/invitations/consume") || route.equals("/api/v1/auth/sessions") || route.equals("/api/v1/guest-auth/sessions") || route.equals("/api/v1/staff-auth/sessions") || route.equals("/api/v1/staff-auth/login") || route.equals("/api/v1/guest-auth/registrations") || publicAvailability || publicBooking || lookup;
             if (anonymous) assertTrue(op.path("security").isMissingNode() || op.path("security").isEmpty());
             else {
                 String scheme = route.endsWith("/refresh") ? (staffAuth ? "staffRefreshCookie" : "guestRefreshCookie")
@@ -234,6 +235,29 @@ class OpenApiContractIntegrationTests {
             }
             assertFalse(route.startsWith("/actuator") || route.equals("/error"));
         }));
+    }
+
+    @Test
+    void publicReservationLookupDocumentsSingleReservationWithoutHistoryOrGrant() throws Exception {
+        var doc=document(); String base="/api/v1/public/reservation-lookup";
+        var op=operation(doc,base+"/search","post");
+        assertSuccessSchema(op,"200","PublicReservationLookupResult");
+        var resultSchema=doc.path("components").path("schemas").path("PublicReservationLookupResult");
+        assertEquals(Set.of("stays","details","overview","accommodations"),strings(resultSchema.path("required")));
+        var overview=doc.path("components").path("schemas").path("PublicReservationLookupOverview");
+        assertEquals(Set.of("createdAt","source","currency","confirmedTotalMinor"),strings(overview.path("required")));
+        assertEquals("int64",overview.path("properties").path("confirmedTotalMinor").path("format").asText());
+        assertEquals(Set.of("stayId","roomTypeCode","timezone"),strings(doc.path("components").path("schemas").path("PublicReservationLookupAccommodation").path("required")));
+        assertCodes(op,"200","400","404","429","503");
+        assertTrue(op.path("security").isMissingNode() || op.path("security").isEmpty());
+        var request=doc.path("components").path("schemas").path("PublicReservationLookupSearchRequest");
+        assertFalse(request.path("additionalProperties").asBoolean(true));
+        assertEquals(Set.of("email","confirmationCode"),strings(request.path("required")));
+        assertEquals(320,request.path("properties").path("email").path("maxLength").asInt());
+        assertTrue(request.path("properties").path("confirmationCode").path("writeOnly").asBoolean());
+        for(String removed:List.of("/challenges","/verify","/reservations","/session"))
+            assertFalse(doc.path("paths").has(base+removed));
+        assertFalse(doc.path("components").path("securitySchemes").has("reservationLookupAccess"));
     }
 
     @Test

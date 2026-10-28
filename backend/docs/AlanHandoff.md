@@ -1,3 +1,75 @@
+## 2026-10-28 — Consulta invitada y resumen visual — QA manual PASS / CI pendiente
+
+José confirma «mi QA manual pasa» y autoriza commit/push normal de esta entrega.
+Rama fix/guest-reservations-visibility, base909a12c. Fetch seguro: origin/main
+fa56e3e solo añade el cierre documental Staff176; sin nuevos cambios funcionales.
+No se integra main ni se cambia de rama para publicar.
+
+Aceptación manual del flujo correo+código y galería/resumen: PASS. Backend focal34
+PASS, Web82 cubiertas (81 PASS y1 timeout; recheck del archivo8/8 PASS), lint/
+typecheck/build PASS y Chrome real29/29 PASS. La limpieza final restaura el
+componente de historial de cuenta a HEAD porque el nuevo resumen ya no lo usa.
+Sin tests deshabilitados ni timeouts ampliados. Los gates generales/CI del PR
+siguen pendientes; no se declara COMPLETADA una validación global no ejecutada.
+
+Se publican únicamente consulta62, BFF/Web/galería, migraciones014/015 aditivas ya
+aplicadas e intactas, tests de compatibilidad y documentos de esta funcionalidad.
+Sin secretos, logs, archivos temporales, Android ni cambios de lógica Staff.
+El entorno3001 conserva PostgreSQL y sus datos. Siguiente: revisar checks del PR;
+merge requiere autorización independiente. La autorización de push queda registrada.
+
+## 2026-10-28 — Resumen visual completo de reserva invitada — EN_QA
+
+José aprueba el flujo correo+código y solicita más información y carrusel.
+Misma rama fix/guest-reservations-visibility/base909a12c; corrección incremental
+sobre consulta62. Reutilizar carrusel/editorial existentes por código real del
+tipo, sin consultas de ATS ni nueva persistencia. Mostrar N estancias, estados,
+asignación, noches/fechas, hotel, fecha/canal y monto original si existe receipt.
+Sin PII nueva, ledger, pagos ni tarifas actuales inventadas; no hay desglose o
+adultos/niños guardados en el alta pública actual. UI indica faltantes honestos.
+
+Contrato62 actualizado: overview/accommodations cerrados en BFF y mapper; proyección
+SQL restringida a correo+código. Mostrar original de receipt coherente o null,
+sin modificar su snapshot. Copia/PDF/conversión de visualización. Migraciones014/015
+aplicadas intactas, sin dependencias, secretos ni cambios Android/Staff/alta pública.
+
+Backend focal34 PASS (9 consulta,25 OpenAPI), paridad93/75/124/16. Web
+lint/typecheck PASS. Focal Web81/82 PASS, un timeout5000ms en vinculación
+existente; recheck aislado8/8 PASS sin modificar tests/límites. Galería/resumen/
+moneda/copia/PDF/multi-stay/importe nulo PASS. Build Docker backend/web PASS,
+tres servicios healthy en3001. Chrome real29/29 PASS, fotos reales, flechas/
+miniaturas, precios/moneda, impresión, móvil390 y Guest/Staff sin regresiones.
+No consulta ATS para visualizar el pasado. Reservas16/estancias16/cuenta1/
+vínculo1/movimientos30 y digest financiero conservados; migraciones35 sin cambios. Evidencia56/55/21 anterior
+corresponde a versión mínima; no atribuirla a este incremento. QA manual nuevo pendiente. Gate Web global
+previo conserva timeouts documentados; no ampliar límites ni tocar tests ajenos.
+Sin commit/push/merge. Siguiente: QA manual del resumen nuevo en3001.
+
+## 2026-10-28 — Cambio aprobado: consulta por correo + código — EN_QA
+
+José sustituye explícitamente OTP/historial anónimo por consulta de UNA reserva
+con correo y referencia. Historial completo solo GuestAccount/vínculos existentes.
+Contrato62 y decisión actualizados. Se retiran rutas/código OTP de esta función;
+ninguna modificación de registro/login/vinculación Guest, Staff o Android.
+
+POST Backend/BFF search con SQL restringido a ambos datos y coherencia de propiedad;
+N stays, proyección sin PII/finanzas, cuotas por correo y referencia, error genérico,
+auditoría inmutable003-015. Migración014 aplicada conservada sin cambios. No cambios
+en claves/proveedores ni dependencia de correo/HMAC para la consulta. Web mantiene
+el estilo y cuenta opcional para historial; resultados solo en memoria/15min.
+
+Backend focal56 PASS, incluidas7 de consulta y25 de OpenAPI; paridad93/75/122/16.
+Upgrade/idempotencia/checksums PASS. Los1170 anteriores son históricos.
+Web focal final55 PASS en8 archivos, Node24/Linux, sin ampliar timeouts.
+Lint/typecheck PASS. Reintentos con compilación concurrente excedieron tiempos;
+la ejecución final aislada conserva todos los tests/assertions y queda verde.
+Gate Web general previo tuvo5 timeouts ajenos (2 reproducidos en base); no se
+declara resuelto ni se repite global. Build backend/web PASS, Compose raíz
+actualizado: tres servicios healthy, puerto3001. Chrome real21/21 PASS: consulta
+de reserva persistida sin OTP, detalles, scope por ambos datos, móvil390 y
+Guest/Staff separados. Sin nuevas reservas/pagos; conteos y huella financiera
+idénticos, migraciones34→35 (solo015). QA manual pendiente. Sin commit/push/merge.
+
 ## 2026-10-27 — Amenidades real MVP y UX Android/Web — COMPLETADA / PASS manual
 
 El usuario confirma aprobación del desarrollo y QA de Amenidades, Android y Web Staff,

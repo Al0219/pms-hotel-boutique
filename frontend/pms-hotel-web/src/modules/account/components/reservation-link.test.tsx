@@ -34,9 +34,9 @@ async function verify(otp = '12345678') {
 }
 
 describe('Guest reservation link demonstration', () => {
-  it('redirects anonymous visitors to contextual access without showing private records', async () => {
-    mount(); await waitFor(() => expect(replace).toHaveBeenCalledWith('/acceso?returnTo=%2Fmis-reservas'));
-    expect(screen.queryByRole('heading', { name: 'Mis reservas' })).not.toBeInTheDocument();
+  it('offers anonymous email and reference lookup without showing private records', async () => {
+    mount(); await screen.findByLabelText('Correo utilizado al reservar'); expect(replace).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', { name: 'Mis reservas' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Referencia de reserva')).not.toBeInTheDocument();
   });
   it('validates, rejects a wrong code and links multiple reservations only after verification', async () => {
