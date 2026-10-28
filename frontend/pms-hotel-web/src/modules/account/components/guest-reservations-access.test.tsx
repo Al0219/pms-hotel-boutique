@@ -35,19 +35,20 @@ describe('Guest reservation access restoration', () => {
     expect(prematureRedirects).toHaveLength(0);
     expect(router.replace).not.toHaveBeenCalled();
   });
-  it('keeps a recoverable session failure on the Guest screen instead of opening another auth context', async () => {
+  it('keeps accountless lookup available when the independent Guest session check fails', async () => {
     mockServer.use(http.get('*/api/auth/guest/session', () => new HttpResponse(null, { status: 503 })));
     mount();
-    expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos comprobar tu sesión');
-    expect(screen.getByRole('button', { name: 'Reintentar sesión' })).toBeInTheDocument();
+    expect(await screen.findByLabelText('Correo utilizado al reservar')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Ya tengo una cuenta' })).toHaveAttribute('href', '/acceso?returnTo=%2Fmis-reservas');
     expect(router.replace).not.toHaveBeenCalled();
   });
-  it('opens contextual Guest access only after a definitive signed-out result', async () => {
+  it('opens email and reference lookup without requiring an account after a signed-out result', async () => {
     mockServer.use(http.get('*/api/auth/guest/session', () => new HttpResponse(null, { status: 401 })),
       http.post('*/api/auth/guest/refresh', () => new HttpResponse(null, { status: 401 })));
     mount();
-    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/acceso?returnTo=%2Fmis-reservas'));
+    await screen.findByLabelText('Correo utilizado al reservar');
+    expect(router.replace).not.toHaveBeenCalled();
     expect(router.replace).not.toHaveBeenCalledWith('/dashboard');
-    expect(screen.queryByRole('heading', { name: 'Mis reservas' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Mis reservas' })).toBeInTheDocument();
   });
 });

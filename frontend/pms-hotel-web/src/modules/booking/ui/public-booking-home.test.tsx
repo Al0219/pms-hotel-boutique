@@ -97,7 +97,7 @@ describe('Public 01 landing interactions', () => {
     expect(within(navigation).getByRole('link', { name: 'Habitaciones' })).toHaveAttribute('href', '/#habitaciones');
     expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/acceso');
     expect(within(navigation).queryByRole('link', { name: 'Iniciar sesión' })).not.toBeInTheDocument();
-    expect(within(navigation).getByRole('link', { name: 'Mis reservas' })).toHaveAttribute('href', '/acceso?returnTo=%2Fmis-reservas');
+    expect(within(navigation).getByRole('link', { name: 'Mis reservas' })).toHaveAttribute('href', '/mis-reservas');
     const toggle = screen.getByRole('button', { name: /Menú/ });
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
@@ -115,7 +115,7 @@ describe('Public 01 landing interactions', () => {
   });
   it('keeps navigation public and directs signed-in Guests to their linked reservations', () => {
     const view = render(<PublicBookingShell><p>Contenido público</p></PublicBookingShell>);
-    expect(screen.getByRole('link', { name: 'Mis reservas' })).toHaveAttribute('href', '/acceso?returnTo=%2Fmis-reservas');
+    expect(screen.getByRole('link', { name: 'Mis reservas' })).toHaveAttribute('href', '/mis-reservas');
     expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/acceso');
     guestAccount = { id: 'guest-demo', email: 'demo@example.com', externalIdentities: [] };
     view.rerender(<PublicBookingShell><p>Contenido público</p></PublicBookingShell>);
@@ -125,7 +125,7 @@ describe('Public 01 landing interactions', () => {
     expect(screen.queryByRole('link', { name: 'Iniciar sesión' })).not.toBeInTheDocument();
     guestAccount = null;
     view.rerender(<PublicBookingShell><p>Contenido público</p></PublicBookingShell>);
-    expect(screen.getByRole('link', { name: 'Mis reservas' })).toHaveAttribute('href', '/acceso?returnTo=%2Fmis-reservas');
+    expect(screen.getByRole('link', { name: 'Mis reservas' })).toHaveAttribute('href', '/mis-reservas');
     expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/acceso');
   });
   it('keeps customer-facing footer copy and opens social and FAQ information', () => {
@@ -135,7 +135,8 @@ describe('Public 01 landing interactions', () => {
     expect(screen.getByRole('dialog', { name: 'Instagram' })).toHaveTextContent('Descubre nuestras habitaciones');
     fireEvent.click(screen.getByRole('button', { name: 'Cerrar' }));
     fireEvent.click(screen.getByRole('button', { name: 'Preguntas frecuentes (FAQ)' }));
-    expect(screen.getByRole('dialog')).toHaveTextContent('Para consultar tus reservas necesitas acceder');
+    expect(screen.getByRole('dialog')).toHaveTextContent('Consulta una reserva con el correo y el código de tu comprobante');
+    expect(screen.getByRole('dialog')).toHaveTextContent('Para ver todas tus reservas e historial, crea una cuenta o inicia sesión');
   });
   it('shows floating search only after the original scrolls above the viewport and uses the current draft', async () => {
     let notify!: (intersecting: boolean, top: number) => void;

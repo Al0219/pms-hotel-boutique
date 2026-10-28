@@ -2,7 +2,7 @@
 
 import { GuestReservationsPage } from '@/modules/account';
 
-/** Canonical public entry; Account owns the linked-only history and verification flow. */
+/** Public entry; Account owns email/code lookup and the authenticated account history. */
 export function MyReservationsPage() {
   return <GuestReservationsPage />;
 }

@@ -460,3 +460,29 @@ simula un pago para saldar la reserva. Asignar Room y realizar check-in siguen
 como acciones separadas: DIRTY bloquea asignar e INSPECTED es obligatorio para
 entregar. La deuda mantiene el bloqueo de checkout aprobado. Contrato55 detalla
 el incremento; no amplía los permisos financieros generales de Recepción.
+
+### Consulta de una reserva sin cuenta mediante correo y código
+
+**Fecha:** 2026-10-28. **Status:** APPROVED por José. Sustituye su decisión
+anterior de OTP y lectura de todas las reservas por correo, aún no publicada.
+El invitado introduce correo responsable + referencia exacta y consulta solo
+esa Reservation, incluidas sus N ReservationStay. Para ver todo el historial
+se requiere cuenta Guest y los vínculos verificados existentes C3/56/57.
+
+La combinación acredita conocimiento, no posesión verificada del buzón. Por eso
+se limita a referencia/hotel/fechas/estado/tipo/habitación; sin datos personales,
+documentos, notas internas ni finanzas. No permite acciones ni crea cuenta,
+sesión o vínculos. SQL aplica ambos datos antes de leer; error genérico y cuotas
+por correo y referencia protegen de búsquedas masivas. Sin correo SMTP/Resend,
+OTP ni claves nuevas para esta consulta; registro/vinculación Guest no cambian.
+
+Contrato [Backend62](../backend/docs/62_PUBLIC_RESERVATION_LOOKUP_CONTRACT.md):
+POST cerrado/no-store, auditoría append-only aditiva y datos solo en memoria.
+Migraciones ya aplicadas se conservan. La implementación permanece EN_QA hasta
+validaciones de esta versión y aprobación manual; sin publicación automática.
+
+Ampliación de consulta62 aprobada por José2026-10-28: resumen visual de N habitaciones
+con galería editorial por código, fecha/canal/moneda y total original del comprobante
+público coherente, opcional. No concede lectura de folio/pagos ni de datos personales;
+no estima tarifas actuales para reconstruir importes históricos ni inventa ocupación.
+No altera la prueba correo+código, el acceso al historial por cuenta o sus vínculos.

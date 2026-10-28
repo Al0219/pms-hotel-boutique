@@ -73,8 +73,9 @@ class StaffAuthAuditAttributionIntegrationTests {
                 String trigger = triggerDefinition(connection, schema);
                 migrate(schema, MASTER);
                 var upgraded = manifest(connection, schema);
-                // Includes additive Housekeeping004 and Room Service005; prior checksums stay immutable.
-                assertEquals(checksums.size() + 10, upgraded.size());
+                // Every current changeset and checksum must be present after upgrading the historical schema.
+                assertEquals(manifest(connection, "public"), upgraded);
+                assertTrue(upgraded.keySet().stream().anyMatch(key -> key.startsWith("003-public-reservation-lookup-014\n")));
                 assertTrue(upgraded.keySet().stream().anyMatch(key -> key.startsWith("005-operations-004\n")));
                 assertTrue(upgraded.keySet().stream().anyMatch(key -> key.startsWith("005-operations-005\n")));
                 assertTrue(upgraded.keySet().stream().anyMatch(key -> key.startsWith("005-operations-006\n")));

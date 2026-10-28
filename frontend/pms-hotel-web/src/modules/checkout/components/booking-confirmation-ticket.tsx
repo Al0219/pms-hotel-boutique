@@ -24,7 +24,7 @@ export function BookingConfirmationTicket({ confirmation, guest, criteria, curre
     <p className={styles.note}>Guarda este comprobante y tu código de reserva para consultar los detalles de tu estadía.</p>
     <div className={styles.actions}><Link className={styles.secondary} href="/mis-reservas">Ver mis reservas <span aria-hidden="true">↗</span></Link><button type="button" className={styles.secondary} onClick={actions.printReceipt}>Imprimir / Guardar PDF</button><button type="button" className={styles.secondary} onClick={actions.downloadCalendar}>Agregar al calendario (.ics)</button></div>
     <p className={`${styles.note} ${styles.exportNote}`}>La impresión permite guardar un PDF desde tu navegador. El calendario es compatible con importación en Google Calendar e iCal.</p>
-    <div className={styles.next}><h3>¿Reservaste como invitado?</h3><p>Tu reserva no requiere una cuenta. Para consultarla desde «Mis reservas», inicia sesión y vincúlala con tu código de reserva y la verificación de tu correo.</p></div>
+    <div className={styles.next}><h3>¿Reservaste como invitado?</h3><p>Tu reserva no requiere una cuenta. En «Mis reservas» puedes consultar esta reserva con el correo y el código de tu comprobante, sin iniciar sesión. Para ver todas tus reservas e historial, crea una cuenta o accede a la que ya tienes.</p></div>
     {actions.feedback && <p className={styles.toast} role="status">{actions.feedback}</p>}
   </section>;
 }

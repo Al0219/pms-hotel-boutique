@@ -1,5 +1,24 @@
 # 39 — Baseline OpenAPI/Swagger Backend
 
+Ampliación62 EN_QA: lookup200 incluye overview y accommodations requeridos, montos
+originales opcionales y código/timezone por stay. Esquemas separados; GuestStay
+compartido no cambia. Paridad93/75/124/16 PASS, OpenAPI25 y consulta9 PASS.
+Sin operaciones nuevas ni exclusiones; expansión de respuesta confirmada por usuario.
+
+## Consulta por correo + código (2026-10-28) — EN_QA
+
+Contrato62 sustituye seis operaciones OTP/listado/grant aún no publicadas por
+una operación POST /api/v1/public/reservation-lookup/search, audiencia internal-bff,
+sin JWT ni security scheme propio. Ambas credenciales obligatorias en JSON cerrado,
+200 de UNA reserva con N stays/detalles, errores400/404/429/503 y private/no-store.
+No cambia autorización Guest/Staff ni expone historial por correo. Proyección
+limitada; OpenAPI requiere paridad completa con mappings, sin exclusiones nuevas.
+Paridad generada: 93 operaciones/75 paths/122 schemas/16 tags; OpenAPI25 PASS.
+Validación focal Backend56 PASS (consulta, OpenAPI y upgrade/idempotencia).
+Los conteos98/80/125/16 y1170 tests del flujo anterior son históricos; la suite
+completa no se repite como parte de este ajuste. Integración visible3001:21 PASS;
+QA manual del usuario pendiente.
+
 ## Android Housekeeping real MVP (2026-10-26) — COMPLETADA / PASS funcional
 
 Contrato58 agrega POST/GET Guest de housekeeping-requests por reserva/estancia y

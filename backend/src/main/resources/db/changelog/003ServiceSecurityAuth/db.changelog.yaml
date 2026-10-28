@@ -38,3 +38,9 @@ databaseChangeLog:
   - include:
       file: 013-account-verification-evidence.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 014-public-reservation-lookup.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 015-public-reservation-query.yaml
+      relativeToChangelogFile: true
