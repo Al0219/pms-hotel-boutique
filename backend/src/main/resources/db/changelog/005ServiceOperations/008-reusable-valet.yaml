@@ -1,0 +1,160 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-operations-008
+      author: alan
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE valet_saved_vehicles (
+                id uuid PRIMARY KEY, guest_account_id uuid NOT NULL REFERENCES guest_accounts(id),
+                make varchar(40) NOT NULL CHECK(btrim(make)<>''), model varchar(40) NOT NULL CHECK(btrim(model)<>''),
+                plate_prefix varchar(3) NOT NULL CHECK(plate_prefix IN ('P','A','C','TE','U','TRC','M','MT','TC','O','CD','CC','MI','DIS')),
+                plate_body varchar(6) NOT NULL CHECK(plate_body ~ '^[0-9]{2,3}[A-Z]{3}$'), color varchar(30),
+                created_at timestamptz NOT NULL, updated_at timestamptz NOT NULL,
+                UNIQUE(guest_account_id,plate_prefix,plate_body), UNIQUE(id,guest_account_id)
+              );
+              INSERT INTO valet_saved_vehicles(id,guest_account_id,make,model,plate_prefix,plate_body,color,created_at,updated_at)
+              SELECT DISTINCT ON (guest_account_id,plate_prefix,plate_body)
+                first_value(id) OVER (PARTITION BY guest_account_id,plate_prefix,plate_body ORDER BY created_at,id),
+                guest_account_id,make,model,plate_prefix,plate_body,color,
+                min(created_at) OVER (PARTITION BY guest_account_id,plate_prefix,plate_body),updated_at
+              FROM valet_vehicles ORDER BY guest_account_id,plate_prefix,plate_body,updated_at DESC,id;
+              ALTER TABLE valet_vehicles ADD COLUMN saved_vehicle_id uuid;
+              ALTER TABLE valet_vehicles ADD COLUMN operational_active boolean NOT NULL DEFAULT false;
+              ALTER TABLE valet_vehicles ADD COLUMN release_expected_version timestamptz;
+              UPDATE valet_vehicles v SET saved_vehicle_id=s.id FROM valet_saved_vehicles s
+                WHERE s.guest_account_id=v.guest_account_id AND s.plate_prefix=v.plate_prefix AND s.plate_body=v.plate_body;
+              ALTER TABLE valet_vehicles ALTER COLUMN saved_vehicle_id SET NOT NULL;
+              ALTER TABLE valet_vehicles ADD CONSTRAINT fk_valet_saved_owner FOREIGN KEY(saved_vehicle_id,guest_account_id) REFERENCES valet_saved_vehicles(id,guest_account_id);
+              ALTER TABLE valet_vehicles ADD CONSTRAINT uq_valet_saved_stay UNIQUE(saved_vehicle_id,stay_id);
+              ALTER TABLE valet_vehicles ADD CONSTRAINT uq_valet_association_saved UNIQUE(id,saved_vehicle_id);
+              ALTER TABLE valet_requests ADD COLUMN saved_vehicle_id uuid;
+              UPDATE valet_requests q SET saved_vehicle_id=v.saved_vehicle_id FROM valet_vehicles v WHERE v.id=q.vehicle_id;
+              ALTER TABLE valet_requests ALTER COLUMN saved_vehicle_id SET NOT NULL;
+              ALTER TABLE valet_requests ADD CONSTRAINT fk_valet_request_saved FOREIGN KEY(vehicle_id,saved_vehicle_id) REFERENCES valet_vehicles(id,saved_vehicle_id);
+              UPDATE valet_vehicles v SET operational_active=(v.location='PARKED'
+                OR EXISTS(SELECT 1 FROM valet_requests q WHERE q.vehicle_id=v.id AND q.active)
+                OR EXISTS(SELECT 1 FROM reservation_stays s JOIN reservations r ON r.id=s.reservation_id
+                    WHERE s.id=v.stay_id AND r.status='CONFIRMED' AND s.status IN ('RESERVED','IN_HOUSE')));
+        - sql:
+            splitStatements: false
+            sql: |
+              DO $body$ BEGIN
+                IF EXISTS(SELECT 1 FROM valet_vehicles WHERE operational_active GROUP BY saved_vehicle_id HAVING count(*)>1)
+                  OR EXISTS(SELECT 1 FROM valet_requests WHERE active GROUP BY saved_vehicle_id HAVING count(*)>1) THEN
+                  RAISE EXCEPTION 'Valet upgrade requires explicit reconciliation of incompatible operational associations; no history was deleted';
+                END IF;
+              END; $body$;
+        - sql:
+            sql: |
+              CREATE UNIQUE INDEX uq_valet_operational_saved ON valet_vehicles(saved_vehicle_id) WHERE operational_active;
+              CREATE UNIQUE INDEX uq_valet_request_active_saved ON valet_requests(saved_vehicle_id) WHERE active;
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE FUNCTION guard_valet_association() RETURNS trigger LANGUAGE plpgsql AS $body$
+              DECLARE eligible boolean; saved valet_saved_vehicles%ROWTYPE;
+              BEGIN
+                SELECT * INTO saved FROM valet_saved_vehicles WHERE id=NEW.saved_vehicle_id AND guest_account_id=NEW.guest_account_id FOR UPDATE;
+                IF NOT FOUND THEN RAISE EXCEPTION 'Valet saved owner mismatch' USING ERRCODE='23514'; END IF;
+                IF TG_OP='UPDATE' AND (NEW.id<>OLD.id OR NEW.saved_vehicle_id<>OLD.saved_vehicle_id OR NEW.stay_id<>OLD.stay_id
+                    OR NEW.property_id<>OLD.property_id OR NEW.guest_account_id<>OLD.guest_account_id) THEN
+                  RAISE EXCEPTION 'Valet association identity is immutable' USING ERRCODE='23514';
+                END IF;
+                SELECT (r.status='CONFIRMED' AND s.status IN ('RESERVED','IN_HOUSE')) INTO eligible
+                  FROM reservation_stays s JOIN reservations r ON r.id=s.reservation_id AND r.property_id=s.property_id
+                  WHERE s.id=NEW.stay_id AND s.property_id=NEW.property_id;
+                IF NOT FOUND THEN RAISE EXCEPTION 'Valet stay context mismatch' USING ERRCODE='23514'; END IF;
+                IF TG_OP='INSERT' THEN
+                  NEW.make:=saved.make; NEW.model:=saved.model; NEW.plate_prefix:=saved.plate_prefix; NEW.plate_body:=saved.plate_body; NEW.color:=saved.color;
+                ELSIF ROW(NEW.make,NEW.model,NEW.plate_prefix,NEW.plate_body,NEW.color) IS DISTINCT FROM ROW(OLD.make,OLD.model,OLD.plate_prefix,OLD.plate_body,OLD.color)
+                    AND (NOT eligible OR EXISTS(SELECT 1 FROM valet_requests WHERE saved_vehicle_id=NEW.saved_vehicle_id AND active)) THEN
+                  RAISE EXCEPTION 'Valet historical or active-request vehicle data cannot change' USING ERRCODE='23514';
+                END IF;
+                NEW.operational_active:=eligible OR NEW.location='PARKED' OR EXISTS(SELECT 1 FROM valet_requests WHERE vehicle_id=NEW.id AND active);
+                RETURN NEW;
+              END; $body$;
+        - sql:
+            sql: CREATE TRIGGER valet_association_guard BEFORE INSERT OR UPDATE ON valet_vehicles FOR EACH ROW EXECUTE FUNCTION guard_valet_association();
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE OR REPLACE FUNCTION guard_valet_request() RETURNS trigger LANGUAGE plpgsql AS $body$
+              DECLARE current_status text; saved_id uuid;
+              BEGIN
+                SELECT saved_vehicle_id INTO saved_id FROM valet_vehicles WHERE id=NEW.vehicle_id AND stay_id=NEW.stay_id AND property_id=NEW.property_id AND guest_account_id=NEW.guest_account_id;
+                IF NOT FOUND OR (NEW.saved_vehicle_id IS NOT NULL AND NEW.saved_vehicle_id<>saved_id) THEN
+                  RAISE EXCEPTION 'Valet request association mismatch' USING ERRCODE='23514';
+                END IF;
+                PERFORM 1 FROM valet_saved_vehicles WHERE id=saved_id FOR UPDATE;
+                IF TG_OP='UPDATE' AND (NEW.vehicle_snapshot IS DISTINCT FROM OLD.vehicle_snapshot OR
+                  NEW.vehicle_id<>OLD.vehicle_id OR NEW.stay_id<>OLD.stay_id OR NEW.property_id<>OLD.property_id OR
+                  NEW.guest_account_id<>OLD.guest_account_id OR NEW.request_key<>OLD.request_key OR
+                  NEW.initial_payload_hash<>OLD.initial_payload_hash OR NEW.saved_vehicle_id<>OLD.saved_vehicle_id) THEN
+                  RAISE EXCEPTION 'Valet identity and snapshot are immutable';
+                END IF;
+                SELECT status INTO current_status FROM service_requests WHERE id=NEW.id AND stay_id=NEW.stay_id AND property_id=NEW.property_id AND category='VALET' FOR UPDATE;
+                IF NOT FOUND THEN RAISE EXCEPTION 'Valet service context mismatch'; END IF;
+                NEW.saved_vehicle_id:=saved_id;
+                NEW.active:=current_status IN ('OPEN','IN_PROGRESS');
+                RETURN NEW;
+              END; $body$;
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE FUNCTION sync_valet_association_request() RETURNS trigger LANGUAGE plpgsql AS $body$
+              BEGIN
+                UPDATE valet_vehicles SET operational_active=operational_active WHERE id=NEW.vehicle_id;
+                RETURN NEW;
+              END; $body$;
+        - sql:
+            sql: CREATE TRIGGER valet_association_request AFTER INSERT OR UPDATE OF active ON valet_requests FOR EACH ROW EXECUTE FUNCTION sync_valet_association_request();
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE FUNCTION sync_valet_association_stay() RETURNS trigger LANGUAGE plpgsql AS $body$
+              BEGIN
+                UPDATE valet_vehicles SET operational_active=operational_active WHERE stay_id=NEW.id;
+                RETURN NEW;
+              END; $body$;
+        - sql:
+            sql: CREATE TRIGGER valet_stay_status AFTER UPDATE OF status ON reservation_stays FOR EACH ROW EXECUTE FUNCTION sync_valet_association_stay();
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE FUNCTION sync_valet_association_reservation() RETURNS trigger LANGUAGE plpgsql AS $body$
+              BEGIN
+                UPDATE valet_vehicles SET operational_active=operational_active WHERE stay_id IN (SELECT id FROM reservation_stays WHERE reservation_id=NEW.id);
+                RETURN NEW;
+              END; $body$;
+        - sql:
+            sql: CREATE TRIGGER valet_reservation_status AFTER UPDATE OF status ON reservations FOR EACH ROW EXECUTE FUNCTION sync_valet_association_reservation();
+      rollback:
+        - sql:
+            sql: |
+              DROP TRIGGER valet_reservation_status ON reservations;
+              DROP FUNCTION sync_valet_association_reservation();
+              DROP TRIGGER valet_stay_status ON reservation_stays;
+              DROP FUNCTION sync_valet_association_stay();
+              DROP TRIGGER valet_association_request ON valet_requests;
+              DROP FUNCTION sync_valet_association_request();
+              DROP TRIGGER valet_association_guard ON valet_vehicles;
+              DROP FUNCTION guard_valet_association();
+              DROP INDEX uq_valet_request_active_saved;
+              DROP INDEX uq_valet_operational_saved;
+              ALTER TABLE valet_requests DROP COLUMN saved_vehicle_id;
+              ALTER TABLE valet_vehicles DROP COLUMN saved_vehicle_id;
+              ALTER TABLE valet_vehicles DROP COLUMN operational_active;
+              ALTER TABLE valet_vehicles DROP COLUMN release_expected_version;
+              DROP TABLE valet_saved_vehicles;
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE OR REPLACE FUNCTION guard_valet_request() RETURNS trigger LANGUAGE plpgsql AS $body$
+              DECLARE current_status text;
+              BEGIN
+                IF TG_OP='UPDATE' AND (NEW.vehicle_snapshot IS DISTINCT FROM OLD.vehicle_snapshot OR NEW.vehicle_id<>OLD.vehicle_id OR NEW.stay_id<>OLD.stay_id OR NEW.property_id<>OLD.property_id OR NEW.guest_account_id<>OLD.guest_account_id OR NEW.request_key<>OLD.request_key OR NEW.initial_payload_hash<>OLD.initial_payload_hash) THEN RAISE EXCEPTION 'Valet identity and snapshot are immutable'; END IF;
+                SELECT status INTO current_status FROM service_requests WHERE id=NEW.id AND stay_id=NEW.stay_id AND property_id=NEW.property_id AND category='VALET' FOR UPDATE;
+                IF NOT FOUND THEN RAISE EXCEPTION 'Valet service context mismatch'; END IF;
+                NEW.active:=current_status IN ('OPEN','IN_PROGRESS'); RETURN NEW;
+              END; $body$;

@@ -34,6 +34,25 @@ class OpenApiContractIntegrationTests {
     @Autowired ObjectMapper json;
     @Autowired @Qualifier("requestMappingHandlerMapping") RequestMappingHandlerMapping mappings;
 
+    @Test void valetDocumentsGuestOwnershipStaffCustodyAndClosedBodies()throws Exception{
+        var doc=document();String guest="/api/v1/guest-auth/account/reservations/{reservationId}/stays/{stayId}";
+        for(String resource:List.of("/valet-vehicles","/valet-requests")){
+            var op=operation(doc,guest+resource,"post");assertTrue(op.path("security").get(0).has("guestBearerAuth"));assertCodes(op,"200","201","400","401","404","409");
+            assertTrue(java.util.stream.StreamSupport.stream(op.path("parameters").spliterator(),false).anyMatch(p->p.path("name").asText().equals("Idempotency-Key")&&p.path("required").asBoolean()));
+        }
+        var staff=operation(doc,"/api/v1/properties/{propertyId}/service-requests/valet/{requestId}/status","put");assertCodes(staff,"200","400","401","403","404","409");assertTrue(staff.path("description").asText().contains("PARKED"));
+        var returned=operation(doc,"/api/v1/properties/{propertyId}/valet-vehicles/{vehicleId}/return","post");assertTrue(returned.path("security").get(0).has("bearerAuth"));
+        var schemas=doc.path("components").path("schemas");for(String name:List.of("ValetVehicleInput","ValetVehicleEdit","ValetRequestInput","ValetRequestEdit","ValetVersion","ValetStaffTransition","ValetAssociationInput"))assertFalse(schemas.path(name).path("additionalProperties").asBoolean(true));
+        for(String field:List.of("reservationId","confirmationCode","roomCode","stayStatus","reservationStatus","stayActive","operationallyVisible","savedVehicleId","canRelease"))assertTrue(schemas.path("ValetVehicle").path("properties").has(field));
+        var saved=operation(doc,"/api/v1/guest-auth/account/valet-vehicles","get");assertTrue(saved.path("security").get(0).has("guestBearerAuth"));assertCodes(saved,"200","401");
+        var associated=operation(doc,guest+"/valet-vehicles/associate","post");assertCodes(associated,"200","201","400","401","404","409");assertTrue(parameter(associated,"Idempotency-Key").path("required").asBoolean());
+        var released=operation(doc,"/api/v1/properties/{propertyId}/valet-vehicles/{vehicleId}/release","post");assertCodes(released,"200","400","401","403","404","409");assertTrue(released.path("security").get(0).has("bearerAuth"));
+        for(var op:List.of(associated,released))for(String code:List.of("400","404","409"))assertEquals("#/components/schemas/ProblemDetail",op.path("responses").path(code).path("content").path("application/problem+json").path("schema").path("$ref").asText());
+        for(String forbidden:List.of("propertyId","stayId","location","guestAccountId","requests"))assertFalse(schemas.path("ValetSavedVehicle").path("properties").has(forbidden));
+        assertEquals(Set.of("savedVehicleId","expectedVehicleUpdatedAt","location"),strings(schemas.path("ValetAssociationInput").path("required")));
+        assertFalse(schemas.path("ValetVehicleEdit").path("properties").has("location"));assertFalse(schemas.path("ValetRequestEdit").path("properties").has("vehicleId"));
+    }
+
     @Test
     void staffFolioHasScopedMoneyAndIdempotentPaymentContract() throws Exception {
         var doc = document(); String base = "/api/v1/properties/{propertyId}/folios";

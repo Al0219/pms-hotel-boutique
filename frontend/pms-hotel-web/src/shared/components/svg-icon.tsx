@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 
 export function SvgIcon({ name, className, style }: {
-  name: 'home' | 'cleaning' | 'dining' | 'gift' | 'reports' | 'dashboard' | 'reservations' | 'room' | 'logout' | 'calendar' | 'guests' | 'account' | 'arrow' | 'chevron' | 'location' | 'phone' | 'mail' | 'facebook' | 'x' | 'instagram' | 'cart' | 'check';
+  name: 'vehicle' | 'home' | 'cleaning' | 'dining' | 'gift' | 'reports' | 'dashboard' | 'reservations' | 'room' | 'logout' | 'calendar' | 'guests' | 'account' | 'arrow' | 'chevron' | 'location' | 'phone' | 'mail' | 'facebook' | 'x' | 'instagram' | 'cart' | 'check';
   className?: string;
   style?: CSSProperties;
 }) {
@@ -21,6 +21,7 @@ export function SvgIcon({ name, className, style }: {
     {name === 'account' && <><circle cx="12" cy="8" r="3.5" /><path d="M5 21v-2a7 7 0 0 1 14 0v2" /></>}
     {name === 'arrow' && <path d="M4 12h16m-6-6 6 6-6 6" />}
     {name === 'chevron' && <path d="m6 9 6 6 6-6" />}
+    {name === 'vehicle' && <><path d="M4 11l2-6h12l2 6M3 11h18v7H3zM6 18v3M18 18v3M6 14h2M16 14h2" /></>}
     {name === 'cart' && <><path d="M2 3h3l3 13h11l3-10H6" /><circle cx="9" cy="21" r="1" /><circle cx="19" cy="21" r="1" /></>}
     {name === 'check' && <path d="m5 12 4 4L19 6" />}
     {name === 'location' && <><path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></>}

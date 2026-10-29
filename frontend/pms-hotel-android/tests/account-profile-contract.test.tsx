@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {createTestQueryClient} from '../src/test/queryClient';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Pressable, Text, View } from 'react-native';
 
@@ -9,7 +10,7 @@ import { MockAccountProfileService } from '@/modules/account/profile/data/mocks/
 import { type AccountProfileService } from '@/modules/account/profile/data/services/AccountProfileService';
 import { accountProfileQueryKey, useAccountProfile, useUpdateAccountProfile } from '@/modules/account/profile/presentation/hooks/useAccountProfile';
 
-function client() { return new QueryClient({ defaultOptions: { mutations: { retry: false }, queries: { gcTime: 0, retry: false } } }); }
+function client() { return createTestQueryClient({ defaultOptions: { mutations: { retry: false }, queries: { gcTime: 0, retry: false } } }); }
 function deferred<T>() { let resolve: (value: T) => void = () => undefined; const promise = new Promise<T>((done) => { resolve = done; }); return { promise, resolve }; }
 const updateInput = { profile: { languageText: 'Español', bedPreferenceText: 'King', roomPreferenceText: 'Jardín', floorPreferenceText: 'Alto', avoidPreferenceText: 'Zonas ruidosas' }, marketingSmsConsent: 'revoked' as const };
 function Harness({ service }: { service: AccountProfileService }) {

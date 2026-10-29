@@ -1,0 +1,21 @@
+import {DomainMappingError} from '@/lib/errors/domain-mapping-error';
+import type {PersistedValetDto,PersistedVehicleDto,VehicleSnapshotDto} from '../dtos/persisted-valet.dto';
+import type {PersistedValet,PersistedVehicle} from '../model/persisted-valet';
+const uuid=/^[a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12}$/i;
+const text=(v:unknown,max:number)=>typeof v==='string'&&v.trim().length>0&&v.length<=max;
+function invalid():never{throw new DomainMappingError('INVALID_VALET');}
+function snapshot(r:VehicleSnapshotDto){if(!r||!text(r.make,40)||!text(r.model,40)||!['P','A','C','TE','U','TRC','M','MT','TC','O','CD','CC','MI','DIS'].includes(r.platePrefix)||!/^\d{2,3}[A-Z]{3}$/.test(r.plateBody)||!(r.color===null||text(r.color,30)))return invalid();return {make:r.make,model:r.model,platePrefix:r.platePrefix,plateBody:r.plateBody,color:r.color};}
+export function projectPersistedValet(value:unknown,propertyId:string):PersistedValetDto[]{
+ if(!Array.isArray(value))return invalid();const ids=new Set<string>();return value.map(raw=>{const r=raw as PersistedValetDto;
+ if(!r||!uuid.test(r.id)||ids.has(r.id)||r.propertyId!==propertyId||!uuid.test(r.vehicleId)||!text(r.confirmationCode,32)||!(r.roomCode===null||text(r.roomCode,100))||!/^\d{4}-\d{2}-\d{2}$/.test(r.serviceDate)||!Number.isFinite(Date.parse(r.serviceDate))||!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(r.deliveryTime)||!['OPEN','IN_PROGRESS','DONE','CANCELLED'].includes(r.status)||typeof r.updatedAt!=='string'||!Number.isFinite(Date.parse(r.updatedAt)))return invalid();ids.add(r.id);
+ return {id:r.id,propertyId,confirmationCode:r.confirmationCode,roomCode:r.roomCode,vehicleId:r.vehicleId,vehicle:snapshot(r.vehicle),serviceDate:r.serviceDate,deliveryTime:r.deliveryTime,status:r.status,updatedAt:r.updatedAt};});
+}
+export function mapPersistedValet(value:unknown,propertyId:string):PersistedValet[]{return projectPersistedValet(value,propertyId).map(r=>({id:r.id,propertyId,reference:r.confirmationCode,roomLabel:r.roomCode,vehicleId:r.vehicleId,vehicle:{...r.vehicle},serviceDate:r.serviceDate,deliveryTime:r.deliveryTime,notes:null,status:r.status,updatedAt:r.updatedAt}));}
+export function projectPersistedVehicles(value:unknown,propertyId:string):PersistedVehicleDto[]{
+ if(!Array.isArray(value))return invalid();const ids=new Set<string>();return value.map(raw=>{const r=raw as PersistedVehicleDto;
+ if(!r||!uuid.test(r.id)||ids.has(r.id)||r.propertyId!==propertyId||!uuid.test(r.stayId)||!uuid.test(r.savedVehicleId)||!['PARKED','WITH_GUEST'].includes(r.location)||typeof r.hasActiveRequest!=='boolean'||[r.createdAt,r.updatedAt].some(v=>typeof v!=='string'||!Number.isFinite(Date.parse(v))))return invalid();ids.add(r.id);
+ const active=r.reservationStatus==='CONFIRMED'&&['RESERVED','IN_HOUSE'].includes(r.stayStatus);
+ if(!uuid.test(r.reservationId)||!text(r.confirmationCode,32)||!(r.roomCode===null||text(r.roomCode,100))||!['RESERVED','IN_HOUSE','CHECKED_OUT','CANCELLED','NO_SHOW'].includes(r.stayStatus)||!['PENDING','CONFIRMED','CANCELLED'].includes(r.reservationStatus)||r.canRelease!==(['CHECKED_OUT','CANCELLED','NO_SHOW'].includes(r.stayStatus)&&r.location==='PARKED'&&!r.hasActiveRequest)||r.stayActive!==active||r.operationallyVisible!==(active||r.location==='PARKED'||r.hasActiveRequest))return invalid();
+ return {...snapshot(r),id:r.id,savedVehicleId:r.savedVehicleId,canRelease:r.canRelease,propertyId,stayId:r.stayId,location:r.location,createdAt:r.createdAt,updatedAt:r.updatedAt,hasActiveRequest:r.hasActiveRequest,reservationId:r.reservationId,confirmationCode:r.confirmationCode,roomCode:r.roomCode,stayStatus:r.stayStatus,reservationStatus:r.reservationStatus,stayActive:r.stayActive,operationallyVisible:r.operationallyVisible};});
+}
+export function mapPersistedVehicles(value:unknown,propertyId:string):PersistedVehicle[]{return projectPersistedVehicles(value,propertyId).map(r=>({...snapshot(r),id:r.id,savedVehicleId:r.savedVehicleId,canRelease:r.canRelease,propertyId,location:r.location,updatedAt:r.updatedAt,hasActiveRequest:r.hasActiveRequest,reservationId:r.reservationId,reference:r.confirmationCode,roomLabel:r.roomCode,stayStatus:r.stayStatus,reservationStatus:r.reservationStatus,stayActive:r.stayActive,operationallyVisible:r.operationallyVisible}));}

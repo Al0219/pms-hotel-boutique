@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {createTestQueryClient} from '../src/test/queryClient';
+import { QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
 import { renderRouter } from "expo-router/testing-library";
@@ -22,7 +23,7 @@ import { LoginScreen } from "@/modules/guest-auth/presentation/LoginScreen";
 import { useGuestLogin } from "@/modules/guest-auth/presentation/hooks/useGuestLogin";
 
 function createQueryClient() {
-  return new QueryClient({
+  return createTestQueryClient({
     defaultOptions: {
       mutations: { retry: false },
       queries: { gcTime: 0, retry: false },

@@ -32,7 +32,7 @@ export function SessionServiceRequestsScreen({ nowMs, stayService }: { nowMs?: (
   const readOnly = lifecycle === 'CHECKOUT_DUE' || lifecycle === 'CHECKED_OUT';
   const { editRequestId, returnTo } = useLocalSearchParams<{ editRequestId?: string; returnTo?: string }>();
   const [filter, setFilter] = useState<ServiceRequestFilter>('ACTIVE');
-  const displayedRequests=environment.useMockApi?requests:requests.filter(item=>item.kind!=='HOUSEKEEPING'&&item.kind!=='ROOM_SERVICE'&&item.kind!=='AMENITIES');
+  const displayedRequests=environment.useMockApi?requests:requests.filter(item=>item.kind!=='HOUSEKEEPING'&&item.kind!=='ROOM_SERVICE'&&item.kind!=='AMENITIES'&&item.kind!=='VEHICLE_REQUEST'&&item.kind!=='TRANSFER');
   const filteredRequests = filterServiceRequests(displayedRequests, filter);
   const editingRequest = !readOnly && typeof editRequestId === 'string' ? requests.find((request) => request.sessionRequestId === editRequestId && request.status !== 'COMPLETED') : undefined;
   const supportsInlineEdit = Boolean(editingRequest && editingRequest.kind === 'HOTEL_ASSIGNED');
