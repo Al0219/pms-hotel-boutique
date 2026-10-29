@@ -1,4 +1,5 @@
 'use client';
+import {GuestReservationSummary} from './guest-reservation-summary';
 import Link from 'next/link';
 import { useState } from 'react';
 import { HttpNetworkError, HttpStatusError } from '@/lib/http';
@@ -20,18 +21,24 @@ function ReadError({ error, retry }: { error: unknown; retry: () => void }) {
 
 /** Shares the existing Web/Android Guest projection and reconciliation contract. */
 export function RealGuestReservations({ reservationId }: { reservationId?: string }) {
+  return reservationId ? <GuestReservationSummary reservationId={reservationId}/> : <ReservationList/>;
+}
+function ReservationList() {
   const query = useLinkedGuestReservations();
   const [selected, setSelected] = useState<{ reservationId: string; stayId: string } | null>(null);
   const stay = useGuestStay(selected?.reservationId, selected?.stayId);
-  const rows = reservationId ? query.data?.filter(row => row.id === reservationId) : query.data;
+  const [search,setSearch]=useState(''),[state,setState]=useState('ALL');
+  const needle=search.trim().toLocaleLowerCase('es');
+  const rows=query.data?.filter(row=>(!needle || (row.reference+' '+row.propertyName).toLocaleLowerCase('es').includes(needle)) &&
+    (state==='ALL' || (state==='IN_HOUSE'||state==='CHECKED_OUT'||state==='NO_SHOW' ? row.status!=='CANCELLED' && row.stays.some(stay=>stay.status===state) : row.status===state)));
   const unavailable = query.isError || query.fetchStatus === 'paused';
   const stayUnavailable = stay.isError || stay.fetchStatus === 'paused';
-  return <Frame title={reservationId ? 'Detalle de tu reserva' : 'Mis reservas'}>
-    {reservationId && <Link className={styles.back} href="/mis-reservas">← Volver a mis reservas</Link>}
+  return <Frame title="Mis reservas">
+    <div className={styles.filters} role="search" aria-label="Buscar en mi historial"><div><label htmlFor="history-search">Buscar reserva u hotel</label><input id="history-search" type="search" value={search} placeholder="Código de reserva o nombre del hotel" onChange={e=>setSearch(e.target.value)}/></div><div><label htmlFor="history-status">Estado</label><select id="history-status" value={state} onChange={e=>setState(e.target.value)}><option value="ALL">Todos los estados</option><option value="CONFIRMED">Confirmadas</option><option value="PENDING">Pendientes</option><option value="CANCELLED">Canceladas</option><option value="IN_HOUSE">En el hotel</option><option value="CHECKED_OUT">Estancia finalizada</option><option value="NO_SHOW">No presentado</option></select></div>{(search||state!=='ALL')&&<button type="button" className={styles.secondary} onClick={()=>{setSearch('');setState('ALL');setSelected(null);}}>Limpiar filtros</button>}</div>
     {query.isPending && !unavailable && <div className={styles.feedback} role="status" aria-live="polite">Consultando tus reservas…</div>}
     {unavailable && <ReadError error={query.error ?? new HttpNetworkError()} retry={() => { void query.refetch(); }} />}
     {!unavailable && rows && <>
-      {!rows.length ? <div className={styles.empty}><span className={styles.emptyIcon} aria-hidden="true">⌂</span><h2>{reservationId ? 'Reserva no disponible' : 'Tu próxima estancia comienza aquí'}</h2><p>{reservationId ? 'No encontramos esta reserva en tu cuenta.' : 'Aún no hay reservas vinculadas a esta cuenta.'}</p><p>{reservationId ? 'Puedes volver al historial para consultar tus reservas disponibles.' : 'Las reservas confirmadas compatibles se recuperan con tu correo verificado. Si acabas de reservar como invitado y aún no aparece, puedes vincularla con la referencia de tu comprobante.'}</p><div className={styles.actions}><Link className={styles.primary} href="/cuenta/reservas/vincular">Vincular mi reserva</Link><Link className={styles.secondary} href="/habitaciones">Explorar habitaciones</Link></div></div>
+      {!rows.length && Boolean(query.data?.length) ? <div className={styles.empty}><h2>No encontramos reservas con estos filtros</h2><p>Prueba con otro código, hotel o estado.</p><button className={styles.secondary} type="button" onClick={()=>{setSearch('');setState('ALL');}}>Restablecer filtros</button></div> : !rows.length ? <div className={styles.empty}><span className={styles.emptyIcon} aria-hidden="true">⌂</span><h2>Tu próxima estancia comienza aquí</h2><p>Aún no hay reservas vinculadas a esta cuenta.</p><p>Las reservas confirmadas compatibles se recuperan con tu correo verificado. Si acabas de reservar como invitado y aún no aparece, puedes vincularla con la referencia de tu comprobante.</p><div className={styles.actions}><Link className={styles.primary} href="/cuenta/reservas/vincular">Vincular mi reserva</Link><Link className={styles.secondary} href="/habitaciones">Explorar habitaciones</Link></div></div>
         : <><p className={styles.count}>{rows.length} {rows.length === 1 ? 'reserva vinculada' : 'reservas vinculadas'}</p><div className={styles.grid}>{rows.map(reservation => <ReservationCard key={reservation.id} reservation={reservation} onSelect={stayId => setSelected({ reservationId: reservation.id, stayId })} />)}</div></>}
     </>}
     {selected && !unavailable && rows?.some(row => row.id === selected.reservationId && row.stays.some(item => item.id === selected.stayId)) && <section className={styles.detail} aria-label="Información de la estancia">
@@ -52,6 +59,6 @@ function ReservationCard({ reservation, onSelect }: { reservation: LinkedGuestRe
       <p className={styles.dates}><time dateTime={stay.arrival}>{guestDateLabel(stay.arrival)}</time><span aria-hidden="true">→</span><time dateTime={stay.departure}>{guestDateLabel(stay.departure)}</time></p>
       <span className={styles.muted}>{guestStayNights(stay)} {guestStayNights(stay) === 1 ? 'noche' : 'noches'}</span>
       <button className={styles.secondary} type="button" onClick={() => onSelect(stay.id)}>Ver estancia {i + 1}</button>
-    </li>)}</ul>
+    </li>)}</ul><Link className={styles.primary} href={"/cuenta/reservas/"+encodeURIComponent(reservation.id)}>Ver reserva completa</Link>
   </article>;
 }

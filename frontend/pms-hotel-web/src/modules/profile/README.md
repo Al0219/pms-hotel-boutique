@@ -59,3 +59,14 @@ The canonical `docs/Backlog_Implementacion_PMS_V1.xlsx` governs WEB-2's future t
 ## Figma / Documentation
 
 Public 05 Account and profile. Consult relevant global domain documents, Web architecture, module boundaries, ownership, and domain-specific Web documentation. No Figma Node ID is invented here.
+
+
+## Perfil personal real — contrato63
+
+Modo real: service personal-profile → DTO cerrado → mapper propio → usePersonalProfile
+→ PersonalProfilePage. GET/PUT BFF Guest bajo /api/auth/guest/account/profile;
+la sesión determina titularidad. Alta explícita al primer guardado, correo readonly,
+version/updatedAt, cancelación y conflicto recuperable. Cero perfiles es un estado
+válido. No se eligen perfiles históricos ni se actualizan datos de reservas.
+El flujo anterior queda exclusivamente en modo mock y rechaza transport real.
+Contrato: backend/docs/63_GUEST_PERSONAL_PROFILE_CONTRACT.md (raíz del monorepo).

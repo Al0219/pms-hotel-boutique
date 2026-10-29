@@ -9,3 +9,7 @@ export async function getLinkedGuestStays(signal?: AbortSignal): Promise<LinkedG
 export function getGuestStay(reservationId: string, stayId: string, signal?: AbortSignal): Promise<GuestStayDTO> {
   return httpRequest({ path: url(`/${encodeURIComponent(reservationId)}/stays/${encodeURIComponent(stayId)}`), signal, withAuth: false });
 }
+
+export function getGuestReservationSummary(reservationId:string,signal?:AbortSignal) {
+  return httpRequest<import("../dtos/reservation-lookup.dto").ReservationLookupDTO>({path:url("/"+encodeURIComponent(reservationId)+"/summary"),signal,withAuth:false});
+}

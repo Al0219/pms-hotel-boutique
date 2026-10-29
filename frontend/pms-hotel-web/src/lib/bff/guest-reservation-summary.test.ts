@@ -1,0 +1,14 @@
+
+import {beforeAll,beforeEach,afterEach,expect,it,vi} from 'vitest';
+import {NextRequest} from 'next/server';
+const upstream=vi.fn<typeof fetch>();let api:typeof import('./guest-reservation-summary');
+const id='11111111-1111-4111-8111-111111111111',stay='22222222-2222-4222-8222-222222222222';
+beforeAll(async()=>{vi.resetModules();vi.stubEnv('PMS_BACKEND_INTERNAL_URL','http://backend:8080');api=await import('./guest-reservation-summary');});beforeEach(()=>{vi.stubGlobal('fetch',upstream);upstream.mockReset();});afterEach(()=>{vi.unstubAllGlobals();vi.unstubAllEnvs();});
+const req=(cookie='pms_guest_access=guest; pms_staff_access=staff')=>new NextRequest('http://localhost:3001/api/auth/guest/account/reservations/'+id+'/summary?accountId=other',{headers:{cookie}});
+const payload={stays:[{reservationId:id,stayId:stay,confirmationCode:'REF123',propertyName:'Hotel',reservationStatus:'CONFIRMED',arrival:'2036-01-01',departure:'2036-01-03',roomCode:null,status:'RESERVED',secret:'never'}],details:[{id:stay,reservationId:id,roomType:{id,name:'Deluxe'},room:null,arrival:'2036-01-01',departure:'2036-01-03',status:'RESERVED'}],overview:{createdAt:'2026-10-28T12:00:00Z',source:'WEB_DIRECTA',currency:'GTQ',confirmedTotalMinor:null},accommodations:[{stayId:stay,roomTypeCode:'CLASSIC',timezone:'America/Guatemala'}],accessToken:'never'};
+it('forwards only Guest authority and whitelists the linked summary without IDs from query',async()=>{
+ upstream.mockResolvedValue(Response.json(payload));const response=await api.guestReservationSummary(req(),id);expect(response.status).toBe(200);expect(response.headers.get('cache-control')).toBe('private, no-store');expect(await response.text()).not.toContain('never');const [url,init]=upstream.mock.calls[0];expect(url).toBe('http://backend:8080/api/v1/guest-auth/account/reservations/'+id+'/summary');expect(new Headers(init?.headers).get('authorization')).toBe('Bearer guest');expect(new Headers(init?.headers).get('cookie')).toBeNull();
+});
+it('rejects missing Guest token and malformed reservation UUID before calling upstream',async()=>{expect((await api.guestReservationSummary(req('pms_staff_access=staff'),id)).status).toBe(401);expect((await api.guestReservationSummary(req(),'invalid')).status).toBe(400);expect(upstream).not.toHaveBeenCalled();});
+it('does not expose a summary for a different reservation',async()=>{upstream.mockResolvedValue(Response.json({...payload,stays:[{...payload.stays[0],reservationId:stay}]}));expect((await api.guestReservationSummary(req(),id)).status).toBe(503);});
+it.each([401,404,500])('preserves authorization and unavailable errors %s without PII',async status=>{upstream.mockResolvedValue(Response.json({private:'never'},{status}));const response=await api.guestReservationSummary(req(),id);expect(response.status).toBe(status===500?503:status);expect(await response.text()).not.toContain('never');});

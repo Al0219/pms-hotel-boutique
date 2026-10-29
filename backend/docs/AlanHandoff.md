@@ -1,3 +1,36 @@
+## 2026-10-28 — Perfil personal y cuenta Guest — EN_QA
+
+José aprobó guardado real y revisión del historial (IMP-WEB-0204, extensión0203).
+Owner José/WEB-2; contrato63 y ADR aprobados, rama feature/guest-personal-profile,
+base b0e74d0. API/BFF propios, perfil personal explícito sin elegir ni editar
+perfiles históricos, correo readonly, preferencias opcionales, versión/UTC y
+auditoría append-only. Historial filtrable con resumen visual propio por vínculo;
+checkout autocompleta solo contacto vacío/no editado desde el perfil designado.
+
+Backend ./mvnw -B verify:1186 PASS,0 failures/errors/skipped. OpenAPI y upgrade
+incluidos. Lint/typecheck y builds Backend/Web PASS. Web focal144:141 PASS y3
+límites de tiempo; consulta pública pasa al repetir,2 timeouts de vinculación
+persisten también en HEAD. Staff:3 casos comparados fallan en HEAD y rama actual.
+La suite Web general fue interrumpida tras detectar fallos fuera del cambio;
+NO se declara PASS de CI Web global. Sin modificar tests ajenos, límites ni gates.
+
+Chrome real3001 con guest.demo@example.test:27/27 PASS; crear/editar/recargar,
+cancelar/validar, historial/detalle/móvil/vinculación accesible y logout401.
+Sin JS/API500 ni pagos. DB conserva16 reservas/16 stays/1 cuenta/1 vínculo/30
+movimientos; hashes de reservas/finanzas/perfiles históricos iguales antes/después.
+35 migraciones previas intactas+004-010;1 perfil personal demo y3 auditorías nuevas.
+Se guardó Huésped Demo y se restauró la preferencia usada para probar actualización.
+Evidencia fuera de Git: %TEMP%/pms-guest-profile-qa (logs/reports/capturas).
+
+Ajuste visual final: conservar el logout canónico de cabecera sin duplicarlo en
+la navegación de cuenta; recheck real10/10 PASS, sin escribir datos nuevos. Continúa EN_QA hasta QA manual
+PASS de José y resolución/verificación del gate Web general con su responsable.
+José autoriza commit y push de este incremento; sin merge con main ni cambios
+de secretos/workflows/migraciones aplicadas.
+Fetch previo a publicación: origin/main avanza a a47f905 con reportes, Android
+y documentación; no se incorpora automáticamente a esta rama.
+Siguiente: publicar rama y revisar compatibilidad del PR; CI Web general pendiente.
+
 ## 2026-10-28 — Consulta invitada y resumen visual — QA manual PASS / CI pendiente
 
 José confirma «mi QA manual pasa» y autoriza commit/push normal de esta entrega.

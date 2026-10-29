@@ -33,7 +33,7 @@ describe("Account dashboard through Guest BFF", () => {
     mockServer.use(http.get(endpoint, ({ request }) => { requests.push(request); return HttpResponse.json(dto); }));
     setup();
     expect(await screen.findByRole("heading", { name: "Mi cuenta" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Sin perfil vinculado" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Tu perfil personal" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "No tienes reservas vinculadas" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "No tienes próximas estancias confirmadas" })).toBeInTheDocument();
     expect(screen.queryByText("No se pudo cargar tu cuenta.")).not.toBeInTheDocument();
@@ -62,15 +62,16 @@ describe("Account dashboard through Guest BFF", () => {
     expect(within(screen.getByLabelText("Sesión de huésped")).getByRole("button", { name: "Cerrar sesión" })).toBeInTheDocument();
     expect(within(screen.getByRole("region", { name: "Resumen de cuenta" })).getAllByRole("article")).toHaveLength(3);
   });
-  it("renders all real linked profiles, nullable language and a persisted next stay", async () => {
+  it("keeps the personal profile explicit with multiple linked profiles and links the persisted next stay", async () => {
     mockServer.use(http.get(endpoint, () => HttpResponse.json({ ...dto, linkedReservationsCount: 2,
       profiles: [{ profileId: "p1", firstName: "Real", lastName: "Guest", preferredLanguage: null, status: "ACTIVE" },
         { profileId: "p2", firstName: "Other", lastName: "Profile", preferredLanguage: "en", status: "INACTIVE" }],
       upcomingStay: { reservationId: "r1", stayId: "s1", confirmationCode: "CONF-REAL", arrival: "2026-12-01", departure: "2026-12-03" },
     })));
     setup(); await screen.findByRole("heading", { name: "Mi cuenta" });
-    expect(screen.getByText("Real Guest · Idioma no indicado · Perfil activo")).toBeInTheDocument();
-    expect(screen.getByText("Other Profile · en · Perfil inactivo")).toBeInTheDocument();
+    expect(screen.getByRole("link", {name:"Editar mi perfil"})).toHaveAttribute("href","/cuenta/perfil");
+    expect(screen.queryByText("Real Guest · Idioma no indicado · Perfil activo")).not.toBeInTheDocument();
+    expect(screen.getByRole("link",{name:"Ver mi próxima estancia"})).toHaveAttribute("href","/cuenta/reservas/r1");
     expect(screen.getByText("CONF-REAL · 2026-12-01 → 2026-12-03")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "2 reservas vinculadas" })).toBeInTheDocument();
   });

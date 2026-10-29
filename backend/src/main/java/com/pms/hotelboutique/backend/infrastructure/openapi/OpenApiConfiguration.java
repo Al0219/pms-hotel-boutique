@@ -43,6 +43,14 @@ public class OpenApiConfiguration {
                 .description("Refresh opaco Guest reenviado por BFF; independiente de Staff."));
     }
     @Bean
+    OpenApiCustomizer personalProfileNullability() {
+        return api -> {
+            var schema=api.getComponents().getSchemas().get("GuestPersonalProfile");
+            if(schema!=null) schema.getProperties().put("profile",new Schema<>().anyOf(List.of(
+                new Schema<>().$ref("#/components/schemas/GuestPersonalProfileDetails"),new Schema<>().types(Set.of("null")))));
+        };
+    }
+    @Bean
     OpenApiCustomizer guestAccountSummaryNullability() {
         return api -> {
             Schema<?> summary = api.getComponents().getSchemas().get("GuestAccountSummaryResponse");
@@ -99,6 +107,7 @@ public class OpenApiConfiguration {
                 if (packageName.contains(".modules.guestauth.") && (
                         handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.guestauth.api.GuestReservationController.class)
                         || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.guestauth.api.GuestAccountController.class)
+                        || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.guestauth.api.GuestPersonalProfileController.class)
                         || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.guestauth.api.GuestHousekeepingController.class)
                         || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.guestauth.api.GuestRoomServiceController.class)
                         || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.guestauth.api.GuestAmenitiesController.class)

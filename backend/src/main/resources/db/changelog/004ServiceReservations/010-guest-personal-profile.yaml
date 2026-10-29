@@ -1,0 +1,32 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-reservations-010
+      author: jose-bd2
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              ALTER TABLE guest_profiles ADD CONSTRAINT uq_guest_profile_owner UNIQUE (id,guest_account_id);
+              CREATE TABLE guest_personal_profiles (
+                guest_account_id uuid PRIMARY KEY REFERENCES guest_accounts(id),
+                profile_id uuid NOT NULL UNIQUE,
+                country varchar(80), bed_type varchar(8), room_vibe varchar(24), floor_preference varchar(8),
+                version bigint NOT NULL CHECK (version >= 1),
+                created_at timestamptz NOT NULL, updated_at timestamptz NOT NULL,
+                CONSTRAINT fk_personal_profile_owner FOREIGN KEY (profile_id,guest_account_id) REFERENCES guest_profiles(id,guest_account_id),
+                CHECK (bed_type IS NULL OR bed_type IN ('KING','QUEEN','TWIN')),
+                CHECK (room_vibe IS NULL OR room_vibe IN ('QUIET','EXTERIOR_VIEW','NEAR_ELEVATOR')),
+                CHECK (floor_preference IS NULL OR floor_preference IN ('HIGH','LOW'))
+              );
+              CREATE TABLE guest_personal_profile_audit (
+                id uuid PRIMARY KEY, guest_account_id uuid NOT NULL REFERENCES guest_accounts(id),
+                profile_id uuid NOT NULL REFERENCES guest_profiles(id), session_id uuid NOT NULL,
+                action varchar(8) NOT NULL CHECK (action IN ('CREATE','UPDATE')),
+                version bigint NOT NULL, occurred_at timestamptz NOT NULL,
+                UNIQUE (guest_account_id,version)
+              );
+              CREATE FUNCTION reject_personal_profile_audit_change() RETURNS trigger LANGUAGE plpgsql AS $$
+              BEGIN RAISE EXCEPTION 'Guest profile audit is append-only'; END; $$;
+              CREATE TRIGGER guest_personal_profile_audit_immutable BEFORE UPDATE OR DELETE ON guest_personal_profile_audit
+              FOR EACH ROW EXECUTE FUNCTION reject_personal_profile_audit_change();

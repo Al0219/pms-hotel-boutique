@@ -486,3 +486,20 @@ con galería editorial por código, fecha/canal/moneda y total original del comp
 público coherente, opcional. No concede lectura de folio/pagos ni de datos personales;
 no estima tarifas actuales para reconstruir importes históricos ni inventa ocupación.
 No altera la prueba correo+código, el acceso al historial por cuenta o sus vínculos.
+
+
+### Perfil personal explícito y recorrido de cuenta Guest
+
+**Fecha:** 2026-10-28. **Status:** APPROVED por José al confirmar guardado real y
+ampliar la revisión al historial y recorrido de cuenta. GuestAccount conserva la
+identidad de acceso y su correo readonly. El perfil personal es un GuestProfile
+nuevo designado explícitamente por cuenta; no se elige entre N perfiles ni se
+apropian contactos por coincidencia de correo. El primer guardado lo crea; GET
+no escribe. Contacto y preferencias no modifican los datos de reservas previas.
+
+El historial sigue limitado a vínculos Guest verificados/persistidos. Su resumen
+completo comparte la proyección visual62 pero exige vínculo propio en SQL,
+no credenciales públicas ni propiedad arbitraria. Preferencias no garantizan
+inventario. Sin cambios de correo/password, documentos, consentimientos o avatar
+subido en este incremento. Contrato [Backend63](../backend/docs/63_GUEST_PERSONAL_PROFILE_CONTRACT.md),
+auditoría append-only sin copia de PII, UTC, control de versión e idempotencia PUT.
