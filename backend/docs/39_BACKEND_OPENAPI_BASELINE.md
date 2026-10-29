@@ -597,3 +597,56 @@ idempotencia, cutoff y checkout normal. OpenAPI generado88 operaciones/70paths/
 112schemas/15tags; paridad mappings comprobada, audiencias Guest nativa/Staff
 y sin exclusiones nuevas. Migración aditiva005-operations-006. QA manual del
 núcleo confirmado por el usuario. Ajuste visual posterior sin cambios de API.
+
+
+## Valet real MVP — 2026-10-27
+
+[Contrato62](62_VALET_REAL_MVP_DECISIONS.md), decisiones VAL-01/02/03 aprobadas.
+GuestValetController7 operaciones: vehículos GET/POST/PUT e historial/creación/
+edición/cancelación de solicitudes. StaffValetController2 operaciones GET/PUT
+status y StaffValetVehicleController2 GET/POST retorno. Guest nativo Bearer y
+Staff Bearer privado desde BFF, permisos INTAKE/OPS y property scope existentes.
+Sin endpoint Guest de completar o modificar custodia, sin Traslados HTTP.
+Esquemas cerrados y validaciones de placa/programación/CAS en Swagger; no-store.
+OpenAPI generado103 operaciones/83 paths/129 schemas/15 tags; paridad mappings
+PASS, sin exclusiones nuevas. Prueba estructural específica Valet y suite
+OpenApiContractIntegrationTests25 PASS; Backend verify1174 PASS.
+QA manual pendiente; no atribuir COMPLETADA hasta confirmación del usuario.
+
+
+### Valet — proyección operativa de estancia
+
+Incremento parcial de reutilización, EN_QA. ValetVehicle amplía las lecturas
+Guest/Staff existentes con reservationId,confirmationCode,roomCode nullable,
+stayStatus,reservationStatus,stayActive,operationallyVisible. Clasificación desde
+registros persistidos; mantiene PARKED/operación pendiente tras finalizar estancia.
+No cambia rutas, permisos ni esquema SQL007. OpenAPI103/83/129/15 conservado;
+OpenApiContractIntegrationTests25 y verify1175 PASS. Contrato62 distingue las
+reglas VAL-04/05 propuestas y flujos de reutilización todavía pendientes.
+
+### Valet — VAL-04/VAL-05 aprobadas, vehículos reutilizables y entrega excepcional
+
+EN_QA. Se agregan GET Guest `/account/valet-vehicles`, POST Guest scoped
+`/valet-vehicles/associate` y POST Staff scoped `/valet-vehicles/{vehicleId}/release`.
+GuestSavedValetController se incluye expresamente en audiencia Guest nativa;
+Associate usa Guest Bearer, vínculo propio, clave y cuerpo cerrado; Release solo
+Staff OPERATIONS_MANAGE, scope, CAS e idempotencia. ValetVehicle añade
+savedVehicleId/canRelease; ValetSavedVehicle no expone contexto operativo ni cuenta.
+OpenAPI generado **106 operaciones /86 paths /131 schemas /15 tags**, sin
+exclusiones; prueba estructural verifica cuerpos, seguridad y códigos de las tres
+operaciones. Migración008 aditiva, reglas y evidencia: contrato62 y QA45.
+
+
+### Valet cierre DoD — ProblemDetail sin redespacho de errores
+
+La prueba con clientes HTTP reales detectó /error convirtiendo409 Guest en401.
+Advice limitado a Valet escribe400/404/409 como application/problem+json, schema
+ProblemDetail; no abre /error ni modifica autenticación. Las respuestas y su schema
+se verifican en OpenApiContractIntegrationTests. Inventario106/86/131/15 intacto.
+Backend focal46 PASS; QA45 acredita escenarios específicos automáticamente.
+
+## 2026-10-29 — Reconciliación Valet con b33236e
+
+Paridad generada PASS (26 tests):114 operaciones/93 paths/144 schemas/16 tags.
+Se mantienen los endpoints de lookup, reportes y perfil personal de main además
+del incremento Valet documentado arriba. ProblemDetail400/404/409 preservado.

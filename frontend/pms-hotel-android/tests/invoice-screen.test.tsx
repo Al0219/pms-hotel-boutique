@@ -1,5 +1,6 @@
+import {createTestQueryClient} from '../src/test/queryClient';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
 import { type InvoiceDocumentService, CheckoutSessionProvider, InvoiceScreen, useCheckoutSession } from '@/modules/checkout';
@@ -19,7 +20,7 @@ function SeededInvoice({ documentService }: { documentService: InvoiceDocumentSe
 }
 
 async function setup(documentService: InvoiceDocumentService) {
-  const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false }, queries: { retry: false } } });
+  const queryClient = createTestQueryClient({ defaultOptions: { mutations: { retry: false }, queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}><AppClockProvider initialMode="IN_STAY">
       <CheckoutSessionProvider>

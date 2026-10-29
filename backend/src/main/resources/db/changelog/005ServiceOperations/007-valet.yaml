@@ -1,0 +1,67 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-operations-007
+      author: alan
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE valet_vehicles (
+                id uuid PRIMARY KEY, guest_account_id uuid NOT NULL REFERENCES guest_accounts(id),
+                stay_id uuid NOT NULL REFERENCES reservation_stays(id), property_id uuid NOT NULL REFERENCES properties(id),
+                make varchar(40) NOT NULL CHECK(btrim(make)<>''), model varchar(40) NOT NULL CHECK(btrim(model)<>''),
+                plate_prefix varchar(3) NOT NULL CHECK(plate_prefix IN ('P','A','C','TE','U','TRC','M','MT','TC','O','CD','CC','MI','DIS')),
+                plate_body varchar(6) NOT NULL CHECK(plate_body ~ '^[0-9]{2,3}[A-Z]{3}$'), color varchar(30),
+                location varchar(16) NOT NULL CHECK(location IN ('PARKED','WITH_GUEST')),
+                creation_key varchar(100) NOT NULL, initial_payload_hash varchar(64) NOT NULL,
+                created_at timestamptz NOT NULL, updated_at timestamptz NOT NULL, return_expected_version timestamptz,
+                UNIQUE(guest_account_id,stay_id,plate_prefix,plate_body), UNIQUE(guest_account_id,stay_id,creation_key),
+                UNIQUE(id,stay_id,property_id,guest_account_id)
+              );
+              CREATE TABLE valet_requests (
+                id uuid PRIMARY KEY, vehicle_id uuid NOT NULL, stay_id uuid NOT NULL, property_id uuid NOT NULL,
+                guest_account_id uuid NOT NULL, request_key varchar(100) NOT NULL,
+                initial_payload_hash varchar(64) NOT NULL, current_payload_hash varchar(64) NOT NULL,
+                service_date date NOT NULL, delivery_time time NOT NULL,
+                vehicle_snapshot jsonb NOT NULL, active boolean NOT NULL DEFAULT true,
+                UNIQUE(guest_account_id,stay_id,request_key),
+                FOREIGN KEY(id,stay_id) REFERENCES service_requests(id,stay_id),
+                FOREIGN KEY(vehicle_id,stay_id,property_id,guest_account_id) REFERENCES valet_vehicles(id,stay_id,property_id,guest_account_id)
+              );
+              CREATE UNIQUE INDEX uq_valet_active_vehicle ON valet_requests(vehicle_id) WHERE active;
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE FUNCTION guard_valet_request() RETURNS trigger LANGUAGE plpgsql AS $body$
+              DECLARE current_status text;
+              BEGIN
+                IF TG_OP='UPDATE' AND (NEW.vehicle_snapshot IS DISTINCT FROM OLD.vehicle_snapshot OR
+                  NEW.vehicle_id<>OLD.vehicle_id OR NEW.stay_id<>OLD.stay_id OR NEW.property_id<>OLD.property_id OR
+                  NEW.guest_account_id<>OLD.guest_account_id OR NEW.request_key<>OLD.request_key OR
+                  NEW.initial_payload_hash<>OLD.initial_payload_hash) THEN
+                  RAISE EXCEPTION 'Valet identity and snapshot are immutable';
+                END IF;
+                SELECT status INTO current_status FROM service_requests WHERE id=NEW.id AND stay_id=NEW.stay_id AND property_id=NEW.property_id AND category='VALET' FOR UPDATE;
+                IF NOT FOUND THEN RAISE EXCEPTION 'Valet service context mismatch'; END IF;
+                NEW.active := current_status IN ('OPEN','IN_PROGRESS');
+                RETURN NEW;
+              END; $body$;
+        - sql:
+            sql: CREATE TRIGGER valet_request_guard BEFORE INSERT OR UPDATE ON valet_requests FOR EACH ROW EXECUTE FUNCTION guard_valet_request();
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE FUNCTION sync_valet_active() RETURNS trigger LANGUAGE plpgsql AS $body$
+              BEGIN
+                UPDATE valet_requests SET active=NEW.status IN ('OPEN','IN_PROGRESS') WHERE id=NEW.id;
+                RETURN NEW;
+              END; $body$;
+        - sql:
+            sql: CREATE TRIGGER valet_service_status AFTER UPDATE OF status ON service_requests FOR EACH ROW WHEN (NEW.category='VALET') EXECUTE FUNCTION sync_valet_active();
+      rollback:
+        - sql:
+            sql: |
+              DROP TRIGGER valet_service_status ON service_requests;
+              DROP FUNCTION sync_valet_active();
+              DROP TABLE valet_requests;
+              DROP FUNCTION guard_valet_request();
+              DROP TABLE valet_vehicles;

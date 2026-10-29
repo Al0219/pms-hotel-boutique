@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {createTestQueryClient} from '../src/test/queryClient';
+import { QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
 import { BackHandler, Platform, Text } from "react-native";
@@ -43,7 +44,7 @@ function ContextProbe() {
 }
 
 async function setup(service: LinkedReservationsService, initialContext: { reservationId: string; reservationStayId: string } | null = null) {
-  const queryClient = new QueryClient({
+  const queryClient = createTestQueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   return await render(

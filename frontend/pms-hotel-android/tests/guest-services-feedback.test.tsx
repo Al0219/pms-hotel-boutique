@@ -4,7 +4,8 @@ import {router} from 'expo-router';
 import {NetworkError} from '@/data/remote/http/HttpError';
 import {GuestServiceRequestsList} from '@/modules/service-requests/presentation/GuestServiceRequestsList';
 import type {ServiceRequestFilter} from '@/modules/service-requests/domain/serviceRequestPresentation';
-const mockHousekeeping=jest.fn(),mockRoomService=jest.fn(),mockAmenities=jest.fn();
+const mockHousekeeping=jest.fn(),mockRoomService=jest.fn(),mockAmenities=jest.fn(),mockValet=jest.fn();
+jest.mock('@/modules/valet/presentation/hooks/usePersistedValet',()=>({useValetRequests:(...args:unknown[])=>mockValet(...args),useValetMutations:()=>({cancel:{isPending:false,isError:false,error:null,reset:jest.fn(),mutate:jest.fn()}})}));
 jest.mock('@/config/environment',()=>({environment:{useMockApi:false},requireApiBaseUrl:()=> 'https://pms.example.test'}));
 jest.mock('expo-router',()=>({...jest.requireActual('expo-router'),router:{push:jest.fn()}}));
 jest.mock('@/modules/services/amenities/presentation/hooks/useAmenitiesRequests',()=>({useAmenitiesRequests:(...args:unknown[])=>mockAmenities(...args)}));
@@ -17,7 +18,7 @@ const order={id:'order',reservationId:'reservation',stayId:'stay',confirmationCo
 function state(data:unknown[]=[],extra:Record<string,unknown>={}){return {data,isPending:false,isFetching:false,isError:false,error:null,fetchStatus:'idle',refetch:jest.fn().mockResolvedValue({data}),...extra};}
 let client:QueryClient;
 function tree(filter:ServiceRequestFilter='ALL',additionalCount=0,additionalFilteredCount=0,showRefresh=true){return <QueryClientProvider client={client}><GuestServiceRequestsList filter={filter} additionalCount={additionalCount} additionalFilteredCount={additionalFilteredCount} showRefresh={showRefresh}/></QueryClientProvider>;}
-beforeEach(()=>{mockAmenities.mockReturnValue(state());jest.clearAllMocks();client=new QueryClient({defaultOptions:{queries:{retry:false,gcTime:0},mutations:{gcTime:0}}});mockHousekeeping.mockReturnValue(state());mockRoomService.mockReturnValue(state());});
+beforeEach(()=>{mockValet.mockReturnValue(state());mockAmenities.mockReturnValue(state());jest.clearAllMocks();client=new QueryClient({defaultOptions:{queries:{retry:false,gcTime:0},mutations:{gcTime:0}}});mockHousekeeping.mockReturnValue(state());mockRoomService.mockReturnValue(state());});
 afterEach(()=>client.clear());
 const obsolete=[/Actualizar solicitudes de limpieza/,/Sin solicitudes de limpieza/,/Actualizar pedidos Room Service/,/Sin pedidos Room Service/];
 it('shows one global empty and one discreet refresh only after both successful empty reads',async()=>{
@@ -98,7 +99,7 @@ it('keeps expansion through OPEN to IN_PROGRESS sync, without granting edit or c
  mockRoomService.mockReturnValue(state([order]));const ui=await render(tree('ACTIVE'));
  await fireEvent.press(ui.getByTestId('room-service-order-order-toggle'));
  expect(ui.getByTestId('room-service-order-order-body')).toHaveStyle({height:192});
- await fireEvent.press(ui.getByTestId('guest-services-refresh'));for(const hook of [mockHousekeeping,mockRoomService,mockAmenities])expect(hook().refetch).toHaveBeenCalledTimes(1);
+ await fireEvent.press(ui.getByTestId('guest-services-refresh'));for(const hook of [mockHousekeeping,mockRoomService,mockAmenities,mockValet])expect(hook().refetch).toHaveBeenCalledTimes(1);
  mockRoomService.mockReturnValue(state([{...order,status:'IN_PROGRESS'}]));await ui.rerender(tree('ACTIVE'));
 
  expect(ui.getByTestId('room-service-order-order-toggle')).toHaveProp('accessibilityState',{expanded:true});expect(ui.queryByLabelText('Editar pedido Room Service')).toBeNull();
@@ -112,10 +113,18 @@ it('hides only the manual refresh for Inicio while retaining queries and synchro
  expect(ui.queryByRole('button',{name:'Actualizar servicios'})).toBeNull();
  expect(ui.queryByTestId('guest-services-refresh')).toBeNull();
  expect(ui.getByText('Solicitado')).toBeTruthy();
- for(const hook of [mockHousekeeping,mockRoomService,mockAmenities])expect(hook).toHaveBeenCalledTimes(1);
+ for(const hook of [mockHousekeeping,mockRoomService,mockAmenities,mockValet])expect(hook).toHaveBeenCalledTimes(1);
  mockRoomService.mockReturnValue(state([{...order,status:'IN_PROGRESS'}]));
  await ui.rerender(tree('ACTIVE',0,0,false));
  expect(ui.getByText('En proceso')).toBeTruthy();
  expect(ui.queryByLabelText('Editar pedido Room Service')).toBeNull();
  expect(ui.queryByText('Actualizar servicios')).toBeNull();
+});
+
+it('waits for Valet before global empty and includes its real cards and refresh',async()=>{
+ mockValet.mockReturnValue(state([],{isPending:true,isFetching:true}));const ui=await render(tree());expect(ui.queryByTestId('guest-services-empty')).toBeNull();expect(ui.getByTestId('guest-services-loading')).toBeTruthy();
+ const row={...order,id:'valet',vehicleId:'vehicle',vehicle:{make:'Toyota',model:'Yaris',platePrefix:'P',plateBody:'123ABC',color:null}};const q=state([row]);mockValet.mockReturnValue(q);await ui.rerender(tree());expect(ui.getByText('Valet')).toBeTruthy();expect(ui.queryByTestId('guest-services-empty')).toBeNull();await fireEvent.press(ui.getByTestId('guest-services-refresh'));expect(q.refetch).toHaveBeenCalledTimes(1);
+});
+it('does not show false empty for Valet error or offline',async()=>{
+ mockValet.mockReturnValue(state([],{isError:true,error:new NetworkError()}));const ui=await render(tree());expect(ui.getByTestId('guest-services-error')).toBeTruthy();expect(ui.queryByTestId('guest-services-empty')).toBeNull();
 });

@@ -1,6 +1,7 @@
+import {valetContinuation} from './guestContinuation';
 import { environment } from "@/config/environment";
 import { useGuestLogout } from "@/modules/guest-auth/presentation/hooks/useGuestLogout";
-import { router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { BackHandler, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
@@ -22,6 +23,8 @@ function sameStay(reservation: LinkedReservationSummary, context: { reservationI
 /** Owns initial 0/1/N selection and authenticated active-stay changes. */
 export function LinkedReservationsScreen({ service }: LinkedReservationsScreenProps) {
   const { session } = useGuestAuthSession();
+  const { returnTo } = useLocalSearchParams();
+  const destination = valetContinuation(returnTo) ?? "/account";
   const { activeReservationContext, setActiveReservationContext } = useActiveReservationContext();
   const query = useLinkedReservations(session?.accountId, service);
   const refetch = query.refetch;
@@ -37,8 +40,8 @@ export function LinkedReservationsScreen({ service }: LinkedReservationsScreenPr
     const outcome = resolveLinkedReservationOutcome(query.data);
     if (outcome.kind !== "AUTO_SELECT") return;
     setActiveReservationContext(outcome.context);
-    router.replace("/account");
-  }, [activeReservationContext, query.data, setActiveReservationContext]);
+    router.replace(destination);
+  }, [activeReservationContext, query.data, setActiveReservationContext, destination]);
 
   useEffect(() => {
     if (Platform.OS !== "android") return;
@@ -54,13 +57,13 @@ export function LinkedReservationsScreen({ service }: LinkedReservationsScreenPr
     if (!selected) return;
     if (changingActiveStay) { setConfirmationVisible(true); return; }
     setActiveReservationContext({ reservationId: selected.reservationId, reservationStayId: selected.reservationStayId });
-    router.replace("/account");
+    router.replace(destination);
   }
   function confirmChange(): void {
     if (!selected) return;
     setActiveReservationContext({ reservationId: selected.reservationId, reservationStayId: selected.reservationStayId });
     setConfirmationVisible(false);
-    router.replace("/account");
+    router.replace(destination);
   }
 
   if (!session) return null;
@@ -74,7 +77,7 @@ export function LinkedReservationsScreen({ service }: LinkedReservationsScreenPr
     <Text accessibilityRole="header" style={styles.title}>Seleccionar estadía</Text><Text style={styles.subtitle}>Elige la estadía que quieres gestionar.</Text>
     {(query.data ?? []).map((reservation) => { const current = sameStay(reservation, activeReservationContext); const checked = current || selected?.reservationStayId === reservation.reservationStayId; return <Pressable accessibilityRole="radio" accessibilityState={{ checked }} key={reservation.reservationStayId} onPress={() => choose(reservation)} style={[styles.card, checked && styles.cardSelected]} testID={"linked-reservation-" + reservation.reservationStayId}><Text style={styles.reference}>{reservation.reference}</Text><Text style={styles.body}>{reservation.propertyLabel ?? "Hotel Boutique"}</Text><Text style={styles.body}>{dates(reservation)}</Text><Text style={styles.body}>{reservation.roomLabel ? "Habitación " + reservation.roomLabel : "Habitación por asignar"}</Text>{current ? <Text style={styles.current}>Estadía actual</Text> : null}</Pressable>; })}
     <Pressable accessibilityRole="button" accessibilityState={{ disabled: !selected }} disabled={!selected} onPress={continueSelection} style={[styles.button, !selected && styles.buttonDisabled]} testID="linked-reservations-continue"><Text style={styles.buttonLabel}>{changingActiveStay ? "Cambiar estadía" : "Continuar"}</Text></Pressable>
-    {changingActiveStay ? <Pressable accessibilityRole="button" onPress={() => router.replace("/account")} style={styles.cancelButton} testID="linked-reservations-cancel"><Text style={styles.cancelLabel}>Cancelar</Text></Pressable> : null}
+    {changingActiveStay ? <Pressable accessibilityRole="button" onPress={() => router.replace(destination)} style={styles.cancelButton} testID="linked-reservations-cancel"><Text style={styles.cancelLabel}>Cancelar</Text></Pressable> : null}
   <RealSessionLogout /></ScrollView><ConfirmationModal body="Cambiarás a la estadía seleccionada." confirmLabel="Cambiar estadía" onCancel={() => setConfirmationVisible(false)} onConfirm={confirmChange} testID="linked-reservations-change-confirmation" title="¿Cambiar de estadía?" visible={confirmationVisible} /></View>;
 }
 function State({ actionLabel = "Reintentar", body, offline, onRetry, testID, title }: { actionLabel?: string; body: string; offline?: boolean; onRetry?: () => void; testID: string; title: string }) { return <View style={styles.screen}><View style={[styles.state, offline && styles.offline]} testID={testID}><Text accessibilityRole="header" style={styles.title}>{title}</Text><Text style={styles.body}>{body}</Text>{onRetry ? <Pressable accessibilityRole="button" onPress={onRetry} style={styles.button} testID={testID + "-action"}><Text style={styles.buttonLabel}>{actionLabel}</Text></Pressable> : null}<RealSessionLogout /></View></View>; }

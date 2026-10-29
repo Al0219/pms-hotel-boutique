@@ -1,0 +1,4 @@
+export interface VehicleSnapshot {make:string;model:string;platePrefix:string;plateBody:string;color:string|null}
+export interface PersistedValet {id:string;propertyId:string;reference:string;roomLabel:string|null;vehicleId:string;vehicle:VehicleSnapshot;serviceDate:string;deliveryTime:string;notes:null;status:'OPEN'|'IN_PROGRESS'|'DONE'|'CANCELLED';updatedAt:string}
+export interface PersistedVehicle extends VehicleSnapshot {id:string;savedVehicleId:string;canRelease:boolean;propertyId:string;location:'PARKED'|'WITH_GUEST';updatedAt:string;hasActiveRequest:boolean;reservationId:string;reference:string;roomLabel:string|null;stayStatus:'RESERVED'|'IN_HOUSE'|'CHECKED_OUT'|'CANCELLED'|'NO_SHOW';reservationStatus:'PENDING'|'CONFIRMED'|'CANCELLED';stayActive:boolean;operationallyVisible:boolean}
+export type ValetTarget='IN_PROGRESS'|'DONE';

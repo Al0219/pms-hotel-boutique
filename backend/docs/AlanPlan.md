@@ -1,3 +1,16 @@
+## 2026-10-29 — Integración de origin/main: conflictos resueltos, validación local PASS
+
+Integrado ba70022 en feature/staff-reservation-detail por autorización de José.
+Conflictos documentales de AlanPlan/AlanHandoff resueltos conservando íntegros
+los historiales de Reservas y Valet. OpenAPI combinado revisado semánticamente.
+Backend:164 pruebas seleccionadas/11 clases PASS y verify/JAR PASS, Java21/PG17
+aislado; Web67 seleccionadas/8 archivos PASS, TypeScript y ESLint PASS. No se
+atribuye una nueva ejecución de las suites globales a esta integración.
+Sin modificaciones propias a Android, código/migraciones de Valet o al entorno
+Docker3001. staff-admin.test.tsx previo conservado byte a byte, fuera del merge.
+Evidencia fuera de Git: %TEMP%/pms-staff-reservation-merge-qa. Main intacto.
+Siguiente: publicación autorizada de la resolución y revisión/checks del PR.
+
 ## 2026-10-29 — Corrección captura pública → detalle Staff — COMPLETADA
 
 Contrato65 implementado en feature/staff-reservation-detail: teléfono, país ISO,
@@ -44,6 +57,217 @@ finanzas, inventario ni GuestAccount. Archivos: proyección/repositorios/control
 BFF/DTO/mapper/UI, pruebas y documentación. Se conserva intacta la corrección
 previa no publicada de staff-admin.test.tsx. Siguiente: implementación y QA.
 Sin commit/push/merge; no editar migraciones ni secretos.
+
+## 2026-10-29 — Valet DoD PASS, reconciliación b33236e verificada
+
+Pendientes V2-01–V2-15 cerrados mediante evidencia concreta en QA45, manteniendo
+el PASS manual visual y11/11 funcional confirmado, sin atribuir15/15 manuales.
+Restaurado worktree desde stash de seguridad; ambos stashes conservados. Main
+avanzó a b33236e: historias documentales preservadas y permisos de Reportes/Valet
+combinados. Sin cambios en migraciones007/008 ni bases operativas.
+Backend71 casos seleccionados acreditados (68 PASS y3 expectativas de baseline
+corregidas/repetidas PASS), verify/JAR PASS; OpenAPI114/93/144/16 PASS.
+Web67 PASS +build/lint/typecheck; Android20 PASS +lint/typecheck y salida normal.
+Android58/566 normal de la etapa anterior conserva evidencia de terminación sin
+forceExit; no repetida aquí. Sin pendientes manuales ni bloqueos locales.
+Siguiente: commits y PR autorizados, verificar CI remoto. No merge.
+
+## 2026-10-27 — Valet: pendientes específicos cerrados, QA/DoD PASS
+
+Usuario autoriza evidencia automática para pendientes razonablemente demostrables,
+sin repetir QA visual/funcional11/11 ya PASS. QA45 añade matriz por V2-01–15 con
+archivo/test/resultado; no se atribuye15/15 manual. Casos manuales adicionales:
+ninguno identificado. VAL-01–05 coherentes;007/008 intactas. Rollback probado solo
+como rechazo transaccional en PostgreSQL desechable/schema aislado.
+
+Nuevos tests: dos HttpClient y sesiones Guest independientes contra Tomcat/PG,
+carreras asociación/solicitudes201+409, descartar/reintentar respuestas200 con mismo
+ID y auditoría única, negativos400/401/403/404/409, guardias por estado y auditoría
+completa. Hallazgo corregido: /error convertía409 en401; advice Valet devuelve
+ProblemDetail directamente sin abrir rutas ni cambiar reglas/Auth. OpenAPI actualizado.
+
+Jest: timers GC300000ms de clientes Query y mutaciones de tests sin disposición.
+Fábrica de prueba compartida desmonta, cancela, destruye mutaciones y limpia caches;
+16 suites la usan sin modificar gcTime productivo ni forzar salida. Amenities21
+focal finaliza; comando normal npm test58 suites/566 PASS salida0 y sin aviso de
+handles. Se conserva cualquier warning act no fatal. No nuevas dependencias.
+
+Validación focal: Backend46 (19 funcionales+2 migración+25 OpenAPI) y JAR PASS;
+Android20 focales, lint/typecheck PASS; Web64 focales y typecheck/lint focal PASS.
+Se conservan1181 Backend/2701 Web y builds/Doctor21/21 anteriores; no repetidos.
+Evidencia/backups/parches `/tmp/pms-valet-dod/`, fuera del repo.
+
+**QA/DoD PASS.** Proceder con reconciliación segura de origin/main y commit/push/PR
+según autorización condicional vigente; preservar historia Staff PR176 y Valet,
+excluir next-env generado preexistente. No merge a main. CI remoto por verificar
+tras publicación; detener integración ante cualquier fallo nuevo.
+
+## 2026-10-27 — Valet revisión final: PASS manual reportado, cierre condicionado — EN_QA
+
+Usuario confirma QA visual Web Staff PASS y funcional11/11 PASS, incluidos registro,
+persistencia, solicitudes, duplicados, preparación, entrega/retorno, filtros/historial,
+reutilización, custodia tras checkout, entrega excepcional, aislamiento y permisos.
+QA45 registra el reporte literal y su contraste con V2-01–15. Sin desglose de los11
+escenarios no se infiere15/15: quedan por acreditar navegación/cambio de estancia,
+carreras de dos dispositivos, respuesta cortada/replay/versiones/auditoría,
+snapshots/edición/cutoff, negativos HTTP, mock/Traslados y upgrade/reaplicación/
+rollback en copia. Se solicitó detalle al usuario. No equivale a fallos reportados.
+
+VAL-01–05 auditadas coherentes. UX vigente: tres cards superiores; Solicitudes es
+el único acceso al modal; sin sección inline. Contrato62 y QA45 actualizados.
+Código funcional sin cambios en esta revisión.007/008 fuentes idénticas al JAR de
+QA; READ ONLY confirma ambas EXECUTED, constraints válidas y0 duplicados activos.
+Sin ejecutar migraciones/escrituras en BD QA; suites Backend en PostgreSQL desechable.
+
+Validación final: Backend clean verify1181/1181 + JAR PASS; OpenAPI106/86/131/15,
+paridad sin exclusiones. Web353 suites/2701 tests, lint/typecheck/build PASS.
+Android57 suites/565 tests aprobados, lint/typecheck/export Hermes PASS; Doctor21/21
+PASS tras resolver acceso DNS del sandbox. Focal Valet19 con detectOpenHandles
+salida0. Completo Jest conserva handles y avisos act: PID propio cerrado tras el
+resumen, sin forceExit ni atribuir salida0; posible timeout CI queda documentado.
+
+Auditoría78 rutas;77 candidatas Valet/glue/tests/docs. Sin patrones de secretos ni
+artefactos candidatos. next-env.d.ts dev preexistente preservado y excluido de
+cualquier commit futuro. Evidencia `/tmp/pms-valet-final-review/` fuera del repo.
+origin/main actualizado por fetch a fa56e3e (PR176 documental); branch sigue909a12c.
+Conservar ambas historias de Plan/Handoff al reconciliar después del gate QA.
+
+**Integración detenida:** no commit/push/PR/merge; DoD sin cierre hasta trazabilidad
+manual V2 completa. CI de esta publicación no existe aún. Siguiente: recibir detalle
+de cobertura oficial pendiente; luego preparar integración normal sin merge a main.
+
+## 2026-10-27 — Valet VAL-04/05 aprobadas e implementadas — EN_QA
+
+Usuario aprobó explícitamente reutilización y entrega excepcional; sustituye las
+limitaciones de la entrega parcial anterior. Rama `feature/valet-real-mvp`, worktree
+`/tmp/pms-valet`; sin commit/push/PR ni PASS manual. Base main `909a12c` preservada.
+
+Diagnóstico:007 acoplaba identidad de vehículo a estancia; quitar stay_id rompería
+custodia e historial.008 aditiva conserva filas/IDs/datos/snapshots, crea guardados
+por Guest y FK de asociaciones. Placa única por cuenta, una asociación operativa
+y una solicitud activa por guardado con índices/locks/triggers PostgreSQL. Conflictos
+históricos de doble custodia detienen migración y hacen rollback, sin resolverlos
+silenciosamente. Preflight de solo lectura en contrato62.007 intacta; BD hotel no tocada.
+
+Guest lista guardados de su cuenta, asocia a estancia propia con ubicación explícita
+sin herencia y CAS/key; edición cambia solo identidad/current association. Android
+separa guardados/estancia, impide duplicados, reinicia drafts por contexto y refresca
+custodia incluso sin solicitudes activas, solo en pantalla/foreground. Mocks intactos.
+Staff release excepcional terminal+PARKED+sin solicitud, con confirmación, OPS/scope,
+versión/locks/idempotencia y auditoría atómica; no crea ni modifica solicitudes.
+Web conserva vehículos predominantes, filtros/contadores y panel cerrado sin desmontar.
+
+Validación: Backend clean verify1181/1181 y build JAR PASS; Web353 suites/2697 pruebas,
+lint/typecheck/build PASS; Android57 suites/565 pruebas, lint/typecheck/export Android
+PASS en sus comprobaciones. Jest deja handles tras finalizar suite completa; se cerró
+solo su PID verificado por cwd, sin forceExit ni ocultar la advertencia. Focal Android
+2/19 y Web8/49 PASS. Backend focal43 PASS (16 funcionales+2 migración+25 OpenAPI);
+carrera simultánea release/replay incluida en focal43 final PASS, auditoría única. OpenAPI106/86/131/15,
+paridad sin exclusiones. Logs `/tmp/pms-valet-v2-*.log`, respaldo inicial fuera del repo.
+
+Contrato62 y QA45 incluyen decisiones vigentes, migración/backfill/preflight y15
+casos manuales V2-01–15. next-env previo preservado; original main limpio.
+Siguiente: ejecutar QA45 con Backend008 actualizado y confirmar resultados manuales.
+Mantener EN_QA hasta confirmación del usuario; no avanzar a publicación.
+
+## 2026-10-27 — Valet: lista operativa y solicitudes desplegables — EN_QA / PARCIAL
+
+Rama `feature/valet-real-mvp`, worktree `/tmp/pms-valet`. Nueva iteración autorizada
+por el usuario. Sin commit/push/PR ni PASS manual. Original main preservado.
+
+Implementado: Vehículos registrados primero, contadores de registros operativos,
+búsqueda placa/marca/modelo/reserva/habitación, filtros ubicación/estancia y
+propiedad autorizada mediante PropertySwitcher. PARKED primero; historial explícito.
+Backend proyecta referencia/habitación y estados persistidos, con stayActive y
+operationallyVisible. Una estancia terminada con PARKED/petición activa permanece
+operativa; resuelta WITH_GUEST sin petición queda en historial. No flags ficticios.
+Solicitudes inicia cerrado con contador/chevron/ARIA; hidden conserva tabla,
+filtros y mutation montados. Confirmaciones/permisos/acciones existentes conservados.
+
+Pendiente indispensable: se consultaron VAL-04 (bloquear nueva asociación si el
+vehículo sigue PARKED/OPEN/IP en otra estancia) y VAL-05 (entrega Staff sin petición
+tras finalizar estancia, con CAS/lock/audit). Esperar respuesta; silencio no aprueba.
+Contrato62 contiene diagnóstico y propuesta concreta de identidad guardada por
+cuenta + asociaciones con IDs históricos preservados/migración008. No se implementó
+esa migración, la reutilización ni selector Android; no afirmar MVP completo.
+La lectura/listado ya implementados no conceden nuevas confirmaciones físicas.
+
+Pruebas: Backend focal36 y verify1175/1175 PASS; Web focal8/47 y suite353/2695 PASS;
+lint/typecheck/build Web y diff-check PASS. Paridad OpenAPI103/83/129/15 y nuevas
+propiedades PASS. Android/migración007 idénticos al inicio; sin repetir sus suites.
+No se ejecutaron migraciones ni aplicación contra BD del hotel; PostgreSQL17
+QA descartable sin puertos. Evidencia `/tmp/pms-valet-reuse-*.log`; copia inicial
+fuera del repo `/tmp/pms-valet-reuse-baseline.zip`. next-env previo preservado.
+[Contrato62](62_VALET_REAL_MVP_DECISIONS.md) y
+[QA45](../../frontend/pms-hotel-android/docs/45_VALET_REAL_MVP_QA.md) actualizados.
+Siguiente: obtener decisión VAL-04/05 y completar modelo, migración y Android;
+después ejecutar pruebas de reutilización y repetición manual. Mantener EN_QA.
+
+## 2026-10-27 — Valet QA: navegación Android y composición Web — EN_QA
+
+Dos hallazgos manuales del usuario corregidos técnicamente en `/tmp/pms-valet`,
+rama `feature/valet-real-mvp`. Sin commit/push/PR; repetición manual pendiente.
+
+H1: GuestRouteGuard omitía `/valet` de rutas HTTP disponibles. Su fallback ofrecía
+volver al selector; cuando faltaba contexto, el selector no conservaba destino y
+terminaba siempre en Inicio. Se habilita Valet real y continuación interna
+allowlisted `/valet` a través de login/selección; sin continuación se conserva
+Inicio. Providers, restore Guest, titularidad y queries scoped permanecen.
+Regresión con router/entrypoint/layout reales cubre selección automática/múltiple,
+login, cambio confirmado, política mock y respuesta tardía de estancia previa.
+
+H2: la página real importaba CSS del mock sin aplicar la clase header y renderizaba
+tablas sin paneles. Ahora usa CSS Module propio con tokens Inter/Lora, jerarquía,
+cabecera responsive, paneles para solicitudes/custodia, Actualizar outline,
+acciones pequeñas compartidas y viewport de tabla enfocable. Conserva StaffShell,
+PropertySwitcher, permisos, filtros, confirmaciones y todas las mutations.
+Sin cambios Backend funcional/contratos/migraciones/validaciones ni dependencias.
+
+Pruebas: Android focal4/25 PASS y suite57/561 PASS; Web focal7/37 PASS y suite
+352/2685 PASS (salida0). Lint/typecheck ambos sin warnings/errores, export Android,
+build Web y diff-check PASS. Un stub antiguo de router se actualizó tras fallar
+la primera pasada; la repetición pasó. Jest completo mantuvo procesos abiertos
+tras el resumen incluso con --detectOpenHandles; procesos propios detenidos sin
+forceExit tras conservar resultados. Focal Android termina con salida0.
+Logs `/tmp/pms-valet-qa-*.log`. Se preserva next-env.d.ts previo byte por byte.
+
+[QA45](../../frontend/pms-hotel-android/docs/45_VALET_REAL_MVP_QA.md) registra causas,
+archivos y pasos para repetir ambos hallazgos. QA manual **PENDIENTE**; no declarar
+PASS manual ni COMPLETADA hasta confirmación explícita del usuario.
+Siguiente: repetir H1 con/sin contexto y H2 en escritorio/móvil/teclado, además de
+entrega/retorno del QA base; registrar PASS/FAIL por hallazgo.
+
+## 2026-10-27 — Valet de vehículos real MVP — EN_QA
+
+Usuario aprueba VAL-01/02/03 y Android28 sobre Android18 para simultaneidad.
+Rama `feature/valet-real-mvp`, worktree `/tmp/pms-valet`, base main `909a12c`.
+Ampliación real autorizada sobre IMP-AND-0105 (mock COMPLETADA, ANDROID-1/WEB-3,
+dependencia0102 cerrada). Backend: Alan; revisión cross-app colaborativa.
+Contrato [62](62_VALET_REAL_MVP_DECISIONS.md),
+QA [Android45](../../frontend/pms-hotel-android/docs/45_VALET_REAL_MVP_QA.md).
+
+PostgreSQL: migración aditiva005-operations-007, vehículos Guest/estancia/property,
+ServiceRequest VALET, índice único parcial de solicitud activa y snapshots
+inmutables. Staff confirma entrega DONE/WITH_GUEST atómica y retorno PARKED sin
+reabrir solicitudes; Guest edita/cancela OPEN con30min/cutoff25min/checkout12:00.
+Auth/permisos/scope/auditoría/idempotencia/CAS existentes; ubicación no cambia al
+crear/cancelar. Android HTTP real, UX/modal compartidos y mocks aislados; Mis
+servicios/Inicio coordinan cuatro fuentes y polling10s. Web `/parking-valet`, BFF
+Staff, búsqueda/filtros/confirmaciones y permisos INTAKE/OPS. Traslados reales no
+disponibles, sin simulación exitosa. Sin pagos/cargos/GPS/tarifas/dependencias nuevas.
+
+Evidencia técnica: Backend verify1174/1174 PASS; focales36 PASS, migración final1
+PASS y custodia final10 PASS (incluye retorno antiguo entre ciclos). OpenAPI
+103 operaciones/83paths/129schemas/15tags, paridad mappings sin exclusiones nuevas.
+Android suite56/553 PASS; Jest advierte handles abiertos tras terminar: procesos
+propios detenidos tras guardar resumen, sin forceExit. Focal Android real7 PASS con
+--detectOpenHandles y salida0; lint/typecheck y export Android PASS. Web completo
+352 suites/2683 pruebas PASS; focal17 PASS, lint/typecheck/build PASS.
+Diff-check PASS. Logs sanitizados `/tmp/pms-valet-*.log`; OpenAPI en backend/target.
+No se migró ni arrancó Backend contra la BD del hotel; PostgreSQL17 descartable,
+sin puertos. Original main limpio y preservado. Sin commit/push/PR.
+QA manual **PENDIENTE**, no atribuido al agente. Mantener EN_QA hasta PASS explícito.
+Siguiente: ejecutar QA45 Android/Staff y confirmar PASS/FAIL manual; no publicar.
 
 ## 2026-10-28 — Perfil personal y cuenta Guest — EN_QA
 

@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {createTestQueryClient} from '../src/test/queryClient';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Slot } from 'expo-router';
 import { renderRouter } from 'expo-router/testing-library';
@@ -21,7 +22,7 @@ import { SessionServiceRequestsProvider } from '@/modules/service-requests';
 import { SessionVehiclesProvider } from '@/modules/valet';
 
 function createQueryClient() {
-  return new QueryClient({
+  return createTestQueryClient({
     defaultOptions: {
       mutations: { retry: false },
       queries: { gcTime: 0, retry: false },

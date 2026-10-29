@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {createTestQueryClient} from '../src/test/queryClient';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { BackHandler } from 'react-native';
@@ -12,7 +13,7 @@ import { ProfileScreen } from '@/modules/account/profile/presentation/ProfileScr
 type UpdateResult = Awaited<ReturnType<AccountProfileService['updateAccountProfile']>>;
 
 function createQueryClient() {
-  return new QueryClient({ defaultOptions: { mutations: { retry: false }, queries: { retry: false } } });
+  return createTestQueryClient({ defaultOptions: { mutations: { retry: false }, queries: { retry: false } } });
 }
 
 async function renderProfile(service: AccountProfileService) {

@@ -1,5 +1,13 @@
 # APPROVED FRONTEND DATA/MOCK CONTRACT — IMP-AND-0105
 
+> **Valet real, 2026-10-27:** las reglas session-only de este documento siguen
+> describiendo el mock. En modo real prevalecen VAL-01/02/03 y
+> [Backend62](../../../backend/docs/62_VALET_REAL_MVP_DECISIONS.md): solo Staff
+> confirma custodia/completado, una solicitud activa por vehículo y snapshots
+> inmutables. Android28 prevalece sobre Android18 sobre simultaneidad.
+> QA real: [QA45](45_VALET_REAL_MVP_QA.md). Traslados reales fuera de alcance.
+
+
 ## Transporte / Valet
 
 **Tarea:** `IMP-AND-0105 — Valet/Parking`  

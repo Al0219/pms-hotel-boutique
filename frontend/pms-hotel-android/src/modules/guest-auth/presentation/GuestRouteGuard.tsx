@@ -1,11 +1,13 @@
 import { environment } from "@/config/environment";
 import { UniversalState } from "@/shared/components/UniversalState";
 
-import { router, usePathname } from "expo-router";
+import { router, useGlobalSearchParams, usePathname } from "expo-router";
 import { type PropsWithChildren, useEffect } from "react";
 
 import { useActiveReservationContext } from "@/modules/guest-auth/presentation/ActiveReservationContextProvider";
 import { useGuestAuthSession } from "@/modules/guest-auth/presentation/GuestAuthSessionProvider";
+
+import { reservationsDestination, valetContinuation } from './guestContinuation';
 
 function destination(
   pathname: string,
@@ -32,6 +34,8 @@ function destination(
 /** Prevents protected route content from mounting without the identity it requires. */
 export function GuestRouteGuard({ children }: PropsWithChildren) {
   const pathname = usePathname();
+  const { returnTo } = useGlobalSearchParams();
+  const continuation = valetContinuation(pathname === "/valet" ? pathname : returnTo);
   const { session } = useGuestAuthSession();
   const { activeReservationContext, clearActiveReservationContext } = useActiveReservationContext();
   const redirect = destination(
@@ -44,15 +48,19 @@ export function GuestRouteGuard({ children }: PropsWithChildren) {
     if (!environment.useMockApi && !session) clearActiveReservationContext();
   }, [session, clearActiveReservationContext]);
   useEffect(() => {
-    if (!environment.useMockApi && session && (pathname === '/login' || pathname === '/')) router.replace('/reservations');
-  }, [pathname, session]);
+    if (!environment.useMockApi && session && (pathname === '/login' || pathname === '/')) {
+      router.replace(continuation && activeReservationContext ? continuation : reservationsDestination(continuation));
+    }
+  }, [pathname, session, activeReservationContext, continuation]);
 
   useEffect(() => {
-    if (redirect) router.replace(redirect);
-  }, [redirect]);
+    if (redirect === '/reservations') router.replace(reservationsDestination(continuation));
+    else if (redirect === '/login' && continuation) router.replace({ pathname: '/login', params: { returnTo: continuation } });
+    else if (redirect) router.replace(redirect);
+  }, [redirect, continuation]);
 
   if (redirect) return null;
-  if (!environment.useMockApi && !['/', '/login', '/reservations', '/account', '/services', '/services/housekeeping', '/services/room-service', '/services/amenities', '/services/requests'].includes(pathname)) {
+  if (!environment.useMockApi && !['/', '/login', '/reservations', '/account', '/services', '/services/housekeeping', '/services/room-service', '/services/amenities', '/services/requests', '/valet'].includes(pathname)) {
     return <UniversalState kind="empty" title="Función no disponible" body="Esta función todavía no está disponible. Puedes consultar tus estadías." action={{ label: 'Volver', onPress: () => router.replace(session ? '/reservations' : '/login') }} testID="guest-real-feature-unavailable" />;
   }
   return children;

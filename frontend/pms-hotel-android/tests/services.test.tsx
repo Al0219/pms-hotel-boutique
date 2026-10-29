@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {createTestQueryClient} from '../src/test/queryClient';
+import { QueryClientProvider } from "@tanstack/react-query";
 import { ActiveReservationContextProvider } from "@/modules/guest-auth";
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import { act, renderRouter } from "expo-router/testing-library";
@@ -58,7 +59,7 @@ async function renderServices(
   service: MockServicesService,
   nowMs: () => number = () => inStayNowMs,
 ) {
-  const queryClient = new QueryClient({
+  const queryClient = createTestQueryClient({
     defaultOptions: {
       queries: { gcTime: 0, retry: false },
       mutations: { retry: false },
@@ -118,7 +119,7 @@ describe("Services", () => {
   });
 
   it("renders Late check-out, dedicated-flow launchers, and V3 shell with Services active", async () => {
-    const queryClient = new QueryClient({
+    const queryClient = createTestQueryClient({
       defaultOptions: {
         queries: { gcTime: 0, retry: false },
         mutations: { retry: false },

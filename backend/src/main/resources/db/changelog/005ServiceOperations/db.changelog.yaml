@@ -17,3 +17,9 @@ databaseChangeLog:
   - include:
       file: 006-amenities.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 007-valet.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 008-reusable-valet.yaml
+      relativeToChangelogFile: true

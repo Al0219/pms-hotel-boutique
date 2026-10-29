@@ -36,3 +36,7 @@ export { initialSessionVehiclesState, SessionVehiclesProvider, sessionVehiclesRe
 export { formatVehiclePlate, hasDuplicateVehiclePlate, normalizePlateForComparison, sanitizeVehiclePlateBodyInput, validateRequiredVehicleText, validateVehiclePlateBody, vehicleInputLimits, vehiclePlatePrefixes } from '@/modules/valet/session/vehicleValidation';
 
 export { buildTransferSessionRequestInput } from '@/modules/valet/domain/buildTransferSessionRequestInput';
+
+export {RealValetScreen} from './presentation/RealValetScreen';
+export {useValetRequests} from './presentation/hooks/usePersistedValet';
+export {ValetRequestsContent} from './presentation/ValetRequestsSection';

@@ -1,4 +1,5 @@
-import { router } from "expo-router";
+import {reservationsDestination} from './guestContinuation';
+import { router, useLocalSearchParams } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { useRef, useState } from "react";
 import {
@@ -90,6 +91,7 @@ export function LoginScreen({ onAuthenticated, service }: LoginScreenProps) {
   const { clearActiveReservationContext } = useActiveReservationContext();
   const { beginSession, sessionExpired } = useGuestAuthSession();
   const login = useGuestLogin(service);
+  const { returnTo } = useLocalSearchParams();
   const inFlight = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
   const [email, setEmail] = useState("");
@@ -133,7 +135,7 @@ export function LoginScreen({ onAuthenticated, service }: LoginScreenProps) {
     clearActiveReservationContext();
     beginSession(session);
     if (onAuthenticated) onAuthenticated(session);
-    else router.replace("/reservations");
+    else router.replace(reservationsDestination(returnTo));
   }
 
   function submit(): void {

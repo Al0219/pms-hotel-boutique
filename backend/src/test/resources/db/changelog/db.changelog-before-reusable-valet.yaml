@@ -1,0 +1,5 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/db.changelog-before-valet.yaml
+  - include:
+      file: db/changelog/005ServiceOperations/007-valet.yaml

@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {createTestQueryClient} from '../src/test/queryClient';
+import { QueryClientProvider } from "@tanstack/react-query";
 import { ActiveReservationContextProvider } from "@/modules/guest-auth";
 import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 import { useLayoutEffect, useRef } from "react";
@@ -73,7 +74,7 @@ async function setup(
   nowMs = () => activeNowMs,
   checkedOut = false,
 ) {
-  const client = new QueryClient({
+  const client = createTestQueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   const content = (

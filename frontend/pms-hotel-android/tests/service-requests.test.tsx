@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {createTestQueryClient} from '../src/test/queryClient';
+import { QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import { useEffect, useRef } from "react";
 import { Slot, usePathname } from "expo-router";
@@ -182,7 +183,7 @@ async function renderRequestsScreen({
   return render(
     <QueryClientProvider
       client={
-        new QueryClient({
+        createTestQueryClient({
           defaultOptions: {
             queries: { gcTime: 0, retry: false },
             mutations: { gcTime: 0, retry: false },
@@ -222,7 +223,7 @@ describe("Session service requests — IMP-AND-0112", () => {
       >
         <QueryClientProvider
           client={
-            new QueryClient({
+            createTestQueryClient({
               defaultOptions: { queries: { gcTime: 0, retry: false } },
             })
           }
@@ -1081,7 +1082,7 @@ describe("Session service requests — IMP-AND-0112", () => {
     const list = await render(
       <QueryClientProvider
         client={
-          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+          createTestQueryClient({ defaultOptions: { queries: { retry: false } } })
         }
       >
         <ActiveReservationContextProvider
@@ -1101,7 +1102,7 @@ describe("Session service requests — IMP-AND-0112", () => {
     const account = await render(
       <QueryClientProvider
         client={
-          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+          createTestQueryClient({ defaultOptions: { queries: { retry: false } } })
         }
       >
         <ActiveReservationContextProvider
@@ -1124,7 +1125,7 @@ describe("Session service requests — IMP-AND-0112", () => {
     const empty = await render(
       <QueryClientProvider
         client={
-          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+          createTestQueryClient({ defaultOptions: { queries: { retry: false } } })
         }
       >
         <ActiveReservationContextProvider
@@ -1141,7 +1142,7 @@ describe("Session service requests — IMP-AND-0112", () => {
     const populated = await render(
       <QueryClientProvider
         client={
-          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+          createTestQueryClient({ defaultOptions: { queries: { retry: false } } })
         }
       >
         <ActiveReservationContextProvider
@@ -1192,7 +1193,7 @@ describe("Session service requests — IMP-AND-0112", () => {
     const empty = await render(
       <QueryClientProvider
         client={
-          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+          createTestQueryClient({ defaultOptions: { queries: { retry: false } } })
         }
       >
         <ActiveReservationContextProvider
@@ -1214,7 +1215,7 @@ describe("Session service requests — IMP-AND-0112", () => {
     const populated = await render(
       <QueryClientProvider
         client={
-          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+          createTestQueryClient({ defaultOptions: { queries: { retry: false } } })
         }
       >
         <ActiveReservationContextProvider
@@ -1245,7 +1246,7 @@ describe("Session service requests — IMP-AND-0112", () => {
     const rendered = await render(
       <QueryClientProvider
         client={
-          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+          createTestQueryClient({ defaultOptions: { queries: { retry: false } } })
         }
       >
         <ActiveReservationContextProvider
@@ -1268,7 +1269,7 @@ describe("Session service requests — IMP-AND-0112", () => {
   });
 
   it("navigates from Account preview to the canonical route, keeps Servicios active, and returns to Services", async () => {
-    const queryClient = new QueryClient({
+    const queryClient = createTestQueryClient({
       defaultOptions: { queries: { gcTime: 0, retry: false } },
     });
     const ui = await renderRouter(
