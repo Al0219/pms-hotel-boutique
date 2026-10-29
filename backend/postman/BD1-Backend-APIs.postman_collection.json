@@ -1056,6 +1056,39 @@
       ]
     },
     {
+      "name": "Staff — exportación CSV On-books diario",
+      "description": "BE-010B-CSV-01. Mismos permisos/filtros del on-books; ALL_PROPERTIES exige MULTI_PROPERTY_READ. Cada ejecución genera estado actual y audit por property; no repetir automáticamente ni guardar tokens reales.",
+      "item": [
+        {
+          "name": "GET CSV On-books — property",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{staffAccessToken}}", "type": "string" }] },
+            "header": [{ "key": "Accept", "value": "text/csv" }],
+            "url": "{{baseUrl}}/api/v1/reports/on-books/daily/export?from={{from}}&to={{to}}&propertyId={{propertyId}}"
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('HTTP 200 CSV', () => pm.response.to.have.status(200));",
+            "pm.test('CSV privado', () => { pm.expect(pm.response.headers.get('Content-Type')).to.include('text/csv'); pm.expect(pm.response.headers.get('Cache-Control')).to.eql('private, no-store'); pm.expect(pm.response.headers.get('Content-Disposition')).to.include('attachment; filename='); });",
+            "if (pm.response.code === 200) { pm.test('Cabecera estable de 11 columnas', () => { const header = pm.response.text().replace(/^\\uFEFF/, '').split('\\r\\n')[0]; pm.expect(header).to.eql('propertyId,timezone,currency,stayDate,physicalRooms,outOfOrderRooms,availableRooms,onBooksRooms,onBooksPercent,unavailableReason,calculatedAt'); }); }"
+          ] } }]
+        },
+        {
+          "name": "GET CSV On-books — ALL_PROPERTIES",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{staffAccessToken}}", "type": "string" }] },
+            "header": [{ "key": "Accept", "value": "text/csv" }],
+            "url": "{{baseUrl}}/api/v1/reports/on-books/daily/export?from={{from}}&to={{to}}&scope=ALL_PROPERTIES"
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('HTTP 200 CSV autorizado', () => pm.response.to.have.status(200));",
+            "pm.test('Sin caché y descarga CSV', () => { pm.expect(pm.response.headers.get('Cache-Control')).to.eql('private, no-store'); pm.expect(pm.response.headers.get('Content-Type')).to.include('text/csv'); pm.expect(pm.response.headers.get('X-Content-Type-Options')).to.eql('nosniff'); });"
+          ] } }]
+        }
+      ]
+    },
+    {
       "name": "Staff — reservas reales (listado/detalle)",
       "description": "STAFF-RESERVATIONS-READ-01, contrato backend/docs/49_STAFF_RESERVATIONS_READ_CONTRACT.md. Usar Staff Auth existente con RESERVATION_MANAGE y propertyId autorizado. Configurar reservationId con una reserva real ya persistida de esa property. Solo lectura; Guest Auth no habilita estos endpoints. No guardar ni exportar tokens reales.",
       "item": [
@@ -1338,6 +1371,75 @@
               }
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "BE-010B-ARRDEP-01",
+      "item": [
+        {
+          "name": "Pending arrivals and departures - authorized property",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffAccessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/reports/arrivals-departures/daily?from={{from}}&to={{to}}&propertyId={{propertyId}}",
+            "description": "Staff RESERVATION_MANAGE or COMMERCIAL_MANAGE. Current pending stays by scheduled local date; no actual movement history, PII or revenue. Inclusive 366 days, 50000 rows max. private, no-store."
+          }
+        },
+        {
+          "name": "Pending arrivals and departures - ALL authorized properties",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffAccessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/reports/arrivals-departures/daily?from={{from}}&to={{to}}&scope=ALL_PROPERTIES",
+            "description": "Additionally requires MULTI_PROPERTY_READ; only active properties authorized by current C2 membership. Never all organization properties by default."
+          }
+        }
+      ]
+    },
+    {
+      "name": "BE-010B-HKCUR-01",
+      "item": [
+        {
+          "name": "Current housekeeping - authorized property",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffAccessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/reports/housekeeping/current?propertyId={{propertyId}}",
+            "description": "Staff OPERATIONS_MANAGE. Current physical rooms and tracked HK state; untracked is unknown, DND overlaps. No historical activity or sellable availability. private, no-store."
+          }
+        },
+        {
+          "name": "Current housekeeping - ALL authorized properties",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffAccessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/reports/housekeeping/current?scope=ALL_PROPERTIES",
+            "description": "Additionally requires MULTI_PROPERTY_READ; only active properties authorized by current C2 membership."
+          }
+        }
+      ]
+    },
+    {
+      "name": "BE-010B-MTCUR-01",
+      "item": [
+        {
+          "name": "Current maintenance - authorized property",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffAccessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/reports/maintenance/current?propertyId={{propertyId}}",
+            "description": "Staff OPERATIONS_MANAGE. Current OPEN/IN_PROGRESS orders and overlapping urgent/unassigned subsets; no history, SLA or PII. private, no-store."
+          }
+        },
+        {
+          "name": "Current maintenance - ALL authorized properties",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffAccessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/reports/maintenance/current?scope=ALL_PROPERTIES",
+            "description": "Additionally requires MULTI_PROPERTY_READ; only active properties authorized by current C2 membership."
+          }
         }
       ]
     },

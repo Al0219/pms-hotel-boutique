@@ -106,5 +106,7 @@ ATS. Cada ruta implementada se agregará a
    este primer reporte no promete capacidad histórica.
 2. Validar con Web la ruta BFF y el mapeo de sesión/errores.
 
-El CSV autorizado por C7-D09 queda para otro incremento después de estabilizar
-la lectura HTTP; no se publica exportación en esta rama.
+El CSV autorizado por C7-D09 se detalla en su
+[contrato específico aprobado](REPORTING_ON_BOOKS_CSV_CONTRACT_PROPOSAL.md),
+BE-010A-CSV-01 (2026-10-21). BE-010B-CSV-01 añade `/export` y su BFF sin cambiar
+el DTO ni la semántica de esta consulta JSON. Su QA/cierre se registra aparte.

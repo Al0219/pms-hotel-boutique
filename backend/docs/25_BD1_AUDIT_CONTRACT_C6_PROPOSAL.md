@@ -151,6 +151,19 @@ registrar la decisión arquitectónica antes de crear su changelog.
 | Mutación local revierte; intento UPDATE/DELETE de evento | No queda evento de la mutación revertida; historia confirmada es append-only en cada fuente integrada. |
 | Auth legado sin organización/actor probables | Permanece almacenado, no se expone mediante inferencia o lookup no scoped. |
 
+## Emisor CSV on-books aprobado (2026-10-21)
+
+El usuario aprobó [BE-010A-CSV-01](REPORTING_ON_BOOKS_CSV_CONTRACT_PROPOSAL.md).
+Su implementación BE-010B-CSV-01 emite `REPORT_EXPORT_GENERATED` sobre
+`REPORT_EXPORT`, actor Staff real, un evento por property y UUID de generación
+común en entityId/correlationId. afterState solo incluye organizationId capturado
+del scope, report/format fijos, from/to, requestedScope, calculatedAt y rowCount
+de esa property. No publica el CSV ni otras properties dentro de cada evento.
+Es generación, no prueba de recepción del archivo. Audit se confirma antes de
+la respuesta; fallo revierte el conjunto. La futura proyección C6 necesita su
+mapping/allowlist propio: esta entrega no expone snapshots crudos ni crea una
+consulta administrativa nueva. Conserva el esquema append-only existente.
+
 ## Revisión manual del contrato
 
 Desde `backend/`, confirmar rama y ausencia de cambios funcionales con

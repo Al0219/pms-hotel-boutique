@@ -1,6 +1,8 @@
 package com.pms.hotelboutique.backend.modules.inventory.application;
 
 import com.pms.hotelboutique.backend.modules.inventory.infrastructure.persistence.DailyOnBooksRepository;
+import com.pms.hotelboutique.backend.modules.reservations.application.AuditService;
+import com.pms.hotelboutique.backend.modules.reservations.domain.ReservationAuditEvent;
 import com.pms.hotelboutique.backend.modules.securityauth.application.AuthorizedPropertyScope;
 import com.pms.hotelboutique.backend.modules.securityauth.application.PropertyScopeResolver;
 import com.pms.hotelboutique.backend.modules.securityauth.application.StaffAuthService;
@@ -15,10 +17,12 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 @Transactional(readOnly = true)
@@ -30,13 +34,17 @@ public class DailyOnBooksServiceImpl implements DailyOnBooksService {
     private final StaffAuthorizationService authorization;
     private final PropertyScopeResolver scopes;
     private final DailyOnBooksRepository repository;
+    private final AuditService audit;
+    private final ObjectMapper json;
 
     public DailyOnBooksServiceImpl(StaffAuthService sessions, StaffAuthorizationService authorization,
-            PropertyScopeResolver scopes, DailyOnBooksRepository repository) {
+            PropertyScopeResolver scopes, DailyOnBooksRepository repository, AuditService audit, ObjectMapper json) {
         this.sessions = sessions;
         this.authorization = authorization;
         this.scopes = scopes;
         this.repository = repository;
+        this.audit = audit;
+        this.json = json;
     }
 
     @Override
@@ -50,12 +58,47 @@ public class DailyOnBooksServiceImpl implements DailyOnBooksService {
     @Override
     public DailyOnBooksReport forAllAuthorizedProperties(StaffPrincipal principal,
             LocalDate from, LocalDate to) {
+        return calculate(allScope(principal), from, to);
+    }
+
+    private AuthorizedPropertyScope allScope(StaffPrincipal principal) {
         StaffAuthorizationSnapshot snapshot = authorize(principal);
         if (!snapshot.hasPermission("MULTI_PROPERTY_READ")) {
             throw new AccessDeniedException("ALL_PROPERTIES requires MULTI_PROPERTY_READ");
         }
-        AuthorizedPropertyScope scope = scopes.resolveAllProperties(snapshot);
-        return calculate(scope, from, to);
+        return scopes.resolveAllProperties(snapshot);
+    }
+
+    @Override
+    @Transactional
+    public byte[] exportForProperty(StaffPrincipal principal, UUID propertyId, LocalDate from, LocalDate to) {
+        var scope = scopes.resolveProperty(authorize(principal), propertyId);
+        return export(principal, scope, from, to);
+    }
+
+    @Override
+    @Transactional
+    public byte[] exportForAllAuthorizedProperties(StaffPrincipal principal, LocalDate from, LocalDate to) {
+        return export(principal, allScope(principal), from, to);
+    }
+
+    private byte[] export(StaffPrincipal principal, AuthorizedPropertyScope scope, LocalDate from, LocalDate to) {
+        var report = calculate(scope, from, to);
+        byte[] bytes = DailyOnBooksCsv.serialize(report);
+        UUID generation = UUID.randomUUID();
+        var counts = report.nights().stream().collect(java.util.stream.Collectors.groupingBy(
+                DailyOnBooksReport.Night::propertyId, java.util.stream.Collectors.counting()));
+        for (UUID propertyId : scope.propertyIds().stream().sorted().toList()) {
+            long count = counts.getOrDefault(propertyId, 0L);
+            String metadata = json.writeValueAsString(Map.of("organizationId", scope.organizationId().toString(),
+                    "report", "ON_BOOKS_DAILY", "format", "CSV", "from", from.toString(), "to", to.toString(),
+                    "requestedScope", scope.type().name(), "calculatedAt", report.calculatedAt().toString(), "rowCount", count));
+            audit.record(new AuditService.RecordAuditCommand(ReservationAuditEvent.ActorType.STAFF,
+                    principal.staffUserId(), "REPORT_EXPORT_GENERATED", "REPORT_EXPORT", generation, propertyId,
+                    null, metadata, null, generation));
+        }
+        // Spring commits/flushes all events before this proxied service returns to HTTP.
+        return bytes;
     }
 
     private StaffAuthorizationSnapshot authorize(StaffPrincipal principal) {

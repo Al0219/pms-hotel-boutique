@@ -26,13 +26,19 @@ public class InventorySecurityConfiguration {
                         "/api/v1/properties/*/room-types/*", "/api/v1/properties/*/rooms",
                         "/api/v1/properties/*/rooms/*", "/api/v1/properties/*/rate-plans",
                         "/api/v1/properties/*/rate-plans/*",
-                        "/api/v1/reports/on-books/daily", "/api/v1/reservations", "/api/v1/reservations/*", "/api/v1/reservations/*/stays/*/room-assignment")
+                        "/api/v1/reports/on-books/daily", "/api/v1/reports/on-books/daily/export",
+                        "/api/v1/reports/arrivals-departures/daily", "/api/v1/reports/housekeeping/current",
+                        "/api/v1/reports/maintenance/current",
+                        "/api/v1/reservations", "/api/v1/reservations/*", "/api/v1/reservations/*/stays/*/room-assignment")
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(errors -> errors
                         .authenticationEntryPoint((request, response, exception) -> response.setStatus(401))
                         .accessDeniedHandler((request, response, exception) -> response.setStatus(403)))
-                .authorizeHttpRequests(requests -> requests.anyRequest().authenticated())
+                .authorizeHttpRequests(requests -> requests
+                        .requestMatchers(request -> request.getRequestURI().equals("/api/v1/reports/on-books/daily/export")
+                                && !"GET".equals(request.getMethod())).denyAll()
+                        .anyRequest().authenticated())
                 .addFilterBefore(new InventoryStaffFilter(jwt, sessions), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
@@ -46,6 +52,18 @@ public class InventorySecurityConfiguration {
         @Override
         protected boolean shouldNotFilter(HttpServletRequest request) {
             return false;
+        }
+
+        @Override
+        protected void doFilterInternal(HttpServletRequest request, jakarta.servlet.http.HttpServletResponse response,
+                jakarta.servlet.FilterChain chain) throws jakarta.servlet.ServletException, java.io.IOException {
+            if (request.getRequestURI().equals("/api/v1/reports/on-books/daily/export")
+                    || request.getRequestURI().equals("/api/v1/reports/arrivals-departures/daily")
+                    || request.getRequestURI().equals("/api/v1/reports/housekeeping/current")
+                    || request.getRequestURI().equals("/api/v1/reports/maintenance/current")) {
+                response.setHeader("Cache-Control", "private, no-store");
+            }
+            super.doFilterInternal(request, response, chain);
         }
     }
 }

@@ -49,7 +49,8 @@ export function StaffShell({ children }: { children: React.ReactNode }) {
         </div>
         <nav aria-label="Módulos Staff"><ul className={styles.navList}>
         {nav.filter(entry => entry.href === "/reportes"
-          ? session.permissions.includes("COMMERCIAL_MANAGE") || session.permissions.includes("RESERVATION_MANAGE")
+          ? session.permissions.includes("COMMERCIAL_MANAGE") || session.permissions.includes("RESERVATION_MANAGE") ||
+            session.permissions.includes("OPERATIONS_MANAGE")
           : (entry.roles as readonly string[]).includes(role)).map(entry => <li key={entry.href}>
           <Link className={styles.navLink} onClick={() => setMenuOpen(false)} href={entry.href} aria-current={pathname === entry.href || pathname.startsWith(`${entry.href}/`) ? "page" : undefined}><SvgIcon name={entry.icon} /><span>{entry.label}</span></Link>
         </li>)}

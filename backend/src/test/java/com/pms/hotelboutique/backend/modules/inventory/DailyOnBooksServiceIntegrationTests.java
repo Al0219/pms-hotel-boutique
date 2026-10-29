@@ -270,6 +270,119 @@ class DailyOnBooksServiceIntegrationTests {
         return "Bearer " + jwt.issue(principal, Instant.now());
     }
 
+    @Test
+    void receptionCsvMatchesSourceAndAuditsActorAndOwnPropertyOnly() throws Exception {
+        var reception = staff("RECEPCION", property);
+        UUID type = insertRoomType(property);
+        insertRoom(property, type);
+        UUID reservation = insertReservation(property, "CONFIRMED", "GTQ");
+        insertStay(property, type, reservation, "RESERVED", FIRST, FIRST.plusDays(1));
+        insertStay(property, type, reservation, "RESERVED", FIRST, FIRST.plusDays(1));
+        var response = mvc.perform(get("/api/v1/reports/on-books/daily/export").accept("text/csv")
+                .param("from", FIRST.toString()).param("to", FIRST.toString())
+                .param("propertyId", property.toString()).header("Authorization", bearer(reception)))
+                .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "private, no-store"))
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().string("Content-Disposition", "attachment; filename=\"on-books-daily_2035-01-01_2035-01-01.csv\""))
+                .andReturn().getResponse();
+        String csv = new String(response.getContentAsByteArray(), java.nio.charset.StandardCharsets.UTF_8);
+        org.junit.jupiter.api.Assertions.assertTrue(csv.startsWith("\uFEFFpropertyId,"));
+        org.junit.jupiter.api.Assertions.assertTrue(csv.contains(property + ",America/Guatemala,GTQ,2035-01-01,1,0,1,2,200.00,,"));
+        org.junit.jupiter.api.Assertions.assertFalse(csv.contains(otherProperty.toString()));
+        entityManager.flush();
+        var event = jdbc.queryForMap("SELECT * FROM reservation_audit_events WHERE action='REPORT_EXPORT_GENERATED' AND actor_id=?", reception.staffUserId());
+        assertEquals(property, event.get("property_id"));
+        assertEquals("STAFF", event.get("actor_type"));
+        assertEquals(event.get("entity_id"), event.get("correlation_id"));
+        assertEquals("REPORT_EXPORT", event.get("entity_type"));
+        var metadata = new tools.jackson.databind.ObjectMapper().readTree((String) event.get("after_state"));
+        assertEquals(ORGANIZATION.toString(), metadata.get("organizationId").asText());
+        assertEquals(1, metadata.get("rowCount").asInt());
+        assertEquals("PROPERTY", metadata.get("requestedScope").asText());
+        assertEquals(8, metadata.size());
+    }
+
+    @Test
+    void portfolioCsvKeepsCurrenciesAndAuditsEveryAuthorizedPropertyForEachGeneration() throws Exception {
+        UUID outside = insertProperty("UTC", "EUR");
+        for (int attempt = 0; attempt < 2; attempt++) {
+            var response = mvc.perform(get("/api/v1/reports/on-books/daily/export").accept("text/csv")
+                    .param("from", FIRST.toString()).param("to", FIRST.toString()).param("scope", "ALL_PROPERTIES")
+                    .header("Authorization", bearer(manager))).andExpect(status().isOk()).andReturn().getResponse();
+            String csv = new String(response.getContentAsByteArray(), java.nio.charset.StandardCharsets.UTF_8);
+            assertEquals(3, csv.split("\r\n").length);
+            org.junit.jupiter.api.Assertions.assertTrue(csv.contains(",USD,") && csv.contains(",GTQ,"));
+            org.junit.jupiter.api.Assertions.assertFalse(csv.contains(outside.toString()));
+        }
+        entityManager.flush();
+        assertEquals(4, jdbc.queryForObject("SELECT count(*) FROM reservation_audit_events WHERE action='REPORT_EXPORT_GENERATED' AND actor_id=?", Integer.class, manager.staffUserId()));
+        assertEquals(2, jdbc.queryForObject("SELECT count(DISTINCT correlation_id) FROM reservation_audit_events WHERE action='REPORT_EXPORT_GENERATED' AND actor_id=?", Integer.class, manager.staffUserId()));
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM reservation_audit_events WHERE action='REPORT_EXPORT_GENERATED' AND actor_id=? AND property_id IS NULL", Integer.class, manager.staffUserId()));
+    }
+
+    @Test
+    void csvRejectsGuestRevocationUnauthorizedScopeAndIncompatibleAcceptWithoutAudit() throws Exception {
+        String route = "/api/v1/reports/on-books/daily/export";
+        var reception = staff("RECEPCION", property);
+        var auditor = staff("AUDITOR", property);
+        var base = get(route).param("from", FIRST.toString()).param("to", FIRST.toString()).param("propertyId", property.toString());
+        mvc.perform(base).andExpect(status().isUnauthorized()).andExpect(header().string("Cache-Control", "private, no-store"));
+        String guest = guestJwt.issue(new GuestPrincipal(UUID.randomUUID(), UUID.randomUUID(), "csv@example.test"), Instant.now());
+        mvc.perform(get(route).param("from", FIRST.toString()).param("to", FIRST.toString()).param("propertyId", property.toString())
+                .header("Authorization", "Bearer " + guest)).andExpect(status().isUnauthorized());
+        mvc.perform(get(route).param("from", FIRST.toString()).param("to", FIRST.toString()).param("propertyId", property.toString())
+                .header("Authorization", bearer(auditor))).andExpect(status().isForbidden());
+        for (UUID denied : new UUID[]{otherProperty, UUID.randomUUID()}) {
+            mvc.perform(get(route).param("from", FIRST.toString()).param("to", FIRST.toString()).param("propertyId", denied.toString())
+                    .header("Authorization", bearer(reception))).andExpect(status().isForbidden());
+        }
+        mvc.perform(get(route).param("from", FIRST.toString()).param("to", FIRST.toString()).param("scope", "ALL_PROPERTIES")
+                .header("Authorization", bearer(reception))).andExpect(status().isForbidden());
+        mvc.perform(get(route).accept("application/json").param("from", FIRST.toString()).param("to", FIRST.toString()).param("propertyId", property.toString())
+                .header("Authorization", bearer(manager))).andExpect(status().isNotAcceptable());
+        jdbc.update("UPDATE auth_sessions SET status='REVOKED',revoked_at=now() WHERE id=?", reception.sessionId());
+        entityManager.clear();
+        mvc.perform(get(route).param("from", FIRST.toString()).param("to", FIRST.toString()).param("propertyId", property.toString())
+                .header("Authorization", bearer(reception))).andExpect(status().isUnauthorized());
+        entityManager.flush();
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM reservation_audit_events WHERE action='REPORT_EXPORT_GENERATED' AND actor_id IN (?,?,?)", Integer.class,
+                manager.staffUserId(), reception.staffUserId(), auditor.staffUserId()));
+    }
+
+    @Test
+    void csvValidatesStrictFiltersAnd366NightBoundary() throws Exception {
+        String route = "/api/v1/reports/on-books/daily/export";
+        for (String[] dates : new String[][]{{"2035-02-30", "2035-03-01"}, {"2035-01-02", "2035-01-01"}, {"2035-01-01", "2036-01-02"}, {"+2035-01-01", "2035-01-01"}}) {
+            mvc.perform(get(route).param("from", dates[0]).param("to", dates[1]).param("propertyId", property.toString())
+                    .header("Authorization", bearer(manager))).andExpect(status().isBadRequest())
+                    .andExpect(header().string("Cache-Control", "private, no-store"));
+        }
+        for (String key : new String[]{"from", "to", "propertyId"}) {
+            mvc.perform(get(route).param("from", FIRST.toString()).param("to", FIRST.toString()).param("propertyId", property.toString())
+                    .param(key, "duplicate").header("Authorization", bearer(manager))).andExpect(status().isBadRequest());
+        }
+        mvc.perform(get(route).param("from", FIRST.toString()).param("to", FIRST.toString()).param("propertyId", property.toString())
+                .param("organizationId", ORGANIZATION.toString()).header("Authorization", bearer(manager))).andExpect(status().isBadRequest());
+        var response = mvc.perform(get(route).param("from", FIRST.toString()).param("to", FIRST.plusDays(365).toString()).param("propertyId", property.toString())
+                .header("Authorization", bearer(manager))).andExpect(status().isOk()).andReturn().getResponse();
+        assertEquals(367, new String(response.getContentAsByteArray(), java.nio.charset.StandardCharsets.UTF_8).split("\r\n").length);
+    }
+
+    @Test
+    void csvOpenApiPublishesBinaryFileHeadersSecurityAndAllFilters() throws Exception {
+        var raw = mvc.perform(get("/v3/api-docs")).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        var operation = new tools.jackson.databind.ObjectMapper().readTree(raw).path("paths").path("/api/v1/reports/on-books/daily/export").path("get");
+        assertEquals(4, operation.path("parameters").size());
+        assertEquals("binary", operation.path("responses").path("200").path("content").path("text/csv").path("schema").path("format").asText());
+        org.junit.jupiter.api.Assertions.assertTrue(operation.path("security").get(0).has("bearerAuth"));
+        for (String code : new String[]{"200", "400", "401", "403", "406", "503"}) {
+            org.junit.jupiter.api.Assertions.assertTrue(operation.path("responses").has(code));
+        }
+        for (String header : new String[]{"Cache-Control", "Content-Disposition", "X-Content-Type-Options"}) {
+            org.junit.jupiter.api.Assertions.assertTrue(operation.path("responses").path("200").path("headers").has(header));
+        }
+    }
+
     private void assertNight(DailyOnBooksReport.Night row, long physical, long ooo,
             long available, long booked, String percent) {
         assertEquals(physical, row.physicalRooms());

@@ -33,6 +33,17 @@ it("allows Reception with RESERVATION_MANAGE to read its authorized property", (
   expect(screen.getByText("Reporte autorizado")).toBeInTheDocument();
   expect(mocks.dashboard).toHaveBeenCalledWith(expect.objectContaining({
     sessionId: "reception-1", scope: { kind: "PROPERTY", propertyIds: ["property-1"] },
+    canReadReservations: true, canReadHousekeeping: false,
+  }));
+});
+
+it("allows Operations to see housekeeping without reservation reports", () => {
+  mocks.session.mockReturnValue({ id: "operations-1", permissions: ["OPERATIONS_MANAGE"], memberships: [
+    { propertyId: "property-1", name: "Hotel Uno", active: true },
+  ] });
+  render(<StaffReportsWorkspace />);
+  expect(mocks.dashboard).toHaveBeenCalledWith(expect.objectContaining({
+    canReadReservations: false, canReadHousekeeping: true,
   }));
 });
 
