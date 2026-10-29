@@ -156,3 +156,47 @@ QA final: abrir /cuenta en el Web integrado con sesión Guest válida; revisar
 header único, correo único, jerarquía/estados con datos reales, sección secundaria
 compacta, desktop/tablet/móvil, foco de teclado y logout existente. Confirmar
 PASS visual/manual antes de cerrar los incrementos. Sin commit/push/merge.
+
+
+## 2026-10-28 — Perfil personal real e historial completo (EN_QA)
+
+Incremento IMP-WEB-0204 aprobado por José; contrato Backend63 extiende el resumen42.
+La cuenta real ya no depende del profileId provisional ni elige uno entre N perfiles.
+GET/PUT propios mediante BFF Guest, correo de acceso readonly, nombre/apellidos,
+contacto y preferencias opcionales. GET sin perfil muestra formulario vacío; solo
+el guardado crea el perfil. Concurrencia version+updatedAt; errores conservan el
+borrador y conflicto409 ofrece recarga explícita. Aislamiento de caché por cuenta;
+logout no permite que una respuesta tardía vuelva a poblarla. Los transports del
+perfil mock quedan prohibidos en modo real. Sin marketing/privacidad ficticios.
+
+Navegación real de cuenta: resumen, perfil, historial y vinculación. El historial
+reutiliza reconciliación/listado existentes; búsqueda por referencia/hotel y
+estado persistido. El detalle obtiene GET propio /reservations/{id}/summary,
+autorizado por vínculo, y reutiliza galería/resumen62 con N estancias. La UI no
+reconstruye precios históricos ni presenta el importe original como saldo actual.
+Facturas/Rewards/Promociones/Mensajes conservan su indicación no interactiva de
+Próximamente; no se presentan contratos mock como implementaciones reales.
+
+QA requerido: crear/recargar/editar/cancelar perfil, opcionales vacíos, teléfono,
+conflicto/error/reintento/logout, búsqueda/filtros, detalle y retorno, vinculación
+existente, datos ajenos/no sesión/Staff rechazados. Docker en3001 con la cuenta
+guest.demo@example.test; pruebas fuera del repositorio. EN_QA hasta QA manual PASS.
+
+
+El consumidor existente GuestProfilePrefill del checkout se actualiza al hook
+público usePersonalProfile. Nombres/correo/teléfono solo rellenan campos vacíos y
+no editados; borrar un nombre o cambiar el prefijo telefónico manualmente se
+respeta. Documentos y datos de reserva no se copian al perfil. Los formularios
+siguen disponibles si la lectura falla; cero perfiles no es un error.
+
+
+Evidencia del incremento: Backend1186 PASS; lint/typecheck/builds PASS; Chrome
+real3001 27 PASS con guardado/actualización, historial/detalle/móvil y logout.
+Web focal141/144 PASS; consulta pública pasa en recheck,2 timeouts legacy de
+vinculación se reproducen en HEAD. Staff3 casos fallan tanto en HEAD como en
+la rama. Suite general interrumpida: no declarar CI Web global PASS ni cerrar
+antes del QA manual y el gate aplicable. Ningún timeout/test/workflow alterado.
+Navegación reutiliza el cierre de sesión canónico existente de la cabecera.
+
+Revisión visual final tras retirar logout duplicado:10/10 PASS, sin cambios de
+datos; Docker3001 saludable, perfil/historial y logout401 correctos.

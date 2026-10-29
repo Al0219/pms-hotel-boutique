@@ -1,4 +1,6 @@
 "use client";
+import { getPublicEnvironment } from "@/lib/env";
+import { PersonalProfilePage } from "./personal-profile-page";
 import { useRef, useState } from "react";
 import { AccountFeedback, AccountSection } from "@/modules/account";
 import { HttpNetworkError } from "@/lib/http/errors";
@@ -6,7 +8,7 @@ import { useGuestProfile } from "../hooks/use-guest-profile";
 import type { GuestProfile } from "../model/profile";
 import styles from "./profile-page.module.css";
 
-export function ProfilePage() {
+function MockProfilePage() {
   const query = useGuestProfile();
   return <AccountSection title="Datos personales y preferencias" description="Edita tus datos de contacto y preferencias. El correo de acceso de tu cuenta no cambia al guardar este perfil.">
     <AccountFeedback loading={query.isPending} error={query.error} retry={query.retry} />
@@ -73,3 +75,5 @@ function ProfileForm({ profile, mutation }: { profile: GuestProfile; mutation: R
     </fieldset>
   </form>;
 }
+
+export function ProfilePage(){ return getPublicEnvironment().useMockApi ? <MockProfilePage/> : <PersonalProfilePage/>; }

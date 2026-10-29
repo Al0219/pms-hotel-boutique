@@ -7,8 +7,8 @@ import type { ReservationLookup } from '../model/reservation-lookup';
 import { guestDateLabel, guestReservationLabel, guestStayLabel, guestStayNights } from '../model/real-guest-reservations';
 import styles from './reservation-lookup-details.module.css';
 
-export function ReservationLookupDetails({ result, contactEmail, onClose }: {
-  result: ReservationLookup; contactEmail: string; onClose: () => void;
+export function ReservationLookupDetails({ result, contactEmail, onClose, authenticated = false }: {
+  result: ReservationLookup; contactEmail: string; onClose: () => void; authenticated?:boolean;
 }) {
   const [currency, setCurrency] = useState<'GTQ' | 'USD'>('GTQ');
   const [feedback, setFeedback] = useState('');
@@ -25,7 +25,7 @@ export function ReservationLookupDetails({ result, contactEmail, onClose }: {
     catch { setFeedback('No se pudo copiar. Puedes seleccionar el código de la reserva.'); }
   };
   return <section className={styles.result} aria-label="Resumen completo de tu reserva">
-    <div className={styles.toolbar}><p role="status">Reserva encontrada · Consulta de lectura</p><button type="button" onClick={onClose}>Consultar otra reserva</button></div>
+    <div className={styles.toolbar}><p role="status">Reserva encontrada · Consulta de lectura</p><button type="button" onClick={onClose}>{authenticated ? "Volver al historial" : "Consultar otra reserva"}</button></div>
     <header className={styles.referenceHeader}>
       <div><p className={styles.overline}>TU RESERVA EN {reservation.propertyName}</p><div className={styles.codeRow}><h2>{reservation.reference}</h2><button type="button" className={styles.copy} onClick={() => void copy()} aria-label="Copiar código de reserva">Copiar código</button></div></div>
       <span className={styles.badge} data-state={reservation.status}>{guestReservationLabel(reservation.status)}</span>
@@ -67,7 +67,7 @@ export function ReservationLookupDetails({ result, contactEmail, onClose }: {
           <p className={styles.note}>El importe corresponde a la confirmación original. Los cambios o servicios posteriores pueden afectar el saldo actual; puedes consultarlo con Recepción.</p>
           <button className={styles.print} type="button" onClick={() => window.print()}>Imprimir / Guardar PDF</button>
         </section>
-        <section className={styles.account}><h2>Tu historial, siempre a mano</h2><p>Crea una cuenta o inicia sesión para consultar todas tus reservas vinculadas.</p><Link href="/acceso?returnTo=%2Fmis-reservas">Ir a mi cuenta</Link></section>
+        <section className={styles.account}><h2>Tu historial, siempre a mano</h2><p>{authenticated ? "Puedes consultar tus otras reservas y actualizar tus preferencias desde tu cuenta." : "Crea una cuenta o inicia sesión para consultar todas tus reservas vinculadas."}</p><Link href={authenticated ? "/cuenta" : "/acceso?returnTo=%2Fmis-reservas"}>Ir a mi cuenta</Link></section>
       </aside>
     </div>
   </section>;

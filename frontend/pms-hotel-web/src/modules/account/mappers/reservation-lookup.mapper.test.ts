@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { DomainMappingError } from '@/lib/errors/domain-mapping-error';
-import { mapReservationLookup } from './reservation-lookup.mapper';
+import { mapReservationLookup,mapGuestReservationSummary } from './reservation-lookup.mapper';
 const row = { reservationId: 'reservation', stayId: 'stay', confirmationCode: 'HB-2026-08421', propertyName: 'Hotel', reservationStatus: 'CONFIRMED', arrival: '2036-01-01', departure: '2036-01-03', roomCode: null, status: 'RESERVED' };
 const detail = { id: 'stay', reservationId: 'reservation', roomType: { id: 'type', name: 'Deluxe' }, room: null, arrival: row.arrival, departure: row.departure, status: row.status };
 const payload = { stays: [row], details: [detail], overview: { createdAt: '2026-10-28T12:00:00Z', source: 'WEB_DIRECTA', currency: 'GTQ', confirmedTotalMinor: 65000 }, accommodations: [{ stayId: 'stay', roomTypeCode: 'CLASSIC', timezone: 'America/Guatemala' }] };
@@ -35,3 +35,5 @@ it('rejects foreign metadata, invalid times, currencies and money', () => {
     expect(() => mapReservationLookup({ ...payload, ...patch }, row.confirmationCode)).toThrow(DomainMappingError);
   }
 });
+
+it("binds the authenticated summary to the selected persisted reservation UUID",()=>{expect(mapGuestReservationSummary(payload,"reservation").reservation.id).toBe("reservation");expect(()=>mapGuestReservationSummary(payload,"foreign")).toThrow("RESERVATION_SUMMARY_SCOPE_MISMATCH");});

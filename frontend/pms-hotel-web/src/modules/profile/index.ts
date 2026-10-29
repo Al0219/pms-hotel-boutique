@@ -4,3 +4,5 @@ export * from "./dtos/profile.dto";
 export * from "./model/profile";
 export * from "./mappers/profile.mapper";
 export * from "./service/profile.service";
+
+export { usePersonalProfile } from "./hooks/use-personal-profile";

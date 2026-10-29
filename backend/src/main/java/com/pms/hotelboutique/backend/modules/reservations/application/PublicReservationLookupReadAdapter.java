@@ -11,11 +11,18 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
-public class PublicReservationLookupReadAdapter implements PublicReservationLookupReadPort {
+public class PublicReservationLookupReadAdapter implements PublicReservationLookupReadPort, com.pms.hotelboutique.backend.modules.guestauth.application.GuestReservationSummaryPort {
     private final JdbcClient jdbc;
     public PublicReservationLookupReadAdapter(JdbcClient jdbc) { this.jdbc = jdbc; }
 
     @Override public Result find(String email, String confirmationCode) {
+        return query("lower(btrim(g.email))=:email AND upper(r.confirmation_code)=:code",java.util.Map.of("email",email,"code",confirmationCode));
+    }
+    @Override public Result findLinked(UUID accountId,UUID reservationId) {
+        return query("r.id=:reservation AND EXISTS (SELECT 1 FROM guest_reservation_links l WHERE l.reservation_id=r.id AND l.property_id=r.property_id AND l.guest_account_id=:account)",java.util.Map.of("reservation",reservationId,"account",accountId));
+    }
+    private Result query(String scope,java.util.Map<String,?> parameters) {
+        // The predicate comes only from these two fixed server-side callers.
         // Scope is applied in SQL before returning any row. One query gives a coherent N-stay snapshot.
         var rows = jdbc.sql("""
             SELECT r.id reservation_id,s.id stay_id,r.confirmation_code,p.name property_name,r.status reservation_status,
@@ -34,9 +41,9 @@ public class PublicReservationLookupReadAdapter implements PublicReservationLook
                 WHERE b.reservation_id=r.id AND b.confirmation_code=r.confirmation_code AND b.status='COMPLETED'
                   AND b.response_snapshot->>'currency'=r.currency
             ) receipt ON true
-            WHERE lower(btrim(g.email))=:email AND upper(r.confirmation_code)=:code
+            WHERE %s
             ORDER BY s.arrival,s.id
-            """).param("email", email).param("code", confirmationCode).query((rs,n) -> {
+            """.formatted(scope)).params(parameters).query((rs,n) -> {
                 UUID reservation = rs.getObject("reservation_id",UUID.class), stay = rs.getObject("stay_id",UUID.class);
                 LocalDate arrival = rs.getObject("arrival",LocalDate.class), departure = rs.getObject("departure",LocalDate.class);
                 var summary = new LinkedStay(reservation,stay,rs.getString("confirmation_code"),rs.getString("property_name"),

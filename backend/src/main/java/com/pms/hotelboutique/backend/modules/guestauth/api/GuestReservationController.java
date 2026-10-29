@@ -22,9 +22,11 @@ import org.springframework.web.server.ResponseStatusException;
 @SecurityRequirement(name = "guestBearerAuth")
 public class GuestReservationController {
     private final GuestAuthService auth;
+    private final GuestReservationSummaryPort summaries;
     private final GuestReservationReadPort reads;
     private final GuestReservationRecoveryService recovery;
-    public GuestReservationController(GuestAuthService auth, GuestReservationReadPort reads, GuestReservationRecoveryService recovery) {
+    public GuestReservationController(GuestAuthService auth, GuestReservationReadPort reads, GuestReservationRecoveryService recovery, GuestReservationSummaryPort summaries) {
+        this.summaries=summaries;
         this.auth = auth;
         this.reads = reads;
         this.recovery = recovery;
@@ -66,6 +68,18 @@ public class GuestReservationController {
         var own = reads.find(active(principal).guestAccountId(), reservationId, stayId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Stay unavailable"));
         return ResponseEntity.ok().cacheControl(CacheControl.noStore().cachePrivate()).body(own);
+    }
+
+    @GetMapping("/{reservationId}/summary")
+    @Operation(summary="Complete summary of my linked reservation",description="Contract 63. Persisted Guest account/reservation/property link required. All stays, editorial type codes, timezone and original receipt total when available. No ledger, third-party PII, payment credentials or Staff notes.")
+    @ApiResponse(responseCode="200",description="Own linked reservation summary; private, no-store.",content=@Content(mediaType="application/json",schema=@Schema(implementation=PublicReservationLookupReadPort.Result.class)))
+    @ApiResponse(responseCode="400",description="Invalid reservation UUID.",content=@Content)
+    @ApiResponse(responseCode="401",description="Guest session required; Staff rejected.",content=@Content)
+    @ApiResponse(responseCode="404",description="Reservation missing or not linked to this account.",content=@Content)
+    public ResponseEntity<PublicReservationLookupReadPort.Result> summary(@Parameter(hidden=true) @AuthenticationPrincipal GuestPrincipal principal,@PathVariable UUID reservationId) {
+        var result=summaries.findLinked(active(principal).guestAccountId(),reservationId);
+        if(result.stays().isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Reservation unavailable");
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore().cachePrivate()).body(result);
     }
 
     private GuestPrincipal active(GuestPrincipal principal) {

@@ -2,7 +2,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useGuestSession, refreshGuestSession } from '@/modules/auth';
 import { HttpStatusError } from '@/lib/http/errors';
-import { getLinkedGuestStays, getGuestStay } from '../service/linked-guest-reservations.service';
+import { getLinkedGuestStays, getGuestStay, getGuestReservationSummary } from '../service/linked-guest-reservations.service';
+import {mapGuestReservationSummary} from '../mappers/reservation-lookup.mapper';
 import { mapLinkedGuestReservations, mapGuestStay } from '../mappers/linked-guest-reservation.mapper';
 async function guestRequest<T>(action: () => Promise<T>, onExpired?: () => void): Promise<T> {
   try { return await action(); }
@@ -31,4 +32,10 @@ export function useGuestStay(reservationId?: string, stayId?: string) {
   return useQuery({ queryKey: ['guest', 'reservation-stay', 'real', account?.id, reservationId, stayId],
     enabled: Boolean(account && reservationId && stayId) && status === 'signed-in', retry: false,
     queryFn: async ({ signal }) => mapGuestStay(await guestRequest(() => getGuestStay(reservationId!, stayId!, signal), retrySession), reservationId!, stayId!) });
+}
+
+export function useGuestReservationSummary(reservationId:string){
+  const {account,status,retrySession}=useGuestSession();
+  return useQuery({queryKey:['guest','reservation-summary','real',account?.id,reservationId],enabled:Boolean(account)&&status==='signed-in',retry:false,
+    queryFn:async({signal})=>mapGuestReservationSummary(await guestRequest(()=>getGuestReservationSummary(reservationId,signal),retrySession),reservationId)});
 }

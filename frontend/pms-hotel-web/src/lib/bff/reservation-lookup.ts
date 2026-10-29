@@ -42,7 +42,18 @@ export async function searchLookup(request: NextRequest) {
     const data = await upstream.json();
     if (!Array.isArray(data.stays) || !Array.isArray(data.details) || !Array.isArray(data.accommodations) || !data.overview) return failure(503);
     // A bounded public summary; no PII, ledger, payment references or internal notes.
-    const response = json({
+    const response = json(reservationSummaryProjection(data));
+    // Retire only the previous lookup cookies, never Guest/Staff credentials.
+    for (const name of ['pms_reservation_lookup_access', 'pms_reservation_lookup_pending']) {
+      response.cookies.set(name, '', { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 0 });
+    }
+    return response;
+  } catch { return failure(503); }
+}
+
+/** Shared public fields; authorization remains specific to each caller. */
+export function reservationSummaryProjection(data: {overview:Record<string,unknown>;stays:Record<string,unknown>[];accommodations:{stayId:string;roomTypeCode:string;timezone:string}[];details:{id:string;reservationId:string;roomType?:{id:string;name:string};room:null|{id:string;code:string};arrival:string;departure:string;status:string}[]}) {
+  return {
       overview: { createdAt: data.overview.createdAt, source: data.overview.source, currency: data.overview.currency, confirmedTotalMinor: data.overview.confirmedTotalMinor },
       accommodations: data.accommodations.map((row: { stayId: string; roomTypeCode: string; timezone: string }) => ({ stayId: row.stayId, roomTypeCode: row.roomTypeCode, timezone: row.timezone })),
       stays: data.stays.map((row: Record<string, unknown>) => ({
@@ -55,11 +66,5 @@ export async function searchLookup(request: NextRequest) {
         room: row.room === null ? null : { id: row.room?.id, code: row.room?.code },
         arrival: row.arrival, departure: row.departure, status: row.status,
       })),
-    });
-    // Retire only the previous lookup cookies, never Guest/Staff credentials.
-    for (const name of ['pms_reservation_lookup_access', 'pms_reservation_lookup_pending']) {
-      response.cookies.set(name, '', { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 0 });
-    }
-    return response;
-  } catch { return failure(503); }
+  };
 }

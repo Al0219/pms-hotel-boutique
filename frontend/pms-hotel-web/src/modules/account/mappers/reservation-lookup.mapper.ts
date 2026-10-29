@@ -44,3 +44,12 @@ export function mapReservationLookup(dto: ReservationLookupDTO, reference: strin
   });
   return { reservation, details, accommodations, overview: { createdAt, currency, confirmedTotalMinor, source: overview.source === null ? null : text(overview.source) } };
 }
+
+/** Own-history route is selected by persisted reservation UUID, not a public credential. */
+export function mapGuestReservationSummary(dto:ReservationLookupDTO,reservationId:string):ReservationLookup {
+  const reference=dto?.stays?.[0]?.confirmationCode;
+  if(typeof reference!=='string')throw new DomainMappingError('INVALID_RESERVATION_SUMMARY');
+  const mapped=mapReservationLookup(dto,reference);
+  if(mapped.reservation.id!==reservationId)throw new DomainMappingError('RESERVATION_SUMMARY_SCOPE_MISMATCH');
+  return mapped;
+}

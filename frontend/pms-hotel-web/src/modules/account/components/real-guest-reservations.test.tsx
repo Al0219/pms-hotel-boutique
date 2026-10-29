@@ -87,3 +87,9 @@ it('offers verification for an honest empty history without fabricating a reserv
  expect(screen.getByText(/Si acabas de reservar como invitado/)).toBeInTheDocument();
  expect(screen.queryByRole('link',{name:row.confirmationCode})).not.toBeInTheDocument();
 });
+
+it('filters real history immediately by reference, hotel and persisted state and resets without losing rows',async()=>{
+ handlers([row,{...row,reservationId:'44444444-4444-4444-8444-444444444444',stayId:'55555555-5555-4555-8555-555555555555',confirmationCode:'OTHER-BOOKING',reservationStatus:'CANCELLED',propertyName:'Hotel Segundo'}]);mount();
+ await screen.findByRole('link',{name:row.confirmationCode});fireEvent.change(screen.getByLabelText('Buscar reserva u hotel'),{target:{value:'Hotel Segundo'}});expect(screen.queryByRole('link',{name:row.confirmationCode})).not.toBeInTheDocument();expect(screen.getByRole('link',{name:'OTHER-BOOKING'})).toBeInTheDocument();
+ fireEvent.change(screen.getByLabelText('Estado'),{target:{value:'CONFIRMED'}});expect(screen.getByRole('heading',{name:'No encontramos reservas con estos filtros'})).toBeInTheDocument();fireEvent.click(screen.getByRole('button',{name:'Restablecer filtros'}));expect(screen.getByRole('link',{name:row.confirmationCode})).toBeInTheDocument();
+});
