@@ -1,6 +1,7 @@
+import {createTestQueryClient} from '../src/test/queryClient';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Text } from 'react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { GuestAuthSessionProvider, useGuestAuthSession } from '@/modules/guest-auth/presentation/GuestAuthSessionProvider';
 import { ActiveReservationContextProvider, useActiveReservationContext } from '@/modules/guest-auth/presentation/ActiveReservationContextProvider';
 import { GuestRouteGuard } from '@/modules/guest-auth/presentation/GuestRouteGuard';
@@ -11,14 +12,14 @@ import { NetworkError } from '@/data/remote/http/HttpError';
 jest.mock('@/config/environment', () => ({ environment: { useMockApi: false } }));
 jest.mock('@/modules/guest-auth/data/services/guestServices', () => ({ guestAuthService: { restore: jest.fn() } }));
 jest.mock('@/modules/guest-auth/data/http/NativeGuestClient', () => ({ nativeGuestClient: { onExpired: jest.fn() } }));
-jest.mock('expo-router', () => ({ router: { replace: jest.fn() }, usePathname: () => '/account' }));
+jest.mock('expo-router', () => ({ router: { replace: jest.fn() }, usePathname: () => '/account', useGlobalSearchParams: () => ({}) }));
 
 function Identity() {
   const { session, sessionExpired } = useGuestAuthSession();
   const { activeReservationContext } = useActiveReservationContext();
   return <Text>{`${session?.accountId ?? 'signed-out'}:${sessionExpired}:${activeReservationContext?.reservationStayId ?? 'none'}`}</Text>;
 }
-function tree(client = new QueryClient()) {
+function tree(client = createTestQueryClient()) {
   return <QueryClientProvider client={client}><GuestAuthSessionProvider><ActiveReservationContextProvider initialActiveReservationContext={{ reservationId: 'r', reservationStayId: 's' }}><GuestRouteGuard><Identity /></GuestRouteGuard></ActiveReservationContextProvider></GuestAuthSessionProvider></QueryClientProvider>;
 }
 beforeEach(() => {
@@ -45,7 +46,7 @@ it('expiration clears private queries and prevents the old stay from rendering',
   let expire!: () => void;
   (nativeGuestClient.onExpired as jest.Mock).mockImplementation((listener) => { expire = listener; return jest.fn(); });
   (guestAuthService.restore as jest.Mock).mockResolvedValue({ accountId: 'restored' });
-  const client = new QueryClient(); client.setQueryData(['stay','r','s'], { private: true });
+  const client = createTestQueryClient(); client.setQueryData(['stay','r','s'], { private: true });
   const view = await render(tree(client));
   await waitFor(() => expect(view.getByText('restored:false:s')).toBeTruthy());
   await act(async () => expire());

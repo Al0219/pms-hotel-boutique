@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {createTestQueryClient} from '../src/test/queryClient';
+import { QueryClientProvider } from "@tanstack/react-query";
 import { Slot } from "expo-router";
 import { renderRouter, waitFor } from "expo-router/testing-library";
 import { act, fireEvent } from "@testing-library/react-native";
@@ -197,7 +198,7 @@ function createGuestLayout(
   sessionControl?: RefObject<SessionRequestsTestControl | null>,
 ) {
   return function GuestLayout() {
-    const queryClient = new QueryClient({
+    const queryClient = createTestQueryClient({
       defaultOptions: {
         mutations: { retry: false },
         queries: { retry: false },

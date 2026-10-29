@@ -5,7 +5,7 @@ import { ActiveReservationContextProvider } from '@/modules/guest-auth/presentat
 import { LinkedReservationsScreen } from '@/modules/guest-auth/presentation/LinkedReservationsScreen';
 let mockFocusCallback: () => void;
 jest.mock('@/config/environment', () => ({ environment: { useMockApi: false } }));
-jest.mock('expo-router', () => ({ router: { replace: jest.fn() }, useFocusEffect: jest.fn((callback) => { mockFocusCallback = callback; }) }));
+jest.mock('expo-router', () => ({ router: { replace: jest.fn() }, useLocalSearchParams: () => ({}), useFocusEffect: jest.fn((callback) => { mockFocusCallback = callback; }) }));
 it('fetches newly linked reservations on return to the existing reservations screen', async () => {
  const listForAccount=jest.fn().mockResolvedValueOnce([]).mockResolvedValue([
   {reservationId:'r',reservationStayId:'new-stay',reference:'REAL-NEW',arrival:'2036-01-01',departure:'2036-01-03',roomLabel:null},

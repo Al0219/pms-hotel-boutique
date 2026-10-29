@@ -1,13 +1,2 @@
-import { ParkingValetCenter } from "@/modules/parking-valet";
-
-/**
- * Dev stub: propertyId/endpoint deben resolverse desde la sesion de Staff Auth
- * y el contrato confirmado por Backend. Mientras no exista esa composicion,
- * se inyectan via env solo en desarrollo (.env.development.local).
- */
-export default function ParkingValetPage() {
-  const propertyId = process.env.NEXT_PUBLIC_PROPERTY_ID;
-  const endpoint = "http://pms.test/valet-requests";
-
-  return <ParkingValetCenter propertyId={propertyId} endpoint={endpoint} />;
-}
+import {PersistedValetPage} from '@/modules/parking-valet';
+export default function ParkingValetPage(){return <PersistedValetPage/>;}

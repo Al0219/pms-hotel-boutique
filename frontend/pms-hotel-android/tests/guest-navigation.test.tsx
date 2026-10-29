@@ -1,3 +1,4 @@
+import {createTestQueryClient} from '../src/test/queryClient';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   act,
@@ -38,7 +39,7 @@ import { type ActiveReservationContext } from "@/modules/guest-auth/domain/model
 import { type GuestAuthSession } from "@/modules/guest-auth/domain/models/GuestAuthSession";
 
 function createQueryClient() {
-  return new QueryClient({
+  return createTestQueryClient({
     defaultOptions: {
       mutations: { retry: false },
       queries: { gcTime: 0, retry: false },

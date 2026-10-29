@@ -72,7 +72,7 @@ export function AccountStayHubScreen({ service }: AccountStayHubScreenProps) {
   const { isCheckedOut } = useCheckoutStatus();
   const completeSessionRequest = useCompleteSessionServiceRequest();
   const { dismissNotice, notice } = useGuestNotice();
-  const displayedRequests=environment.useMockApi?requests:requests.filter(item=>item.kind!=='HOUSEKEEPING'&&item.kind!=='ROOM_SERVICE'&&item.kind!=='AMENITIES');
+  const displayedRequests=environment.useMockApi?requests:requests.filter(item=>item.kind!=='HOUSEKEEPING'&&item.kind!=='ROOM_SERVICE'&&item.kind!=='AMENITIES'&&item.kind!=='VEHICLE_REQUEST'&&item.kind!=='TRANSFER');
   const activeRequests = filterServiceRequests(displayedRequests, 'ACTIVE');
   const submittedConfirmationVisible = notice?.type === 'SERVICE_REQUEST_SUCCESS';
 

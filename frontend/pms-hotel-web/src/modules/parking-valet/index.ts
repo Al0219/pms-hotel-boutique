@@ -6,3 +6,6 @@
 
 export { ParkingValetCenter } from "./components/parking-valet-center";
 export type { ValetRequest, ValetRequestRequestType, ValetRequestStatus } from "./model/valet-request";
+
+export {PersistedValetPage} from './components/persisted-valet-page';
+export {projectPersistedValet,projectPersistedVehicles} from './mappers/persisted-valet.mapper';

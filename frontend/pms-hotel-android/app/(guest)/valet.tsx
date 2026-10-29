@@ -1,6 +1,3 @@
-import { ValetScreen } from '@/modules/valet';
-
-/** Product route authorized by IMP-AND-0105. */
-export default function ValetRoute() {
-  return <ValetScreen />;
-}
+import {environment} from '@/config/environment';
+import {ValetScreen,RealValetScreen} from '@/modules/valet';
+export default function ValetRoute(){return environment.useMockApi?<ValetScreen/>:<RealValetScreen/>;}
