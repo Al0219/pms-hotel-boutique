@@ -98,15 +98,16 @@ describe('Dedicated existing-reservation link screen', () => {
     expect(screen.queryByText('Deluxe King')).not.toBeInTheDocument();
     expect(screen.queryByText('Carlos Mendoza')).not.toBeInTheDocument();
   });
-  it('keeps the real Guest session intact without sending mock or new Backend link requests', async () => {
+  it('keeps the real Guest session and offers the connected form without sending a request automatically', async () => {
     vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'false');
     const linkRequest = vi.fn();
     mockServer.use(http.get('*/api/auth/guest/session', () => HttpResponse.json({ guestAccountId: 'real', sessionId: 'real-session', email: 'real@example.test', context: 'GUEST' })),
       http.post('http://pms.test/__mock/reservation-links/*', () => { linkRequest(); return HttpResponse.json({}); }));
     setup('link');
-    expect(await screen.findByText(/La vinculación no está disponible/)).toBeInTheDocument();
+    expect(await screen.findByLabelText('Referencia de reserva')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Vincular reserva existente' })).toBeInTheDocument();
-    expect(screen.queryByLabelText('Referencia de reserva')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Solicitar código de verificación' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Código de verificación')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Cerrar sesión' })).toBeInTheDocument();
     expect(linkRequest).not.toHaveBeenCalled();
   });

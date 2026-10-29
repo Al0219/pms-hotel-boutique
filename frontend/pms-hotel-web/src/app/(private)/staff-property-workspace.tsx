@@ -6,6 +6,7 @@ import { useStaffSession } from '@/modules/auth';
 import { usePropertyScope } from '@/modules/properties';
 import { CalendarGantt, ReservationCenter, ReservationDetail, StaffNewReservation, useStaffReservationStays } from '@/modules/reservations';
 import { RoomBoard, RoomCatalogAdmin } from '@/modules/rooms';
+import { useStaffHousekeepingRooms } from '@/modules/housekeeping';
 import { StaffPanel } from '@/modules/staff-panel';
 import styles from './staff-property-workspace.module.css';
 
@@ -23,13 +24,14 @@ export function StaffReservationsWorkspace({ reservationId, endpoint }: { reserv
   const canAssign = session.permissions.includes('RESERVATION_MANAGE');
   const resource = endpoint ?? '/api/staff/reservations';
   return <StaffPropertyWorkspace>{(propertyId, sessionId) => reservationId
-    ? <ReservationDetail key={`${sessionId}:${propertyId}:${reservationId}`} reservationId={reservationId} propertyId={propertyId} endpoint={resource} sessionId={sessionId} canManage={canAssign} />
-    : <ReservationCenter key={`${sessionId}:${propertyId}`} propertyId={propertyId} endpoint={resource} canCreate={false} />}</StaffPropertyWorkspace>;
+    ? <ReservationDetail key={`${sessionId}:${propertyId}:${reservationId}`} reservationId={reservationId} propertyId={propertyId} endpoint={resource} sessionId={sessionId} canManage={canAssign}
+        folioAccess={session.staffUserId && session.permissions.includes('FOLIO_PAYMENT_OPERATE') ? { actorId: session.staffUserId, sessionId } : undefined} />
+    : <ReservationCenter key={`${sessionId}:${propertyId}`} propertyId={propertyId} endpoint={resource} canCreate={canAssign} />}</StaffPropertyWorkspace>;
 }
 
 export function StaffNewReservationWorkspace() {
   const session = useStaffSession();
-  const canCreate = session.permissions.includes('RESERVATION_MANAGE') || session.roleId === 'SUPER_ADMIN';
+  const canCreate = session.permissions.includes('RESERVATION_MANAGE');
   return <StaffPropertyWorkspace>{(propertyId, sessionId) => {
     const property = session.memberships.find(item => item.propertyId === propertyId && item.active);
     return property ? <StaffNewReservation key={`${sessionId}:${propertyId}`} propertyId={propertyId} sessionId={sessionId}
@@ -46,22 +48,25 @@ export function StaffRoomsWorkspace() {
   return <StaffPropertyWorkspace>{(propertyId, sessionId) => {
     const property = session.memberships.find(item => item.propertyId === propertyId && item.active);
     return <RoomsContent key={`${sessionId}:${propertyId}`} propertyId={propertyId} sessionId={sessionId}
-      propertyName={property?.name} timezone={property?.timezone} canManage={canManage} endpoint={mock ? 'http://pms.test/rooms' : '/api/staff/rooms'} />;
+      propertyName={property?.name} timezone={property?.timezone} canManage={canManage}
+      canReadCleaning={session.permissions.includes('RESERVATION_MANAGE') || session.permissions.includes('OPERATIONS_MANAGE')}
+      endpoint={mock ? 'http://pms.test/rooms' : '/api/staff/rooms'} />;
   }}</StaffPropertyWorkspace>;
 }
 
-function RoomsContent({ propertyId, sessionId, canManage, endpoint, propertyName, timezone }: {
-  propertyId: string; sessionId: string; canManage: boolean; endpoint?: string; propertyName?: string; timezone?: string;
+function RoomsContent({ propertyId, sessionId, canManage, canReadCleaning, endpoint, propertyName, timezone }: {
+  propertyId: string; sessionId: string; canManage: boolean; canReadCleaning: boolean; endpoint?: string; propertyName?: string; timezone?: string;
 }) {
   const mock = getPublicEnvironment().useMockApi;
   const stays = useStaffReservationStays(propertyId, sessionId, !mock);
+  const cleaning = useStaffHousekeepingRooms(propertyId, sessionId, !mock && canReadCleaning);
   const [view, setView] = useState<'board' | 'catalog'>('board');
   const viewControls = <div className={styles.views} role="group" aria-label="Vistas de habitaciones">
       <button aria-pressed={view === 'board'} onClick={() => setView('board')}>Tablero operativo</button>
       <button aria-pressed={view === 'catalog'} onClick={() => setView('catalog')}>Administrar inventario</button>
     </div>;
   return <div>
-    {view === 'board' ? <RoomBoard viewControls={viewControls} propertyId={propertyId} sessionId={sessionId} propertyName={propertyName} timezone={timezone} endpoint={endpoint} occupancySource={mock ? undefined : stays} canManage={!mock && canManage} /> : <>{viewControls}<RoomCatalogAdmin propertyId={propertyId} sessionId={sessionId} canManage={canManage} /></>}
+    {view === 'board' ? <RoomBoard viewControls={viewControls} propertyId={propertyId} sessionId={sessionId} propertyName={propertyName} timezone={timezone} endpoint={endpoint} occupancySource={mock ? undefined : stays} cleaningSource={!mock && canReadCleaning ? cleaning : undefined} canManage={!mock && canManage} /> : <>{viewControls}<RoomCatalogAdmin propertyId={propertyId} sessionId={sessionId} canManage={canManage} /></>}
   </div>;
 }
 

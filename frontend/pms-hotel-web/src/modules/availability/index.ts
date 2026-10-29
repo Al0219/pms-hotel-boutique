@@ -64,3 +64,5 @@ export {
   AvailabilityMatrixGrid,
   type AvailabilityMatrixGridProps,
 } from "./components/availability-matrix-grid";
+
+export { roomPresentationFor } from './content/public-room-metadata';

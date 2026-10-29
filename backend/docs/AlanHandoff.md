@@ -1,3 +1,1866 @@
+## 2026-10-28 — Consulta invitada y resumen visual — QA manual PASS / CI pendiente
+
+José confirma «mi QA manual pasa» y autoriza commit/push normal de esta entrega.
+Rama fix/guest-reservations-visibility, base909a12c. Fetch seguro: origin/main
+fa56e3e solo añade el cierre documental Staff176; sin nuevos cambios funcionales.
+No se integra main ni se cambia de rama para publicar.
+
+Aceptación manual del flujo correo+código y galería/resumen: PASS. Backend focal34
+PASS, Web82 cubiertas (81 PASS y1 timeout; recheck del archivo8/8 PASS), lint/
+typecheck/build PASS y Chrome real29/29 PASS. La limpieza final restaura el
+componente de historial de cuenta a HEAD porque el nuevo resumen ya no lo usa.
+Sin tests deshabilitados ni timeouts ampliados. Los gates generales/CI del PR
+siguen pendientes; no se declara COMPLETADA una validación global no ejecutada.
+
+Se publican únicamente consulta62, BFF/Web/galería, migraciones014/015 aditivas ya
+aplicadas e intactas, tests de compatibilidad y documentos de esta funcionalidad.
+Sin secretos, logs, archivos temporales, Android ni cambios de lógica Staff.
+El entorno3001 conserva PostgreSQL y sus datos. Siguiente: revisar checks del PR;
+merge requiere autorización independiente. La autorización de push queda registrada.
+
+## 2026-10-28 — Resumen visual completo de reserva invitada — EN_QA
+
+José aprueba el flujo correo+código y solicita más información y carrusel.
+Misma rama fix/guest-reservations-visibility/base909a12c; corrección incremental
+sobre consulta62. Reutilizar carrusel/editorial existentes por código real del
+tipo, sin consultas de ATS ni nueva persistencia. Mostrar N estancias, estados,
+asignación, noches/fechas, hotel, fecha/canal y monto original si existe receipt.
+Sin PII nueva, ledger, pagos ni tarifas actuales inventadas; no hay desglose o
+adultos/niños guardados en el alta pública actual. UI indica faltantes honestos.
+
+Contrato62 actualizado: overview/accommodations cerrados en BFF y mapper; proyección
+SQL restringida a correo+código. Mostrar original de receipt coherente o null,
+sin modificar su snapshot. Copia/PDF/conversión de visualización. Migraciones014/015
+aplicadas intactas, sin dependencias, secretos ni cambios Android/Staff/alta pública.
+
+Backend focal34 PASS (9 consulta,25 OpenAPI), paridad93/75/124/16. Web
+lint/typecheck PASS. Focal Web81/82 PASS, un timeout5000ms en vinculación
+existente; recheck aislado8/8 PASS sin modificar tests/límites. Galería/resumen/
+moneda/copia/PDF/multi-stay/importe nulo PASS. Build Docker backend/web PASS,
+tres servicios healthy en3001. Chrome real29/29 PASS, fotos reales, flechas/
+miniaturas, precios/moneda, impresión, móvil390 y Guest/Staff sin regresiones.
+No consulta ATS para visualizar el pasado. Reservas16/estancias16/cuenta1/
+vínculo1/movimientos30 y digest financiero conservados; migraciones35 sin cambios. Evidencia56/55/21 anterior
+corresponde a versión mínima; no atribuirla a este incremento. QA manual nuevo pendiente. Gate Web global
+previo conserva timeouts documentados; no ampliar límites ni tocar tests ajenos.
+Sin commit/push/merge. Siguiente: QA manual del resumen nuevo en3001.
+
+## 2026-10-28 — Cambio aprobado: consulta por correo + código — EN_QA
+
+José sustituye explícitamente OTP/historial anónimo por consulta de UNA reserva
+con correo y referencia. Historial completo solo GuestAccount/vínculos existentes.
+Contrato62 y decisión actualizados. Se retiran rutas/código OTP de esta función;
+ninguna modificación de registro/login/vinculación Guest, Staff o Android.
+
+POST Backend/BFF search con SQL restringido a ambos datos y coherencia de propiedad;
+N stays, proyección sin PII/finanzas, cuotas por correo y referencia, error genérico,
+auditoría inmutable003-015. Migración014 aplicada conservada sin cambios. No cambios
+en claves/proveedores ni dependencia de correo/HMAC para la consulta. Web mantiene
+el estilo y cuenta opcional para historial; resultados solo en memoria/15min.
+
+Backend focal56 PASS, incluidas7 de consulta y25 de OpenAPI; paridad93/75/122/16.
+Upgrade/idempotencia/checksums PASS. Los1170 anteriores son históricos.
+Web focal final55 PASS en8 archivos, Node24/Linux, sin ampliar timeouts.
+Lint/typecheck PASS. Reintentos con compilación concurrente excedieron tiempos;
+la ejecución final aislada conserva todos los tests/assertions y queda verde.
+Gate Web general previo tuvo5 timeouts ajenos (2 reproducidos en base); no se
+declara resuelto ni se repite global. Build backend/web PASS, Compose raíz
+actualizado: tres servicios healthy, puerto3001. Chrome real21/21 PASS: consulta
+de reserva persistida sin OTP, detalles, scope por ambos datos, móvil390 y
+Guest/Staff separados. Sin nuevas reservas/pagos; conteos y huella financiera
+idénticos, migraciones34→35 (solo015). QA manual pendiente. Sin commit/push/merge.
+
+## 2026-10-27 — Amenidades real MVP y UX Android/Web — COMPLETADA / PASS manual
+
+El usuario confirma aprobación del desarrollo y QA de Amenidades, Android y Web Staff,
+incluido el último ajuste de Inicio Android que elimina «Actualizar servicios» y
+mantiene la sincronización automática. No se repitió QA visual por instrucción.
+
+Entrega preparada en `feature/amenities-real-mvp`, basada en `origin/main` `51d6e32`.
+Incluye API Guest/Staff, catálogo por propiedad, migración aditiva `005-operations-006`,
+OpenAPI, Android real y mock con Mis servicios, Web Staff y mejoras UX aprobadas.
+Se preservaron los cinco originales locales; el archivo `next-env.d.ts` generado
+por Next se excluyó. Sin funcionalidades adicionales.
+
+Evidencia automatizada existente: Backend 1144/1144 PASS; Android 55 suites/543 tests
+PASS antes del último ajuste, y 4 suites/52 tests focalizados PASS después; Web 2631
+PASS; lint/typecheck/build y paridad OpenAPI PASS; diff-check PASS. QA manual Android
+Expo Go y Web Firefox: PASS confirmado por el usuario. La CI del PR queda por verificar.
+
+Siguiente: commit convencional, push y PR a `main`; revisar checks y reportar fallos.
+No hacer merge sin autorización.
+
+## 2026-10-27 — Mis servicios: desbordamiento medido y gestos originales — EN_QA visual
+
+Ajuste UX autorizado en `/tmp/pms-amenities`, rama `feature/amenities-real-mvp`.
+ServiceRequestDisclosure compartido mide el contenido natural sin límite vertical
+al ancho real y compara con la altura colapsada uniforme, ajustada por fontScale.
+Chevron solo con desbordamiento; cuerpo toca→edita según elegibilidad original,
+chevron independiente→expande/contrae sin editar. Una expandida por listado;
+contenido completo inline, sin agregar botones/acciones dentro de la expansión.
+Swipe/cancelación, estados, filtros y polling permanecen. Controles mock de
+completado ya existentes permanecen fuera del contenido expandible. Inicio
+conserva el ajuste previo, sin cambios adicionales en este turno.
+
+Pruebas Android: focalizadas8/103 PASS; suite completa55/538 PASS; lint/typecheck
+y export Android PASS. Se prueban límites exactos de altura, ancho variable, fuente grande,
+readonly/disabled, separación editar/expandir, exclusividad y swipe expandido.
+Sin cambios de lógica funcional, hooks, DTO/mappers/dominio, Backend, Web,
+dependencias ni migraciones. Amenidades mantiene su PASS técnico/manual previo.
+QA visual de este ajuste pendiente; guía44 al final. Sin commit/push/PR.
+Siguiente: verificar cards cortas/largas, rotación/TalkBack y gestos con Expo Go.
+
+## 2026-10-26 — Amenidades PASS manual; ajuste UX Mis servicios/Inicio — EN_QA visual
+
+El usuario confirma **PASS técnico y manual de Amenidades real MVP**: núcleo
+COMPLETADA. Autoriza únicamente ajustes de presentación antes del commit en la
+misma rama `feature/amenities-real-mvp`, worktree `/tmp/pms-amenities`.
+
+Card compartida para Housekeeping/Room Service/Amenidades reales y mock: cabecera
+compacta de altura uniforme, chevron derecho y detalles inline; una expandida
+por listado. Acciones elegibles dentro de detalles, swipe/confirmación, filtros,
+refresh único y polling10s existentes conservados. La selección visual persiste
+al sincronizar OPEN→IN_PROGRESS. Inicio elimina solo «Mi estadía» y «Tu reserva
+vinculada», conservando habitación/tipo/fechas/referencia y navegación Check-out.
+Sin cambios de lógica funcional, HTTP/DTO/mappers/dominio/hooks, Backend/Web,
+dependencias ni migraciones. Cambios previos preservados; sin commit/push/PR.
+
+Pruebas Android: lint/typecheck y export Android PASS; suite completa54/533 PASS;
+focales3/35 PASS sobre ambas solicitudes, exclusividad entre tipos/solicitudes, readonly,
+acciones y regresión de estados/polling/cancelación. Revisión visual del ajuste:
+**PENDIENTE**, separada del PASS manual de Amenidades ya confirmado. Guía:
+[QA44](../../frontend/pms-hotel-android/docs/44_AMENITIES_REAL_MVP_QA.md).
+Siguiente: comprobar visualmente cards/expansión/Inicio con Expo Go y confirmar
+PASS/FAIL del ajuste. No publicar todavía.
+
+## 2026-10-26 — Amenidades real MVP — EN_QA / PASS técnico
+
+Rama `feature/amenities-real-mvp`, worktree `/tmp/pms-amenities`, base main
+`51d6e32` (Room Service PR172). Ampliación persistida autorizada sobre
+IMP-AND-0113, cuyo cierre UI/mock conserva COMPLETADA (ANDROID-1 / WEB-3;
+dependencias0107/0103 cerradas). Backend: Alan; revisión cross-app colaborativa.
+Contrato [61](61_AMENITIES_REAL_MVP.md), QA manual/comandos
+[Android44](../../frontend/pms-hotel-android/docs/44_AMENITIES_REAL_MVP_QA.md).
+
+Catálogo PostgreSQL por propiedad con cinco artículos/UUIDs, provisión para
+propiedades existentes y futuras mediante migración aditiva005-operations-006.
+Sin precios/cargos/folio. Guest idempotencia/historial/editar/cancelar, contexto
+propio, locks/CAS, auditoría, anticipación30min, cutoff25min y checkout normal12:00
+en timezone de propiedad. Staff INTAKE/OPS y OPEN→IP→DONE. Android real/mocks y
+Mis servicios con filtros, vacío coordinado, refresh único y polling compartido10s.
+Web Staff `/amenities` y BFF de sesión/propiedad; sin cambios de implementación
+Housekeeping/Room Service, sin dependencias nuevas ni migraciones previas editadas.
+
+Pruebas: verify Java21/PostgreSQL17 **1144/1144 PASS**, incluida migración desde
+main/checksums/datos históricos/reaplicación, concurrencia/seguridad y OpenAPI.
+Paridad OpenAPI88ops/70paths/112schemas/15tags, sin exclusiones nuevas. Android
+suite54/527 PASS y focalizadas finales2/29 PASS (incluyen aislamiento retardado
+adicional); lint/typecheck, Expo Doctor21/21 y export Android PASS. Web344/2622
+PASS con maxWorkers2, lint/typecheck/build PASS. Ajustadas solo expectativas
+aditivas de migración y guard compartido que antes bloqueaba Amenidades.
+`git diff --check` PASS. Cinco archivos originales verificados SHA-2565/5 intactos;
+árbol original mantiene exactamente sus cinco cambios. Sin commit/push/PR.
+
+QA manual real: **PENDIENTE**, no atribuido al agente. No se migró ni arrancó el
+Backend contra la BD del hotel; pruebas en PostgreSQL descartable sin puerto.
+Evidencia: `/tmp/pms-amenities-*.log`, `backend/target/openapi-generated.json`,
+`backend/target/surefire-reports/`. La suite Android muestra advertencias de
+act/handles al finalizar, sin pruebas fallidas; no se silencian con forceExit.
+Siguiente: ejecutar QA44 con Expo Go y Firefox y confirmar PASS/FAIL; mantener
+EN_QA hasta la confirmación explícita del usuario. No publicar todavía.
+
+## 2026-10-26 — Room Service real MVP — COMPLETADA / PASS manual
+
+El usuario confirma PASS técnico y manual del recorrido Room Service. Se autoriza
+commit, push normal y PR hacia main; no merge. Último ajuste Android: feedback
+único Housekeeping/Room Service, actualización manual compartida y vacíos generales
+coordinados con filtros/carga/error. Conserva polling, acciones y caches existentes.
+13 casos nuevos; regresión focal de seis archivos:81 PASS. Typecheck/ESLint focal
+PASS. Backend59/Web58 previos siguen válidos; no se repiten suites completas.
+Ajuste visual final: PASS técnico / EN_QA visual, sin atribuir QA manual adicional.
+Escenarios adversos no confirmados siguen pendientes según guía43/contrato60.
+Cinco archivos originales preservados fuera del worktree aislado.
+
+## 2026-10-26 — Room Service real MVP — EN_QA
+
+Implementado sobre main8aed2f6/PR171 en feature/android-room-service-real-mvp,
+worktree /tmp/pms-room-service. Contrato60/guíaAndroid43: catálogo por propiedad
+con seis productos GTQ, ServiceRequest ROOM_SERVICE y metadata/líneas snapshot,
+Guest creación/listado/edición/cancelación idempotentes, locks/CAS/audit y ciclo
+Staff con OPS/scope. No precios ni identidad del cliente; no pagos/folio ni
+estados físicos. Zona de propiedad, comidas,30min/cutoff25 y checkout normal;
+late checkout simulado no autoriza. Migración aditiva005-operations-005, historial
+aplicado intacto. Se extraen contexto/polling de Housekeeping sin cambiar reglas.
+Android conserva UX/mock y añade HTTP/historial/acciones/refresco10s; Web Staff
+/room-service con BFF seguro, tabla, confirmaciones, scope y logout cache.
+
+Backend59 PASS únicos (incluye OpenAPI y upgrades/checksums/reaplicación), Android65
+PASS, Web58 PASS; typechecks y ESLint focal PASS. OpenAPI81/64/104/15 y paridad,
+git diff --check. PostgreSQL17 descartable18555, no BD del hotel ni suites completas,
+builds pesados o Docker E2E. Logs/hashes: /tmp/room-service-preservation/.
+Cinco originales preservados; sin commit/push/PR. Housekeeping anterior PASS
+manual confirmado; Room Service y variantes/visual/red siguen EN_QA manual.
+Siguiente: guía43 en Expo Go/Firefox y confirmación explícita antes de publicar.
+
+## 2026-10-26 — Room Service real MVP — EN_PROGRESO
+
+Solicitud explícita: Android→Backend→PostgreSQL→Web Staff, catálogo seis productos
+persistidos por propiedad/preciosGTQ, snapshots, pedidos idempotentes, edición y
+cancelación OPEN/cutoff25min, ciclo Staff con OPERATIONS_MANAGE. Rama
+feature/android-room-service-real-mvp, main8aed2f6 con PR171 fusionado, worktree
+/tmp/pms-room-service. Cinco originales preservados por hashes fuera del repo.
+Dependencias: IMP-AND-0111 UI/mock COMPLETADA y Housekeeping real PASS manual;
+autorización actual amplía a persistencia real sin alterar el XLSX. Android-1 y
+Web-3 conservan ownership de UI; Backend sigue sus contratos/operación existentes.
+Contrato60/guíaAndroid43 documentan el incremento autorizado; sigue EN_QA hasta
+confirmación manual. Migración aditiva005-operations-005, ServiceRequest categoría
+ROOM_SERVICE y catálogo/metadata/líneas estructuradas; sin cargos, folio ni pagos.
+Reusar vínculo/contexto Guest, transiciones/auditoría y polling visible de
+Housekeeping. No aceptar late checkout simulado como derecho servidor. Sin nuevas
+dependencias, commit, push ni PR. Siguiente: pruebas focales y QA manual integrado.
+
+## 2026-10-26 — Housekeeping actions PASS manual; franjas EN_QA; publicación autorizada
+
+El usuario confirma edición, swipe cancelación, inicio/finalización Staff,
+persistencia/estados y restricciones. Franjas ampliadas09/10/11/12/14 con sus
+finales reales: whitelist, due_at UTC por zona de propiedad,30min, checkout12:00,
+cutoff25min persistido. Android conserva selección válida/fechas futuras y formulario;
+GuestStay.timezone permite cálculos IANA independientes del teléfono. FULL_CLEANING
+único tipo real. Esquema compatible, sin migraciones/dependencias nuevas.
+Backend55 PASS; Android78 PASS; Web regresión afectada22 PASS (previo50, no sumar).
+Typechecks, ESLint focal, OpenAPI74/58/96/15 y diff-check. Guía42/contrato59.
+QA manual de franjas/fechas/zona distinta pendiente; no extrapolar PASS anterior.
+Commit convencional/push normal/PR autorizados, no merge. Preservar cinco archivos
+originales. main remoto incorporó PR169; comprobar compatibilidad e integrar
+normalmente si hay conflictos. Consultar CI remoto y corregir fallos específicos.
+
+## 2026-10-26 — Housekeeping real actions MVP — EN_QA
+
+Implementado sobre main03e476e/PR168 en feature/housekeeping-real-actions-mvp,
+worktree /tmp/pms-housekeeping-actions. Guest edita/cancela propias OPEN antes
+del cutoff25min; Staff OPERATIONS_MANAGE gestiona OPEN→IN_PROGRESS→DONE.
+Bloqueos, CAS updatedAt y no-op/replay evitan sobrescrituras/auditoría repetida.
+Auditoría Guest/Staff sin notas; identidad y propiedad revalidadas. Sin DELETE,
+Guest DONE, alteraciones hk_room_states, tablas, migraciones ni dependencias nuevas.
+Android reutiliza formulario/swipe/confirmación y queries reales; mock intacto.
+Staff reutiliza modal/tabla y refresca contador. Contrato59 y guía Android42.
+
+Backend49 PASS (PostgreSQL17 descartable); Android41 PASS; Web50 PASS.
+Typechecks Android/Web, ESLint focal sin warnings, OpenAPI74ops/58paths/96schemas/15tags
+y paridad de mappings, git diff --check PASS. Logs y hashes de cinco originales
+en /tmp/housekeeping-actions-preservation/. Sin suites completas, builds pesados
+ni Docker E2E. Cinco archivos originales intactos; sin commit/push/PR.
+
+El PASS manual anterior acredita únicamente creación/lectura/persistencia/sin
+duplicados. Pendientes QA manual de nuevas acciones, cutoff/errores/carreras y
+visual de modal/responsive/foco; no se atribuyen resultados nuevos al usuario.
+Siguiente: ejecutar guía42 Android/Firefox y confirmar PASS antes de publicar.
+
+## 2026-10-26 — Housekeeping real actions MVP — EN_PROGRESO
+
+Autorizado por solicitud explícita: edición/cancelación Guest OPEN antes del
+cutoff25min y ciclo Staff OPEN→IN_PROGRESS→DONE con OPERATIONS_MANAGE. Rama
+feature/housekeeping-real-actions-mvp, base main03e476e/PR168, worktree aislado
+/tmp/pms-housekeeping-actions. Cinco archivos originales y worktrees previos
+intactos. Contrato59: locks y CAS updatedAt existentes, sin tablas/dependencias/
+migraciones nuevas. No Guest DONE, no DELETE ni cambios físicos de habitación.
+Reutilizar formulario, swipe/confirmación Android y modal/tabla Staff. Siguiente:
+implementar/verificar focalmente y entregar EN_QA; sin commit/push/PR.
+
+## 2026-10-26 — PR168: corrección focal de conteos de upgrade CI
+
+MVP publicado en fa908d1; PR168 hacia main, abierto y sin conflictos.
+CI de ese SHA: Android, Web y Docker Stack PASS; Backend1084 tests/3 failures,
+0 errors/skipped, únicamente conteos de manifests30→31 por005-operations-004.
+Se ajustan los deltas en PublicBookingReceiptSchemaUpgradeTests,
+StaffAuthAuditAppendOnlyIntegrationTests y StaffAuthAuditAttributionIntegrationTests,
+y se exige presencia del nuevo changeset. Checksums, datos históricos, triggers
+e idempotencia de reaplicación conservan sus aserciones; no se modifica código
+funcional, contratos ni migraciones.
+
+Verificación correctiva: solo los tres métodos fallidos,3 PASS sobre PostgreSQL17
+descartable en18553. Comando/log en /tmp/housekeeping-pr-close/
+backend-ci-fix-focused.log. Sin suite completa/build pesado/Docker E2E local.
+git diff --check PASS; cinco archivos locales originales intactos. Commit
+correctivo y push normal en el mismo PR autorizados por el alcance de cierre.
+CI del SHA correctivo se informa en la descripción del PR, sin merge.
+Housekeeping funcional sigue COMPLETADA / PASS manual; UX Staff conserva PASS
+técnico / EN_QA visual. No se atribuyen pruebas manuales adicionales al usuario.
+
+## 2026-10-26 — Housekeeping MVP real: COMPLETADA / PASS manual; UX Staff EN_QA visual
+
+Confirmación explícita del usuario: crear limpieza real desde Android, consultarla
+en Firefox Staff, persistencia al cerrar/reabrir Expo Go y ausencia de duplicados.
+Se cierra exclusivamente este recorrido funcional. La mejora posterior de tarjeta
+«Limpiezas solicitadas» y modal conserva PASS técnico / EN_QA visual: no se atribuye
+al usuario QA visual de la modal, responsive, foco ni teclado.
+
+Rama feature/android-housekeeping-real-mvp, worktree /tmp/pms-android-housekeeping;
+HEAD/base main a98250f (PR167 integrado), origin/main actualizado e idéntico al
+inicio de publicación. Commit convencional, push normal y PR hacia main autorizados;
+no merge. Cinco cambios originales preservados byte a byte. Solo documentación
+de cierre modificada en este turno; funcionalidades aceptadas intactas.
+
+Guest POST/GET housekeeping-requests y Staff GET por propiedad documentados en
+contrato58. ServiceRequest existente, migración005-operations-004 aditiva,
+idempotencia transaccional y vínculos Guest/Staff/scope existentes. Android HTTP
+real sin fallback ni acciones locales sobre solicitudes persistidas. Staff usa
+una query para KPI OPEN+IN_PROGRESS y modal con todos los estados, actualización,
+accesibilidad técnica y grid6/3/2; tabla fija inferior retirada. Sin cambios
+respecto a estados físicos de habitación, cargos ni servicios ajenos.
+
+Evidencia existente: Backend52 PASS; Android87 PASS; Web Housekeeping21 PASS;
+Web mejora UX21 PASS (grupos históricos separados, no sumar por solapamientos).
+Typecheck Android/Web, ESLint focal y OpenAPI/paridad mappings PASS. Cierre:
+revisión completa y git diff --check, sin repetir suites, builds ni Docker E2E.
+CI remoto se consultará después de publicar y se informará en el PR.
+
+Pendientes: QA visual Firefox de tarjeta/modal, responsive6/3/2 y teclado/foco;
+variantes manuales no confirmadas de red/errores, sesión, fecha/zona horaria,
+autorización adversa y cambios de cuenta/propiedad/estancia. Cobertura automática
+no equivale a PASS manual de esas variantes. Siguiente: revisar CI y completar
+QA visual antes de autorizar merge; mantener PR abierto sin fusionar.
+
+## 2026-10-26 — Android Housekeeping real MVP — EN_QA
+
+Implementación autorizada sobre main a98250f (PR167 integrado), rama
+feature/android-housekeeping-real-mvp en /tmp/pms-android-housekeeping.
+Guest POST/GET housekeeping-requests por estancia autorizada, service_requests
+reutilizado, migración005-operations-004 aditiva, idempotencia/rollback/audit Guest;
+Staff GET por propiedad y sección Web read-only con permisos/scope existentes.
+Android HTTP sin fallback, consultas propias por cuenta/estancia y sin acciones
+locales sobre solicitudes reales. Solo defaults10:00–11:00/FULL_CLEANING.
+No altera estados físicos HK, login, vínculos ni el MVP anterior aprobado.
+
+Evidencia final: Backend52 métodos únicos PASS (7 clases focales, incluidos23
+OpenAPI y6 migraciones); Android87 PASS/6 archivos; Web21 PASS/3 archivos.
+Typecheck Android/Web, ESLint focal16/12 archivos y git diff --check PASS.
+Jest completó salida0; aviso previo de GC/open handles existente, sin forceExit.
+Esquema OpenAPI71 operaciones/55 paths/92 schemas/15 tags, paridad mappings PASS.
+Contrato58 y guía Android41 incluyen persistencia, límites y QA Fedora/Firefox/
+Expo Go con la misma BD. Solo PostgreSQL17 descartable para automatización;
+no se modificó BD del hotel. Cinco archivos originales verificados SHA-256,
+secretos/configuración/generados ajenos intactos. Sin commit/push/PR ni suite
+completa/build pesado/Docker E2E. CI y QA manual de este incremento pendientes;
+PASS anterior del usuario no acredita Housekeeping. Siguiente: usuario prueba
+el recorrido real y confirma PASS antes de autorizar publicación.
+
+## 2026-10-26 — Android Housekeeping real MVP — EN_PROGRESO
+
+Solicitud explícita del usuario; base origin/main a98250f (PR167 integrado), rama
+feature/android-housekeeping-real-mvp en /tmp/pms-android-housekeeping.
+Cinco archivos locales ajenos preservados mediante SHA-256; sin commit/push/PR.
+Alcance: Guest crea/lista limpieza propia, service_requests existente y programación
+estructurada aditiva, lectura Staff con permisos existentes y Android HTTP sin
+acciones locales sobre solicitudes persistidas. Contrato58; defaults MVP únicamente,
+opciones QA adicionales siguen mock. Anticipación30min, checkout12:00 y timezone
+persistida de propiedad. No modifica estados físicos HK ni funcionalidades aprobadas.
+Siguiente: verificaciones focales/OpenAPI y entrega EN_QA para PASS manual del usuario.
+
+## 2026-10-26 — PR169: nueva sincronización con main03e476e, EN_QA
+
+PR169 sí contiene452c626. Main avanza con PR168 y solo AlanPlan/AlanHandoff
+vuelven a entrar en conflicto. Integración/publicación ya autorizadas; se conservan
+ambos historiales con entradas main primero. Código/contratos/migración58 idénticos
+al origen y Android local intacto por SHA256, fuera de los cambios propios.
+Backend focal Guest/Housekeeping/OpenAPI/upgrades BUILD SUCCESS:82 pruebas, cero
+fallos/errores/omitidas, Java21/PostgreSQL17 descartable. Web focal165/12 PASS y
+lint/typecheck/build Linux PASS. Sin repetir/aprobar la suite general; no reutilizar
+el PASS1077 anterior como evidencia del nuevo árbol. QA manual/gate Web pendientes.
+Sin recrear contenedores habituales ni modificar la BD de3001.
+
+## 2026-10-26 — Integración autorizada de Mis reservas con main a98250f: EN_QA
+
+José autoriza merge normal, validación y commit/push de nuestra rama. PR166/167
+traen activación Staff y API Guest compartida56/57: se reutilizan su controlador,
+adaptador, BFF y hooks, retirando el segundo GET incompatible de esta rama.
+Se conservan diseño público, acceso Guest contextual y OTP manual C3; invalidación
+de caché OTP adaptada a las claves reales account-scoped. Las pruebas de lectura
+y dos estancias/C3 usan el contrato vigente; regresiones adicionales de activación
+Staff sin cambiar reglas, dependencias, timeouts ni workflow. Documentación original
+marcada sustituida, no contrato paginado vigente. Backend verify completo Java21/
+PostgreSQL17 BUILD SUCCESS:1077 pruebas, cero fallos/errores/omitidas;23 OpenAPI,
+14 invitaciones Staff,9 MVP Android,6 recuperación y7 regresiones C3/historial.
+Web lint/typecheck/build Linux PASS. General limpia2521/2535:13 timeouts y una
+aserción de replay. Repetición9 archivos243/246; checkout25/25 y vínculo4/4 PASS
+sin modificar código. Tres timeouts persisten (cursor Staff, búsqueda y filtros
+de reservas), archivos sin modificaciones propias frente a main. Gate Web general
+no aprobado; evidencia de corrida inicial con entorno QA incorrecto diferenciada
+en Web70. Sin elevar límites/excluir tests ni cambios propios a migraciones,
+Android/Staff o servicios habituales. Android local reaplicado y excluido.
+Listo para commit/push autorizados; faltan QA manual y CI. EN_QA, no completar.
+
+## 2026-10-26 — Mis reservas aplicado en3001: EN_QA
+
+José confirma que3001 seguía usando imágenes anteriores; el preview aislado no
+actualizaba ese entorno. Corrección trasladada al proyecto principal en la rama
+local fix/public-my-reservations-3001 y desplegada mediante compose.yaml habitual.
+Backend/Web healthy; PostgreSQL conserva contenedor, volumen y datos:2 propiedades,
+24 habitaciones,8 reservas,8 estancias,28 migraciones. Android intacto.
+Navegador real3001:18/18 PASS, Guest/Staff separados incluso con ambas cookies,
+historial propio, recarga, móvil y logout. Cero escrituras de reservas/pagos en QA
+habitual. Se detuvo únicamente el preview Web/API3002 para evitar confusión.
+Clave OTP y proveedor de correo vacíos en el entorno; preguntas de autorización
+y ubicación de configuración pendientes. No crear secretos ni simular el vínculo.
+Evidencia/recorrido en Web70; QA manual y gate Web general pendientes. Sin commit,
+push, merge, migraciones ni cambios de dependencias/configuración de Compose.
+
+## 2026-10-25 — Mis reservas: contrato aprobado e implementación EN_QA
+
+José prioriza flujo principal Web completo. Se confirma salto indebido a Staff,
+restauración Guest prematura y pérdida de retorno Google; corregidos en worktree
+fix/public-my-reservations-flow desde main0d1f4b7, sin tocar Android local.
+José aprueba GUEST_RESERVATIONS_READ_PROPOSAL.md. Implementados listado/detalle
+propios Guest con links persistidos y N stays, sin importes/notas ni selector de
+cuenta/property; OpenAPI actualizado. Web conecta lectura y C3 mediante BFF/cookies
+Guest, sin inventar TTL, IDs o confirmaciones. Acceso/retorno Google y cierre Guest
+permanecen en contexto público aunque exista sesión Staff; reenvío mínimo60s.
+Backend verify completo Java21/PostgreSQL17:1049 PASS, cero fallos/errores/omitidas,
+incluido recorrido anónimo→OTP real→historial y rechazo de otra cuenta. Web
+lint/typecheck/build PASS; navegador16/16 PASS (1440px/390px), sin JS/5xx. Correo
+reemplazado solo por fixture de entrega en BD QA; C3 verifica realmente el código.
+Focal183/185 con dos timeouts5s mock; nueva UI12/12 PASS. Repetición de ambos
+archivos12/12 PASS; conjunto del26/10 otra vez183/185. Límites5s y aserciones
+originales conservados. General interrumpida
+tras130/334 archivos y40 fallos (mayormente timeouts); tres de Staff en main0d1f4b7,
+sin cambios de límites/validaciones ni otros módulos. Gate general no aprobado.
+Private09 también pasa aislado, sin cambios funcionales ni de sus tests.
+QA manual del owner pendiente. Preview aislado3002;3001 preservado. Sin migraciones,
+secretos, dependencias, commit/push ni cambios al entorno habitual. EN_QA.
+Siguiente: aceptación manual y validación del gate Web antes de publicar.
+
+## 2026-10-26 — PR167: aislamiento de fixtures Backend; MVP COMPLETADA / PASS
+
+Publicación autorizada: commit1b769069c3f33fd1b5d7c6be7e4fe6e3eca9cb05,
+PR https://github.com/Al0219/pms-hotel-boutique/pull/167 hacia main, sin conflictos.
+CI inicial: Web y Stack PASS; Android falla expo-doctor20/21 por siete versiones
+patch SDK. Las actualizaciones Expo previas siguen excluidas por alcance y los
+cinco archivos locales conservan sus bytes. No se debilitan checks de Doctor.
+
+Backend inicial1070 tests/5 fallos: fixtures de las dos clases Guest nuevas
+contaminaban el esquema compartido de pruebas, afectando conteos en Booking y
+Query. Corrección limitada a esos fixtures: esquema único por clase, datasource/
+Liquibase/JPA scoped, limpieza del esquema propio y cierre de contexto. Sin
+código funcional, auth, endpoints, datos de trabajo o aserciones debilitadas.
+
+Verificación correctiva focal25 PASS: GuestAndroidMvp, GuestReservationRecovery,
+ReservationBookingService y ReservationQueryService, orden alfabético con pool2/
+minimumIdle0 igual a CI, PostgreSQL17 descartable y JVM25/release21. Comando:
+./mvnw -B --no-transfer-progress -Dsurefire.runOrder=alphabetical
+-Dtest=GuestAndroidMvpIntegrationTests,GuestReservationRecoveryIntegrationTests,ReservationBookingServiceIntegrationTests,ReservationQueryServiceIntegrationTests test.
+Evidencia /tmp/android-mvp-close-preserved/backend-ci-fix-focused.log.
+Sin suite completa/build/QA manual local. git diff --check PASS. Commit correctivo
+y push normal autorizados en el mismo PR; CI remoto se informa en su descripción.
+MVP y referencia conservan el PASS manual confirmado del usuario; los escenarios
+no confirmados permanecen pendientes. No fusionar. Siguiente: revisar CI del SHA
+correctivo; tratar la alineación SDK excluida como alcance separado.
+
+## 2026-10-26 — MVP Android ↔ Backend — COMPLETADA / PASS; preparación de PR
+
+Confirmación manual explícita del usuario del recorrido Web/Android y del ajuste
+visual. Alcance aceptado: login Guest, reservas reales, vinculación segura,
+selección de estancia y código de confirmación visible. Sin nueva QA manual
+atribuida al agente. Variantes no acreditadas (sesión/reinicio/red/errores,
+selección alternativa, hardware/accesibilidad y HTTPS externo) permanecen
+pendientes; no cerrar otros incrementos ni backlog por arrastre.
+
+Rama feature/android-backend-mvp, base5cc0d58/PR166, publicación normal y PR hacia
+main autorizados; no merge autorizado. Revisión del diff completo y git diff
+--check para el cierre; no repetir suites, builds ni QA. Evidencia previa por
+incremento, sin sumar repeticiones: MVP Backend42/Android105; corrección vínculos
+Backend43/Web72/Android25; referencia Backend4/Android36, typecheck/ESLint focal
+PASS. PostgreSQL17 descartable y JVM25/release21; CI remoto reportado en el PR.
+
+Cinco archivos previos preservados byte a byte en el worktree: app.json, eas.json,
+package.json, package-lock.json y Web next-env.d.ts. Commit incluye solo plugin/
+dependencia/lock de SecureStore en los tres archivos compartidos; excluye EAS,
+identificador de app/proyecto, actualizaciones Expo previas y next-env generado.
+Snapshot/control externo: /tmp/android-mvp-close-preserved. Sin secretos ni
+artefactos generados en la selección de publicación; migraciones previas intactas.
+Owner Alan; revisión cross-app de seguimiento pendiente de asignación. Contratos
+56/57 y guías Android38/Web70 registran cierre y límites de QA. Siguiente: publicar
+commit convencional/PR, revisar conflictos y CI, sin fusionar.
+
+## 2026-10-26 — Referencia visible Android EN_QA; recorrido real PASS manual
+
+Confirmación explícita recibida del usuario: el recorrido real de reservas
+Web/Android tiene PASS manual. Se registra ese resultado para ese recorrido;
+no se atribuyen ejecuciones manuales nuevas ni aceptación del ajuste visual.
+
+Ajuste autorizado en feature/android-backend-mvp: Inicio/Mi estadía muestra
+Reserva · confirmationCode desde el detalle Guest persistido; ausencia/null/
+blanco → Referencia no disponible. Nunca sustituye por reservationId. El detalle
+Guest agrega confirmationCode desde reservations.confirmation_code, conservando
+SQL de pertenencia, IDs y claves de cache. DTO/mapper/Domain Android propagan
+el dato; chip acotado a una línea/ellipsis, mismos colores/tarjeta. Pruebas A→B
+cubren carga y referencia ausente/distinta, sin retener el código de A.
+Sin cambios de login, vinculación, Housekeeping, Web o migraciones en este ajuste;
+los cambios locales previos se preservan. Contrato56/OpenAPI y Android38 coherentes.
+
+Validación focal: Android36 casos distintos PASS (mapper8, presentación11,
+HTTP17); no sumar repeticiones. Typecheck y ESLint focal PASS. Backend4 métodos
+focales de detalle/pertenencia/OpenAPI PASS sobre PostgreSQL17 descartable,
+JDK25/release21, copia /tmp/pms-android-reference-backend. git diff --check PASS.
+Comandos Android: npm run typecheck; npm test -- --runTestsByPath
+ tests/stay-contract.test.ts tests/account-stay-hub.test.tsx tests/android-backend-mvp.test.ts.
+Backend: ./mvnw -B --no-transfer-progress
+ '-Dtest=GuestAndroidMvpIntegrationTests#ownDetailUsesPersistedRoomAndTypeAndDoesNotReturnGuestPii+nullRoomRemainsNullAndCrossReservationStayIs404,OpenApiContractIntegrationTests#nativeGuestReadsAndRefreshHaveExactGeneratedContract+generatedPathsAndMethodsMatchRealApplicationMappings' test.
+Logs /tmp/pms-android-reference-tests.log, /tmp/pms-android-reference-presentation-final.log
+y /tmp/pms-android-reference-backend.log. Sin suite completa, build pesado,
+commit/push/PR ni cambios a la base de trabajo. Ajuste visual pendiente de
+confirmación manual del usuario; no se confunde con el PASS previo del recorrido.
+Siguiente: comprobar visualmente la referencia en Android y confirmar el ajuste.
+
+## 2026-10-25 — Corrección de vínculos Guest Web/Android — EN_QA
+
+Implementación autorizada en feature/android-backend-mvp; trabajo Android previo,
+EAS/package/app y next-env.d.ts conservados. Contrato57/guíaWeb70 y addendumAndroid38.
+Reserva pública/pago/recibo J6 no modificados: BFF conserva201 y luego solicita
+recuperación propia con cookie Guest. POST reconcile independiente, GuestPrincipal,
+correo verificado y CONFIRMED, no transferencia; aditivo013/procedenciaACCOUNT
+reutiliza email_verified_at para cuentas anteriores, sin nuevas tablas ni edición
+de migraciones aplicadas. Locks compatibles con FK, unicidad y auditoría existentes.
+Web listado/detalle reales en todas sus entradas, cache separada del modo mock,
+refresh/errores e invalidación Guest; Android recupera/refresca al volver por focus.
+
+Diagnóstico base real solo SELECT: última[referencia local omitida] confirmada, una estancia y sin
+link, correo compatible con cuenta verificada sin proof. No se atribuye ese código
+al usuario sin confirmación. Web→Backend→pms_hotel comprobado; URL del APK/Metro no
+confirmable. No se aplicó013 ni se crearon vínculos, reservas o pagos en esa base.
+
+Pruebas focales PASS: Backend43 casos distintos (recovery6, OpenAPI23,
+registro/migraciones/upgrade/creación/replay/OTP14); Web72 distintas (70 del conjunto
+más2 nuevas de expiración/cache; última suiteUI10 PASS); Android25 distintas,
+última focus1 repetida PASS. No sumar repeticiones. Typecheck Web/Android y ESLint
+focal PASS; git diff --check y whitespace untracked PASS. OpenAPI68 operaciones,
+53 paths/89 schemas, sin exclusiones nuevas. JVM25/release21 y PostgreSQL17 de QA
+separado; compilación en /tmp/pms-guest-links-backend por target previo de otro
+propietario. Solo PostgreSQL descartable, sin Docker E2E ni builds de distribución.
+Evidencia /tmp/pms-guest-links-{backend-tests,backend-final,history-regression,
+web-final,web-expiry-tests,android-tests-final,android-focus-final}.log;
+OpenAPI en target de la copia temporal. Jest conserva aviso de handles de suites
+existentes tras PASS; no fallo de pruebas. No commit/push/PR ni cambios a secretos.
+Owner Alan; revisión cross-app de seguimiento. QA manual Firefox/Android pendiente.
+Siguiente: arrancar Backend/Web actualizados con013 y ejecutar guíaWeb70 sobre
+la misma instancia desde Firefox y Android; abrir Mis reservas recupera elegibles.
+
+## 2026-10-25 — Corrección de vínculos Guest Web/Android — EN_PROGRESO
+
+Autorización explícita de Alan en feature/android-backend-mvp; MVP Android y
+cambios locales previos preservados. Diagnóstico de solo lectura: última reserva
+[referencia local omitida] CONFIRMED/una estancia/sin link, titular con email de cuenta verificada
+pero sin proof; no se confirmó que ese código sea el del usuario. Web→Backend→
+pms_hotel comprobado; URL del APK Android no verificable desde el workspace.
+Contrato57: recuperación idempotente propia REQUIRES_NEW, sourceACCOUNT desde
+marca de verificación persistida mediante aditivo013, sin nuevas tablas ni
+modificar migraciones aplicadas. BFF conserva201 y luego recupera; listado/detalle
+Web reales, refetch Android, sin mock fallback. QA Firefox/Android pendiente.
+Siguiente: cerrar evidencias focales y entregar guía70, sin commit/push/PR.
+
+## 2026-10-25 — ANDROID-BACKEND-MVP — EN_QA
+
+Rama feature/android-backend-mvp, base origin/main5cc0d58 con PR166 integrado.
+Login/me/refresh/logout/summary Guest reutilizados; refresh nativo por header,
+SecureStore y Bearer propios. Dos GET por vínculos persistidos y joins property/
+reservation/stay; sin nuevas entidades/tablas/migraciones ni capacidades Staff.
+Servicios HTTP, DTO/mapper/hooks, restore/expiración/logout y guard sin fallback
+mock entregados. Contrato56/Android38, C1/C3/OpenAPI y conectividad local opt-in.
+Owner Alan; revisión cross-app de seguimiento, sin bloquear cierre técnico.
+
+Evidencia:42 pruebas Backend distintas PASS (Guest Android9, Account Summary10,
+OpenAPI23); última repetición32 PASS tras reforzar Guest→Staff, refresh revocado
+y schemas/nullability. HTTP TCP real login→summary→list→stay sobre PostgreSQL17
+tras seed sintético descartable, refresh nativo/cookie y logout/401 PASS.
+Ejecución JDK25 con release21, sin suite completa ni build de distribución.
+Target previo con archivos de otro propietario: compilación/pruebas en copia
+/tmp/android-backend-mvp-backend, sin modificar sus permisos. Evidencia en
+/tmp/android-backend-mvp-backend-tests.log, /tmp/android-backend-mvp-backend-final.log
+y target/openapi-generated.json de esa copia (67 operaciones,52 paths,89 schemas).
+Android10 suites/105 pruebas focales PASS, typecheck y ESLint focal PASS;
+Jest reporta aviso de handles abiertos de temporizadores en suites existentes.
+Log /tmp/android-backend-mvp-android-final.log. git diff --check y whitespace
+untracked PASS. Los5 cambios locales iniciales comprobados contra snapshot:
+Web/EAS byte a byte; app/package/lock conservados más SecureStore únicamente.
+Sin commit/push/PR, cambios a secretos o base de trabajo. QA físico Android,
+SecureStore nativo, LAN/HTTPS y confirmación manual de Alan pendientes.
+Siguiente: desplegar Backend actualizado en LAN controlada y ejecutar guíaAndroid38.
+
+## 2026-10-25 — ANDROID-BACKEND-MVP — EN_PROGRESO
+
+Autorización explícita del usuario: integración real Android Guest login → reservas
+vinculadas → estancia persistida. Rama feature/android-backend-mvp desde
+origin/main 5cc0d58 (PR166 integrado). Cambios locales Android/EAS y next-env.d.ts
+preservados; sin commit/push/PR. Owner Alan; revisión cross-app de seguimiento.
+Reutilizar C1/C3, sesiones Guest y PostgreSQL; definir transporte nativo seguro,
+lecturas por vínculo persistido, DTO/mapper/hooks existentes y SecureStore.
+Sin nuevas tablas/migraciones ni capacidades Staff. Acceptance: aislamiento Guest,
+login/restore/refresh/logout, listado/estancia reales; pruebas focales, typecheck,
+OpenAPI y diff-check. QA Android físico pendiente de confirmación del usuario.
+Siguiente: implementar contrato y pruebas del incremento, sin suites completas.
+
+## 2026-10-25 — PR166: correcciones focales por fallos CI
+
+Primera CI del merge f4e0e44: Stack PASS, Web12 fallos en staff-admin-row y Backend6
+fallos de conteos de migración (1054 pruebas ejecutadas). Diagnóstico: callback
+izquierdo recibió un segundo argumento undefined; backdrop de recuperación se
+montaba incluso cuando no aplicaba. Se conserva onReveal(boolean) para izquierda/
+cierre y solo se monta recuperación habilitada. No se debilitaron tests de gestos.
+Cinco clases de upgrade esperaban el total anterior28; se incorpora el changeset
+aditivo012 (29), con aserción explícita de presencia, conservando checksums, datos
+históricos, triggers e idempotencia. No se tocaron migraciones aplicadas.
+Validación local: 105 tests Web focales PASS,23 de migración PASS, typecheck/diff
+PASS. Sin suites completas locales ni nueva QA manual. Nueva CI pendiente del
+commit de corrección; MVP y estados independientes conservados. Sin merge a main.
+
+## 2026-10-25 — PR166: integración normal de origin/main0d1f4b7
+
+Merge autorizado en worktree aislado desde c7f0f1c; conflictos solo en este historial
+y AlanPlan, resueltos conservando íntegros ambos bloques Staff/reservas. OpenAPI
+se combinó automáticamente y conserva los contratos de ambos módulos. Sin resolver
+con ours/theirs ni cambios funcionales propios. MVP de creación/Gmail/activación/
+M08/reactivación/swipe y estados de QA conservados.
+Validación local focal: OpenApiContractIntegrationTests22 PASS sobre PostgreSQL17
+descartable, Java25/release21; npm run typecheck PASS y git diff --check PASS.
+Sin suite completa ni nueva QA manual. Android y next-env.d.ts, cinco archivos
+locales, preservados byte a byte fuera del merge. Publicar commit normal y revisar
+CI del PR; sin force push ni fusión del PR a main. CI aún pendiente al registrar.
+
+## 2026-10-25 — Reactivación MVP: COMPLETADA / PASS manual; preparación PR
+
+Aceptación explícita del usuario para el flujo confirmado de reactivación con
+swipe. Invitación Gmail/activación inicial conservan su cierre previo. Recuperación
+de cuentas antiguas, SMTP externo adicional, lector de pantalla y escenarios
+manuales no acreditados siguen pendientes: no se confunden con cobertura automatizada.
+Evidencia histórica: Backend38 focales distintos PASS, BFF/Web34 y últimos64 de
+gesto/acciones PASS; no sumar repeticiones. Guía55 registra la separación.
+Preparación actual: revisión de diff/untracked y git diff --check; sin repetir
+suites/build/Docker. Android y next-env.d.ts excluidos y preservados. CI completo
+queda al PR hacia main; no merge. Estados independientes BE/QA sin cierre por arrastre.
+
+## 2026-10-25 — Swipe derecho de recuperación Staff: EN_QA
+
+Mismo reconocedor desplaza tres columnas a derecha y revela panel izquierdo de
+recuperación según elegibilidad real; Reactivar con UserRoundCheck/confirmación o
+recuperación con Mail. Gesto contrario cierra; swipe izquierdo, edición y teclado
+conservados. Sin Backend/BFF/infra nueva. 64 pruebas focales PASS; typecheck/diff
+PASS. Mouse/touch/wheel verificados con eventos automatizados; Firefox/touchpad
+físico pendientes (guía55). Sin suite completa/build/Docker ni commit/push.
+
+## 2026-10-25 — Reactivación y recuperación Staff MVP: EN_QA
+
+Mismos endpoints y correo Gmail: reactivar SUSPENDED con M08 vigente y confirmación;
+sin evidencia, recuperación explícita del administrador también para cuentas
+antiguas. Suspensión efectiva revoca enlaces pendientes; consumo nuevo activa con
+contraseña/M08/auditoría en una transacción. Sin flags confiados al navegador ni
+reactivación DISABLED. UI conserva columnas/edición/swipe y refresca listado/detalle.
+Backend38 pruebas distintas PASS (HTTP14 finales, OpenAPI21, correo3); BFF/Web34 y
+regresión focal3 PASS; typecheck/diff PASS. Fixtures de permisos y ProblemDetail
+corregidas, sin relajar seguridad. Sin suites completas/build/Docker E2E.
+Pendiente Firefox/Gmail/lector de pantalla; guía55. No cerrar globalmente3B-2 ni
+QA independientes. Cierre inicial anterior intacto. Sin commit/push/PR.
+
+## 2026-10-25 — Invitación y activación Staff MVP: COMPLETADA / PASS
+
+Aceptación explícita del usuario. Último ajuste: Next Link «Iniciar sesión» abre
+`/acceso?from=staff-activation`; solo ese recorrido evita el salto automático por
+sesión Staff/Guest existente. Login normal intacto, sin autenticación automática ni
+cambios Backend/BFF/Gmail/credenciales. Solo revisión y git diff --check PASS; no
+nuevos tests/build/Docker ni ejecución manual atribuida. Evidencia y pendientes
+anteriores conservados (guía55). No cierra reactivación general/QA independientes.
+Sin commit/push/PR; cambios locales preservados.
+
+## 2026-10-25 — Consumo de invitación activa altas nuevas: EN_QA
+
+Cambio de producto autorizado: contraseña/M08/token/ACTIVE/auditoría/revocación
+se confirman juntos, versión única y locks existentes más propiedades. Requisitos
+fallidos revierten todo; cuentas antiguas y DISABLED siguen excluidas. Sin sesión
+automática: éxito ofrece `/acceso`. Gmail/alta automática intactos. Backend focal35
+PASS; Web18 PASS (+últimas3 repetidas), typecheck/diff PASS. Gmail real/Firefox
+pendientes; guía55. No cerrar reactivación general ni QA independientes. Sin
+commit/push/PR; cambios ajenos conservados.
+
+## 2026-10-25 — Alta Staff con invitación automática: EN_QA
+
+Alta confirmada201 → POST invitation real con versión/scope vigentes. Bloqueo
+durante ambas operaciones; mensajes distintos para envío confirmado o incierto,
+sin repetir creación/invitación. Listado actualizado y reenvío manual conservado.
+Focal15 PASS, typecheck/diff PASS; Gmail/Firefox pendientes. Sin cambios Backend/
+BFF ni infraestructura. Guía55. Sin commit/push.
+
+## 2026-10-25 — Invitación Staff reutiliza Gmail: EN_QA
+
+Se reutiliza el bean SMTP existente sin cambios en el correo Guest. Eliminada
+configuración Staff SMTP independiente y dependencia Mailpit; solo se detuvo el
+capturador de esta QA, sin tocar PostgreSQL ni otros servicios. Tests focales15
+PASS (3 Staff +12 existentes), typecheck/diff PASS. Gmail real/Firefox pendientes;
+no se atribuye envío real a los tests interceptados. Guía55 actualizada; historial
+con Mailpit abajo permanece como evidencia anterior. Sin commit/push/PR.
+
+## 2026-10-23 — Invitación y activación inicial Staff MVP: EN_QA
+
+Autorización directa; feature/staff-activation-mvp desde main fe6a381. Nuevas altas
+reciben marcador de onboarding; anteriores no reciben backfill de preparación ni
+reactivación. Invitación SMTP real, hash de token/TTL/un uso, consumo→M08+contraseña
+hashed manteniendo SUSPENDED, admin confirma ACTIVE con requisitos actuales.
+BFF/UI reales; tres columnas, Origin/cookies/no-store, una escritura/usuario y
+recuperación409/503. Migración012 y metadatos invalidados con correo/DISABLED;
+locks, revocación y auditoría atómicos. Backend focal57 PASS, Web334/7 y30/2 PASS,
+HTTP real28 aserciones PASS (incluye SMTP detenido→503/rollback), typecheck/lint/diff
+PASS. Sin suites completas/builds/stack Docker E2E. Manual Firefox y proveedor
+SMTP externo pendientes; guía55 y entorno descartable3111/Mailpit19526. No completar
+3B-2 global ni BE-006B/C/BE-014A/QA2A/2B. next-env.d.ts conservado; sin commit/push/PR.
+
+## 2026-10-24 — Integración autorizada con main fe6a381: EN_QA
+
+José autoriza integrar PR164 en feature/staff-reservations-real y publicar tras
+validar. Se conservan ambas entradas en AlanPlan/AlanHandoff; OpenAPI integra
+automáticamente las pruebas de alta de usuarios y reservas. Otros archivos
+entrantes idénticos a main, sin correcciones funcionales propias adicionales.
+Backend focal Java21/PostgreSQL17 aislados: verify BUILD SUCCESS,166 pruebas,
+cero fallos/errores/omitidas. Web lint/typecheck PASS;15 archivos484/491 PASS,
+repetición de los dos fallidos119/120 PASS. El timeout de recuperación de cursor
+también falla aislado en copia exacta de main fe6a381; seis casos iniciales pasan
+al repetir sin cambiar límites. Build de producción PASS; gate general/CI pendiente.
+QA manual PASS previo conservado; EN_QA, sin nueva aceptación manual atribuida.
+Main, contenedores habituales, datos y stash documental previo conservados.
+Siguiente: publicar el merge normal y revisar checks, sin force ni merge del PR.
+
+## 2026-10-23 — Alta real Staff: EN_QA, contrato55
+
+José aprueba CONFIRMED con alojamiento pendiente, sin pago automático, asignación
+y check-in separados; discrepancias pospuestas. Implementado en
+feature/staff-reservations-real desde53b3e09: Booking/Inventory/Folio reutilizados,
+actor Staff confiable, propiedad explícita, RESERVATION_MANAGE e idempotencia.
+Sin GuestAccount, capacidad ficticia, migraciones, permisos o dependencias nuevos.
+
+Backend general1031: un timeout20s de Swagger. Repetición95 PASS:13 alta Staff,
+62 HTTP público y20 OpenAPI. Web lint/typecheck/build PASS; corrida64/64 PASS
+anterior y última63/64 por timeout5s de la prueba mock de edición/N stays.
+General Web no verde; repetición de13 archivos293/295. Los dos casos restantes
+de administración también fallan en una copia de origin/main53b3e09, sin cambios
+de rama. No se debilitaron assertions, límites ni workflow; no certificar CI PASS.
+
+Navegador real25 comprobaciones PASS, Recepción/Super Admin: alta/replay tras
+corte de respuesta, DIRTY, inspección/asignación, entrada, deuda que impide salida,
+N stays, móvil y logout. SQL: un folio/cargo/recibo, cero pagos por reserva.
+Imágenes probadas en3001, tres servicios healthy y8 checks de lectura PASS;
+conteos2/24/5/5/7/28 (properties/rooms/reservations/stays/HK/migraciones) intactos.
+QA aislado retirado; imágenes anteriores guardadas con prefijo
+pms-staff-creation-before-*. Evidencia temporal fuera de Git; guía Web69.
+
+QA manual PASS confirmado por José («todo funciona», 2026-10-23), con commit y
+push autorizados. EN_QA por el gate general/CI pendiente; sin merge ni nueva tarea.
+El cierre anterior sigue aparte en el stash identificado
+`docs: preserve housekeeping cycle closure before staff booking`; no mezclarlo.
+
+## 2026-10-23 — Alta Staff MVP: COMPLETADA, aceptación manual PASS
+
+Usuario confirma creación, persistencia y actualización del listado. QA69 separa
+esa evidencia manual de las suites automatizadas: Backend focal25 PASS; Web focal
+370/7 PASS, ajuste UX staff-admin.test.tsx 51 PASS y cierre158/3; typecheck/
+ESLint/diff PASS.
+Las pruebas HTTP/SQL y OpenAPI de integración no se ejecutaron localmente y quedan
+para CI del PR; no atribuir PASS manual de Firefox, concurrencia, rollback, login,
+Origin o lector. Se preserva next-env.d.ts fuera del commit. Commit y PR hacia main
+autorizados; sin merge. M08/reactivación bloqueada; invitaciones/credenciales fuera
+del incremento. QA2A/2B y BE-006B/C/BE-014A mantienen estados independientes.
+
+## 2026-10-23 — Alta Staff MVP: EN_QA
+
+Autorización directa Backend/BFF/UI; feature/staff-admin-create desde origin/main
+53b3e09, next-env.d.ts local conservado. Alta SUSPENDED sin credencial entregable,
+org/scope/STAFF_MANAGE reales, membership ACTIVE y STAFF_CREATED transaccionales.
+BFF POST/no-store/Origin/un envío y formulario Modal con bloqueo de doble clic;
+503 exige GET del listado antes de otra alta. Tres columnas y mutaciones previas
+conservadas. Backend focal25 PASS, Web focal370/7 PASS, typecheck/ESLint/diff PASS.
+PostgreSQL real, Firefox y OpenAPI generado pendientes; HTTP/SQL/OpenAPI tienen
+pruebas añadidas no ejecutadas. Sin Docker, suite global ni build. Guía breve QA69.
+No se cierran estados independientes ni BE-006B/C/BE-014A; M08 sigue bloqueando
+reactivación. Sin commit/push/PR. Siguiente: validar creación y persistencia manual.
+
+## 2026-10-23 — PR #163: merge normal con main, resolución semántica
+
+Usuario autoriza integrar origin/main 122f6e4 en feature/staff-admin-read 03bc308;
+sin rebase/force push ni merge del PR a main. Se resuelven individualmente seis
+conflictos: ambos historiales, OpenAPI Admin+lifecycle, bypass MSW Admin+HK,
+navegación Usuarios+Reportes+HK/scopes y limpieza/prueba de cachés Staff. Destinos
+seguros reutilizan permisos efectivos de navegación; no nuevos permisos ni contratos.
+next-env.d.ts local protegido con stash/copia, excluido de resolución.
+Checkout en worktree detached main: 12 PASS; main ya tenía 67ef77d (limpieza del
+carrito antes de navegar). Tras integrar, checkout coincide exactamente con main,
+sin ediciones propias: 457 focalizadas/12 archivos PASS y otras 20/3 PASS.
+OpenAPI focal Java21/PG17 tmpfs aislado: 19 PASS; sin verify Backend global.
+Una única ejecución npm run check: lint/typecheck PASS, 2.341 PASS/1 timeout
+Staff cursor (5s), checkout PASS. Fixture de cursores reducida de50 a5 filas,
+con todas las aserciones y timeout intactos: aislado2.679→829ms PASS; se mantiene
+cambio a25, filtros/scope e historial. No se repite global; focales finales477/15
+PASS y build separado PASS. No se declara check local PASS. Gate global pendiente
+de CI del nuevo commit. PostgreSQL QA y worktree temporales retirados, evidencia
+conservada y caché externa intacta. Diff/index PASS;
+procedimiento y evidencia en QA68. Estados previos independientes, 3D-2 COMPLETADA
+y bloqueo M08 conservados. Siguiente: registrar global, commit normal de merge,
+push a misma rama y actualizar estado/revisión/CI del PR sin fusionarlo.
+
+## 2026-10-23 — Cierre 3D-2: aceptación manual PASS y preparación de PR
+
+Usuario autoriza COMPLETADA para 3D-2: suspensión, baja lógica, confirmaciones,
+swipe de escritorio e iconos con QA manual PASS. QA68 separa manual de automático
+histórico y conserva 409 HTTP/503/lector/hardware y demás variantes no confirmadas,
+así como paginación positiva NO EJECUTABLE. Una sola ejecución de npm run check:
+lint/typecheck PASS, 2.207 tests PASS/1 FAIL en checkout público sin cambios.
+Focal checkout 11 PASS/1 FAIL; build restante separado PASS. No se cambia checkout
+ni se repite suite global/Backend. PR en borrador por gate global. Commit convencional,
+push sin force y PR hacia main autorizados; merge no autorizado. main verificada
+como rama por defecto e integración de PR recientes; origin/main actualizada.
+3D-1/3B-1/3C COMPLETADAS, 3B-2/M08 BLOQUEADA y QA2A/2B independientes sin cambios;
+no cerrar BE-006B/C/BE-014A. Historial siguiente preservado. Siguiente: validar,
+publicar solo archivos del módulo y documentar CI/limitaciones; sin creación ni
+reactivación en este incremento.
+
+## 2026-10-23 — 3D-2: runtime anterior demostrado, EN_QA
+
+FAIL persistente investigado por HTTP real: Next en 3001 sirve build
+`h-sNKwKaTgRGTT1sYXtdD`, distinto del local `Hn3SEdEnvuJrJGWzkcVRq`.
+El chunk servido de Usuarios contiene filas de consulta sin triggers de edición
+ni reconocedor; el artefacto local sí los contiene. No atribuir este FAIL al
+reconocedor actual ni considerar verificada la pestaña autenticada del usuario.
+Sin cambios funcionales: dos scripts de diagnóstico de solo lectura y procedimiento
+en QA68 para reiniciar Next desde su terminal y trazar eventos/overlays/remounts
+en Firefox. 54 focalizadas PASS/53 fuera del filtro; node --check y diff --check PASS.
+Sin sesión QA autorizada, no PASS funcional. Sin builds, suites completas, Docker,
+Backend/BFF, commit/push/merge. 3D-2 EN_QA y estados independientes intactos.
+Siguiente: servir código vigente y comprobar primero tres clics, después arrastre.
+
+## 2026-10-23 — Regresión crítica 3D-2: click-to-edit prioritario, EN_QA
+
+FAIL manual registrado. Se retiran set/releasePointerCapture y supresión de 500 ms;
+clics normales no se interceptan. onClick de correo/rol/propiedades deja de vetar
+selección residual; solo el arrastre reconocido consume su clic de liberación,
+con registro eliminado en la siguiente pulsación. 66 focalizadas y 46 checks de
+componentes Firefox PASS, diff --check PASS. Ruta autenticada NO VERIFICADA:
+no PASS funcional ni manual. QA68 detalla límites y evidencia. Sin suite completa,
+builds, Docker o cambios Backend/BFF; sin commit/push/merge. 3D-2 EN_QA, cierres
+independientes preservados. Siguiente: validar primero los tres clics y luego
+arrastre en /seguridad/usuarios con sesión autorizada.
+
+## 2026-10-23 — Mouse3D-2: FAIL manual investigado, corrección EN_QA
+
+Firefox nativo sobre componentes reales reprodujo que solo funcionaba el vacío:
+se excluían texto/triggers y el clic abría email. Ahora captura desde down en el
+origen, admite contenido cerrado, frena el clic residual antes del editor y usa
+CSS de selección solo durante drag.45 focalizadas y35 checks nativos de fixture
+PASS; diff --check PASS. No QA manual PASS ni ruta autenticada verificada: login
+QA401; extracción bootstrap rechazada, sin lectura alternativa. Fixture sin
+Backend, límites en QA68. Sin suite/build/Docker nuevo ni cambios Backend/BFF.
+3D-2 EN_QA y demás estados intactos; sin commit/push/merge. Siguiente: QA manual
+sobre cuenta autorizada; no volver a exigir espacio vacío para el gesto.
+
+## 2026-10-23 — Corrección puntual de arrastre3D-2 EN_QA
+
+Mouse primario sobre espacio libre y touch reutilizan el gesto; wheel horizontal
+acumulado permite touchpad cuando el navegador entrega esos eventos. No escribe,
+no bloquea scroll vertical/zoom ni selección, y conserva clic, teclado/confirmación.
+41 focalizadas PASS/2 archivos (26 no seleccionadas), diff --check PASS. Hardware
+real y nueva QA Firefox PENDIENTES. Registro breve en QA68; sin check/builds/E2E,
+Docker, hashes masivos ni Backend/BFF. Cambios locales y estados independientes
+preservados; sin commit/push/merge.3D-2 EN_QA. Siguiente: validar mouse/touchpad.
+
+## 2026-10-23 — Fase3D-2 EN_QA: suspensión y baja lógica UI
+
+- **Implementación:** status real vía BFF3C existente. Deslizamiento táctil revela
+  acciones, nunca ejecuta; alternativa de teclado/mouse discreta en Acceso y
+  confirmación explícita con advertencia de que no hay reactivación. Solo tres
+  columnas. ACTIVE→SUSPENDED/DISABLED y SUSPENDED→DISABLED; no propio/SA, estado
+  terminal sin edición. Backend/BFF/Auth/Properties/shared y Guest intactos.
+- **Consistencia:** extiende el coordinador3D-1, sin segundo sistema de escritura:
+  versión/lock por usuario, GET vigente y reconciliación;409 conserva intención,
+  recuperación explícita y nueva confirmación;503/red no reintenta ni desbloquea
+  con refetch. Nueva prueba de foco tras baja, compartición del lock con email y
+  retirada por filtro.37 casos nuevos; lectura/edición3D-1 conservadas.
+- **Automático:**519 focalizadas/18 archivos PASS; última corrida check2162/303
+  PASS con lint/typecheck/build; builds finales false/true PASS. Los intentos
+  anteriores fallaron en checkout
+  público/sessionStorage, incluso con2 workers; archivos intactos, intermitencia
+  no resuelta ni ocultada. No atribuir nuevo CI ni suite Maven Backend.
+- **Real aislado:** Firefox→Next3010→JAR Java21→PostgreSQL17 tmpfs:19 checks false+
+  19 true (MSW activo) y11 layout/táctil=49 PASS,14 SQL PASS.409 HTTP real tras
+  edición externa;503 por pausa propia cuyo cambio original acabó persistido,
+  sin replay y con GET explícito. SQL:11 cuentas/12 eventos ORGANIZATION, actor/
+  sujeto/org/correlación y memberships ACTIVE. Capturas reales inspeccionadas.
+- **Límites/QA:** [QA68](../../frontend/pms-hotel-web/docs/68_STAFF_ADMIN_STATUS_UI_QA.md).
+  EN_QA hasta aceptación manual; teclado nativo de Firefox visible NO EJECUTABLE
+  por foco OS (componentes PASS), lector/hardware/CI no acreditados. No atribuir
+  QA manual PASS; evidencias3D-1 siguen independientes. Se retiran solo servicios
+  QA propios; resultados en /tmp/pms-3d2-qa/. diff --check, typecheck posterior
+  a builds y preservación SHA-256 PASS:9 archivos existentes del alcance,4 nuevos,
+  sin alterar código Backend/BFF/Auth/Properties/shared ni QA67.
+- **Estados/siguiente:**3D-1,3B-1 y3C COMPLETADAS;3B-2 BLOQUEADA por M08; QA2A/2B
+  y BE-006B/C/BE-014A sin cambios. Sin reactivación/alta/credenciales ni commit/
+  push/merge. Solo3D-2 EN_QA. Siguiente: QA manual de gestos, confirmaciones y
+  recuperación con fixtures descartables, conservando pendientes no ejecutados.
+
+## 2026-10-23 — Fase3D-1 COMPLETADA, aceptación QA PASS autorizada
+
+- **Manual confirmado por el usuario:** edición directa de correo, rol y
+  propiedades; guardados y persistencia; conservación de borradores; cambios
+  externos y simplificación visual tras Actualizar usuario. Autoriza cerrar3D-1.
+- **Pendientes manuales conservados:**409 HTTP y recuperación503 no ejecutados,
+  lector de pantalla no acreditado; otros casos no confirmados no adquieren PASS.
+  Cambios externos PASS no se interpreta como prueba manual del código HTTP409.
+- **Automático previo, no repetido ahora:**159 focalizadas/4 archivos PASS;
+  último check2125 pruebas/302 archivos PASS, lint/typecheck/build y builds mocks
+  false/true PASS. Historial de Firefox/concurrencia e incidencias intermedias
+  conservado en [QA67](../../frontend/pms-hotel-web/docs/67_STAFF_ADMIN_INLINE_EDIT_QA.md),
+  separado de la evidencia manual. Sin nueva atribución de CI remoto.
+- **Cierre documental:** únicamente QA67, AlanPlan y AlanHandoff; git diff --check
+  y preservación SHA-256 PASS. Código y todos los cambios locales intactos en
+  feature/staff-admin-read, sin commit/push/merge. Entradas anteriores EN_QA
+  conservadas como historial, sustituidas para el estado vigente por este cierre.
+- **Estados:**3D-1 COMPLETADA/QA PASS;3B-1 y3C COMPLETADAS;3B-2 BLOQUEADA por M08;
+  3D-2 PENDIENTE, sin implementar.2A/2B QA independientes y BE-006B/C/BE-014A
+  intactos. Siguiente: mantener pendientes documentados; esperar autorización
+  independiente antes de avanzar a3D-2.
+
+## 2026-10-23 — Recuperación inline compacta3D-1 EN_QA
+
+- **Cambio:** elimina instrucciones permanentes, comparación textual del borrador
+  y banners de éxito después de Actualizar usuario. GET conserva borrador/grupo,
+  muestra datos vigentes y mantiene409/503 y confirmación explícita sin retries.
+  Foco vuelve al último campo usado, sin saltar al primero ni robarlo si durante
+  el GET se movió a otro control. Rol pendiente ratificable con mouse/táctil/Enter.
+- **Automático:**159 focalizadas PASS/4 archivos; segunda corrida check2125
+  PASS/302 archivos, lint/typecheck/build; builds false/true y diff/hashes PASS
+  (solo8 archivos autorizados). Primera corrida general:2123 PASS/1 FAIL
+  en aserción de sessionStorage de checkout; archivo intacto,25 casos focalizados
+  posteriores PASS y no reproducido en check final. Nuevos tests cubren recuperación
+  limpia, foco, semántica y confirmación, además de regresiones409/503/tabs.
+- **Seguimiento:** [QA67](../../frontend/pms-hotel-web/docs/67_STAFF_ADMIN_INLINE_EDIT_QA.md).
+  Nueva QA manual visual/nativa/lector PENDIENTE, sin nuevas ejecuciones Firefox o
+  Spring/PostgreSQL en este ajuste. Tres columnas y responsive conservados.
+  **3D-1 EN_QA**;3B-1/3C/2C, QA2A/2B, bloqueo3B-2/M08 y BE-006B/C/BE-014A intactos.
+  Sin cambios Backend/BFF/Guest/3D-2, commit, push ni merge. Siguiente: QA manual
+  de recuperación sin ruido, foco y ratificación del borrador.
+
+## 2026-10-23 — Retorno entre pestañas Firefox: corrección3D-1 EN_QA
+
+- **Causa/evidencia:** bundle anterior KiCue0wmwZIS78z5ZgnaN reproducía pérdida
+  de input/borrador/búsqueda al revalidar sesión: marcador de documento intacto,
+  sin navegación completa, pero input desconectado. requireFreshSession sustituía
+  el árbol por loading; además refetch podía desmontar celdas y blur confundía
+  defocus con finalización. No se desactivó foco ni actualización de permisos.
+- **Corrección:** árbol previamente autorizado preservado oculto/inert durante
+  comprobación; inicial cacheada no monta consultas hasta verificar. Sesión503
+  conserva estado bloqueado; logout/permisos/identidad/404 siguen retirándolo.
+  Blur de ventana/visibilidad/defocus programático no guarda ni cancela; dentro
+  de página sigue aplicando. Refetch conserva editor y versión original; lecturas
+  mayores guardan remoto separado/conflicto, adopción solo por GET explícito.
+  Borrador se mantiene si sale de filtro pero sigue scoped; inválido404 se retira.
+  503 incierto sigue bloqueado; no retries. Nombre de propiedad no remonta editor.
+- **Automático final:**476 focalizadas/17 archivos PASS; check2119 tests/302
+  archivos PASS con lint/typecheck/build, builds false/true y typecheck final PASS.
+  Dos pestañas Firefox reales contra Next/JAR/PostgreSQL17 descartable:13 false+
+  13 true=26 comprobaciones PASS. Dos PATCH concurrentes con misma versión dan
+  un200 y un409; el editor no sobrescribe y su revisión posterior confirma versión2.
+  Baseline reprodujo el fallo aparte; no confundirlo con PASS de la corrección.
+- **Archivos/límites:** Auth Provider cliente, hooks/componentes Staff y tests de
+  navegación/edición; [QA67](../../frontend/pms-hotel-web/docs/67_STAFF_ADMIN_INLINE_EDIT_QA.md)
+  y seguimiento. Backend/BFF/Guest/contratos intactos. git diff --check y SHA-256
+  PASS, cambios locales conservados. Evidencia /tmp/pms-staff-tab-focus-qa/;
+  solo proyecto QA propio retirado. Sin Maven, commit/push/merge o implementación3D-2.
+- **Siguiente:** nueva QA manual de foco/borradores/concurrencia/503 descrita en67.
+  **3D-1 EN_QA**, no aceptación manual ni CI remoto nuevos.3B-1/3C/2C cierres,
+  QA2A/2B independientes, bloqueo3B-2/M08 y BE-006B/C/BE-014A preservados.
+
+## 2026-10-23 — Corrección UX3D-1: click-to-edit EN_QA
+
+- **Alcance:** sustituye botones Editar/Guardar/Cancelar por contenido interactivo
+  sin chrome; correo por Enter/blur, rol por selección, propiedades por lote al
+  salir o Ctrl+Enter. Escape descarta borrador permitido. Tres columnas intactas,
+  fila expandible y responsive; estado/username/IDs/version/credenciales no editables.
+- **Coordinación:** hook/contratos/transporte existentes, una versión canónica y
+  bloqueo por usuario; PUT conserva contraparte vigente. Finalizar sin cambio no
+  envía. Blur diferido comprueba foco real para no guardar entre casillas; guard
+  de PropertySwitcher/diálogo excluido. Enter/blur no duplica; IME/key229 no guarda.
+  Finalización verifica target/grupo frente a eventos tardíos. Recuperar409 no
+  reenvía al salir: revisión y nueva decisión; rol pide reelección también táctil.
+  503/red continúa bloqueado hasta GET explícito, sin refresh/retry de escritura.
+- **Automático nuevo:**433 focalizadas/15 archivos PASS; check2104 tests/302
+  archivos PASS con lint/typecheck/build, builds mocks false/true y typecheck final
+  PASS. Firefox con ventana→Next→JAR→PostgreSQL17 aislado:26 false+27 true=53
+  comprobaciones nativas PASS;16 envíos explícitos, sin replay. SQL en ambas
+  fixtures AUDITOR/ACTIVE/version8/2 asignaciones.5 comprobaciones separadas de
+  layout headless PASS a1366/768/390px, sin escrituras. Capturas inspeccionadas.
+- **Harness:** intentos iniciales no PASS: headless sin eventos de foco/blur,
+  redimensionado BiDi con ventana bloqueado y correo repetido de fixture. Se
+  diagnosticaron mediante eventos DOM y se separaron perfiles/interacción/layout,
+  con correos únicos; no cambios de seguridad ni arreglos Backend/BFF para pruebas.
+- **Archivos/preservación:** solo staff-inline-group/workspace/CSS, hook inline,
+  tests y QA67/AlanPlan/Handoff. git diff --check y hashes PASS; Backend/BFF/Auth/
+  Properties y todos los cambios previos conservados. Sin dependencias ni commit/
+  push/merge. Proyecto descartable pms_staff_click_edit_qa retirado, no DB habitual.
+- **Evidencia/siguiente:** [QA67](../../frontend/pms-hotel-web/docs/67_STAFF_ADMIN_INLINE_EDIT_QA.md)
+  conserva418/2089/49 históricos y añade resultados/procedimiento vigentes. Logs/
+  resúmenes/capturas /tmp/pms-staff-click-edit-qa/. **3D-1 EN_QA**, pendiente nueva
+  validación manual; lector/CI remoto no acreditados.3B-1/3C/2C COMPLETADAS,
+  QA2A/2B independientes y3B-2/M08 bloqueada;3D-2 no implementada/PENDIENTE.
+
+## 2026-10-23 — Fase3D-1: edición inline Staff EN_QA
+
+- **Alcance/autorización:** solo correo, rol y propiedades mediante BFF3C real.
+  feature/staff-admin-read, cambios locales previos conservados y sin commit/
+  push/merge.3D-1 EN_QA hasta aceptación manual; no se implementa3D-2.
+- **UI/capas:** tres columnas Usuario/Acceso/Asignación; acciones contextuales y
+  Guardar/Cancelar dentro del grupo expandido, sin página/cuarta columna. Nuevo
+  DTO/service/mapper/Domain/hook/componente local; API pública Auth/Properties,
+  nombres/opciones desde memberships activas reales y catálogo administrativo.
+  Estado informativo, sin suspensión/baja/reactivación/credenciales. Shared Input/
+  Button/ConfirmDialog y tokens existentes; foco/labels y responsive comprobados.
+- **Consistencia/seguridad:** un grupo en edición, snapshot vigente mediante GET,
+  PUT completo con contraparte canónica y versión confirmada. Un despacho sin
+  refresh/retry; bloqueo síncrono de escrituras.409 preserva borrador y requiere
+  GET explícito/revisión;503/red/acuse inválido bloquea hasta comprobar el estado,
+  incluso al remontar dentro de la misma identidad.200+GET fallido conserva éxito;
+  salida del scope retira datos. Respuestas tardías no repueblan otro contexto.
+  Guard voluntario de PropertyProvider confirma descarte; cambios forzosos y
+  pérdida de permiso ocultan datos/cancelan lecturas. Sin mutar sesión del actor.
+- **Automático ejecutado:**418 focalizadas/15 archivos PASS, check2089 tests/302
+  archivos PASS con lint/typecheck/build, builds explícitos false/true y typecheck
+  final PASS. Firefox real contra Next producción→JAR existente→PostgreSQL17
+  descartable:24 comprobaciones false+25 true=49 PASS,12 escrituras explícitas.
+  Guardados secuenciales, foco,409 provocado en fixture concurrente, pausa/reanudo
+  de Backend QA para503 real sin replay y GET explícito, SQL final AUDITOR/ACTIVE/
+  versión/conjunto completo. Capturas escritorio/tablet/móvil inspeccionadas.
+- **Artefactos:** [QA67](../../frontend/pms-hotel-web/docs/67_STAFF_ADMIN_INLINE_EDIT_QA.md)
+  con inventario, arquitectura, casos, comandos y procedimiento manual. Evidencia
+  efímera /tmp/pms-staff-inline-qa/ (logs, resúmenes, capturas y snapshot SHA-256).
+  Solo servicios QA propios retirados; no DB habitual/producción. Backend/BFF3C/
+  Auth y contratos/QA anteriores intactos; sin Maven ni atribuir915 pruebas previas
+  a esta corrida. git diff --check y preservación de archivos anteriores PASS.
+- **Pendientes:** QA manual3D-1 y lector de pantalla NO ACREDITADOS; CI remoto no
+  ejecutado. Firefox fue automatizado, no aceptación del usuario.3D-2 PENDIENTE;
+  esperar autorización posterior.3B-1/3C/2C COMPLETADAS, QA2A/2B independientes y
+  bloqueo3B-2/M08 conservados; BE-006B/C y BE-014A no se completan por arrastre.
+
+## 2026-10-22 — Fase3C COMPLETADA: aceptación QA PASS autorizada
+
+- **Estado/autorización:** usuario autorizó expresamente el cierre de3C con
+  aceptación QA PASS. Rama feature/staff-admin-read; solo documentación,
+  cambios locales conservados y sin commit/push/merge. Historial EN_QA intacto.
+- **Manual confirmado:** login SUPER_ADMIN mediante Next BFF, lectura Staff con
+  cookies, correo modificado/persistido, no-op/changed=false, versión409 con datos
+  conservados, rol AUDITOR mediante PUT membership, suspensión SUSPENDED y baja
+  DISABLED. ACTIVE400; correo y membership sobre DISABLED409; sin autenticación401
+  y Origin externo403. Lista exacta de trece escenarios en
+  [QA66](../../frontend/pms-hotel-web/docs/66_STAFF_ADMIN_MUTATIONS_BFF_QA.md).
+- **Distinción obligatoria:** Origin ausente, permisos con otra cuenta RECEPCION
+  activa, desconexión temporal503 y MSW activo NO completados manualmente en esta
+  sesión. Su cobertura automatizada previa permanece; no atribuir PASS manual.
+  Aceptación global QA PASS autorizada sin inventar otras ejecuciones.
+- **Automático conservado, no reejecutado:**382 focalizadas PASS,2052 frontend
+  mediante check PASS, builds con mocks true/false PASS y156 comprobaciones de
+  integración PASS. Firefox previo automatizado; CI remoto NO ACREDITADO.
+- **Validación de este cierre:** git diff --check y comparación SHA-256 del
+  snapshot inicial; únicamente QA66, AlanPlan y esta entrada modificados.
+  Sin npm/Maven/HTTP ni nuevas pruebas funcionales por el cierre documental.
+- **Límites/siguiente:**3B-1 COMPLETADA y QA2A/2B independientes sin cambios;
+  3B-2/reactivación BLOQUEADA por M08. No completar BE-006B/C ni BE-014A.
+  **3D PENDIENTE**, sin implementación; esperar autorización específica de inicio.
+
+## 2026-10-22 — Fase3C BFF de mutaciones Staff EN_QA
+
+- **Autorización/estado:** usuario autorizó solo las tres mutaciones BFF hacia
+  Backend3B-1 ya COMPLETADA. Rama feature/staff-admin-read; trabajo previo
+  conservado, sin commit/push/merge.3C EN_QA hasta confirmación manual propia.
+- **Implementación:** PATCH /api/staff/admin/users/{id}, PUT /membership y PATCH
+  /status (SUSPENDED/DISABLED). GET existente intacto; Allow GET,PATCH en detalle.
+  Staff HttpOnly/backendStaffRequest existentes, Origin canónico obligatorio,
+  scope estricto/organización desde Backend, payload64KiB, validación/campos
+  exactos, expectedVersion entero y acuse mínimo/version/changed. Sin StaffView.
+- **Seguridad/recuperación:** no-store también en errores/405; proyección allowlist
+  y códigos contractuales. Una llamada interna sin refresh/retry; timeout/red/
+  acuse inválido503 puede ser resultado incierto, requiere GET autorizado antes
+  de otro comando. No nuevas cookies, auth ni revocación en Next. Correo reutiliza
+  la regla de login sin modificar su comportamiento ni añadir restricciones.
+- **MSW:** exclusión previa al worker solo para esos PATCH/PUT same-origin;
+  sin respondWith ni persistencia simulada. Handlers nuevos exclusivamente tests.
+- **Automático ejecutado:** check PASS (2052 tests/301 archivos, lint/typecheck/
+  build),382 focalizados PASS, builds explícitos false/true y typecheck final
+  PASS. Integración Next producción→JAR ya validado→PostgreSQL17 descartable:
+  55 aserciones HTTP+23 Firefox **por cada flag**,156 total; MSW controlador
+  activo con true, cookies HttpOnly/Secure, no-op/409, GERENCIA, RECEPCION403,
+  otra org404, origen403, lecturas coherentes y logout. No se reejecutó Maven;
+  915/30 Backend son evidencia histórica de54, no de esta corrida.
+- **Preservación:** snapshot SHA-256 de2184 archivos previos, sin pérdidas ni
+  cambios en Backend/contratos/QA54/UI/tabla/providers. Solo los archivos BFF/
+  validación/boundary/tests y documentación de esta entrega. git diff --check PASS.
+  Entorno propio pms_staff_bff_mutations_qa retirado; no DB habitual/producción.
+- **Artefactos:** [QA66](../../frontend/pms-hotel-web/docs/66_STAFF_ADMIN_MUTATIONS_BFF_QA.md)
+  incluye inventario, contratos, comandos y procedimiento manual reproducible.
+  Logs/resúmenes técnicos locales /tmp/pms-staff-bff-mutations-qa/; sin tokens
+  compartidos. QA manual3C y CI remoto NO ACREDITADOS; Firefox fue automatizado.
+- **Límites/siguiente:** confirmar QA manual3C.3D todavía no implementada; futura
+  edición por grupo en tres columnas y baja accesible, sin retries de comandos ni
+  falsa atomicidad correo/membership.3B-2 reactivación bloqueada M08;2A/2B QA
+  independientes,3B-1 y2C cierres y BE-006B/C/BE-014A globales conservados.
+
+## 2026-10-22 — Backend3B-1 COMPLETADA: QA manual PASS y cierre autorizado
+
+- **Estado/autorización:** usuario confirmó QA satisfactoria en PostgreSQL aislado
+  y autorizó registrar solo3B-1 COMPLETADA. Rama feature/staff-admin-read; código
+  y cambios locales conservados, sin commit/push/merge. Historial EN_QA intacto.
+- **Manual del usuario:** login Staff, RECEPCION403 en catálogo administrativo,
+  SUPER_ADMIN autorizado, correo persistido, no-op200/changed=false, versión409,
+  rol/propiedades, SUSPENDED, retiro de propiedades, DISABLED y rechazo409 de
+  cambios posteriores. Reinicio sin pérdida/restauración; SQL membership ACTIVE,
+  asignación retirada INACTIVE y auditoría ORGANIZATION con actor/sujeto/org/
+  correlación correctos. Lista exacta en [QA54](54_STAFF_ADMIN_MUTATIONS_QA.md).
+- **Automático previo, separado:**915 pruebas Backend PASS y30 aserciones HTTP/SQL
+  PASS del agente conservadas (también114 focalizados/OpenAPI previos). No corridas
+  nuevamente en este cierre. No atribuir al usuario concurrencia, rollback,
+  revocación de tokens ni aislamiento entre organizaciones. CI remoto NO ACREDITADO.
+- **Límites:**3B-2/reactivación BLOQUEADA por M08. BE-006B/C y BE-014A globales no
+  se completan; Backend2A y BFF2B mantienen sus estados QA independientes.
+  No se inicia3C ni se modifica contrato53, código, migraciones, frontend/BFF.
+- **Validación documental:** git diff --check y preservación por hashes; solo54,
+  AlanPlan y AlanHandoff modificados. Sin Maven/npm/HTTP ni nueva QA funcional.
+- **Siguiente:** esperar autorización específica de otra tarea;3C no implementada
+  por este cierre.
+
+## 2026-10-22 — Backend3B-1: comandos Staff, auth coordinada y bootstrap demo EN_QA
+
+- **Autorización/estado:** subincremento explícito del usuario contrastado con53/
+  M11 sin contradicción material. EN_QA, pendiente confirmación manual; no aprobar
+  globalmente53 ni cerrar BE-006B/C, BE-014A, C6-D06 o QA2A/2B. Web2C intacta.
+  feature/staff-admin-read; trabajo local previo conservado; sin commit/push/merge.
+- **Implementación:** PATCH correo, PUT membership, PATCH SUSPENDED/DISABLED;
+  respuesta mínima200/version/changed, sin StaffView. Sesión/permisos/scope SQL,
+  sin autoedición/promoción SA/escape org; DISABLED terminal. CAS global, no-op
+  normalizado sin eventos/revocación; locks UUID comunes y revalidación posterior.
+  Revocación completa Staff/familias y auditoría ORGANIZATION actor/sujeto/correlación
+  en commit único. Rollback por fallos obligatorios. GET sin cambios de DTO.
+- **Auth/demo:** login revalida correo/credencial; refresh/logout serializan y
+  recargan entidades. Rechazo de refresh conocido confirma revocación necesaria;
+  no duplica evento si ya estaba revocado. Login fallido legado/C6-D06 global
+  siguen pendientes. Demo inicializa membership/asignaciones solo al crear Staff,
+  no sobrescribe campos administrados ni repone asignaciones al reiniciar.
+- **Evidencia:**114 focalizados PASS; verify915/108 clases PASS, cero failures/
+  errors/skipped en PostgreSQL17.11/Java21. OpenAPI generado52 operaciones/40paths/
+  68schemas/15tags, mappings reales sin exclusiones. JAR real:30 aserciones HTTP/SQL
+  PASS, con parada/arranque y persistencia de correo/rol/DISABLED/historia inactiva;
+  Guest intacto. Pruebas deterministas login/refresh antes/después, doble refresh,
+  logout, conflictos, actor revocado, administradores cruzados, rollback auditoría/
+  revocación y no-op. No atribuir QA manual ni CI remoto a esas ejecuciones.
+- **Correcciones de regresión:** refresh de entidad en transacción compartida
+  necesitaba flush previo; no crear otro evento al repetir refresh ya revocado.
+  Fixtures usan correos únicos y esquema Guest vigente. Suite final completa PASS.
+- **Artefactos/límites:** [QA54](54_STAFF_ADMIN_MUTATIONS_QA.md),53,baseline39,
+  Postman y AlanPlan. Sin migración adicional/dependencias ni frontend/BFF;44
+  archivos Web previos preservados por hash. Logs /tmp/pms-staff-mutations-qa/.
+  Solo entorno QA propio18091 retirado; datos de producción no usados.
+- **Siguiente:** QA manual54 y confirmación para cierre de3B-1; después autorizar
+  BFF de mutaciones.3B-2/reactivación sigue bloqueada por evidencia/productor Staff;
+  sin alta/reset/invitación ni mutación de Guest.
+
+## 2026-10-22 — Fase3A: definición M08/M11 y subconjunto Backend3B-1 propuesto
+
+- **Estado:** PENDIENTE DE APROBACIÓN FINAL; recomendación favorable del usuario
+  para M01–M07/M09/M10 no autoriza implementación. No READY ni APPROVED automático.
+  feature/staff-admin-read; todos los cambios locales preservados.
+- **Documento:** [53](53_STAFF_ADMIN_MUTATIONS_CONTRACT_PROPOSAL.md), revisión
+  M02/paridad exacta login por capa sin ASCII adicional, M10 tres columnas y
+  expansión/edición contextual. M08: evidencia nullable interna ligada a generación
+  y flujo Staff consumido, sin backfill de hashes/logins ni cambios de cuentas ACTIVE.
+  No hay productor confiable actual: reactivación3B-2 bloqueada.
+- **M11:** matriz por operación/dependencia con estados reales (BE-006B/C pendientes,
+  BE-014A EN_QA, esquema y fundamentos auditoría completados según AlanPlan).
+  3B-1 integra base transaccional/CAS, coordinación login/refresh/logout, revocación
+  de sesiones/familias, auditoría, correo, rol/properties, suspensión y DISABLED.
+  ACTIVE como entrada excluido. Concurrencia, revalidación, orden de locks,
+  rollback/fallo auditoría/Guest/version/no-op deben pasar antes de PUBLICACIÓN.
+  Reparación mínima de rechazo refresh afectado no completa C6-D06 global.
+  DemoDataBootstrap puede reinsertar asignaciones al reiniciar: coordinación y
+  bootstrap solo de Staff nuevo bloquean publicación demo hasta probarse.
+- **Evidencia:** investigación estática StaffUser/AuthSession/RefreshToken,
+  StaffAuthServiceImpl/Bootstrap, AuthAuditEvent/repositorios y reglas de login
+  Java/Web. Sin flujo Staff de invitación/reset/preparación; Guest no lo sustituye.
+  Validación documental/enlaces/hash/diff en sección17 de53; no nuevos PASS
+  de Maven/npm/HTTP/navegador ni pruebas de concurrencia ejecutadas.
+- **Límites/siguiente:** aprobar contrato/subconjunto antes de implementar.
+  QA2A/2B EN_QA intactos;2C COMPLETADA con salvedades históricas. BE-006B/C,
+  BE-014A y credenciales no se cierran. Sin código, migraciones, commit/push/merge.
+
+## 2026-10-22 — Fase3A: contrato de mutaciones propuesto y cierre documental2C
+
+- **Estado:** propuesta53 PENDIENTE DE APROBACIÓN; solo Fase2C COMPLETADA por
+  instrucción expresa del usuario y conformidad condicionada satisfecha. Mantener
+  paginación positiva manual NO EJECUTABLE y lector de pantalla NO ACREDITADO;
+  sin atribuir nueva inspección manual. Backend2A/BFF2B EN_QA independientes.
+- **Entrega:** [contrato53](53_STAFF_ADMIN_MUTATIONS_CONTRACT_PROPOSAL.md), tres
+  comandos candidatos C4 y BFF, DTO/errores/scope, expectedVersion global,
+  revocación transaccional/auditoría atribuida y protocolo de locks auth.
+  Inline en tres columnas con guardados separados, swipe revela/confirmación y
+  alternativa de menú accesible. Matriz T01–T25 y archivos/plan incremental.
+- **Decisiones:** M01–M11 pendientes; correo50 login frente a320 lectura,
+  acuse al retirar propiedad seleccionada, auto-contacto/protección SA,
+  credencial preparada sin fuente persistida y dependencia BE-014A. No se
+  declaran APPROVED ni se implementan mutaciones; no ampliar Guest.
+- **Evidencia de esta entrega:** inspección de contratos51/52/64/65 y C1/C2/C4/C6,
+  esquema/servicios/repositorios/auth/auditoría/UI reales; validación de enlaces,
+  ejemplos JSON, preservación por hashes y git diff --check registrada en53.
+  Los 864 Backend y1937 frontend PASS siguen como evidencia histórica; no
+  ejecutados nuevamente por cambios solo documentales.
+- **Operación/siguiente:** feature/staff-admin-read; árbol local conservado,
+  sin commit/push/merge. Aprobar precisiones por ID antes del incremento Backend.
+  QA65 y AlanPlan reflejan cierre limitado2C sin completar BE-006B/C ni XLSX.
+
+## 2026-10-22 — Usuarios: pie de paginación unificado con Habitaciones/Reservas
+
+- **Autorizado:** usuario pidió flechas y todo el pie igual al de esas tablas.
+  Se reutiliza EntityPagination con variante de presentación cursor; se eliminan
+  controles/estilos locales. Selector Filas por página5/10/25/50/100, flechas ‹/›,
+  páginas visitadas y estilos responsive compartidos. Default Staff50 conservado.
+- **Contrato:** Backend sigue paginando; sin useEntityPagination/slice local,
+  COUNT inventado ni saltos a páginas sin cursor. Resumen de rango sin total;
+  historia y reset por filtros/scope/tamaño intactos. Modo anterior de Habitaciones
+  y Reservas conserva sus totales reales y navegación. No endpoints nuevos.
+- **Evidencia:**103 focalizados/7 archivos PASS (incluye tablas referentes),
+  check1937/299 PASS, lint/typecheck/build; build mocks=true y typecheck PASS.
+  Firefox Next/Spring/PostgreSQL sintético26 aserciones PASS; capturas desktop/
+  tablet/mobile inspeccionadas. diff-check/hashes Backend/BFF/contratos PASS.
+- **Seguimiento:** [Web65](../../frontend/pms-hotel-web/docs/65_STAFF_ADMIN_UI_QA.md).
+  Cierre preparado y conformidad anterior2C conservados, sin atribuir nueva QA
+  manual al usuario. Paginación positiva manual NO EJECUTABLE y lector no
+  acreditado siguen explícitos. Backend2A/BFF2B mantienen EN_QA independiente.
+- **Operación:** feature/staff-admin-read, cambios locales preservados. Entorno
+  aislado3005/18090 retirado al terminar; sin producción, commits/push/merge.
+
+## 2026-10-22 — Fase2C: tres columnas, conformidad condicionada satisfecha y cierre preparado
+
+- **Conformidad:** usuario confirmó6 PASS manuales: clic/contracción en fila,
+  Enter/Espacio, caché30s sin GET repetido, tipografía y RECEPCION→dashboard.
+  La última condición visual era retirar Acciones y pasar regresiones: SATISFECHA
+  mediante implementación/pruebas siguientes. No se atribuye nueva inspección
+  humana de la tabla modificada. Historial EN_QA anterior conservado abajo.
+- **Cambio mínimo:** Usuario/Acceso/Asignación, chevron accesible dentro de Usuario,
+  colspan3, redistribución40/27/33% y móvil con grupos/divisores. Solo presentación
+  local/tests; sin tocar compartidos, queries, caché, permisos, Backend/BFF o datos.
+- **Automático:**95 focalizados/8 archivos PASS; check1934/299 PASS, lint/typecheck/
+  build; build mocks=true y typecheck PASS; diff-check PASS. Firefox real con MSW,
+  Next/Spring/PostgreSQL sintético24 aserciones PASS, colSpan3, tres encabezados/
+  celdas y caché incluidos; capturas escritorio/tablet/móvil revisadas por agente.
+  Nuevo PASS de teclado nativo no atribuido al harness; el PASS manual del usuario
+  para Enter/Espacio y el de componentes se conservan como evidencia acreditada.
+- **Cierre preparado/salvedades:** conformidad condicionada del usuario satisfecha;
+  paginación positiva manual NO EJECUTABLE por falta de registros; lector de
+  pantalla NO ACREDITADO. No se declara una auditoría integral de accesibilidad.
+  Backend2A/BFF2B permanecen EN_QA y no se completan automáticamente. Sin marcar
+  filas XLSX como COMPLETADA. [Web65](../../frontend/pms-hotel-web/docs/65_STAFF_ADMIN_UI_QA.md).
+- **Preservación:** feature/staff-admin-read, cambios locales intactos; hashes
+  previos de Backend/BFF/contratos conservados. QA aislada3004/18089 retirada,
+  otros servicios intactos. Sin commit/push/merge. Próximo CRUD requiere contrato
+  real: inline y swipe DISABLED dentro de celdas existentes, sin recrear Acciones.
+
+## 2026-10-22 — Fase2C: ajustes finales de fila, tipografía y salida autorizada EN_QA
+
+- **Autorización/historia:** usuario autoriza ajustes finales y continuación.
+  Segunda revisión humana PASS en encabezado, detalles, búsqueda, móvil, /acceso,
+  Enter/Espacio del control anterior y recuperación. Redirección sin STAFF_MANAGE
+  manual pendiente; paginación positiva NO EJECUTABLE sin registros. No cierre.
+- **Implementación:** se elimina únicamente la aclaración de zona horaria;
+  Intl/DTO intactos. Fila completa delega clic al control nativo de chevron sin
+  texto/botón visual; semántica table/tr/td conservada, Enter/Espacio y foco;
+  inputs/selects/botones/enlaces/menús/contenteditable/acciones swipe se excluyen.
+  Caché de detalle visitado válida30s, cerrado hidden/disabled, gcTime0 al perder
+  observadores/contexto; sin precarga masiva, búsqueda350 y cursor preservados.
+- **Tipografía:** Firefox confirma Inter igual al cuerpo del panel; strong de
+  Usuarios usaba bolder UA700 frente a600 de Habitaciones. Corrección local a
+  token body+semibold600; sin fuentes/dependencias/global CSS nuevos. Caras Google
+  no cargadas en runtime aislado; se documenta límite, no se inventa descarga.
+- **Guard:** límite único reutilizado en prefijo Usuarios y módulo; replace sin
+  pantalla denegada/queries. Reutiliza misma navegación StaffShell: dashboard
+  donde ya autorizado; OPERACIONES/AUDITOR carecen de destino Staff y salen a /,
+  sin logout ni bucle. Sin sesión/caducada /acceso. STAFF_MANAGE sigue efectivo,
+  nunca concedido por rol. Backend/BFF/Guest sin cambios de autenticación.
+- **QA:**95 focalizados/8 archivos PASS; check1934/299 PASS, lint/typecheck/build;
+  build mocks=true y typecheck PASS. Firefox real20 PASS sin mocks y22 con MSW
+  y reducción de movimiento; capturas escritorio/tablet/móvil inspeccionadas,
+  reutilización detalle sin nuevo GET comprobada. Nativo teclado no confirmado
+  por harness; Enter/Espacio PASS en componentes y nueva QA humana recomendada.
+  diff-check y hashes previos Backend/BFF/MSW/contratos PASS.
+- **Entrega:** [Web65](../../frontend/pms-hotel-web/docs/65_STAFF_ADMIN_UI_QA.md)
+  contiene inventario, causa, destinos, límites y pasos manuales. Entorno3003/
+  18088 aislado retirado, otros servicios preservados. Rama feature/staff-admin-read,
+  todo cambio local conservado; sin commit/push/merge. 2A/2B/2C permanecen EN_QA.
+
+## 2026-10-22 — BE-006 Fase2C: correcciones de QA manual y UX EN_QA
+
+- **Autorización/historia:** usuario autorizó corregir directamente la UX.
+  Comunicó 13 escenarios manuales PASS, 1 NO EJECUTABLE (paginación positiva,
+  falta de registros) y1 PENDIENTE (desconexión/recuperación). No es cierre;
+  conservar EN_QA de2C/2A/2B hasta nueva confirmación manual.
+- **Cambios:** cuatro columnas conservadas; Ver más/menos expande una fila
+  compacta con GET detalle bajo demanda, sin página/tarjetas ni precarga masiva.
+  URL antigua redirige al listado protegido con filtros allowlisted, sin targetID.
+  Encabezado Usuarios, sin textos redundantes/propiedad repetida; aviso de scope
+  accesible oculto visualmente y sin UUID. Móvil continuo con divisores sutiles.
+- **Búsqueda/seguridad:** debounce350ms, misma tabla marcada Actualizando durante
+  cambio solo de username y mismo contexto; placeholder acotado, abort y cursor
+  reiniciado. No puentes entre sesión/org/permisos/propiedades. Mismo provider
+  Staff configura /acceso sin sesión y oculta contenido durante revalidación;
+  STAFF_MANAGE efectivo antes de consultas, Backend autoridad definitiva.
+  Guest aislado. No credenciales ni acciones de mutación falsas; C4-D05 pendiente.
+- **Automático:** focalizados81/8 PASS; check completo repetido1920/299 PASS,
+  lint/typecheck y builds mocks=true/false PASS, diff-check PASS. Primer check y
+  contraste focalizado fallaron en limpieza de carrito del checkout público;
+  copia temporal HEAD12 PASS y segunda suite íntegra PASS sin tocar checkout.
+  Fallo intermitente documentado, causa no establecida como regresión Staff.
+- **Firefox real:** Next/Spring/PostgreSQL temporal en3002/18087 para conservar
+  servicios existentes;23 aserciones PASS sin mocks incluyendo Backend stop/start
+  y Reintentar,21 PASS con MSW activo. Capturas desktop/tablet/mobile revisadas.
+  Teclado Enter nativo no confirmado por harness, expansión por clic PASS;
+  Enter/Espacio en componentes PASS y nueva QA humana pendiente.
+- **Preservación/límites:** Backend/BFF/MSW/contratos previos idénticos por hash;
+  sin commits/push/merge. Runtime solo bootstrap SA; paginación positiva manual
+  no ejecutable con esos datos. Recuperación automatizada no reemplaza el
+  escenario manual pendiente. Entornos temporales retirados al terminar.
+- **Guía/inventario:** [Web65](../../frontend/pms-hotel-web/docs/65_STAFF_ADMIN_UI_QA.md),
+  sección vigente de correcciones con pasos concretos y evidencia histórica.
+  Siguiente: nueva QA del usuario; inline expectedVersion/409 y swipe DISABLED
+  solo tras contratos/Backend aprobados, sin eliminación física ni reset ficticio.
+
+## 2026-10-22 — BE-006 Fase 2C: UI de administración Staff real EN_QA
+
+- **Autorización/estado:** usuario autorizó directamente lectura visual 2C;
+  feature/staff-admin-read, cambios locales anteriores conservados. 2A y2B siguen
+  EN_QA; 2C también, sin confirmación humana ni estados APPROVED/COMPLETADA.
+- **Implementación:** src/modules/staff Service→DTO→Mapper→Domain→Hook→UI,
+  /seguridad/usuarios y /seguridad/usuarios/[staffUserId], cuatro columnas
+  Usuario/Acceso/Asignación/Acciones; filtros literales Backend, catálogo real,
+  cursor/atrás y detalle agrupado. Responsive móvil y sidebar existente.
+- **Seguridad:** STAFF_MANAGE efectivo, sesión Staff real, PropertyProvider,
+  comparación organización/scope/asignación completa, cache por sesión/permisos/
+  organización/contexto, AbortSignal/gcTime0 sin datos previos; logout limpia
+  staff-admin preservando Guest. ALL vacío opt-in explícito solo SA autorizado.
+  Sin otro auth, tokens en UI, backend nuevo, mocks de usuarios ni mutaciones.
+- **Automático:** focalizados84/7 PASS; check final1913/298 PASS, lint/typecheck/
+  build; build mocks=true y typecheck PASS. Firefox BiDi real contra Next/Spring/
+  PostgreSQL tmpfs: 17 aserciones sin mocks y18 con controller MSW activo PASS,
+  capturas desktop/tablet/mobile inspeccionadas. diff-check PASS. Código/tests
+  previos de Backend/BFF/MSW verificados por hashes; no nuevo verify864 atribuido.
+- **Límites:** runtime usa bootstrap SA del perfil QA existente; GERENCIA,
+  targets fuera del alcance y cursor positivo cubiertos por componentes/BFF y
+  QA Backend previa, no por ese runtime de una cuenta. QA humana/lector de
+  pantalla pendientes; regreso conserva filtros/scope pero inicia primera página.
+- **Documentación:** [Web65](../../frontend/pms-hotel-web/docs/65_STAFF_ADMIN_UI_QA.md)
+  contiene inventario, comandos reproducibles, matriz manual PASS/FAIL y secuencia
+  futura de contratos/Backend/BFF, edición inline y swipe con confirmación/teclado,
+  expectedVersion/409, auditoría y revocación. No controles ficticios anticipados.
+- **Siguiente:** revisión manual del usuario; mutaciones solo después de contratos
+  aprobados. No commit, push ni merge. Entornos temporales de QA retirados.
+
+## 2026-10-22 — BE-006 Fase 2B: BFF Staff de lectura integrado EN_QA
+
+- **Estado:** EN_QA BFF; Backend Fase 2A permanece EN_QA hasta confirmación
+  manual. Rama feature/staff-admin-read; todos los cambios previos conservados.
+  Autorización expresa solo BFF, sin UI/mutaciones ni commit/push/merge.
+- **Entrega:** GET /api/staff/admin/roles, /users, /users/[id] hacia los tres
+  GET Spring existentes. Cookie Staff HttpOnly y helper interno reutilizados;
+  autoridad STAFF_MANAGE/organización/scope en Backend. DTO/proyección validada,
+  cursores opacos y paginación Backend, errores mínimos, no-store y 405 explícito.
+  GET reales excluidos antes de MSW; no auth paralela ni cambios Guest.
+- **Evidencia nueva Web:** 149 tests/8 archivos focalizados PASS; npm run check
+  con mocks=false: lint/boundaries, TypeScript, 1.871 tests/296 archivos y build
+  PASS; build mocks=true y typecheck tras generar tipos Next PASS.
+- **HTTP automático real:** Next en 3001, Spring/JAR previo en 18086 y PostgreSQL
+  tmpfs derivados del perfil manual QA existente; 71 comprobaciones por build
+  mocks=false/true PASS. Solo bootstrap SUPER_ADMIN; GERENCIA/403 y cursor positivo
+  cubiertos por tests BFF y QA Backend previa, sin atribuirlos a ese runtime.
+  No tokens en logs/evidencia, sin producción. No ejecución manual de navegador.
+- **Preservación:** código/tests Backend intactos contra SHA-256 inicial;
+  ningún cambio de contrato HTTP Spring ni migraciones. 864 Backend PASS es
+  evidencia anterior, no ejecución nueva de esta fase.
+- **Documentación/evidencias:** [Web 64](../../frontend/pms-hotel-web/docs/64_STAFF_ADMIN_BFF_QA.md),
+  contrato 51 y routers Web; /tmp/pms-staff-admin-bff-qa/. Preparado técnicamente
+  para src/modules/staff; faltan UI/cache/hooks y QA manual explícita. Cursor
+  Backend conserva TTL15min/clave por proceso; no soporte multirréplica nuevo.
+- **Siguiente:** revisión manual con el procedimiento Web64; esperar confirmación.
+  No iniciar frontend administrativo ni cerrar COMPLETADA sin autorización.
+
+## 2026-10-22 — BE-006 Fase 2A-QA: HTTP revalidado, sin cambios funcionales
+
+- **Estado:** EN_QA, no COMPLETADA; confirmación manual del usuario pendiente.
+  Rama feature/staff-admin-read y todo el trabajo local previo conservados.
+- **Procedimiento:** compose.bd2-test.yaml, PostgreSQL 17 tmpfs/Java 21, Tomcat
+  RANDOM_PORT y fixtures ya definidas en StaffAdminReadHttpIntegrationTests.
+  No producción ni nuevo provisionamiento. Perfil manual revisado, no arrancado.
+- **Evidencia nueva:** focalizados 31 PASS: 11 HTTP real, 2 parser, 2 cursor y
+  16 OpenAPI. Verify completo 864 PASS, cero failures/errors/skipped, BUILD
+  SUCCESS a las 20:40:48 UTC. Logs /tmp/pms-staff-admin-qa-recheck/ y artefactos
+  regenerables backend/target/surefire-reports y openapi-generated.json.
+- **Escenarios:** SA/GERENCIA y scope, 403 sin permiso, 401 Staff inválida/Guest,
+  404 sanitizado, asignación parcial/organización ajena, estados/membership,
+  usuarios sin properties, filtros/cursor, no-store, campos seguros, 405 y
+  paridad OpenAPI PASS. TTL cursor comprobado unitariamente, sin espera HTTP15min.
+- **Cambios de turno:** solo QA 52, AlanPlan y esta entrada. SHA-256 inicial de
+  21 archivos locales confirma código/tests/contrato/Postman sin cambios.
+  Diff-check/enlaces PASS. No defectos nuevos ni correcciones funcionales.
+- **Límites/siguiente:** Backend técnicamente listo para integración BFF; cursor
+  por proceso/una instancia conservado. [QA 52](52_STAFF_ADMIN_READ_QA.md) contiene
+  matriz, comandos, evidencia y criterio PASS/FAIL para revisión humana; esa
+  revisión no equivale a ejecución HTTP manual independiente. CI remoto/Newman
+  no ejecutados. Esperar confirmación QA manual PASS, sin BFF/React/commit/push/merge.
+
+## 2026-10-22 — BE-006 Fase 2A: lectura Backend entregada EN_QA
+
+- **Estado:** EN_QA; implementación Backend solicitada expresamente por el usuario.
+  QA manual pendiente; BE-006B/C globales y propuesta BFF/UI no se declaran
+  completados/aprobados. Sin commit/push/merge.
+- **Rama/base:** `feature/staff-admin-read` / `a0f62d0`; documentos locales previos
+  conservados. Cambios exclusivamente Backend, sin migraciones ni secretos.
+- **Entrega:** GET /api/v1/staff-admin/roles, /users y /users/{id}, STAFF_MANAGE,
+  Staff C1/C2 reutilizado, SQL scoped/REPEATABLE_READ, catálogo fijo, DTO propios,
+  búsqueda literal/filtros, keyset firmado de 15min y errores sanitizados/no-store.
+  Adaptación 405 limitada al namespace, sin mappings administrativos de escritura.
+- **Evidencia ejecutada:** compilación PASS; focalizados 31 PASS; verify final
+  Docker Java 21/PostgreSQL 17: 864 tests, cero failures/errors/skipped y BUILD
+  SUCCESS. OpenAPI real 49 operaciones/38 paths/63 schemas/14 tags, sin exclusiones.
+  Diff-check, enlaces y colección Postman válida con elementos previos intactos PASS.
+- **Archivos/QA:** [contrato 51](51_STAFF_ADMIN_READ_CONTRACT_PROPOSAL.md),
+  [guía 52 e inventario exacto](52_STAFF_ADMIN_READ_QA.md), baseline OpenAPI,
+  securityauth api/application/persistence/security, tests y colección BD1.
+- **Límites:** cursor de clave efímera por proceso; restart/otra réplica lo invalida.
+  Scope vacío representado solo en vista administrativa SUPER_ADMIN ALL, sin
+  cambiar AuthorizedPropertyScope compartido. No cache/query/UI/BFF implementados.
+- **Pendiente:** QA manual del usuario; después, integración BFF bajo nueva
+  autorización. Newman y CI remoto no ejecutados; no se atribuye QA visual.
+
+## 2026-10-22 — BE-006 Fase 2A: inicio Backend de lectura Staff
+
+- **Estado:** EN_PROGRESO, tres GET Backend autorizados explícitamente por el
+  usuario; sin aprobación global de BFF/UI ni cierre de BE-006B/C.
+- **Rama/base:** `feature/staff-admin-read` / `a0f62d0`; tres documentos locales
+  previos conservados. Sin commit/push/merge; sin cambios Web/migraciones.
+- **Control de cambios:** R01–R07 de [51](51_STAFF_ADMIN_READ_CONTRACT_PROPOSAL.md)
+  contrastados con C1/C2/C4/C6 y la instrucción actual. Scope vacío únicamente
+  SUPER_ADMIN ALL de su organización, mediante representación administrativa
+  local; AuthorizedPropertyScope global conserva su invariante no vacío.
+- **Pruebas:** compilación Java 21 Docker PASS; pruebas PostgreSQL/HTTP y OpenAPI
+  en ejecución. Evidencia final y QA manual se registrarán al entregar.
+- **Siguiente:** cerrar pruebas, verify y guía QA; no iniciar BFF ni mutaciones.
+
+## 2026-10-22 — BE-006: propuesta HTTP/BFF para lectura Staff
+
+- **Estado:** PENDIENTE DE APROBACIÓN. Solo documentación autorizada; BE-006B/C
+  conservan sus estados y dependencias. Sin endpoints ni cambios funcionales.
+- **Base/rama:** `main` `a0f62d0`, árbol inicial limpio; sin crear rama,
+  commit, push ni merge en esta preparación documental.
+- **Contrato:** [51](51_STAFF_ADMIN_READ_CONTRACT_PROPOSAL.md), R01–R07 propuestos;
+  C1/C2/C4/C6 conservados. Owners previstos Alan/BD1 y WEB-2; reviewer WEB-3.
+- **Alcance:** tres GET Spring/BFF; predicados SQL de visibilidad completa,
+  PROPERTY/ALL, usuarios sin asignaciones, DTO, cursor, errores, cache/MSW,
+  archivos y aceptación del primer incremento. Alta/reset/sesiones fuera.
+- **Validación:** referencias locales y `git diff --check`; sin Maven, Web suites,
+  QA HTTP, migraciones ni cambios XLSX. No se acredita prueba funcional nueva.
+- **Siguiente:** revisar/aprobar R01–R07; registrar decisión y rama dedicada antes
+  de implementar el subconjunto de lectura, sin dar BE-006B/C por completados.
+
+## Asignación Staff — bloqueo de DIRTY y validación Web (2026-10-23)
+
+José aprueba bloquear la preasignación de Room DIRTY y destacar el motivo en
+Reservas. Revisión de contratos50/52 y decisión aprobada; rama
+`fix/staff-room-assignment-dirty-guard` desde c4e5109. Origin/main aa831b8 tiene
+el mismo árbol de base; no merge/rebase. QA manual PASS confirmado por José;
+estado EN_QA hasta terminar el gate Web general. Commit/push autorizados.
+
+Backend conserva la candidata DIRTY con selectable=false/reason; PUT relee estado
+escalar después del lock Room compartido con HK y devuelve409 sin asignación ni
+audit parcial. CLEAN/sin seguimiento conservan preasignación; INSPECTED sigue
+siendo obligatorio para check-in. BFF/mapper y UI preservan el motivo, destacado
+en rojo con texto explícito. No nuevas APIs, permisos, migraciones o dependencias.
+
+./mvnw -B verify BUILD SUCCESS: 950 pruebas/107 reportes, 0 fallos/errores/omitidas,
+Java21.0.9/PostgreSQL17.11 aislados. Incluye 19 pruebas Staff de lectura/asignación,
+preview obsoleta y escritor HK concurrente con snapshot JPA previo; OpenAPI17 PASS.
+Java no cambió después de ese verify. JAR SHA256:
+0ef0c18ee95029b90b78a8ee529a1880cb32cbfbabcdbb5320b08f4b0aabee9c.
+
+Web: 22/22 focalizadas PASS en la ejecución inicial; última repetición 21/22 y
+recorrido real 0/1 por timeout5s de los casos N stays. Ambos fallan también en
+HEAD c4e5109 (baseline5/7), sin relación con un rechazo DIRTY. Casos nuevos PASS.
+Comparación adicional: el carrito original agota5s en una copia exacta de
+origin/main aa831b8 y en la rama. Gate Web general no aprobado; mantener EN_QA.
+Los resultados de barridos con experimentos temporales no certifican el árbol
+final: se restauran todos los cambios públicos, de formato y de tests ajenos.
+Solo queda la corrección DIRTY y espera/consulta semántica del calendario de su
+recorrido existente, preservando todas las assertions y límites. Sin exclusiones,
+tests deshabilitados o cambios al workflow. Evidencia fuera de Git.
+Últimos lint/typecheck Linux PASS sobre el árbol final.
+
+Se conservan contenedores, imágenes y PostgreSQL habituales del hotel3001; QA
+aislado, sin datos sintéticos en esa base. Build Web Linux anterior PASS vigente:
+no cambios de runtime posteriores. Dependencias verificadas contra package/lock,
+sin cambios a Docker/Compose. Publicación autorizada; PR/checks GitHub pendientes.
+Web/Backend restaurados con sus mismas imágenes; tres servicios saludables,
+Inicio/Reservas HTTP200 y checksum del JAR activo idéntico al verify950.
+La aprobación manual no se atribuye a casos individuales ni cierra el QA separado53.
+
+## Check-in/checkout Staff — QA manual aprobado y publicación (2026-10-22)
+
+José confirma QA manual PASS y autoriza commit/push del Backend54 y la Web
+dependiente en `feature/staff-stay-lifecycle-web`, sin merge a main. Esta entrada
+actualiza los pendientes de QA manual/publicación de las entregas siguientes;
+no cierra retroactivamente el QA separado del contrato53 ni certifica escenarios
+individuales no detallados por José. Backend946 y lint/typecheck/build Web PASS
+siguen vigentes. Gate Web general y checks de GitHub pendientes; conservar los
+timeouts de baseline y React418 público documentados, sin declarar CI PASS.
+
+## Check-in/checkout Staff — entrega Web para QA (2026-10-22)
+
+- **Estado:** EN_PROGRESO; funcionalidad implementada/validada, cierre general y
+  QA manual de José pendientes. Rama feature/staff-stay-lifecycle-web, conserva
+  Backend EN_QA; sin commit/push/merge ni cambios de migraciones/dependencias.
+- **Entrega:** botones por stay en el detalle real, confirmación accesible,
+  expectativas congeladas al abrir, versión sin redondear, cookie Staff/Origin,
+  propiedad explícita y códigos409 saneados. No habilita acciones provisionales.
+  Reintento incierto conserva clave/cuerpo, incluso cerrando y reabriendo diálogo
+  mientras siga montado. Refresca reserva/lista/stays, asignación, ocupación y HK.
+- **Validación:** lint/typecheck/build PASS.50 archivos Web340/341 PASS,52 nuevas
+  PASS; timeout5s del listado reproduce en HEAD9abea00 (10/11 PASS). Timeout público
+  también reproduce en HEAD. Suites generales interrumpidas y no certificadas;
+  fixtures QueryClientProvider propios corregidos, assertions/límites intactos.
+  Backend946 PASS previo vigente, sin repetir Java para atribuirlo a la UI.
+- **Real:**17 comprobaciones funcionales en PostgreSQL aislado,0 respuestas5xx,
+  móvil390px. Corte deliberado de respuesta de checkout y recuperación idempotente;
+  un cargo/pago/entrada/salida en SQL, Room DIRTY conservando DND, fechas/cargos y
+  ATS correcto. Navegador global PARTIAL por React418 en Inicio con fechas/query,
+  reproducido en versión anterior y nueva; reporte FAIL original conservado.
+- **Entorno:**3001 actualizado tras recrear Backend/Web; verificación SHA256 del
+  JAR igual al946 PASS, ruta nueva sin sesión401, disponibilidad200/6 ofertas y3
+  servicios saludables. Hotel conserva2 properties/24 rooms/2 reservas/2 stays;
+  ninguna reserva o limpieza de QA en su base. Configuración/volumen preservados.
+  Contenedores/redes temporales retirados; volumen aislado de QA detenido.
+- **Siguiente:** QA manual propio en3001 con reserva pública nueva para hoy y Room
+  inspeccionada; gate Web general pendiente por timeouts previos. Web66 detalla
+  pasos/evidencia. No afirmar COMPLETADA ni CI PASS; reservas sin folio no verifican
+  saldo cero. Temporal pms-stay-lifecycle-web-qa fuera de Git conserva evidencia.
+
+## Check-in/checkout Staff — inicio Web (2026-10-22)
+
+José autoriza conectar BFF/botones del contrato54. Nueva rama
+feature/staff-stay-lifecycle-web desde9abea00 conserva el Backend EN_QA sin
+publicar; no merge/rebase ni cambios al XLSX. Alcance por ReservationStay,
+RESERVATION_MANAGE/property explícita, timestamp sin redondear, reintento con la
+misma clave/cuerpo, confirmación accesible y refresco de lecturas. Plan/QA en
+Web66; validación Web y QA manual pendientes, Backend946 PASS previo no los cubre.
+
+## Check-in/checkout Staff — entrega Backend EN_QA (2026-10-22)
+
+- **Estado:** EN_QA; implementación y validación técnica PASS, QA manual propio
+  pendiente. Rama feature/staff-stay-lifecycle, base9abea00; sin commit/push/merge.
+  Se conservan los acuerdos previos del contrato54 y decisión académica.
+- **Entrega:** POST check-in/checkout con Staff activo, RESERVATION_MANAGE,
+  scope SQL, expectativas de estado/Room/updatedAt y recibo local idempotente.
+  Auditoría de actor Staff y rollback de salida/limpieza; no datos financieros
+  expuestos. GET Staff agrega updatedAt. BFF actual sigue con su allowlist previa;
+  no se añaden botones ni se atribuye QA visual nuevo.
+- **Reglas:** check-in CONFIRMED y fecha local válida, Room inspeccionada y sin
+  conflicto/bloqueo. Otra stay IN_HOUSE bloquea entrega física aunque venciera su
+  salida prevista o se cancelara su padre; ATS permanece independiente. Checkout
+  requiere todos los folios verificables sin deuda positiva, sin compensar
+  créditos/monedas; salida anticipada conserva fechas/cargos, deja Room DIRTY.
+- **Finanzas:** nuevas reservas públicas registran CHARGE/PAYMENT simulado en
+  Folio existente, dentro del recibo/transacción públicos. Replays no repiten
+  efectos ni rellenan historia. Guard financiero por property+reserva compartido
+  con alta/postings/reversos/transiciones de FolioService; reservas independientes
+  conservan concurrencia. No PSP real, migraciones ni dependencias nuevas.
+- **Validación final:** ./mvnw -B verify946 PASS,107 reportes,0 failures/errors/
+  skipped, BUILD SUCCESS y JAR,16:42 min; Java21/PostgreSQL17 aislados.40 casos
+  nuevos prueban HTTP/SQL/auth/scope, integración pública completa, ATS, deuda,
+  no folio, créditos, rollback, doble acción, replay/revocación y carreras con
+  cargos/alta de folio. OpenAPI17 PASS; paridad53 operaciones/42 paths/63 schemas/
+  13 tags; content-types JSON/problem+json y precisión de updatedAt comprobados.
+- **Ejecuciones anteriores:** focalizada143:139 PASS,2 fallos y2 errores por
+  refresh que descartaba cambios propios del folio, guard demasiado amplio y
+  formato UUID de Swagger. Corregidos conservando assertions y timeouts.
+  Primer verify completo946:945 PASS/1 fallo propio de OpenAPI por content-type
+  */*; anotaciones corregidas, repetición íntegra PASS. Una ejecución intermedia
+  detenida para incluir ocupación IN_HOUSE vencida no se cuenta como finalizada.
+- **Evidencia:** backend/target/staff-lifecycle-* ignorado: logs/reports iniciales,
+  primer full y final separados, OpenAPI y JAR. Sin cambios al CI ni exclusiones.
+  Diff-check/revisión de alcance PASS; los cinco archivos nuevos son de la tarea.
+- **Conservación/siguiente:** QA temporal retirado, hotel3001 sin actualizar;
+  base de datos del usuario sin tocar. Reservas históricas sin folio siguen
+  bloqueadas, no se inventa saldo cero. QA manual53 sigue pendiente. Integración
+  BFF/botones Web como siguiente incremento autorizado por separado.
+
+## Check-in/checkout Staff — inicio Backend autorizado (2026-10-22)
+
+- José autoriza proseguir con Backend54 y vínculo de pago simulado al folio.
+  READY → EN_PROGRESO. Nueva feature/staff-stay-lifecycle desde9abea00, conservando
+  los acuerdos documentales sin publicar. Main f7c8f7d ya incorpora PR160 y su
+  árbol coincide; no se integran ramas ni se cambia el entorno habitual3001.
+- Alcance: POST check-in/checkout Staff con scope SQL, timestamp de concurrencia,
+  recibo idempotente y auditoría del actor; deuda por todos los folios de reserva,
+  guard compartido con escritores. CHARGE/PAYMENT de nuevas reservas simuladas
+  en la misma transacción/recibo existente; no backfill ni nuevas migraciones.
+- Bloqueos de recursos usan predicado de scope en subconsulta para no bloquear
+  la fila Property que el booking público protege con FOR SHARE. Orden común:
+  recibo local, guard financiero de propiedad, reserva, stay, Room.
+- Pruebas previstas: HTTP/PostgreSQL/OpenAPI, auth/scope, saldo/ausencia, rollback,
+  carrera con postings/alta de folio y reintentos; regresión completa Java21/PG17.
+  Sin resultado nuevo atribuido aún. QA manual53 sigue pendiente.
+- Siguiente: finalizar pruebas Backend; BFF/botones Web posteriores. Sin commit,
+  push, merge, nuevos proveedores, secretos ni pruebas sobre la BD del usuario.
+
+## Check-in/checkout Staff — alcance académico y saldo aprobados (2026-10-22)
+
+- José informa decisión del docente: pagos del área pública simulados; integración
+  bancaria/PSP real fuera del proyecto académico actual por tiempo de desarrollo.
+  Se conserva el adaptador existente, sin exigir un proveedor para este incremento.
+- Aprueba todas las reglas consultadas: deuda de cualquier folio de la reserva
+  bloquea cada salida, sin compensación entre folios/monedas; falta de folio o
+  información contable verificable también bloquea. No quedan esas decisiones
+  de negocio abiertas. Contrato54 y decisiones globales actualizados.
+- Pago simulado aprobado no acredita saldo contable cero. Booking actual no crea
+  movimientos de folio; deberá integrarse explícitamente esa fuente para mostrar
+  un checkout público válido, sin nuevo cobro, historial reescrito ni saldo UI.
+  La comprobación debe coordinarse con los escritores financieros existentes.
+- Rama documental docs/staff-stay-lifecycle-contract, base9abea00 conservada;
+  cambios solo documentales. Transporte sigue propuesto, código PENDIENTE,
+  QA manual53 pendiente; sin nuevo verify ni resultados API/CI atribuidos.
+- Siguiente: concretar implementación Backend del contrato54 y cobertura contable
+  del recorrido simulado. Sin commit/push/merge ni cambios al stack3001 en este acuerdo.
+
+## Check-in/checkout Staff — reglas aprobadas y contrato pendiente (2026-10-22)
+
+- José aprueba las reglas propuestas y exige bloquear checkout con saldo pendiente.
+  Contrato54 registra check-in de reserva CONFIRMED en fechas locales admitidas,
+  Room asignada/INSPECTED y validada, salida anticipada sin recalcular cargos,
+  auditoría Staff y checkout→DIRTY transaccional.
+- Rama nueva documental `docs/staff-stay-lifecycle-contract`, base9abea00;
+  ese commit ya coincide con origin/feature/staff-checkout-housekeeping.
+  Estado del contrato PENDIENTE, no declarar READY la integración HTTP.
+- Hallazgo: Folio permite vínculos por reserva/stay y saldo por movimientos;
+  booking público no genera CHARGE/PAYMENT. Falta decisión sobre deuda compartida
+  y falta de fuente contable. Propuesta consultada: cualquier deuda de la reserva
+  bloquea, sin compensar con otros folios; ausencia de fuente verificable bloquea.
+- Concurrencia financiera requiere coordinar también escritores/alta de folios;
+  no basta consultar saldo dentro del checkout. Reutilizar idempotencia local y
+  permisos vigentes, sin implementar ni ampliar acceso financiero por suposición.
+- Solo documentación; diff-check y revisión de consistencia PASS. No atribuir
+  pruebas nuevas a las APIs aún inexistentes;905 PASS es evidencia de contrato53.
+  QA manual53 sigue pendiente. Sin commit/push/merge ni despliegue3001 nuevos.
+- Siguiente: decisión financiera de José y cierre del contrato54 antes de código.
+
+## Checkout → limpieza — publicación autorizada (2026-10-22)
+
+- José autoriza commit/push de `feature/staff-checkout-housekeeping` y después
+  acordar el contrato Staff de check-in/checkout. No autoriza merge ni implementar
+  sus nuevas APIs/BFF/UI antes de acordar las reglas pendientes.
+- Estado EN_QA: la autorización de Git no sustituye QA manual PASS. Se conserva
+  la evidencia técnica anterior: verify905 PASS,0 failures/errors/skipped,
+  sin nuevas ejecuciones ni checks remotos atribuidos. Diff/alcance revisados.
+- Entorno habitual3001 sin actualizar; siguiente paso: propuesta contractual
+  separada de la implementación interna publicada.
+
+## Checkout → limpieza — entrega técnica EN_QA (2026-10-22)
+
+- **Estado:** EN_QA, QA manual propio pendiente. Rama
+  feature/staff-checkout-housekeeping, base0d4affd; contrato53 aprobado para
+  integrar el servicio interno, sin HTTP/BFF/UI de checkout autorizados.
+- **Cambio:** checkOut bloquea stay y Room, confirma CHECKED_OUT + DIRTY y dos
+  eventos SYSTEM correlacionados en una transacción; rollback completo si audit
+  falla. Reutiliza HK y cleaningReason; crea seguimiento al salir si faltaba,
+  conserva DND y otras stays. Caso histórico sin Room no inventa asignación.
+- **Pruebas finales:** ./mvnw -B verify905 PASS/BUILD SUCCESS/JAR,0 omitidas,
+  Java21/PostgreSQL17 aislados,17:13 min.16 casos nuevos: concurrencia/reintento,
+  rollback, caché JPA y DND, creación de seguimiento, ATS y futura preasignación.
+  Regresiones de reservas/finanzas/inventario/operaciones/auth/OpenAPI PASS.
+- **Primera ejecución:**905 casos,904 PASS y1 timeout en Swagger de
+  PublicBookingHttpIntegrationTests:153. Init19,95s contra20s. Repetición íntegra
+  con PG nuevo y caché de compilación:905 PASS; HTTP62 PASS, Swagger9,84s.
+  Sin modificar prueba/timeout/configuración/CI ni omitir casos. Logs/reports de
+  ambas ejecuciones separados en backend/target/checkout-hk-* ignorado.
+- **Conservación:** no migraciones, dependencias, rutas, permisos, cobros ni
+  frontend funcional nuevos. No se hacen checkouts en la base del usuario ni
+  se actualiza el stack habitual3001. Pruebas/temporales exclusivamente aislados.
+- **Siguiente:** revisión/QA manual de José y acordar contrato Staff si desea
+  operarlo desde pantalla. No afirmar que ya existen botones de entrada/salida.
+  Sin commit/push/merge; no checks remotos atribuidos. La entrada siguiente es histórica.
+
+## Checkout → limpieza — inicio (2026-10-22)
+
+- **Estado:** EN_PROGRESO. José autoriza continuar con la integración propuesta.
+- **Rama/base:** feature/staff-checkout-housekeeping desde0d4affd; main1c0eccd
+  contiene los PR157–159 y su árbol coincide. Rama anterior publicada intacta.
+- **Contrato/alcance:**53, servicio interno checkOut existente; checkout/HK/audit
+  en una transacción, Room→DIRTY, motivo legible, concurrencia y efectos únicos.
+  Reutilizar HousekeepingService y proyección actual; no HTTP/UI/folio nuevos.
+- **Siguiente:** implementación y QA automatizado; luego QA manual de José.
+  Sin commit/push/merge autorizados ni cambios al entorno/datos del usuario.
+
+## Housekeeping — motivo de rechazo y foco (2026-10-22)
+
+- **Estado:** COMPLETADA; validación técnica y QA manual propio PASS, confirmado
+  expresamente por José el 2026-10-22. Autoriza commit/push en la misma rama.
+- **Causa:** Modal reenfocaba al cambiar el callback inline, incluso por cada
+  letra; el motivo persistía en audit pero no formaba parte del DTO de lectura.
+- **Cambio:** foco inicial separado del listener; pausa de polling/foco mientras
+  se confirma. Motivo vigente DIRTY desde auditoría existente con property scope,
+  proyectado como cleaningReason y visible en detalle; DND no lo reemplaza.
+- **Validación:** Web84 pruebas/18 archivos PASS con el límite original;
+  typecheck/lint PASS. Backend verify focalizado41 PASS/BUILD SUCCESS, Java21/PG17:
+  StaffHousekeepingIntegrationTests, HousekeepingServiceIntegrationTests,
+  RoomReadinessIntegrationTests y OpenApiContractIntegrationTests. Se reprodujo
+  antes del arreglo la pérdida de foco y el guardado accidental al escribir espacios.
+  Regresión de composición Habitaciones:4 PASS/1 timeout5s inicial; archivo íntegro
+  repetido5 PASS con límite30s solo en CLI local. Sin cambios de timeout/CI/tests.
+  Build producción Backend/Web PASS, dependencias Web cacheadas del mismo lock
+  mediante override temporal ya validado; no cambios Dockerfile/Compose/lockfile.
+- **Integrado3001:**7 comprobaciones Chrome PASS: escritura continua con espacios
+  y tildes, foco conservado más de30s, cancelar sin cambios, motivo existente en
+  detalle tras recargar y móvil390px sin overflow; sin excepciones JS ni5xx.
+  SQL antes/después:2 properties/24 rooms/2 reservas/5 estados HK/25 eventos audit,
+  iguales. No se guardó un rechazo nuevo ni se reescribió historia. Tres
+  contenedores saludables; PostgreSQL original intacto. Temporales fuera del repo.
+- **Siguiente:** publicar este ajuste en `feature/staff-housekeeping-real`.
+  Próximo alcance por acordar con José; sin merge ni funcionalidad adicional
+  autorizados en este cierre. No se atribuyen checks remotos de GitHub.
+
+## Limpieza y entrega — cierre manual y publicación autorizada (2026-10-21)
+
+- **Estado:** COMPLETADA; QA técnico y manual propio PASS. José confirma
+  expresamente su QA de este incremento y autoriza commit/push en la misma rama.
+  José aprobó preasignar con aviso sin entregar una
+  habitación no inspeccionada; contrato52. Base publicada HK3186d92, misma rama.
+- **Entrega:** consulta de limpieza para Recepción desde Habitaciones sin acceso
+  de gestión HK; preview informa limpieza actual y aviso. CheckIn interno exige
+  Room asignada/INSPECTED, con bloqueo Room compartido por escritores HK.
+- **Límites:** no nuevo endpoint/botón check-in, no automatismo check-out→DIRTY,
+  sin cambios ATS, migraciones, roles globales ni secretos. Fixture Comercial
+  de check-in se adapta a la regla aprobada, sin alterar su lógica funcional.
+- **Backend final:** ./mvnw -B verify887 PASS,0 failures/errors/skipped,
+  BUILD SUCCESS y JAR,12:24 min, Java21/PostgreSQL17 aislados, sin builds/Chrome
+  simultáneos. Primera ejecución:3 fallos por fixture propia ya corregidos;
+  segunda:796 PASS y exit137 durante builds, no éxito. Logs/reports separados
+  en backend/target/readiness-*; no modificar assertions de BD3 ni excluir casos.
+- **Web:**143 casos verificados:135 PASS/8 timeouts5s; control HEAD también falla
+  por tiempo. Los6 archivos afectados repiten30 PASS con30s solo en runner local,
+  sin cambios a tests/timeouts/CI del repo. Build/typecheck/lint PASS.
+- **Integrado3001:**22 comprobaciones Chrome PASS,0 JS/5xx y sin overflow390px.
+  Recepción lee limpieza y filtra; tracking/status/DND403. Reserva/asignación
+  existentes conservadas, ATS intacto. SQL conserva2 propiedades/24 rooms/6 tipos,
+  2 reservas/2 stays/1 GuestAccount/2 StaffUsers/28 migraciones/2 HK;1 recibo QA.
+  HK audit10→12 por DND on/off Admin. Chrome QA cerrado; stack habitual saludable.
+- **Docker:** imagen Backend canónica y Web compilada con dependencias cacheadas
+  del mismo package/lock, comparación byte a byte PASS. npm ci normal falló por
+  conectividad ETIMEDOUT; override/Dockerfile temporal fuera del repo, sin cambiar
+  fuente/configuración/dependencias/credenciales. Cold build requiere red npm.
+- **Siguiente:** publicar en `feature/staff-housekeeping-real` y continuar
+  puliendo este módulo según los ajustes que indique José. Sin merge ni nuevas
+  funcionalidades definidas en este cierre. CI remoto no ejecutado.
+
+## Housekeeping — cierre manual y publicación autorizada (2026-10-21)
+
+- **Estado:** EN_QA → COMPLETADA. José confirmó que probó Housekeeping y está
+  bien; autoriza commit y push de `feature/staff-housekeeping-real`.
+- **Permisos:** conservar la implementación aprobada con OPERATIONS_MANAGE y
+  property scope. No se añade acceso de Recepción ni se modifica la matriz
+  global de roles. Superadmin probado; Gerencia/Operaciones conservan el acceso
+  previsto en C2. No se interpreta la confirmación como un nuevo permiso.
+- **Evidencia:** Backend verify879 PASS y verify final focalizado26 PASS;
+  Web1863 casos verificados entre la suite y la repetición del archivo con
+  timeout, build/typecheck/lint PASS. QA integrado3001:17 comprobaciones PASS.
+  Se reutiliza esta evidencia sin atribuir nuevas ejecuciones ni CI remoto.
+- **Siguiente:** commit/push de esta rama y revisión del próximo alcance privado.
+  No merge ni cambios funcionales adicionales en este cierre; base y datos
+  locales conservados. Los registros EN_QA siguientes son históricos.
+
+## Housekeeping — actualización local3001 y QA integrado (2026-10-21)
+
+- **Estado:** EN_QA. José autorizó reconstruir el entorno habitual y probar
+  el flujo integrado con cuentas existentes. No autorizó publicación ni merge.
+- **Despliegue local:** imágenes Backend/Web reconstruidas con Dockerfiles
+  existentes; mocks=false y puerto3001. Compose up --no-build --wait PASS;
+  Backend/Web/PostgreSQL saludables. Mismo contenedor/volumen PostgreSQL;
+  copia pg_dump previa guardada fuera del repo. Preview aislada3101 detenida.
+- **QA real positivo:** Inicio/catálogo/detalle/checkout Guest/confirmación;
+  pago SIMULATED y ATS disminuye exactamente1. Recepción accede por formulario,
+  encuentra la reserva pública y asigna habitación física; Habitaciones muestra
+  la ocupación reservada para la fecha elegida; Calendario y reporte on-books
+  consultan datos reales. Logout vuelve a Inicio. Recepción→HK403, sin ampliar permisos.
+- **Conservación:**24 Rooms/6 RoomTypes/2 Properties/28 migraciones y cuentas
+  previas conservadas. QA añadió1 Reservation,1 Stay,1 GuestProfile y1 recibo;
+  no GuestAccount nueva ni reservas duplicadas al repetir verificaciones.
+- **Bloqueo de cuenta resuelto:** José autorizó expresamente crear qa_staff
+  local mediante StaffBootstrapConfiguration. Contenedor one-off con la imagen
+  existente, sin reiniciar el stack ni modificar .env/Compose. Cuenta SUPER_ADMIN
+  ACTIVE,1 membership y1 STAFF_BOOTSTRAP_CREATED; contraseña codificada por el
+  PasswordEncoder existente. Contenedor temporal retirado y eliminado tras el alta;
+  valores de bootstrap usados solo en ese proceso, sin credenciales versionadas.
+  Recepción conserva su rol; StaffUsers pasa de1 a2 por el alta autorizada.
+- **QA integrado final:**17 comprobaciones PASS en navegador contra3001, cero
+  excepciones JS/5xx. Incluye login Superadmin por formulario, PROPERTY concreta,
+  seguimiento/limpieza/inspección, DND independiente, reload y logout/guard.
+  Habitación201 final INSPECTED/DNDfalse,5 eventos HK con actor Admin esperado.
+  ATS no cambia por limpieza/DND. Se reutilizó la reserva QA existente:2 reservas
+  totales y1 recibo de QA, sin nuevas cuentas Guest ni reservas duplicadas.
+  Creación/ATS-1 constan en ejecución anterior. Scripts/resultados/recibo/captura/
+  backup en temporal pms-housekeeping-local3001-qa, fuera del repo.
+- **Siguiente:** usuario prueba el entorno3001 y confirma QA manual antes de
+  COMPLETADA. Autorizar el QA/alta no se interpreta como PASS manual ni publicación.
+  Sin cambios funcionales adicionales, migraciones, secretos versionados,
+  commit, push ni merge.
+
+## Housekeeping Staff real — implementación y validación (2026-10-21)
+
+- **Estado:** EN_QA; José aprobó contrato51 y su implementación frontend y
+  backend. Rama `feature/staff-housekeeping-real`, base main `8e1abbe`.
+- **Entrega:** cinco operaciones Staff/BFF por PROPERTY, tablero con filtros y
+  detalle, seguimiento explícito, ciclo de limpieza con motivo y DND independiente.
+  Reutiliza HousekeepingService, tablas y permisos C2; no agrega migraciones.
+- **Seguridad:** sesión Staff vigente, OPERATIONS_MANAGE y scope antes de consultar;
+  actor del servidor, auditoría atómica, bloqueo de Room y versión UTC exacta.
+  Conflicto/replay devuelve409; sin retries ciegos ni cambios a inventario/reservas.
+- **Backend:** `./mvnw -B verify`, 879 pruebas PASS/BUILD SUCCESS. Después del último
+  ajuste de nulabilidad de OpenAPI, verify focalizado de
+  StaffHousekeepingIntegrationTests y OpenApiContractIntegrationTests:26 PASS.
+  No se atribuyen los879 a esa segunda invocación. Java21/PostgreSQL17 aislado;
+  logs, reports, OpenAPI y JAR en backend/target/housekeeping-* ignorados.
+- **Web:** suite306 archivos/1863 casos:1862 PASS y1 timeout5s en checkout existente;
+  archivo repetido íntegro25 PASS, mismo timeout y fuentes intactas. Todos los
+  casos verificados entre dos ejecuciones, sin atribuir1863 PASS a una sola.
+  Build producción (mocks=false), typecheck y lint PASS. Sin cambiar CI/tests
+  para ocultar errores. La ejecución Windows anterior fue interrumpida por
+  lentitud y la primera Linux paralela tuvo timeouts; no se cuentan como PASS.
+- **Navegador/BD:** Chrome contra BFF/API/PG reales aislados:9 comprobaciones PASS,
+  escritorio/móvil sin overflow, reload, ciclo/motivo/DND, replay409, logout y
+  Recepción denegada; sin excepciones JS. Habitación101 final DIRTY/DNDfalse;
+  6 eventos HK con actor Staff esperado, sin evento adicional por replay.
+  Capturas/logs/resultados en el directorio temporal pms-housekeeping-browser-qa.
+  Primer intento previo a health UP devolvió503 sin escrituras; repetido tras UP.
+- **Siguiente/límites:** QA manual del usuario según Web64; no COMPLETADA aún.
+  El stack habitual3001 y su BD se conservaron sin reconstruir/modificar;
+  preview aislada3101 con datos desechables. No se atribuye CI remoto, publicación
+  ni PASS manual. Sin migraciones, dependencias nuevas, secretos, commit o push.
+
+## Housekeeping Staff real — contrato preparado (2026-10-21)
+
+- José autoriza frontend y backend del módulo. Rama aislada
+  `feature/staff-housekeeping-real`, main `8e1abbe`; working tree inicial limpio.
+- Inspección: HousekeepingService/HkRoomState, ciclo DIRTY/CLEAN/INSPECTED y DND,
+  actor/audit existentes; UI provisional y pms.test. No existe contrato HTTP
+  aprobado; la matriz de permisos operativos sigue propuesta para Housekeeping.
+- Contrato51 PROPOSED: rutas/DTO/BFF, OPERATIONS_MANAGE, PROPERTY, actor de sesión,
+  seguimiento explícito, transiciones/motivo, DND, concurrencia y pruebas.
+  Sin duplicar servicios ni asumir que Sin seguimiento es un estado persistido.
+- Evidencia: baseline Web `npm run test -- src/modules/housekeeping
+  --maxWorkers=1 --reporter=dot`, 11 archivos/40 pruebas PASS; enlaces del
+  contrato y `git diff --check` PASS. No se atribuye validación HTTP/Backend
+  ni QA manual a una integración todavía no implementada.
+- Siguiente: aprobar contrato y ejecutar el incremento. No hay cambios Java/UI,
+  migraciones, secretos, commit, push ni merge.
+
 ## Juan / publicación de correcciones H1–H4 vía PR (2026-10-08)
 
 - **Autorización:** usuario solicita actualizar la rama, publicarla y entregar
@@ -3852,3 +5715,88 @@ sesiones al modificar el acceso.
 - **Entorno/siguiente:** runtime QA aislado activo localhost:3001; herramientas
   visuales fallaron al inicializar. Usuario debe verificar UI/descarga según guía
   y confirmar PASS; solo entonces COMPLETADA. No se inició otro reporte.
+## 2026-10-27 — Cierre aceptado: Reserva Staff y Folio mínimo61
+
+José autoriza publicar este cierre mediante commit/push normal, sin merge.
+La revisión del historial de reservas invitadas se autoriza como incremento
+posterior separado; no forma parte del commit documental de cierre Staff.
+
+José confirma «todo ese flujo ya quedó» después del QA integrado46+14 PASS y
+los checks del PR financiero previamente reportados aprobados. Aceptación y DoD
+del recorrido de una propiedad/stay en GTQ: PASS; Web71 y Folio mínimo61 pasan
+a COMPLETADA. No se atribuye ejecución manual individual de variantes adversas
+ni se cierran folio avanzado, N stays, Guest/público u otras entregas BD2-FP.
+Solo documentación, rama test/staff-reservation-flow-qa / base81accce, sin nueva
+corrida CI/Maven ni commit/push. La evidencia histórica EN_QA se conserva abajo.
+Siguiente recomendado: puente reserva pública → historial Guest → recepción
+Staff y luego multi-room; no iniciar esos incrementos sin autorización.
+
+## 2026-10-27 — QA integrado de Reserva Staff — EN_QA / PASS técnico
+
+Recorrido real3001:46 comprobaciones funcionales distintas y14 SQL PASS, por
+etapas y sobre una sola reserva QA KYEMCQY6HB / habitación201. Alta confirmada,
+cargo650.00, asignación/inspección/entrada, abono325.00 y liquidación325.00;
+saldo0, salida CHECKED_OUT, limpieza automática DIRTY con motivo y posterior
+INSPECTED. Recuperación de abono tras perder respuesta201 y recargar conserva
+clave/cuerpo/movimiento; no pagos duplicados. Un cargo/dos pagos, cinco recibos
+idempotentes, actores Staff y eventos de entrada/salida únicos. ATS4→3→4;
+historial de16 movimientos previos intacto, sin GuestAccount ni migraciones nuevos.
+Pruebas negativas de suciedad/inspección/deuda y permiso HK de Recepción PASS.
+Dos interrupciones del harness (espera busy y etiqueta de fila) se corrigieron
+sin cambios de producto ni nuevas reservas/pagos; reportes originales conservados.
+Guía y límites: [Web71](../../frontend/pms-hotel-web/docs/71_STAFF_RESERVATION_FLOW_QA.md).
+Evidencia fuera de Git: pms-staff-reservation-flow-qa. Solo documentación;
+no nuevos build/Maven/CI ni commit/push. Rama/base y autorización a continuación.
+QA manual del owner pendiente; no cerrar Folio61 ni otras entregas. Siguiente:
+José repite el recorrido manual de Web71 y confirma su resultado.
+
+### Inicio del incremento
+
+José autoriza validar alta → asignación → entrada → abono → pago total → salida
+y limpieza. Rama `test/staff-reservation-flow-qa` desde origin/main81accce,
+que ya integra PR174 del dashboard. Contratos50/52/54/55/61 vigentes; reutilizar
+implementaciones existentes, sin reglas ni APIs nuevas. Owner José; coordinación
+de Reservas/Folio/seguridad preservada. Docker3001 saludable, working tree inicial
+limpio. Se usarán datos QA identificados y una habitación sin estancia activa;
+sin alterar reservas previas ni borrar movimientos/auditoría. HTTP/navegador/SQL
+pendientes. Aceptación manual del owner y cierre financiero61 no se presuponen.
+Sin commit/push de este incremento. La evidencia técnica posterior se registra arriba.
+
+## 2026-10-26 — Folio mínimo Staff: contrato61 aprobado, EN_QA
+
+José autoriza cerrar el flujo principal en feature/staff-folio-payments desde
+main566c7f0. Se reutilizarán StaffFolioService/FolioService, C2, guard financiero
+e idempotencia existentes; Recepción ya tiene FOLIO_PAYMENT_OPERATE. Fila Web0401
+y extensión0302 consultadas, sin editar XLSX ni declarar cerrado S4 completo.
+José confirma abonos y pago total: positivos, misma moneda y hasta saldo actual.
+Documento61 registra alcance limitado y recuperación de reintentos. API/BFF y
+panel de folio en detalle Staff implementados sobre el libro existente;
+sin PSP, migraciones nuevas, secretos, dependencias, commit/push ni Android.
+
+Diagnóstico3001: servicios healthy, pero Swagger50 paths sin las rutas recientes
+de Housekeeping y BFF con detalle Guest paginado antiguo. Imágenes activas7eb4a3f/
+de963c4 corresponden al despliegue anterior. Configuración Compose/runtime coincide;
+se conservan imágenes de recuperación y volumen PostgreSQL. Baseline solo conteos:
+2 propiedades/24 rooms/9 reservas/9 stays/7 folios/13 movimientos/1 cuenta/0 links/
+28 migraciones. Despliegue actualizado desde main566c7f0: ambas imágenes build PASS,
+activadas en3001 y tres servicios healthy. Swagger58 paths y manifiesto confirman
+recuperación Guest y acciones Housekeeping actuales; HTTP público200 y privado401
+sin sesión. Mismos contenedor/volumen PostgreSQL y todos los conteos de negocio;
+migraciones existentes28→31. No reservas nuevas, pagos ni secretos modificados.
+Incremento financiero: verify focal final111 PASS; Web afectado78 PASS;
+lint/typecheck/build PASS. Suite general Web2613/2616, sin ocultar3 fallos
+ajenos: timeout administrativo también en main y dos fallos que pasan aislados.
+Detalle verificable en contrato61, sin cambios en esos módulos/tests.
+Docker3001 actualizado otra vez con el incremento: tres servicios healthy,
+misma BD/volumen/conteos. Chrome real13 PASS con Recepción, sin reservas ni pagos
+nuevos durante smoke. Pagos/rollback/concurrencia solo en DB descartable.
+Pendientes QA manual owner/CI general; no COMPLETADA ni S4 completo.
+Evidencia temporal pms-staff-folio-payments/pms-staff-folio-qa, fuera de Git.
+José autoriza commit/push2026-10-27. origin/main avanzó a51d6e32 con Room Service;
+contrato financiero renumerado61, sin tocar el60 del compañero. Limpieza financiera
+separada de la lista compartida de caches para evitar conflicto y conservar
+ambos módulos en la integración. Mantener EN_QA; no atribuir PASS manual/CI general.
+Publicado ae88d50 en origin/feature/staff-folio-payments. Simulación main51d6e32
+sin conflictos y conserva ambos caches; typecheck/lint PASS y48 pruebas PASS en
+threads tras esperas/timeouts con forks, sin cambiar assertions/timeouts. Sin
+merge/rebase ni cambios en main. Evidencia temporal publication-* fuera de Git.

@@ -35,6 +35,28 @@ class OpenApiContractIntegrationTests {
     @Autowired @Qualifier("requestMappingHandlerMapping") RequestMappingHandlerMapping mappings;
 
     @Test
+    void staffFolioHasScopedMoneyAndIdempotentPaymentContract() throws Exception {
+        var doc = document(); String base = "/api/v1/properties/{propertyId}/folios";
+        for (String suffix : List.of("", "/{folioId}", "/{folioId}/movements", "/{folioId}/payments")) {
+            var op = operation(doc, base + suffix, suffix.endsWith("payments") ? "post" : "get");
+            assertEquals("staff", op.path("x-audience").asText());
+            assertTrue(op.path("security").get(0).has("bearerAuth"));
+            if (suffix.endsWith("payments")) assertCodes(op, "201", "400", "401", "403", "404", "409");
+            else assertCodes(op, "200", "400", "401", "403", "404");
+        }
+        var payment = operation(doc, base + "/{folioId}/payments", "post");
+        assertSuccessSchema(payment, "201", "StaffFolioPaymentReceipt");
+        assertTrue(java.util.stream.StreamSupport.stream(payment.path("parameters").spliterator(), false)
+                .anyMatch(p -> p.path("name").asText().equals("Idempotency-Key") && p.path("required").asBoolean()));
+        var schemas = doc.path("components").path("schemas");
+        assertFalse(schemas.path("StaffFolioPaymentRequest").path("additionalProperties").asBoolean(true));
+        assertFalse(schemas.path("StaffFolioMoney").path("additionalProperties").asBoolean(true));
+        assertEquals("string", schemas.path("StaffFolioMoney").path("properties").path("amount").path("type").asText());
+        assertEquals(Set.of("folio", "balance", "movementCount"), strings(schemas.path("StaffFolioDetail").path("required")));
+        assertFalse(schemas.path("StaffFolioPaymentReceipt").path("properties").has("balance"));
+    }
+
+    @Test
     void generatedPathsAndMethodsMatchRealApplicationMappings() throws Exception {
         String raw = mvc.perform(get("/v3/api-docs")).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         var doc = json.readTree(raw);
@@ -68,6 +90,40 @@ class OpenApiContractIntegrationTests {
                 + " tags=" + doc.path("tags").size());
     }
     @Test
+    void nativeGuestReadsAndRefreshHaveExactGeneratedContract() throws Exception {
+        var doc = document();
+        String base = "/api/v1/guest-auth/account/reservations";
+        var reconcile = operation(doc, base + "/reconcile", "post");
+        assertTrue(reconcile.path("security").get(0).has("guestBearerAuth"));
+        assertFalse(reconcile.has("requestBody"));
+        assertCodes(reconcile,"204","401","503");
+        var list = operation(doc, base, "get");
+        assertEquals("guest-bff-or-native", list.path("x-audience").asText());
+        assertTrue(list.path("security").get(0).has("guestBearerAuth"));
+        assertEquals("#/components/schemas/GuestLinkedStay", list.path("responses").path("200").path("content").path("application/json").path("schema").path("items").path("$ref").asText());
+        var detail = operation(doc, base + "/{reservationId}/stays/{stayId}", "get");
+        assertSuccessSchema(detail, "200", "GuestStay");
+        assertCodes(detail, "200", "400", "401", "404");
+        assertEquals(2, detail.path("parameters").size());
+        var refresh = operation(doc, "/api/v1/guest-auth/refresh", "post");
+        for (String name : Set.of("guestRefreshCookie", "guestNativeRefresh")) {
+            assertTrue(java.util.stream.StreamSupport.stream(refresh.path("security").spliterator(), false).anyMatch(requirement -> requirement.has(name)));
+        }
+        var scheme = doc.path("components").path("securitySchemes").path("guestNativeRefresh");
+        assertEquals("header", scheme.path("in").asText());
+        assertEquals("X-Guest-Refresh-Token", scheme.path("name").asText());
+        assertFalse(refresh.has("requestBody"));
+        var schemas = doc.path("components").path("schemas");
+        assertEquals(Set.of("reservationId", "stayId", "confirmationCode", "propertyName", "reservationStatus", "arrival", "departure", "roomCode", "status"), strings(schemas.path("GuestLinkedStay").path("required")));
+        assertFalse(schemas.path("GuestLinkedStay").path("properties").has("totalMinor"));
+        assertFalse(schemas.path("GuestLinkedStay").path("properties").has("notes"));
+        assertEquals(Set.of("id", "reservationId", "confirmationCode", "roomType", "room", "arrival", "departure", "status", "timezone"), strings(schemas.path("GuestStay").path("required")));
+        var room = schemas.path("GuestStay").path("properties").path("room").path("anyOf");
+        assertEquals("#/components/schemas/GuestStayRoom", room.get(0).path("$ref").asText());
+        assertEquals("null", room.get(1).path("type").asText());
+    }
+
+    @Test
     void verifiedRegistrationHasExactSchemasAndBffBinding() throws Exception {
         var doc=document();var schemas=doc.path("components").path("schemas");
         var request=schemas.path("RegistrationRequest");
@@ -84,13 +140,44 @@ class OpenApiContractIntegrationTests {
     }
 
     @Test
+    void housekeepingDocumentsPersistedCleaningReasonWithoutExposingAuditHistory() throws Exception {
+        var schema = document().path("components").path("schemas").path("StaffHousekeepingRoom");
+        assertTrue(strings(schema.path("required")).contains("cleaningReason"));
+        var reason = schema.path("properties").path("cleaningReason");
+        assertEquals(Set.of("string", "null"), strings(reason.path("type")));
+        assertTrue(reason.path("description").asText().contains("append-only audit"));
+        assertFalse(schema.path("properties").has("auditEvents"));
+    }
+
+    @Test
+    void staffCreationDocumentsUnpaidLodgingAdmissionAndImmutableReceipt() throws Exception {
+        var doc = document();
+        var quote = operation(doc, "/api/v1/reservations/creation-options", "get");
+        var create = operation(doc, "/api/v1/reservations", "post");
+        assertSuccessSchema(quote, "200", "StaffReservationCreationQuote");
+        assertSuccessSchema(create, "201", "StaffReservationCreationReceipt");
+        assertTrue(create.path("description").asText().contains("unpaid lodging CHARGE"));
+        assertTrue(create.path("description").asText().contains("No GuestAccount, payment"));
+        assertTrue(create.path("security").get(0).has("bearerAuth"));
+        assertTrue(create.path("responses").has("409"));
+        var schemas = doc.path("components").path("schemas");
+        assertFalse(schemas.path("StaffReservationCreationRequest").path("additionalProperties").asBoolean());
+        assertFalse(schemas.path("StaffReservationCreationOption").path("properties").has("capacity"));
+        Set<String> receiptFields = new HashSet<>();
+        schemas.path("StaffReservationCreationReceipt").path("properties").properties()
+                .forEach(field -> receiptFields.add(field.getKey()));
+        assertEquals(Set.of("operationId", "propertyId", "reservationId", "completedAt"), receiptFields);
+        assertEquals(receiptFields, strings(schemas.path("StaffReservationCreationReceipt").path("required")));
+    }
+
+    @Test
     void guestAccountSummaryDocumentsOwnIdentityAndOptionalRealDataOnly() throws Exception {
         var doc = document();
         var op = operation(doc, "/api/v1/guest-auth/account/summary", "get");
         assertEquals("Resumen de mi cuenta", op.path("summary").asText());
         assertTrue(op.path("parameters").isMissingNode() || op.path("parameters").isEmpty());
         assertFalse(op.has("requestBody"));
-        assertEquals("internal-bff", op.path("x-audience").asText());
+        assertEquals("guest-bff-or-native", op.path("x-audience").asText());
         assertTrue(op.path("security").get(0).has("guestBearerAuth"));
         assertSuccessSchema(op, "200", "GuestAccountSummaryResponse");
         assertTrue(op.path("responses").has("401"));
@@ -128,22 +215,49 @@ class OpenApiContractIntegrationTests {
         doc.path("paths").properties().forEach(path -> path.getValue().properties().forEach(method -> {
             String route = path.getKey();
             var op = method.getValue();
-            boolean staffAuth = (route.startsWith("/api/v1/staff-auth/") || route.startsWith("/api/v1/auth/"));
+            boolean staffAuth = (route.startsWith("/api/v1/staff-auth/") || route.startsWith("/api/v1/auth/") || route.startsWith("/api/v1/staff-admin/"));
             boolean guestAuth = route.startsWith("/api/v1/guest-auth/");
             boolean publicAvailability = route.equals("/api/v1/public/availability") && method.getKey().equals("get");
             boolean publicBooking = route.equals("/api/v1/public/bookings") && method.getKey().equals("post");
-            assertEquals(publicAvailability || publicBooking ? "public" : staffAuth || guestAuth ? "internal-bff" : "staff", op.path("x-audience").asText());
+            boolean lookup = route.startsWith("/api/v1/public/reservation-lookup/");
+            boolean nativeGuest = guestAuth && (route.equals("/api/v1/guest-auth/sessions") || route.equals("/api/v1/guest-auth/refresh")
+                    || route.equals("/api/v1/guest-auth/me") || route.equals("/api/v1/guest-auth/session") || route.equals("/api/v1/guest-auth/logout")
+                    || route.startsWith("/api/v1/guest-auth/account/"));
+            assertEquals(publicAvailability || publicBooking ? "public" : nativeGuest ? "guest-bff-or-native" : staffAuth || guestAuth || lookup ? "internal-bff" : "staff", op.path("x-audience").asText());
             boolean anonymous = route.endsWith("/google/start") || route.endsWith("/google/exchange")
-                    || route.equals("/api/v1/auth/sessions") || route.equals("/api/v1/guest-auth/sessions") || route.equals("/api/v1/staff-auth/sessions") || route.equals("/api/v1/staff-auth/login") || route.equals("/api/v1/guest-auth/registrations") || publicAvailability || publicBooking;
+                    || route.equals("/api/v1/staff-auth/invitations/consume") || route.equals("/api/v1/auth/sessions") || route.equals("/api/v1/guest-auth/sessions") || route.equals("/api/v1/staff-auth/sessions") || route.equals("/api/v1/staff-auth/login") || route.equals("/api/v1/guest-auth/registrations") || publicAvailability || publicBooking || lookup;
             if (anonymous) assertTrue(op.path("security").isMissingNode() || op.path("security").isEmpty());
             else {
                 String scheme = route.endsWith("/refresh") ? (staffAuth ? "staffRefreshCookie" : "guestRefreshCookie")
                         : route.startsWith("/api/v1/guest-auth/registrations/") ? "guestRegistrationBinding" : guestAuth ? "guestBearerAuth" : "bearerAuth";
-                assertEquals(1, op.path("security").size());
-                assertTrue(op.path("security").get(0).has(scheme), route + " " + method.getKey());
+                assertEquals(route.equals("/api/v1/guest-auth/refresh") ? 2 : 1, op.path("security").size());
+                assertTrue(java.util.stream.StreamSupport.stream(op.path("security").spliterator(), false).anyMatch(requirement -> requirement.has(scheme)), route + " " + method.getKey());
             }
             assertFalse(route.startsWith("/actuator") || route.equals("/error"));
         }));
+    }
+
+    @Test
+    void publicReservationLookupDocumentsSingleReservationWithoutHistoryOrGrant() throws Exception {
+        var doc=document(); String base="/api/v1/public/reservation-lookup";
+        var op=operation(doc,base+"/search","post");
+        assertSuccessSchema(op,"200","PublicReservationLookupResult");
+        var resultSchema=doc.path("components").path("schemas").path("PublicReservationLookupResult");
+        assertEquals(Set.of("stays","details","overview","accommodations"),strings(resultSchema.path("required")));
+        var overview=doc.path("components").path("schemas").path("PublicReservationLookupOverview");
+        assertEquals(Set.of("createdAt","source","currency","confirmedTotalMinor"),strings(overview.path("required")));
+        assertEquals("int64",overview.path("properties").path("confirmedTotalMinor").path("format").asText());
+        assertEquals(Set.of("stayId","roomTypeCode","timezone"),strings(doc.path("components").path("schemas").path("PublicReservationLookupAccommodation").path("required")));
+        assertCodes(op,"200","400","404","429","503");
+        assertTrue(op.path("security").isMissingNode() || op.path("security").isEmpty());
+        var request=doc.path("components").path("schemas").path("PublicReservationLookupSearchRequest");
+        assertFalse(request.path("additionalProperties").asBoolean(true));
+        assertEquals(Set.of("email","confirmationCode"),strings(request.path("required")));
+        assertEquals(320,request.path("properties").path("email").path("maxLength").asInt());
+        assertTrue(request.path("properties").path("confirmationCode").path("writeOnly").asBoolean());
+        for(String removed:List.of("/challenges","/verify","/reservations","/session"))
+            assertFalse(doc.path("paths").has(base+removed));
+        assertFalse(doc.path("components").path("securitySchemes").has("reservationLookupAccess"));
     }
 
     @Test
@@ -296,7 +410,10 @@ class OpenApiContractIntegrationTests {
             for (var parameter : op.path("parameters")) {
                 String name = parameter.path("name").asText();
                 assertTrue(names.add(parameter.path("in").asText() + ":" + name), "duplicate parameter");
-                assertFalse(Set.of("principal", "staffUserId", "sessionId", "username", "roleCode").contains(name), name);
+                boolean staffAdminFilter = path.getKey().equals("/api/v1/staff-admin/users")
+                        && method.getKey().equals("get") && parameter.path("in").asText().equals("query")
+                        && Set.of("username", "roleCode").contains(name);
+                assertFalse(!staffAdminFilter && Set.of("principal", "staffUserId", "sessionId", "username", "roleCode").contains(name), name);
                 if (parameter.path("in").asText().equals("path")) {
                     assertTrue(parameter.path("required").asBoolean());
                     assertEquals("uuid", parameter.path("schema").path("format").asText());
@@ -343,7 +460,7 @@ class OpenApiContractIntegrationTests {
         }
         for (String route : List.of("/api/v1/auth/sessions", "/api/v1/guest-auth/sessions", "/api/v1/staff-auth/sessions")) {
             var op = operation(doc, route, "post");
-            assertEquals("internal-bff", op.path("x-audience").asText());
+            assertEquals(route.equals("/api/v1/guest-auth/sessions") ? "guest-bff-or-native" : "internal-bff", op.path("x-audience").asText());
             assertTrue(op.path("security").isArray());
             assertEquals(0, op.path("security").size());
             for (String status : List.of("201", "400", "401")) assertTrue(op.path("responses").has(status));
@@ -466,6 +583,8 @@ class OpenApiContractIntegrationTests {
             assertTrue(op.path("responses").path("200").path("headers").has("Cache-Control"));
         }
         assertSuccessSchema(operation(doc, route, "get"), "200", "StaffRoomAssignmentPreview");
+        assertTrue(operation(doc, route, "get").path("description").asText().contains("DIRTY rooms remain visible but are not selectable"));
+        assertTrue(operation(doc, route, "put").path("description").asText().contains("rejecting DIRTY rooms"));
         assertSuccessSchema(operation(doc, route, "put"), "200", "StaffRoomAssignmentResult");
         assertTrue(operation(doc, route, "put").path("responses").has("409"));
         var schemas = doc.path("components").path("schemas");
@@ -485,7 +604,7 @@ class OpenApiContractIntegrationTests {
             assertEquals("uuid", parameter(op, "propertyId").path("schema").path("format").asText());
             for (String code : List.of("200", "400", "401", "403")) assertTrue(op.path("responses").has(code));
             assertTrue(op.path("responses").path("200").path("headers").has("Cache-Control"));
-            assertFalse(doc.path("paths").path(route).has("post"));
+            assertEquals(route.equals("/api/v1/reservations"), doc.path("paths").path(route).has("post"));
         }
         assertSuccessSchema(operation(doc, "/api/v1/reservations/{reservationId}", "get"), "200", "StaffReservation");
         assertTrue(operation(doc, "/api/v1/reservations/{reservationId}", "get").path("responses").has("404"));
@@ -501,8 +620,130 @@ class OpenApiContractIntegrationTests {
         assertEquals(Set.of("profileId", "firstName", "lastName"), strings(schemas.path("ResponsibleGuestView").path("required")));
     }
 
+    @Test
+    void staffAdminReadsDocumentExactTransportScopePaginationAndSafeDtos() throws Exception {
+        var doc = document();
+        for (String path : List.of("/api/v1/staff-admin/roles", "/api/v1/staff-admin/users", "/api/v1/staff-admin/users/{id}")) {
+            var op = operation(doc, path, "get");
+            assertEquals("internal-bff", op.path("x-audience").asText());
+            assertTrue(op.path("security").get(0).has("bearerAuth"));
+            assertTrue(op.path("description").asText().contains("STAFF_MANAGE"));
+            for (String code : List.of("200","400","401","403","405","503")) {
+                assertTrue(op.path("responses").has(code),path+" "+code);
+                assertTrue(op.path("responses").path(code).path("headers").has("Cache-Control"));
+            }
+            assertEquals(path.endsWith("/{id}") ? Set.of("get","patch") : path.endsWith("/users") ? Set.of("get","post") : Set.of("get"), keys(doc.path("paths").path(path)));
+            assertFalse(op.has("requestBody"));
+        }
+        var list = operation(doc,"/api/v1/staff-admin/users","get");
+        assertEquals(Set.of("scope","propertyId","status","roleCode","username","limit","cursor"),parameterNames(list));
+        assertTrue(parameter(list,"scope").path("required").asBoolean());
+        assertEquals(Set.of("PROPERTY","ALL_PROPERTIES"),strings(parameter(list,"scope").path("schema").path("enum")));
+        assertEquals(50,parameter(list,"limit").path("schema").path("default").asInt());
+        assertEquals(1,parameter(list,"limit").path("schema").path("minimum").asInt());
+        assertEquals(100,parameter(list,"limit").path("schema").path("maximum").asInt());
+        assertEquals(4096,parameter(list,"cursor").path("schema").path("maxLength").asInt());
+        assertEquals(80,parameter(list,"username").path("schema").path("maxLength").asInt());
+        var detail=operation(doc,"/api/v1/staff-admin/users/{id}","get");
+        assertTrue(detail.path("responses").has("404"));
+        assertEquals(Set.of("id","scope","propertyId"),parameterNames(detail));
+        assertEquals("uuid",parameter(detail,"id").path("schema").path("format").asText());
+        var roles=operation(doc,"/api/v1/staff-admin/roles","get");
+        assertTrue(parameterNames(roles).isEmpty());
+        assertSuccessSchema(roles,"200","StaffAdminRolesResponse");
+        assertSuccessSchema(list,"200","StaffAdminUsersPage");
+        assertSuccessSchema(detail,"200","StaffAdminUserDetail");
+        var schemas=doc.path("components").path("schemas");
+        var user=schemas.path("StaffAdminUserView");
+        var fields=Set.of("id","username","workEmail","status","roleCode","membershipStatus","organizationId","propertyIds","createdAt","updatedAt","version");
+        assertEquals(fields,keys(user.path("properties")));assertEquals(fields,strings(user.path("required")));
+        assertEquals(Set.of("SUPER_ADMIN","GERENCIA","RECEPCION","OPERACIONES","AUDITOR"),strings(user.path("properties").path("roleCode").path("enum")));
+        assertEquals(Set.of("string","null"),strings(schemas.path("StaffAdminUsersPage").path("properties").path("nextCursor").path("type")));
+        assertEquals(Set.of("type","title","status","code"),keys(schemas.path("StaffAdminReadError").path("properties")));
+    }
+
+    private Set<String> keys(JsonNode object) {
+        var result = new TreeSet<String>();object.properties().forEach(entry -> result.add(entry.getKey()));return result;
+    }
+
+    @Test
+    void staffStayLifecycleDocumentsIdempotentScopedCommandsAndExactConcurrencyTimestamp() throws Exception {
+        var doc = document();
+        for (String action : List.of("check-in", "check-out")) {
+            var op = operation(doc, "/api/v1/reservations/{reservationId}/stays/{stayId}/" + action, "post");
+            assertEquals("staff", op.path("x-audience").asText());
+            assertTrue(op.path("security").get(0).has("bearerAuth"));
+            assertTrue(op.path("description").asText().contains("RESERVATION_MANAGE"));
+            assertTrue(parameter(op, "propertyId").path("required").asBoolean());
+            assertEquals("header", parameter(op, "Idempotency-Key").path("in").asText());
+            assertTrue(parameter(op, "Idempotency-Key").path("required").asBoolean());
+            for (String code : List.of("200", "400", "401", "403", "404", "409")) assertTrue(op.path("responses").has(code));
+            assertSuccessSchema(op, "200", "StaffStayLifecycleResult");
+            assertTrue(op.path("responses").path("200").path("headers").has("Cache-Control"));
+        }
+        var schemas = doc.path("components").path("schemas");
+        var request = schemas.path("StaffStayLifecycleRequest");
+        assertFalse(request.path("additionalProperties").asBoolean());
+        var requestFields = new HashSet<String>();
+        request.path("properties").properties().forEach(p -> requestFields.add(p.getKey()));
+        assertEquals(Set.of("expectedStatus", "expectedUpdatedAt", "expectedRoomId"), requestFields);
+        assertTrue(strings(request.path("required")).containsAll(Set.of("expectedStatus", "expectedUpdatedAt")));
+        assertEquals(1, request.path("properties").path("expectedUpdatedAt").path("minLength").asInt());
+        assertEquals(40, request.path("properties").path("expectedUpdatedAt").path("maxLength").asInt());
+        assertEquals(Set.of("operationId", "propertyId", "reservationId", "stayId", "status", "completedAt"), strings(schemas.path("StaffStayLifecycleResult").path("required")));
+        assertEquals("date-time", schemas.path("StaffStay").path("properties").path("updatedAt").path("format").asText());
+        assertTrue(strings(schemas.path("StaffStay").path("required")).contains("updatedAt"));
+    }
+
     private JsonNode document() throws Exception {
         return json.readTree(mvc.perform(get("/v3/api-docs")).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+    }
+
+    @Test
+    void staffAdminCommandsDocumentStrictBodiesAndNoReactivation() throws Exception {
+        var doc=document();var schemas=doc.path("components").path("schemas");
+        var routes=Map.of("/api/v1/staff-admin/users/{id}",List.of("patch","StaffAdminContactCommand"),
+            "/api/v1/staff-admin/users/{id}/membership",List.of("put","StaffAdminMembershipCommand"),
+            "/api/v1/staff-admin/users/{id}/status",List.of("patch","StaffAdminStatusCommand"));
+        for(var entry:routes.entrySet()) {
+            var op=operation(doc,entry.getKey(),entry.getValue().get(0));
+            assertEquals("internal-bff",op.path("x-audience").asText());
+            assertTrue(op.path("security").get(0).has("bearerAuth"));
+            assertTrue(parameter(op,"scope").path("required").asBoolean());
+            assertSuccessSchema(op,"200","StaffAdminMutationResult");
+            for(String status:List.of("400","401","403","404","409","413","415","503"))assertTrue(op.path("responses").has(status));
+            var command=schemas.path(entry.getValue().get(1));
+            assertFalse(command.path("additionalProperties").asBoolean(true));
+            assertEquals(9007199254740990L,command.path("properties").path("expectedVersion").path("maximum").asLong());
+        }
+        var state=schemas.path("StaffAdminStatusCommand").path("properties").path("status");
+        if(state.has("$ref"))state=schemas.path(state.path("$ref").asText().replace("#/components/schemas/",""));
+        assertEquals(Set.of("ACTIVE","SUSPENDED","DISABLED"),strings(state.path("enum")));
+        assertEquals(50,schemas.path("StaffAdminContactCommand").path("properties").path("workEmail").path("maxLength").asInt());
+        assertEquals(Set.of("organizationId","staffUserId","version","changed"),strings(schemas.path("StaffAdminMutationResult").path("required")));
+    }
+
+    @Test
+    void staffCreationDocumentsSuspendedViewAndStrictInputWithoutCredentials() throws Exception {
+        var doc=document();var op=operation(doc,"/api/v1/staff-admin/users","post");
+        assertSuccessSchema(op,"201","StaffAdminUserView");
+        assertTrue(op.path("security").get(0).has("bearerAuth"));
+        var schema=doc.path("components").path("schemas").path("StaffAdminCreateCommand");
+        assertEquals(Set.of("username","workEmail","roleCode","propertyIds"),strings(schema.path("required")));
+        assertFalse(schema.path("additionalProperties").asBoolean(true));
+        assertEquals(50,schema.path("properties").path("workEmail").path("maxLength").asInt());
+    }
+
+    @Test
+    void staffInvitationDocumentsScopedAdminAndPublicOneUseConsumer() throws Exception {
+        var doc=document();
+        var invite=operation(doc,"/api/v1/staff-admin/users/{id}/invitation","post");
+        assertTrue(parameter(invite,"scope").path("required").asBoolean());
+        assertTrue(invite.path("security").get(0).has("bearerAuth"));
+        var consume=operation(doc,"/api/v1/staff-auth/invitations/consume","post");
+        assertTrue(consume.path("security").isEmpty()||consume.path("security").isMissingNode());
+        assertTrue(consume.path("requestBody").path("content").has("application/json"));
+        assertCodes(consume,"200","400","409","503");
     }
 
     private JsonNode operation(JsonNode doc, String path, String method) {

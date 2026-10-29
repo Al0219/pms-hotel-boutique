@@ -1,3 +1,6 @@
+import { ServiceRequestDisclosureGroup } from '@/modules/service-requests/presentation/ServiceRequestDisclosure';
+import {GuestServiceRequestsList} from '@/modules/service-requests/presentation/GuestServiceRequestsList';
+import { environment } from '@/config/environment';
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { Pressable, ScrollView, Text, View } from 'react-native';
@@ -69,7 +72,8 @@ export function AccountStayHubScreen({ service }: AccountStayHubScreenProps) {
   const { isCheckedOut } = useCheckoutStatus();
   const completeSessionRequest = useCompleteSessionServiceRequest();
   const { dismissNotice, notice } = useGuestNotice();
-  const activeRequests = filterServiceRequests(requests, 'ACTIVE');
+  const displayedRequests=environment.useMockApi?requests:requests.filter(item=>item.kind!=='HOUSEKEEPING'&&item.kind!=='ROOM_SERVICE'&&item.kind!=='AMENITIES');
+  const activeRequests = filterServiceRequests(displayedRequests, 'ACTIVE');
   const submittedConfirmationVisible = notice?.type === 'SERVICE_REQUEST_SUCCESS';
 
   if (remoteState.kind === 'loading') {
@@ -128,25 +132,24 @@ export function AccountStayHubScreen({ service }: AccountStayHubScreenProps) {
     <View style={accountStayHubStyles.screen} testID="account-stay-hub-screen">
       <GuestRootHeader title="Inicio" />
       <ScrollView contentContainerStyle={accountStayHubStyles.content} style={accountStayHubStyles.scroll}>
-        <Text accessibilityRole="header" style={accountStayHubStyles.sectionTitle}>Mi estadía</Text>
-        <Text style={accountStayHubStyles.subtitle}>Tu reserva vinculada</Text>
         <View style={accountStayHubStyles.stayCard}>
           <Text style={accountStayHubStyles.stayCardEyebrow}>{roomText}</Text>
           <Text style={accountStayHubStyles.stayCardTitle}>{stay.roomType.name}</Text>
           <Text style={accountStayHubStyles.stayCardBody}>{stayDates}</Text>
           <Text style={accountStayHubStyles.stayCardBody}>{`Check-out · ${formatStayDate(stay.departure)}`}</Text>
           <View style={accountStayHubStyles.reference}>
-            <Text style={accountStayHubStyles.referenceText}>{stay.reservationId}</Text>
+            <Text testID="account-stay-reference" numberOfLines={1} ellipsizeMode="tail" style={accountStayHubStyles.referenceText}>{stay.confirmationCode ? `Reserva · ${stay.confirmationCode}` : "Reserva · Referencia no disponible"}</Text>
           </View>
         </View>
         <Pressable accessibilityLabel={isCheckedOut ? 'Ver factura' : 'Abrir Check-out'} accessibilityRole="button" onPress={() => router.push(isCheckedOut ? '/account/invoice' : '/account/checkout')} style={accountStayHubStyles.button} testID="account-checkout-launcher"><View accessible={false} testID="account-checkout-launcher-icon"><SymbolView accessibilityElementsHidden name={isCheckedOut ? guestFeatureIcons.invoice : guestFeatureIcons.checkout} size={20} tintColor={tokens.color.white} /></View><Text style={accountStayHubStyles.buttonLabel}>{isCheckedOut ? 'Ver factura' : 'Check-out'}</Text></Pressable>
         <View style={accountStayHubStyles.requestsSection} testID="account-session-requests">
           <Text accessibilityRole="header" style={accountStayHubStyles.sectionTitle}>Mis servicios</Text>
-          {activeRequests.length === 0 ? <Text style={accountStayHubStyles.subtitle}>Aún no tienes servicios solicitados.</Text> : activeRequests.slice(0, 3).map((request) => <SessionServiceRequestCard key={request.sessionRequestId} onComplete={completeSessionRequest} onRemove={removeRequest} onEdit={(item) => {
+          {!environment.useMockApi ? <GuestServiceRequestsList showRefresh={false} filter="ACTIVE" additionalCount={displayedRequests.length} additionalFilteredCount={activeRequests.length}/> : null}
+          <ServiceRequestDisclosureGroup>{activeRequests.length === 0 ? environment.useMockApi ? <Text style={accountStayHubStyles.subtitle}>Aún no tienes servicios solicitados.</Text> : null : activeRequests.slice(0, 3).map((request) => <SessionServiceRequestCard key={request.sessionRequestId} onComplete={completeSessionRequest} onRemove={removeRequest} onEdit={(item) => {
             const target = sessionServiceRequestEditPath(item);
             router.push({ pathname: target, params: { editRequestId: item.sessionRequestId, editMode: item.kind, returnTo: 'account' } });
-          }} request={request} requests={requests} />)}
-          {requests.length > 0 ? <Pressable accessibilityRole="button" onPress={() => router.push('/services/requests')} style={accountStayHubStyles.button} testID="account-session-requests-all"><Text style={accountStayHubStyles.buttonLabel}>Ver todos</Text></Pressable> : null}
+          }} request={request} requests={requests} />)}</ServiceRequestDisclosureGroup>
+          {(!environment.useMockApi || requests.length > 0) ? <Pressable accessibilityRole="button" onPress={() => router.push('/services/requests')} style={accountStayHubStyles.button} testID="account-session-requests-all"><Text style={accountStayHubStyles.buttonLabel}>Ver todos</Text></Pressable> : null}
         </View>
       </ScrollView>
       <ConfirmationModal body={notice?.mode === 'UPDATED' ? 'Los cambios se guardaron correctamente.' : 'Tu solicitud fue registrada correctamente.'} confirmLabel="Entendido" onCancel={dismissNotice} onConfirm={dismissNotice} showCancel={false} testID="account-service-request-submitted" title={notice?.mode === 'UPDATED' ? 'Solicitud actualizada' : 'Solicitud enviada'} visible={submittedConfirmationVisible} />

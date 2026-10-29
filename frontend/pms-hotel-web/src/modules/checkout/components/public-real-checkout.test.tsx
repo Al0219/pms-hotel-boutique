@@ -112,10 +112,13 @@ describe('Real J6 submit', () => {
     const view = await paymentPage(quantity, multiple);
     expect(sessionStorage.getItem('pms:public-cart:v1:real')).not.toBeNull();
     const removal = vi.spyOn(sessionStorage, 'removeItem');
+    const invalidate = vi.spyOn(clients.at(-1)!, 'invalidateQueries');
     const submit = screen.getByRole('button', { name: 'Confirmar reserva con pago simulado' });
     fireEvent.click(submit); fireEvent.click(submit);
     await waitFor(() => expect(push).toHaveBeenCalledWith(expect.stringContaining('/reserva/confirmacion?')));
     expect(requests).toHaveLength(1);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['guest', 'reservations'] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['guest', 'account-summary'] });
     expect(screen.getByRole('button', { name: 'Carrito' })).toHaveTextContent('0');
     expect(sessionStorage.getItem('pms:public-cart:v1:real')).toBeNull();
     expect(removal.mock.calls.filter(([key]) => key === 'pms:public-cart:v1:real')).toHaveLength(1);

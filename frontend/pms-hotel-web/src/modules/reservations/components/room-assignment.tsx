@@ -45,7 +45,8 @@ export function RoomAssignment({ onClose, onAssigned, ...props }: Readonly<RoomA
               : preview && <>
                 <p className={styles.summary}><strong>{preview.roomType}</strong><span>{day(preview.arrival)} → {day(preview.departure)}</span></p>
                 <p>Selecciona la habitación física para esta estadía. El tipo reservado y su tarifa se conservan.</p>
-                {!preview.canAssign && <p className={styles.notice} role="status">{preview.reason}</p>}
+                <p className={styles.notice}>No se pueden asignar habitaciones sucias. Asignar no realiza el check-in: la habitación deberá estar inspeccionada antes de entregarla al huésped.</p>
+                {!preview.canAssign && <p className={styles.error} role="status">{preview.reason}</p>}
                 {preview.rooms.length === 0 ? <p role="status">No hay habitaciones disponibles de este tipo para estas fechas.</p>
                   : <fieldset className={styles.choices} disabled={action.busy || !preview.canAssign}>
                     <legend>Habitaciones del mismo tipo</legend>
@@ -53,12 +54,14 @@ export function RoomAssignment({ onClose, onAssigned, ...props }: Readonly<RoomA
                       <input type="radio" name={`assignment-${props.stayId}`} value={room.id} checked={selected === room.id}
                         disabled={!room.selectable || action.query.isFetching} onChange={() => { setSelected(room.id); action.clearError(); }} />
                       <span><strong>Habitación {room.number}</strong><small>{room.floor === null ? 'Piso no registrado' : `Piso ${room.floor}`}</small>
-                        <small>{room.reason ?? 'Disponible para asignación'}</small></span>
+                        <small className={!room.selectable ? styles.blockedReason : undefined}>{!room.selectable ? `No asignable: ${room.reason ?? 'No cumple las condiciones de asignación.'}` : 'Disponible para asignación'}</small>
+                        <small>Limpieza: {room.housekeepingStatus === 'INSPECTED' ? 'Inspeccionada' : room.housekeepingStatus === 'DIRTY' ? 'Sucia' : room.housekeepingStatus === 'CLEAN' ? 'Limpia · pendiente de inspección' : room.housekeepingStatus === null ? 'Sin seguimiento' : 'No disponible'}</small>
+                        {room.warning && <small className={!room.selectable ? styles.blockedReason : styles.warning}>{room.warning}</small>}</span>
                       <span className={styles.badge}>{room.status === 'ACTIVE' ? 'Operativa' : room.status === 'OOO' ? 'Fuera de orden' : 'Fuera de servicio'}</span>
                     </label>)}
                   </fieldset>}
                 {preview.canAssign && !preview.rooms.some(room => room.selectable)
-                  && <p className={styles.notice} role="status">No hay habitaciones operativas libres para asignar en estas fechas.</p>}
+                  && <p className={styles.error} role="status">No hay habitaciones que cumplan las condiciones de asignación para estas fechas.</p>}
                 <p className={styles.note}>Se verificará nuevamente antes de guardar. Esta acción no confirma la reserva ni genera cargos.</p>
               </>}
       {action.error && <p role="alert" className={styles.error}>{action.error}</p>}

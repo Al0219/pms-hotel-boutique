@@ -11,6 +11,9 @@ export interface AssignmentRoom {
   status: 'ACTIVE' | 'OOO' | 'OOS';
   selectable: boolean;
   reason: string | null;
+  housekeepingStatus?: 'DIRTY' | 'CLEAN' | 'INSPECTED' | null;
+  readyForCheckIn?: boolean;
+  warning?: string | null;
 }
 export interface RoomAssignmentPreview extends RoomAssignmentScope {
   arrival: string;

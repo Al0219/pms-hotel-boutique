@@ -201,3 +201,26 @@ la configuración SMTP se valida al arrancar y el transporte al solicitar envío
 Los tests usan transporte mock/configuración sintética, sin correos externos.
 QA real de OTP sigue manual y EN_QA; la limitación resend.dev aplica solo a Resend,
 no confirma por sí misma disponibilidad/autorización Gmail.
+
+## Extensión Guest Android nativo — 2026-10-25, EN_QA
+
+Autorizada explícitamente por Alan: [contrato56](56_ANDROID_GUEST_MVP_CONTRACT_QA.md).
+Guest sessions/me/refresh/logout/account summary admiten BFF Web o Android
+nativo seguro; Google y registro siguen BFF-only, browser sin tokens. Refresh
+nativo en X-Guest-Refresh-Token sin cookie/Origin, servicio/rotación existentes.
+Dos GET propios account/reservations y /{reservationId}/stays/{stayId}, siempre
+GuestPrincipal y vínculos persistidos/property coherente. Sin tablas/migraciones
+ni cambios Staff. OpenAPI y sus pruebas incluyen audiencia guest-bff-or-native,
+Bearer Guest y alternativas de refresh; sin exclusiones nuevas.
+
+## Corrección posterior — reservas Guest, EN_QA (2026-10-25)
+
+[Contrato57](57_GUEST_BOOKING_LINK_RECOVERY.md) reutiliza las lecturas existentes,
+agrega POST account/reservations/reconcile y reservationStatus al listado.
+Solo GuestPrincipal, correo verificado persistido y CONFIRMED; sin transferencia.
+Migración aditiva013 habilita procedencia ACCOUNT desde email_verified_at para
+cuentas anteriores sin prueba; no inventa OTP/Google ni crea tablas. Transacción
+independiente, auditoría/locks/ON CONFLICT existentes. Web confirma primero y
+recupera después; Web/Android reconcilian antes de listar. La confirmación/pago
+nunca se repite o revierte por fallo de vínculo. Amplía el alcance inicial del
+MVP56; no modifica migraciones aplicadas ni cierra QA previos. OpenAPI con paridad.

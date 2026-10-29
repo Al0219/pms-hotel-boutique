@@ -26,14 +26,15 @@ export function useUnifiedLogin(returnTo?: string, googleError = false) {
     if (active.current) return;
     active.current = true; setBusy(true); setError(undefined);
     try {
-      const result = mapUnifiedLogin(await loginWithCredentials(email, password, context));
+      const destination = guestAccessReturn(returnTo) ?? (returnTo === undefined ? readGuestCheckoutReturn() : undefined);
+      const requestedContext = destination ? 'GUEST' : context;
+      const result = mapUnifiedLogin(await loginWithCredentials(email, password, requestedContext), requestedContext);
       if (result.kind === 'selection') { setContexts(result.contexts); return; }
       setPassword(''); setContexts([]); setRedirecting(true);
       if (result.context === 'GUEST') {
-        const destination = guestAccessReturn(returnTo) ?? (returnTo === undefined ? readGuestCheckoutReturn() : undefined) ?? '/cuenta';
         clearGuestCheckoutReturn();
         await client.invalidateQueries({ queryKey: ['guest-session'] });
-        router.replace(destination);
+        router.replace(destination ?? '/cuenta');
       } else {
         await client.invalidateQueries({ queryKey: staffSessionKey });
         router.replace('/dashboard');

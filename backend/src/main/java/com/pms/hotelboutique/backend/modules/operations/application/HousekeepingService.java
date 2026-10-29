@@ -23,6 +23,14 @@ public interface HousekeepingService {
 
     HkRoomView markDirty(UUID propertyId, UUID roomId, UUID actorId);
 
+    HkRoomView markDirty(UUID propertyId, UUID roomId, String reason, UUID actorId);
+
+    /** Internal transactional checkout effect; identity is SYSTEM, correlation is the stay. */
+    HkRoomView markDirtyAfterCheckout(UUID propertyId, UUID roomId, UUID stayId);
+
+    /** Trusted internal Staff effect; callers supply the authorized actor and operation correlation. */
+    HkRoomView markDirtyAfterCheckout(UUID propertyId, UUID roomId, UUID stayId, UUID actorId, UUID operationId);
+
     HkRoomView inspect(UUID propertyId, UUID roomId, UUID actorId);
 
     HkRoomView rejectInspection(UUID propertyId, UUID roomId, String reason, UUID actorId);

@@ -28,3 +28,12 @@ it("hides Reportes without an applicable read permission", () => {
   render(<StaffShell><p>Panel</p></StaffShell>);
   expect(screen.queryByRole("link", { name: "Reportes" })).not.toBeInTheDocument();
 });
+
+it('shows Housekeeping only with the existing operations permission', () => {
+  mocks.session.mockReturnValue({roleId:'OPERACIONES',roleName:'Operaciones',userName:'operador',permissions:['OPERATIONS_MANAGE']});
+  const view=render(<StaffShell><p>Contenido</p></StaffShell>);
+  expect(screen.getByRole('link',{name:'Housekeeping'})).toHaveAttribute('href','/housekeeping');
+  mocks.session.mockReturnValue({roleId:'RECEPCION',roleName:'Recepción',userName:'recepcion',permissions:['RESERVATION_MANAGE']});
+  view.rerender(<StaffShell><p>Contenido</p></StaffShell>);
+  expect(screen.queryByRole('link',{name:'Housekeeping'})).not.toBeInTheDocument();
+});

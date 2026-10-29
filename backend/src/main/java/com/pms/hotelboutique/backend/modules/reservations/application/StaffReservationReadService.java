@@ -65,7 +65,7 @@ public class StaffReservationReadService {
                             .orElseThrow(() -> new IllegalStateException("Missing scoped room"));
                     return new StaffStay(s.id(), s.arrival(), s.departure(), s.status().name(),
                             new StaffRoomType(type.getId(), type.getCode(), type.getName()),
-                            room == null ? null : new StaffRoom(room.getId(), room.getCode()));
+                            room == null ? null : new StaffRoom(room.getId(), room.getCode()), s.updatedAt());
                 }).toList();
         return new StaffReservation(reservation.id(), reservation.propertyId(), reservation.confirmationCode(),
                 reservation.status().name(), reservation.sourceChannel(), reservation.sourceReference(),
@@ -82,7 +82,8 @@ public class StaffReservationReadService {
             @Schema(description = "Persisted stays; may be empty for historical reservation headers") List<StaffStay> stays) { }
     public record StaffStay(UUID stayId, LocalDate arrival, LocalDate departure,
             @Schema(allowableValues = {"RESERVED", "IN_HOUSE", "CHECKED_OUT", "CANCELLED", "NO_SHOW"}) String status,
-            StaffRoomType roomType, @Schema(nullable = true, description = "Null when no physical room is assigned") StaffRoom room) { }
+            StaffRoomType roomType, @Schema(nullable = true, description = "Null when no physical room is assigned") StaffRoom room,
+            @Schema(description = "Persisted UTC timestamp; preserve exact string for lifecycle concurrency checks") Instant updatedAt) { }
     public record StaffRoomType(UUID roomTypeId, String code, String name) { }
     public record StaffRoom(UUID roomId, String code) { }
 }

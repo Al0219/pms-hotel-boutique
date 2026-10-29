@@ -43,5 +43,6 @@ public class RefreshToken {
     public AuthSession getSession() { return session; }
     public UUID getFamilyId() { return familyId; }
     public boolean isActive(Instant now) { return revokedAt == null && expiresAt.isAfter(now); }
+    public boolean isRevoked() { return revokedAt != null; }
     public void revoke(Instant now) { revokedAt = now; }
 }

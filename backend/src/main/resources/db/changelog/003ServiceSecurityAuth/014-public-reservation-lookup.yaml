@@ -1,0 +1,47 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-public-reservation-lookup-014
+      author: jose-bd2
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              CREATE TABLE public_reservation_challenges (
+                id uuid PRIMARY KEY,
+                email varchar(320) NOT NULL,
+                email_fingerprint char(64) NOT NULL,
+                binding_hash char(64) NOT NULL,
+                otp_hash char(64) NOT NULL,
+                generation integer NOT NULL DEFAULT 1,
+                status varchar(16) NOT NULL CHECK (status IN ('PENDING_SEND','READY','UNKNOWN','CONSUMED')),
+                created_at timestamptz NOT NULL,
+                expires_at timestamptz NOT NULL,
+                otp_expires_at timestamptz NOT NULL
+              );
+              CREATE TABLE public_reservation_lookup_events (
+                id uuid PRIMARY KEY,
+                email_fingerprint char(64) NOT NULL,
+                kind varchar(8) NOT NULL CHECK (kind IN ('SEND','FAIL')),
+                occurred_at timestamptz NOT NULL
+              );
+              CREATE INDEX ix_lookup_email_budget ON public_reservation_lookup_events(email_fingerprint,kind,occurred_at DESC);
+              CREATE TABLE public_reservation_access (
+                token_hash char(64) PRIMARY KEY,
+                challenge_id uuid NOT NULL UNIQUE REFERENCES public_reservation_challenges(id),
+                email varchar(320) NOT NULL,
+                created_at timestamptz NOT NULL,
+                expires_at timestamptz NOT NULL,
+                revoked_at timestamptz
+              );
+              CREATE TABLE public_reservation_lookup_audit (
+                id uuid PRIMARY KEY,
+                challenge_id uuid NOT NULL REFERENCES public_reservation_challenges(id),
+                event varchar(24) NOT NULL,
+                occurred_at timestamptz NOT NULL
+              );
+              CREATE FUNCTION reject_lookup_audit_mutation() RETURNS trigger LANGUAGE plpgsql AS $$
+              BEGIN RAISE EXCEPTION 'Reservation lookup audit is append-only'; END;
+              $$;
+              CREATE TRIGGER lookup_audit_append_only BEFORE UPDATE OR DELETE ON public_reservation_lookup_audit
+                FOR EACH ROW EXECUTE FUNCTION reject_lookup_audit_mutation();

@@ -39,3 +39,5 @@ export type {
 } from './domain/booking-search-criteria';
 
 export { usePublicSearchCriteria } from './components/public-booking-provider';
+
+export { RoomPhotoCarousel } from './ui/room-photo-carousel';

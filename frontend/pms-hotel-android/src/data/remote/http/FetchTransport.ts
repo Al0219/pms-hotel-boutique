@@ -15,6 +15,7 @@ export class FetchTransport implements HttpClient {
       throw new HttpError(`HTTP request failed with ${response.status}`, response.status);
     }
 
+    if (response.status === 204) return null as T;
     return (await response.json()) as T;
   }
 }

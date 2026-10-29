@@ -9,8 +9,12 @@ import { Button } from '@/shared/components';
 import { useReservationLink } from '../hooks/use-reservation-link';
 import { otpError, referenceError } from '../model/reservation-link';
 import styles from './reservation-link-form.module.css';
+import { RealReservationLinkForm } from './real-reservation-link-form';
 
 export function ReservationLinkForm({ standalone = false }: { standalone?: boolean } = {}) {
+  return getPublicEnvironment().useMockApi ? <MockReservationLinkForm standalone={standalone} /> : <RealReservationLinkForm standalone={standalone} />;
+}
+function MockReservationLinkForm({ standalone = false }: { standalone?: boolean }) {
   const { account } = useGuestSession();
   const mockMode = getPublicEnvironment().useMockApi;
   const link = useReservationLink();

@@ -100,11 +100,16 @@ describe('Staff new reservation journey', () => {
     expect(await screen.findByRole('heading', { name: 'No hay tipos con tarifa disponibles' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Revisar reserva/ })).toBeDisabled();
   });
-  it('does not send a synthetic command in real mode and does not fake a created reservation', async () => {
-    vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'false'); const { user } = setup(); fill();
+  it('uses the real Staff transport instead of a synthetic command when mocks are disabled', async () => {
+    const real = vi.fn(() => HttpResponse.json({}, { status: 503 }));
+    const synthetic = vi.fn(() => HttpResponse.json({}));
+    mockServer.use(http.get('*/api/staff/reservations/creation-options', real), http.post('*/__mock/staff-reservations/:propertyId', synthetic));
+    vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'false'); const { user } = setup();
+    for (const [label, value] of [['Nombre *','Ana'],['Apellidos *','Perez'],['Correo electrónico *','ana@example.test'],['Teléfono *','+502 5555 5555']])
+      fireEvent.change(screen.getByLabelText(label), { target: { value } });
     await user.click(screen.getByRole('button', { name: /Consultar disponibilidad/ }));
-    expect(screen.getByRole('alert')).toHaveTextContent('todavía no están conectadas');
-    expect(screen.getByLabelText('Nombre completo *')).toHaveValue('Ana Pérez');
+    expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos consultar las habitaciones');
+    expect(real).toHaveBeenCalledTimes(1); expect(synthetic).not.toHaveBeenCalled();
     expect(screen.queryByRole('heading', { name: 'Reserva registrada' })).not.toBeInTheDocument();
   });
   it('denies the creation UI when the staff permission is absent', () => {

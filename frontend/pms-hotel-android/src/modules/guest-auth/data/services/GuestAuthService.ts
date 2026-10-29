@@ -1,7 +1,9 @@
 import { type GuestAuthSession } from '@/modules/guest-auth/domain/models/GuestAuthSession';
 import { type GuestLoginRequest } from '@/modules/guest-auth/domain/models/GuestLoginRequest';
 
-/** Auth boundary for the frontend-first mock; it does not imply backend authentication. */
+/** Guest Auth boundary, implemented by explicit mock or native HTTP configuration. */
 export interface GuestAuthService {
+  restore?(): Promise<GuestAuthSession | null>;
+  logout?(): Promise<void>;
   login(request: GuestLoginRequest): Promise<GuestAuthSession>;
 }

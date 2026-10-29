@@ -277,3 +277,14 @@ handlers existentes; POST sessions y GET/DELETE session permanecen compatibles,
 con `deprecated` exclusivamente en OpenAPI y sin fecha de retirada. Refresh
 permanece en POST refresh con cookie pms_staff_refresh. No cambia identidad,
 JWT, refresh, auditoría, permisos ni semántica de sesión; no modifica el BFF.
+
+## Extensión Guest Android nativo — 2026-10-25, EN_QA
+
+Autorizada explícitamente por Alan: [contrato56](56_ANDROID_GUEST_MVP_CONTRACT_QA.md).
+Guest sessions/me/refresh/logout/account summary admiten BFF Web o Android
+nativo seguro; Google y registro siguen BFF-only, browser sin tokens. Refresh
+nativo en X-Guest-Refresh-Token sin cookie/Origin, servicio/rotación existentes.
+Dos GET propios account/reservations y /{reservationId}/stays/{stayId}, siempre
+GuestPrincipal y vínculos persistidos/property coherente. Sin tablas/migraciones
+ni cambios Staff. OpenAPI y sus pruebas incluyen audiencia guest-bff-or-native,
+Bearer Guest y alternativas de refresh; sin exclusiones nuevas.

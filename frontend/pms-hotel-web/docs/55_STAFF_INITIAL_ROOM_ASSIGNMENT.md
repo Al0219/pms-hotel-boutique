@@ -1,5 +1,9 @@
 # Staff — Asignación inicial de habitación física
 
+Ampliación aprobada: [Web65](65_ROOM_READINESS_QA.md)/Backend52 agrega limpieza
+actual y advertencia a candidatas. Preasignar no equivale a entregar/check-in.
+El cierre histórico siguiente no acredita QA manual de esa ampliación.
+
 Estado vigente del incremento real: **COMPLETADA**; Alan confirmó QA manual
 PASS de asignación física y estados operativos el 2026-10-08 y autorizó el cierre.
 Contrato y evidencia en [Backend50](../../../backend/docs/50_STAFF_INITIAL_ROOM_ASSIGNMENT_CONTRACT.md)

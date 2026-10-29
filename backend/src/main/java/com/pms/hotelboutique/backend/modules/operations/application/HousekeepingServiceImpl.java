@@ -5,6 +5,7 @@ import com.pms.hotelboutique.backend.modules.operations.infrastructure.persisten
 import com.pms.hotelboutique.backend.modules.reservations.application.AuditService;
 import com.pms.hotelboutique.backend.modules.reservations.domain.ReservationAuditEvent;
 import com.pms.hotelboutique.backend.modules.securityauth.application.AuthorizedPropertyScope;
+import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -19,15 +20,21 @@ public class HousekeepingServiceImpl implements HousekeepingService {
 
     private final HkRoomStateRepository states;
     private final AuditService audit;
+    private final RoomReadinessService readiness;
+    private final EntityManager entities;
 
-    public HousekeepingServiceImpl(HkRoomStateRepository states, AuditService audit) {
+    public HousekeepingServiceImpl(HkRoomStateRepository states, AuditService audit, RoomReadinessService readiness,
+            EntityManager entities) {
         this.states = states;
         this.audit = audit;
+        this.readiness = readiness;
+        this.entities = entities;
     }
 
     @Override
     public HkRoomView trackRoom(UUID propertyId, UUID roomId, UUID actorId) {
         requireIds(propertyId, roomId);
+        readiness.lockRoom(propertyId, roomId);
         return HkRoomView.from(states.findByPropertyIdAndRoomId(propertyId, roomId)
                 .orElseGet(() -> states.save(new HkRoomState(UUID.randomUUID(), propertyId, roomId,
                         Instant.now()))));
@@ -36,7 +43,9 @@ public class HousekeepingServiceImpl implements HousekeepingService {
     @Override
     @Transactional(readOnly = true)
     public HkRoomView statusOf(UUID propertyId, UUID roomId) {
-        return HkRoomView.from(existing(propertyId, roomId));
+        requireIds(propertyId, roomId);
+        return HkRoomView.from(states.findByPropertyIdAndRoomId(propertyId, roomId)
+                .orElseThrow(() -> new HousekeepingException("room is not tracked")));
     }
 
     @Override
@@ -47,6 +56,44 @@ public class HousekeepingServiceImpl implements HousekeepingService {
     @Override
     public HkRoomView markDirty(UUID propertyId, UUID roomId, UUID actorId) {
         return transition(propertyId, roomId, actorId, "HK_SOILED", (state, now) -> state.markDirty(now));
+    }
+
+    @Override
+    public HkRoomView markDirty(UUID propertyId, UUID roomId, String reason, UUID actorId) {
+        if (reason == null || reason.isBlank()) throw new HousekeepingException("reason is required");
+        return transition(propertyId, roomId, actorId, "HK_SOILED", reason.trim(), (state, now) -> state.markDirty(now));
+    }
+
+    @Override
+    public HkRoomView markDirtyAfterCheckout(UUID propertyId, UUID roomId, UUID stayId) {
+        return soilAfterCheckout(propertyId, roomId, stayId, null, stayId);
+    }
+
+    @Override
+    public HkRoomView markDirtyAfterCheckout(UUID propertyId, UUID roomId, UUID stayId, UUID actorId, UUID operationId) {
+        if (actorId == null || operationId == null) throw new HousekeepingException("Staff context is required");
+        return soilAfterCheckout(propertyId, roomId, stayId, actorId, operationId);
+    }
+
+    private HkRoomView soilAfterCheckout(UUID propertyId, UUID roomId, UUID stayId, UUID actorId, UUID correlationId) {
+        if (stayId == null) throw new HousekeepingException("stay id is required");
+        readiness.lockRoom(propertyId, roomId);
+        var current = states.findByPropertyIdAndRoomId(propertyId, roomId);
+        HkRoomState state;
+        HkRoomState.Status before = null;
+        if (current.isPresent()) {
+            state = current.get();
+            // A transaction may have cached HK before waiting for the shared Room lock.
+            entities.refresh(state);
+            before = state.getStatus();
+        } else {
+            state = states.save(new HkRoomState(UUID.randomUUID(), propertyId, roomId, Instant.now()));
+        }
+        state.markDirty(Instant.now());
+        state.recordActor(actorId);
+        record(state, "HK_SOILED", before,
+                "Salida del huésped: habitación pendiente de limpieza.", actorId, correlationId);
+        return HkRoomView.from(state);
     }
 
     @Override
@@ -78,7 +125,11 @@ public class HousekeepingServiceImpl implements HousekeepingService {
         state.setDnd(dnd, Instant.now());
         state.recordActor(actorId);
         if (before != dnd) {
-            record(state, "HK_DND_CHANGED", null, dnd ? "DND on" : "DND off", actorId);
+            audit.record(new AuditService.RecordAuditCommand(actorId == null
+                    ? ReservationAuditEvent.ActorType.SYSTEM : ReservationAuditEvent.ActorType.STAFF,
+                    actorId, "HK_DND_CHANGED", "HK_ROOM_STATE", state.getId(), propertyId,
+                    "{\"dnd\":" + before + "}", "{\"dnd\":" + dnd + "}",
+                    dnd ? "DND on" : "DND off", null));
         }
         return HkRoomView.from(state);
     }
@@ -92,6 +143,11 @@ public class HousekeepingServiceImpl implements HousekeepingService {
 
     private HkRoomView transition(UUID propertyId, UUID roomId, UUID actorId, String action,
             HkTransition transition) {
+        return transition(propertyId, roomId, actorId, action, null, transition);
+    }
+
+    private HkRoomView transition(UUID propertyId, UUID roomId, UUID actorId, String action,
+            String reason, HkTransition transition) {
         HkRoomState state = existing(propertyId, roomId);
         HkRoomState.Status before = state.getStatus();
         try {
@@ -100,25 +156,31 @@ public class HousekeepingServiceImpl implements HousekeepingService {
             throw new HousekeepingException(e.getMessage(), e);
         }
         state.recordActor(actorId);
-        record(state, action, before, null, actorId);
+        record(state, action, before, reason, actorId);
         return HkRoomView.from(state);
     }
 
     private HkRoomState existing(UUID propertyId, UUID roomId) {
         requireIds(propertyId, roomId);
+        readiness.lockRoom(propertyId, roomId);
         return states.findByPropertyIdAndRoomId(propertyId, roomId)
                 .orElseThrow(() -> new HousekeepingException("room is not tracked"));
     }
 
     private void record(HkRoomState state, String action, HkRoomState.Status before, String reason,
             UUID actorId) {
+        record(state, action, before, reason, actorId, null);
+    }
+
+    private void record(HkRoomState state, String action, HkRoomState.Status before, String reason,
+            UUID actorId, UUID correlationId) {
         ReservationAuditEvent.ActorType type = actorId == null
                 ? ReservationAuditEvent.ActorType.SYSTEM
                 : ReservationAuditEvent.ActorType.STAFF;
         audit.record(new AuditService.RecordAuditCommand(type, actorId, action, "HK_ROOM_STATE",
                 state.getId(), state.getPropertyId(),
                 before == null ? null : "{\"status\":\"" + before + "\"}",
-                "{\"status\":\"" + state.getStatus() + "\"}", reason, null));
+                "{\"status\":\"" + state.getStatus() + "\"}", reason, correlationId));
     }
 
     private static java.util.Set<UUID> authorizedIds(AuthorizedPropertyScope scope) {

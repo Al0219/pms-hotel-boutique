@@ -1,3 +1,8 @@
+import { environment } from '@/config/environment';
+import { useActiveReservationContext } from '@/modules/guest-auth/presentation/ActiveReservationContextProvider';
+import { useGuestAuthSession } from '@/modules/guest-auth/presentation/GuestAuthSessionProvider';
+import { useRoomServiceOrders } from './hooks/useRoomServiceOrders';
+import type { PersistedRoomServiceOrder } from '../domain/models/PersistedRoomServiceOrder';
 import { router, useLocalSearchParams } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
@@ -14,7 +19,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { NetworkError } from "@/data/remote/http/HttpError";
+import { HttpError, NetworkError } from "@/data/remote/http/HttpError";
 import { GuestCheckoutDueState, useCheckoutStatus } from "@/modules/checkout";
 import {
   guestFeatureIcons,
@@ -236,7 +241,7 @@ function CartPanel({
             >
               <ServiceCatalogItemCard
                 disabled={pending}
-                incrementDisabled={line.quantity >= ROOM_SERVICE_MAX_ITEM_QUANTITY}
+                incrementDisabled={item.available===false||line.quantity >= ROOM_SERVICE_MAX_ITEM_QUANTITY}
                 onDecrement={() => onDecrement(item.fixtureKey)}
                 onIncrement={() => onIncrement(item.fixtureKey)}
                 price={'Q ' + item.priceAmount}
@@ -249,7 +254,7 @@ function CartPanel({
         })
       )}
       <View style={styles.totalSection}>
-        <Text style={styles.deliveryLabel}>Total</Text>
+        <Text style={styles.deliveryLabel}>{environment.useMockApi?"Total":"Total estimado"}</Text>
         <Text style={styles.total} testID="room-service-total">{'Q ' + total}</Text>
       </View>
       <Text style={styles.productName}>Notas (opcional)</Text>
@@ -277,6 +282,9 @@ function SchedulePanel({
   noAvailabilityBody,
   periodsIncompatible,
   pending,
+  editing=false,
+  conflict=false,
+  onReload,
   scheduleError,
   serviceDate,
   submitError,
@@ -294,6 +302,9 @@ function SchedulePanel({
   noAvailabilityBody: string;
   periodsIncompatible: boolean;
   pending: boolean;
+  editing?:boolean;
+  conflict?:boolean;
+  onReload?:()=>void;
   scheduleError: boolean;
   serviceDate: string;
   submitError: boolean;
@@ -409,7 +420,7 @@ function SchedulePanel({
                   body={
                     submitOffline
                       ? "Conéctate a internet y reintenta tu pedido."
-                      : "Intenta nuevamente."
+                      : conflict ? "El pedido cambió o ya no admite modificaciones. Actualiza antes de continuar." : "Revisa productos, cantidades, fecha y horario. Actualiza si el catálogo cambió."
                   }
                   offline={submitOffline}
                   testID={
@@ -424,6 +435,7 @@ function SchedulePanel({
                   }
                 />
               ) : null}
+              {conflict&&onReload?<Button label="Actualizar pedido" onPress={onReload} testID="room-service-reload"/>:null}
               <Button
                 disabled={disabled}
                 label={
@@ -431,7 +443,7 @@ function SchedulePanel({
                     ? "Enviando pedido..."
                     : submitError || submitOffline
                       ? "Reintentar"
-                      : "Confirmar pedido"
+                      : editing ? "Guardar cambios" : "Confirmar pedido"
                 }
                 onPress={onSubmit}
                 testID="room-service-submit"
@@ -444,27 +456,50 @@ function SchedulePanel({
   );
 }
 
-/** Query owns menu state, Mutation owns submit state, and the cart is local UI configuration. */
-export function RoomServiceScreen({
+function orderCart(order?: PersistedRoomServiceOrder) {
+  return {items:order?.items.map(line=>({itemFixtureKey:line.productId,quantity:line.quantity,mealPeriod:line.mealPeriod}))??[]};
+}
+export function RoomServiceScreen(props:RoomServiceScreenProps) {
+  return environment.useMockApi?<RoomServiceForm {...props}/>:<RealRoomServiceScreen {...props}/>;
+}
+function RealRoomServiceScreen(props:RoomServiceScreenProps) {
+  const {activeReservationContext:context}=useActiveReservationContext();const {session}=useGuestAuthSession();
+  const {editRequestId}=useLocalSearchParams<{editRequestId?:string}>();
+  const key=environment.useMockApi?'mock':`${session?.accountId}:${context?.reservationId}:${context?.reservationStayId}:${editRequestId??'new'}`;
+  return !environment.useMockApi&&typeof editRequestId==='string'
+    ? <RoomServiceEditor key={key} {...props} requestId={editRequestId}/>
+    : <RoomServiceForm key={key} {...props}/>;
+}
+function RoomServiceEditor({requestId,...props}:RoomServiceScreenProps&{requestId:string}) {
+  const query=useRoomServiceOrders(props.service);const clock=useAppClock();const row=query.data?.find(order=>order.id===requestId);
+  if(row&&row.status==='OPEN'&&(props.nowMs??clock.nowMs)()<Date.parse(row.modifiableUntil)) return <RoomServiceForm {...props} initialRequest={row} reloadOrder={async()=>(await query.refetch()).data?.find(order=>order.id===requestId)}/>;
+  return <View style={styles.screen}><GuestChildHeader title="Room Service" onBack={()=>router.dismissTo('/services/requests')} backAccessibilityLabel="Volver a mis servicios" backTestID="room-service-edit-back"/><StateCard title={query.isPending?'Cargando pedido':query.isError?'No pudimos cargar el pedido':'Este pedido ya no admite cambios'} body="Actualiza o consulta su estado en Mis servicios." testID="room-service-edit-state" actionLabel="Actualizar" onAction={()=>void query.refetch()}/><GuestNavigationShell/></View>;
+}
+/** Existing cart/form; real lifecycle and amounts come exclusively from Backend. */
+function RoomServiceForm({
   service,
   stayService,
-  nowMs,
-}: RoomServiceScreenProps) {
+  nowMs, initialRequest, reloadOrder,
+}: RoomServiceScreenProps & {initialRequest?:PersistedRoomServiceOrder;reloadOrder?:()=>Promise<PersistedRoomServiceOrder|undefined>}) {
+  const [editing,setEditing]=useState(initialRequest);
   const appClock = useAppClock();
   const getNowMs = nowMs ?? appClock.nowMs;
-  const menuQuery = useRoomServiceMenu(service);
+  const menuQuery = useRoomServiceMenu(service,editing);
   const menu = deriveRemoteState(menuQuery, () => false);
   const stayQuery = useCurrentStay(stayService);
   const stay = deriveRemoteState(stayQuery, () => false);
-  const submission = useSubmitRoomService(service);
+  const submission = useSubmitRoomService(service,editing);
   const { addRequest, requests, updateRequest } = useSessionServiceRequests();
   const { isCheckedOut } = useCheckoutStatus();
+  const schedulingRequests=useMemo(()=>environment.useMockApi?requests:[],[requests]);
+  const timezone=environment.useMockApi?undefined:stay.kind==='success'?stay.data.timezone??'':'';
+  const canEdit=!editing||editing.status==='OPEN'&&getNowMs()<Date.parse(editing.modifiableUntil);
   const effectiveCheckoutAtMs =
     stay.kind === "success"
-      ? getEffectiveCheckoutAt(stay.data, requests)
+      ? getEffectiveCheckoutAt(stay.data, schedulingRequests,timezone)
       : null;
   const checkoutDayContext = useMemo(() => stay.kind === "success"
-    ? { departure: stay.data.departure, hasActiveLateCheckout: Boolean(getActiveLateCheckoutRequest(requests)) }
+    ? { departure: stay.data.departure, hasActiveLateCheckout: environment.useMockApi&&Boolean(getActiveLateCheckoutRequest(requests)) }
     : undefined,
   [requests, stay]);
   const lifecycle =
@@ -472,7 +507,8 @@ export function RoomServiceScreen({
       ? getGuestStayActionStatus({
           isCheckedOut,
           nowMs: getNowMs(),
-          requests,
+          requests:schedulingRequests,
+          timezone,
           stay: stay.data,
         })
       : isCheckedOut
@@ -490,7 +526,7 @@ export function RoomServiceScreen({
   const [periodNotice, setPeriodNotice] = useState(false);
   const [cart, dispatch] = useReducer(
     roomServiceCartReducer,
-    initialRoomServiceCart,
+    initialRequest?orderCart(initialRequest):initialRoomServiceCart,
   );
   const cartAvailabilityTimes = useMemo(
     () =>
@@ -501,18 +537,18 @@ export function RoomServiceScreen({
         : allDayTimes,
     [cart, checkoutDayContext, menu],
   );
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState(initialRequest?.notes??"");
   const [serviceDate, setServiceDate] = useState(() =>
-    getInitialServiceDate(getNowMs(), allDayTimes),
+    initialRequest?.serviceDate??getInitialServiceDate(getNowMs(), allDayTimes,timezone),
   );
   const [deliveryTime, setDeliveryTime] = useState<string | null>(() =>
-    getNearestServiceTime(
-      getInitialServiceDate(getNowMs(), allDayTimes),
+    initialRequest?.deliveryTime??getNearestServiceTime(
+      getInitialServiceDate(getNowMs(), allDayTimes,timezone),
       allDayTimes,
-      getNowMs(),
+      getNowMs(),undefined,undefined,undefined,undefined,timezone,
     ),
   );
-  const [step, setStep] = useState<RoomServiceStep>("CATALOG");
+  const [step, setStep] = useState<RoomServiceStep>(initialRequest?"CART":"CATALOG");
   const [pendingRemoval, setPendingRemoval] = useState<string | null>(null);
   const [discardVisible, setDiscardVisible] = useState(false);
   const [timePickerVisible, setTimePickerVisible] = useState(false);
@@ -521,10 +557,10 @@ export function RoomServiceScreen({
   const [, setTimeCheckVersion] = useState(0);
   const inFlight = useRef(false);
   const editLoaded = useRef<string | null>(null);
-  const [initialEditDraft, setInitialEditDraft] = useState<string | null>(null);
+  const [initialEditDraft, setInitialEditDraft] = useState<string | null>(initialRequest?JSON.stringify({items:orderCart(initialRequest).items,notes:initialRequest.notes??"",serviceDate:initialRequest.serviceDate,deliveryTime:initialRequest.deliveryTime}):null);
   const pendingExit = useRef<(() => void) | null>(null);
   const editedRequest =
-    typeof editRequestId === "string"
+    environment.useMockApi&&typeof editRequestId === "string"
       ? requests.find(
           (request) =>
             request.sessionRequestId === editRequestId &&
@@ -567,19 +603,19 @@ export function RoomServiceScreen({
     return () => clearTimeout(timer);
   }, [editedRequest]);
   useEffect(() => {
-    if (stay.kind !== "success") return;
+    if (initialRequest||stay.kind !== "success") return;
     const firstAvailable = getFirstAvailableServiceDate(
       getNowMs(),
       cartAvailabilityTimes,
       stay.data.arrival,
       stay.data.departure,
-      effectiveCheckoutAtMs,
+      effectiveCheckoutAtMs,timezone,
     );
     const nearest = isServiceDateWithinStay(
       serviceDate,
       getNowMs(),
       stay.data.arrival,
-      stay.data.departure,
+      stay.data.departure,timezone,
     )
       ? getNearestServiceTime(
           serviceDate,
@@ -588,10 +624,10 @@ export function RoomServiceScreen({
           deliveryTime,
           stay.data.arrival,
           stay.data.departure,
-          effectiveCheckoutAtMs,
+          effectiveCheckoutAtMs,timezone,
     )
       : null;
-    if (nearest === deliveryTime) return;
+    if (nearest!==null && nearest === deliveryTime) return;
     const timer = setTimeout(() => {
       if (nearest) {
         setDeliveryTime(nearest);
@@ -605,7 +641,7 @@ export function RoomServiceScreen({
             undefined,
             stay.data.arrival,
             stay.data.departure,
-            effectiveCheckoutAtMs,
+            effectiveCheckoutAtMs,timezone,
           ),
         );
       } else if (
@@ -613,12 +649,12 @@ export function RoomServiceScreen({
           serviceDate,
           getNowMs(),
           stay.data.arrival,
-          stay.data.departure,
+          stay.data.departure,timezone,
         )
-      ) setServiceDate(stay.data.departure);
+      ) setServiceDate(environment.useMockApi?stay.data.departure:getStayServiceDateWindow(stay.data.arrival,stay.data.departure,getNowMs(),timezone)?.minimumDate??stay.data.departure);
     }, 0);
     return () => clearTimeout(timer);
-  }, [cartAvailabilityTimes, deliveryTime, effectiveCheckoutAtMs, getNowMs, serviceDate, stay]);
+  }, [cartAvailabilityTimes, deliveryTime, effectiveCheckoutAtMs, getNowMs, initialRequest, serviceDate, stay,timezone]);
   useEffect(() => {
     if (isCheckedOut) return;
     const interval = setInterval(
@@ -649,6 +685,7 @@ export function RoomServiceScreen({
     isServiceWithinEffectiveCheckout({
       arrival: stay.data.arrival,
       effectiveCheckoutAtMs,
+      timezone,
       nowMs: getNowMs(),
       serviceDate,
       startTime: time,
@@ -664,7 +701,7 @@ export function RoomServiceScreen({
         getRoomServicePeriodWindows(nextPeriod).some((window) => isRoomServiceTimeInWindow(time, window)),
       );
       setDeliveryTime((current) => getNearestServiceTime(
-        serviceDate, candidateTimes, getNowMs(), current ?? undefined, stay.data.arrival, stay.data.departure, effectiveCheckoutAtMs,
+        serviceDate, candidateTimes, getNowMs(), current ?? undefined, stay.data.arrival, stay.data.departure, effectiveCheckoutAtMs,timezone,
       ));
     }
     setCategory(nextCategory);
@@ -677,54 +714,52 @@ export function RoomServiceScreen({
       serviceDate,
       getNowMs(),
       stay.data.arrival,
-      stay.data.departure,
+      stay.data.departure,timezone,
     );
   const stayDateWindow =
     stay.kind === "success"
       ? getStayServiceDateWindow(
           stay.data.arrival,
           stay.data.departure,
-          getNowMs(),
+          getNowMs(),timezone,
         )
       : null;
   const noAvailability =
-    stay.kind === "success" &&
+    !editing && stay.kind === "success" &&
     menu.kind === "success" &&
     getFirstAvailableServiceDate(
       getNowMs(),
       cartAvailabilityTimes,
       stay.data.arrival,
       stay.data.departure,
-      effectiveCheckoutAtMs,
+      effectiveCheckoutAtMs,timezone,
     ) === null;
   const noAvailabilityBody =
     effectiveCheckoutAtMs !== null && getMinimumServiceTime(getNowMs()) > effectiveCheckoutAtMs
       ? "No hay horarios disponibles que cumplan con los 30 minutos de anticipación antes de tu hora de salida."
       : "No hay horarios disponibles durante tu estadía.";
+  function scheduleAllowed(date:string,time:string) {
+    if(editing&&date===editing.serviceDate&&time===editing.deliveryTime) return canEdit;
+    return stay.kind==='success'&&isServiceWithinEffectiveCheckout({arrival:stay.data.arrival,effectiveCheckoutAtMs,nowMs:getNowMs(),serviceDate:date,startTime:time,timezone});
+  }
   const deliveryTimeAllowed =
     stay.kind === "success" &&
     menu.kind === "success" &&
     deliveryTime !== null &&
     isRoomServiceCartAvailableAt(menu.data, cart, serviceDate, deliveryTime, checkoutDayContext) &&
-    isServiceWithinEffectiveCheckout({
-      arrival: stay.data.arrival,
-      effectiveCheckoutAtMs,
-      nowMs: getNowMs(),
-      serviceDate,
-      startTime: deliveryTime,
-    });
+    scheduleAllowed(serviceDate,deliveryTime);
   const isDirty =
     cart.items.length > 0 &&
-    (!editedRequest ||
+    (!(editedRequest||editing) ||
       initialEditDraft !== JSON.stringify({ items: cart.items, notes, serviceDate, deliveryTime }));
   useEffect(() => registerNavigationGuard({
     isDirty,
-    message: editedRequest
+    message: editedRequest||editing
       ? "Los cambios que no hayas guardado se perderán."
       : "Los productos del carrito se eliminarán si sales de esta pantalla.",
     onDiscard: () => { if (!editedRequest) resetCreate(); },
-    title: editedRequest ? "¿Descartar cambios?" : "¿Salir del servicio?",
-  }), [editedRequest, isDirty, registerNavigationGuard]);
+    title: editedRequest||editing ? "¿Descartar cambios?" : "¿Salir del servicio?",
+  }), [editedRequest,editing,isDirty,registerNavigationGuard]);
   function goBack() {
     if (step === "SCHEDULE") setStep("CART");
     else if (step === "CART") setStep("CATALOG");
@@ -794,7 +829,7 @@ export function RoomServiceScreen({
             deliveryTime,
             stay.data.arrival,
             stay.data.departure,
-            effectiveCheckoutAtMs,
+            effectiveCheckoutAtMs,timezone,
           )
         : null,
     );
@@ -822,7 +857,7 @@ export function RoomServiceScreen({
   }
   function submit() {
     if (
-      lifecycle !== "ACTIVE" ||
+      !canEdit || lifecycle !== "ACTIVE" ||
       menu.kind !== "success" ||
       stay.kind !== "success" ||
       cart.items.length === 0 ||
@@ -841,13 +876,7 @@ export function RoomServiceScreen({
         serviceDate,
         deliveryTime, checkoutDayContext,
       ) ||
-      !isServiceWithinEffectiveCheckout({
-        arrival: stay.data.arrival,
-        effectiveCheckoutAtMs,
-        nowMs: getNowMs(),
-        serviceDate,
-        startTime: deliveryTime,
-      })
+      !scheduleAllowed(serviceDate,deliveryTime)
     ) {
       setScheduleError(true);
       return;
@@ -878,13 +907,11 @@ export function RoomServiceScreen({
             serviceDate,
             summary: `${formatGuestDate(serviceDate)} · ${deliveryTime} · ${totalUnits} ${totalUnits === 1 ? "producto" : "productos"}`,
           });
-          if (editedRequest)
-            updateRequest(editedRequest.sessionRequestId, input);
-          else {
-            addRequest(input);
-            resetCreate();
+          if(environment.useMockApi) {
+            if (editedRequest) updateRequest(editedRequest.sessionRequestId, input);
+            else { addRequest(input); resetCreate(); }
           }
-          showServiceRequestSuccess(editedRequest ? "UPDATED" : "CREATED");
+          showServiceRequestSuccess(editedRequest||editing ? "UPDATED" : "CREATED");
           router.replace("/account");
         },
       },
@@ -988,7 +1015,7 @@ export function RoomServiceScreen({
                       )?.quantity ?? 0;
                     return (
                       <ProductCard
-                        disabled={pending || categoryIncompatibleWithCart || !selectedCategoryAvailable}
+                        disabled={pending || item.available===false || categoryIncompatibleWithCart || !selectedCategoryAvailable}
                         item={item}
                         key={item.fixtureKey}
                         onDecrement={() =>
@@ -998,7 +1025,7 @@ export function RoomServiceScreen({
                           })
                         }
                         onIncrement={() => {
-                          if (categoryIncompatibleWithCart || !selectedCategoryAvailable) return;
+                          if (item.available===false || categoryIncompatibleWithCart || !selectedCategoryAvailable) return;
                           dispatch(
                             quantity === 0
                               ? {
@@ -1065,6 +1092,9 @@ export function RoomServiceScreen({
           noAvailabilityBody={noAvailabilityBody}
           periodsIncompatible={periodsIncompatible}
           pending={pending}
+          editing={!!editing}
+          conflict={!!editing&&submission.error instanceof HttpError&&submission.error.status===409}
+          onReload={()=>{void reloadOrder?.().then(fresh=>{if(fresh?.status==='OPEN'){setEditing(fresh);dispatch({type:'SET_ITEMS',items:orderCart(fresh).items});setServiceDate(fresh.serviceDate);setDeliveryTime(fresh.deliveryTime);setNotes(fresh.notes??'');submission.reset();}});}}
           scheduleError={scheduleError}
           serviceDate={serviceDate}
           submitError={submitError}
@@ -1116,13 +1146,7 @@ export function RoomServiceScreen({
           stay.kind !== "success" ||
           menu.kind !== "success" ||
           !isRoomServiceCartAvailableAt(menu.data, cart, serviceDate, value, checkoutDayContext) ||
-          !isServiceWithinEffectiveCheckout({
-            arrival: stay.data.arrival,
-            effectiveCheckoutAtMs,
-            nowMs: getNowMs(),
-            serviceDate,
-            startTime: value,
-          })
+          !scheduleAllowed(serviceDate,value)
         }
         mode="time"
         onCancel={() => setTimePickerVisible(false)}
@@ -1131,13 +1155,7 @@ export function RoomServiceScreen({
             stay.kind === "success" &&
             menu.kind === "success" &&
             isRoomServiceCartAvailableAt(menu.data, cart, serviceDate, value, checkoutDayContext) &&
-            isServiceWithinEffectiveCheckout({
-              arrival: stay.data.arrival,
-              effectiveCheckoutAtMs,
-              nowMs: getNowMs(),
-              serviceDate,
-              startTime: value,
-            })
+            scheduleAllowed(serviceDate,value)
           ) {
             setScheduleError(false);
             setDeliveryTime(value);
@@ -1151,7 +1169,7 @@ export function RoomServiceScreen({
       />
       <ConfirmationModal
         body={
-          editedRequest
+          editedRequest||editing
             ? "Los cambios que no hayas guardado se perderán."
             : "Los productos del carrito se eliminarán si sales de esta pantalla."
         }

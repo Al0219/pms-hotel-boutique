@@ -162,8 +162,15 @@ class StaffAuthAuditAppendOnlyIntegrationTests {
 
                 migrate(schema, MASTER);
                 var upgradedManifest = manifest(connection, schema);
-                // Upgrade includes AUTH-01 append-only and AUTH-02 attribution columns.
-                assertEquals(previousManifest.size() + 6, upgradedManifest.size());
+                // Upgrade includes AUTH-01/AUTH-02 and the additive Staff invitation migration.
+                // Includes additive Housekeeping004, Room Service005 and Amenities006; prior checksums stay immutable.
+                assertEquals(manifest(connection, "public"), upgradedManifest);
+                assertTrue(upgradedManifest.keySet().stream().anyMatch(key -> key.startsWith("003-public-reservation-lookup-014\n")));
+                assertTrue(upgradedManifest.keySet().stream().anyMatch(key -> key.startsWith("005-operations-004\n")));
+                assertTrue(upgradedManifest.keySet().stream().anyMatch(key -> key.startsWith("005-operations-005\n")));
+                assertTrue(upgradedManifest.keySet().stream().anyMatch(key -> key.startsWith("005-operations-006\n")));
+                assertTrue(upgradedManifest.keySet().stream().anyMatch(key -> key.startsWith("003-staff-auth-012\n")));
+                assertTrue(upgradedManifest.keySet().stream().anyMatch(key -> key.startsWith("003-guest-account-evidence-013\n")));
                 previousManifest.forEach((key, checksum) -> assertEquals(checksum, upgradedManifest.get(key)));
                 assertEquals(manifest(connection, "public"), upgradedManifest);
                 assertEquals(before, auditRows(connection, schema));

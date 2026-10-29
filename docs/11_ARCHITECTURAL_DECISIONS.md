@@ -410,3 +410,79 @@ Swagger 8081. Esta decisión sustituye el addendum 2026-10-05 de publicación
 Backend normal y puertos variables. dev/start también fijan 3001 sin fallback.
 QA integrado = Docker Compose raíz, mismo commit; conflicto de puerto falla.
 [Contrato y QA](../backend/docs/44_UNIFIED_LOGIN_CONTRACT_QA.md).
+
+### Alcance académico — pagos públicos simulados y saldo de checkout Staff
+
+**Fecha:** 2026-10-22. **Status:** APPROVED.
+**Fuente:** José comunica la decisión del docente: los pagos reales del área
+pública quedan fuera del alcance del proyecto por su tiempo de desarrollo.
+Se conserva el procesamiento simulado existente; no se exige integrar un PSP
+real para completar el flujo académico de reservas y operación Staff.
+
+José aprueba además las reglas financieras de checkout Staff del
+[contrato54](../backend/docs/54_STAFF_STAY_LIFECYCLE_CONTRACT.md): se revisan todos
+los folios vinculados a la reserva en su propiedad; cualquier saldo positivo
+bloquea la salida de cualquiera de sus estadías. No se compensan deudas con
+créditos de otros folios ni entre monedas. Si no hay folio o información contable
+verificable, se bloquea por saldo no verificable.
+
+**Consecuencias:** aprobación simulada de pago y saldo contable del folio son
+conceptos diferentes. No se afirma que hubo débito bancario real, ni se convierte
+automáticamente un recibo simulado o un folio ausente en saldo cero. La futura
+integración contable del recorrido simulado debe ser explícita, trazable,
+append-only e idempotente, sin recobrar ni reescribir reservas históricas.
+Un checkout rechazado conserva la estancia y su limpieza; uno válido no cobra,
+devuelve dinero ni cierra folios. El PSP real deja de ser dependencia de este
+incremento, sin eliminar el control financiero ni las reglas de seguridad/scope.
+Esta decisión no implementa las APIs ni modifica el estado QA de otros incrementos.
+
+### Asignación Staff — bloqueo por habitación sucia
+
+**Fecha:** 2026-10-23. **Status:** APPROVED por José mediante solicitud explícita.
+Sustituye únicamente la regla de contrato52 que permitía preasignar una Room
+DIRTY. La candidata sigue visible con motivo destacado y no seleccionable;
+Backend rechaza la asignación si el estado actual es DIRTY, incluso para fechas
+futuras. Revalida bajo el lock Room compartido con Housekeeping, sin confiar en
+la preview ni en caché JPA. No genera asignación ni su audit si se rechaza.
+
+CLEAN y ausencia de seguimiento conservan las reglas previas de preasignación;
+INSPECTED sigue siendo obligatorio para check-in. No cambia ATS, OOO/OOS,
+permisos, propiedad, estados de reserva ni asignaciones previamente guardadas.
+Contrato y QA de esta revisión en contratos Backend50/52 y AlanPlan/AlanHandoff.
+
+### Reservas tomadas por Staff — alojamiento pendiente, sin pago automático
+
+**Fecha:** 2026-10-23. **Status:** APPROVED por José al aceptar el flujo de alta.
+Recepción, Gerencia y Super Admin con RESERVATION_MANAGE y PROPERTY autorizada
+pueden crear una Reservation CONFIRMED con N stays RESERVED y cargo inicial de
+alojamiento pendiente en folio Guest. No se crea GuestAccount, cobra dinero ni
+simula un pago para saldar la reserva. Asignar Room y realizar check-in siguen
+como acciones separadas: DIRTY bloquea asignar e INSPECTED es obligatorio para
+entregar. La deuda mantiene el bloqueo de checkout aprobado. Contrato55 detalla
+el incremento; no amplía los permisos financieros generales de Recepción.
+
+### Consulta de una reserva sin cuenta mediante correo y código
+
+**Fecha:** 2026-10-28. **Status:** APPROVED por José. Sustituye su decisión
+anterior de OTP y lectura de todas las reservas por correo, aún no publicada.
+El invitado introduce correo responsable + referencia exacta y consulta solo
+esa Reservation, incluidas sus N ReservationStay. Para ver todo el historial
+se requiere cuenta Guest y los vínculos verificados existentes C3/56/57.
+
+La combinación acredita conocimiento, no posesión verificada del buzón. Por eso
+se limita a referencia/hotel/fechas/estado/tipo/habitación; sin datos personales,
+documentos, notas internas ni finanzas. No permite acciones ni crea cuenta,
+sesión o vínculos. SQL aplica ambos datos antes de leer; error genérico y cuotas
+por correo y referencia protegen de búsquedas masivas. Sin correo SMTP/Resend,
+OTP ni claves nuevas para esta consulta; registro/vinculación Guest no cambian.
+
+Contrato [Backend62](../backend/docs/62_PUBLIC_RESERVATION_LOOKUP_CONTRACT.md):
+POST cerrado/no-store, auditoría append-only aditiva y datos solo en memoria.
+Migraciones ya aplicadas se conservan. La implementación permanece EN_QA hasta
+validaciones de esta versión y aprobación manual; sin publicación automática.
+
+Ampliación de consulta62 aprobada por José2026-10-28: resumen visual de N habitaciones
+con galería editorial por código, fecha/canal/moneda y total original del comprobante
+público coherente, opcional. No concede lectura de folio/pagos ni de datos personales;
+no estima tarifas actuales para reconstruir importes históricos ni inventa ocupación.
+No altera la prueba correo+código, el acceso al historial por cuenta o sus vínculos.

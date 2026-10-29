@@ -1,0 +1,66 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-operations-006
+      author: alan
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE service_requests DROP CONSTRAINT ck_sr_category;
+              ALTER TABLE service_requests ADD CONSTRAINT ck_sr_category CHECK (category IN ('CONCIERGE','VALET','HOUSEKEEPING','ROOM_SERVICE','AMENITIES','MAINTENANCE','OTHER'));
+              CREATE TABLE amenities_catalog (
+                id uuid PRIMARY KEY, property_id uuid NOT NULL REFERENCES properties(id),
+                code varchar(64) NOT NULL, name varchar(160) NOT NULL CHECK(btrim(name)<>''),
+                display_order smallint NOT NULL, UNIQUE(property_id,code)
+              );
+              CREATE TABLE amenities_requests (
+                id uuid PRIMARY KEY, stay_id uuid NOT NULL REFERENCES reservation_stays(id),
+                request_key varchar(100) NOT NULL, initial_payload_hash varchar(64) NOT NULL,
+                current_payload_hash varchar(64) NOT NULL, service_date date NOT NULL,
+                delivery_time time NOT NULL, UNIQUE(stay_id,request_key),
+                FOREIGN KEY(id,stay_id) REFERENCES service_requests(id,stay_id)
+              );
+              CREATE TABLE amenities_request_lines (
+                request_id uuid NOT NULL REFERENCES amenities_requests(id),
+                item_id uuid NOT NULL REFERENCES amenities_catalog(id), item_name varchar(160) NOT NULL,
+                quantity smallint NOT NULL CHECK(quantity BETWEEN 1 AND 5), PRIMARY KEY(request_id,item_id)
+              );
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE FUNCTION provision_amenities_catalog(target_property uuid) RETURNS void
+              LANGUAGE sql AS $body$
+                INSERT INTO amenities_catalog(id,property_id,code,name,display_order)
+                SELECT md5(target_property::text || ':amenities:' || v.code)::uuid,target_property,v.code,v.name,v.position
+                FROM (VALUES
+                  ('extra-towels','Toallas adicionales',1),
+                  ('extra-pillow','Almohada adicional',2),
+                  ('dental-kit','Kit dental',3),
+                  ('toiletry-kit','Kit de aseo',4),
+                  ('slippers','Pantuflas',5)
+                ) AS v(code,name,position) ON CONFLICT(property_id,code) DO NOTHING;
+              $body$;
+        - sql:
+            sql: SELECT provision_amenities_catalog(id) FROM properties;
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE FUNCTION provision_new_property_amenities() RETURNS trigger
+              LANGUAGE plpgsql AS $body$
+              BEGIN
+                PERFORM provision_amenities_catalog(NEW.id);
+                RETURN NEW;
+              END;
+              $body$;
+        - sql:
+            sql: CREATE TRIGGER properties_amenities_catalog AFTER INSERT ON properties FOR EACH ROW EXECUTE FUNCTION provision_new_property_amenities();
+      rollback:
+        - sql:
+            sql: |
+              DROP TRIGGER properties_amenities_catalog ON properties;
+              DROP FUNCTION provision_new_property_amenities();
+              DROP FUNCTION provision_amenities_catalog(uuid);
+              DROP TABLE amenities_request_lines;
+              DROP TABLE amenities_requests;
+              DROP TABLE amenities_catalog;
+              ALTER TABLE service_requests DROP CONSTRAINT ck_sr_category;
+              ALTER TABLE service_requests ADD CONSTRAINT ck_sr_category CHECK(category IN ('CONCIERGE','VALET','HOUSEKEEPING','ROOM_SERVICE','MAINTENANCE','OTHER'));

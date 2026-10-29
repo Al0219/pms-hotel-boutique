@@ -37,7 +37,7 @@ export function PublicBookingShell({ children }: { children: ReactNode }) {
             if (event.key === 'Escape') { setMenuOpen(false); menuTrigger.current?.focus(); }
           }}>
           <Link href={catalogueHref}>Habitaciones</Link><Link href="/#amenidades">Amenidades</Link>
-          <Link href={account ? '/mis-reservas' : '/acceso?returnTo=%2Fmis-reservas'}>Mis reservas</Link>
+          <Link href="/mis-reservas">Mis reservas</Link>
         </nav>
         <div className={styles.headerActions}><PublicGlobalCart />
           <button ref={menuTrigger} type="button" className={styles.menuToggle}

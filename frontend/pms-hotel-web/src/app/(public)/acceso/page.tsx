@@ -5,7 +5,7 @@ import { GuestIdentityAccess } from './guest-identity-access';
 export default async function AccessPage({ searchParams }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { returnTo, error } = await searchParams;
+  const { returnTo, error, from } = await searchParams;
   const pending=pendingRegistration((await cookies()).get(registrationCookie)?.value);
-  return <GuestIdentityAccess pendingRequestId={pending?.requestId} returnTo={typeof returnTo === 'string' ? returnTo : undefined} googleError={error === 'google'} />;
+  return <GuestIdentityAccess afterStaffActivation={from === 'staff-activation'} pendingRequestId={pending?.requestId} returnTo={typeof returnTo === 'string' ? returnTo : undefined} googleError={error === 'google'} />;
 }

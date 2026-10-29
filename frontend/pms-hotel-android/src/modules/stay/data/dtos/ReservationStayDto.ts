@@ -9,10 +9,12 @@ export interface AssignedRoomDto {
 }
 
 /**
- * Forma exclusiva de fixtures/mocks durante Sprint 1. No constituye un
- * contrato de API ni autoriza un endpoint hasta que Backend lo confirme.
+ * DTO normalizado de Stay. Fixtures y el adapter HTTP Guest lo producen;
+ * el contrato de wire real está en GuestStayDto y Backend contrato56.
  */
 export interface ReservationStayDto {
+  timezone?: string;
+  confirmationCode?: string | null;
   id: string | null | undefined;
   reservationId: string | null | undefined;
   roomType: StayRoomTypeDto | null | undefined;

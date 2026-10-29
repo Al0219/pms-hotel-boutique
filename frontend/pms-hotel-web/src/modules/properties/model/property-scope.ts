@@ -9,10 +9,10 @@ export function defaultStaffProperty(session: StaffSession): string {
   return (active.find(item => item.propertyCode === 'HB-GT-DEMO') ?? active[0])?.propertyId ?? '';
 }
 
-export function resolvePropertyScope(session: StaffSession, selection: string): PropertyScope | null {
+export function resolvePropertyScope(session: StaffSession, selection: string, allowEmptyAll = false): PropertyScope | null {
   const ids = session.memberships.filter(item => item.active).map(item => item.propertyId).sort();
   if (selection === allProperties) {
-    return session.permissions.includes("MULTI_PROPERTY_READ") && ids.length > 0
+    return session.permissions.includes("MULTI_PROPERTY_READ") && (ids.length > 0 || (allowEmptyAll && session.roleId === "SUPER_ADMIN" && session.permissions.includes("STAFF_MANAGE")))
       ? { kind: "ALL_PROPERTIES", propertyIds: ids } : null;
   }
   return ids.includes(selection) ? { kind: "PROPERTY", propertyIds: [selection] } : null;

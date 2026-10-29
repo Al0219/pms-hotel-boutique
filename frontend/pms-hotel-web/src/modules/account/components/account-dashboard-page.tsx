@@ -76,7 +76,8 @@ function RealAccountDashboard({ summary }: { summary: RealAccountSummary }) {
         </div></article>
         <article className={styles.card}><div><p className={styles.cardCategory}>RESERVAS VINCULADAS</p>
           <h2 className={styles.cardTitle}>{summary.linkedReservationsCount ? `${summary.linkedReservationsCount} reservas vinculadas` : "No tienes reservas vinculadas"}</h2>
-          <p className={styles.cardDesc}>El listado y la vinculación desde esta pantalla aún no están disponibles.</p>
+          <p className={styles.cardDesc}>Consulta tus estancias y vincula las reservas que hiciste como invitado.</p>
+          <div className={styles.actions}><Link className={styles.btnPrimary} href="/mis-reservas">Ver mis reservas</Link><Link className={styles.btnSecondary} href="/cuenta/reservas/vincular">Vincular reserva existente</Link></div>
         </div></article>
       </section>
       <section className={styles.moreSection} aria-labelledby="more-account-title">

@@ -7,3 +7,10 @@ La pantalla deriva INITIAL_SELECTION cuando no hay contexto y CHANGE_ACTIVE_STAY
 Android Back se consume en ambos modos y no navega, cierra sesión ni muestra modal. El drawer muestra Cambiar estadía solo con GuestAuthSession; el acceso temporal no lo muestra.
 
 Los providers locales reservation-scoped se remontan por `reservationStayId`. A→B no expone estado de A; volver a A no promete persistencia porque no existe Backend ni almacenamiento local simulado. No se usa `queryClient.clear()` durante el cambio.
+
+## Extensión Android ↔ Backend (2026-10-25)
+
+El [incremento real38](38_ANDROID_BACKEND_MVP.md), autorizado separadamente,
+reutiliza estos contratos/UI y extiende transporte y persistencia de sesión solo
+en modo API real. Las limitaciones frontend-first anteriores describen el modo
+mock; no son autoridad para endpoints Backend. QA físico permanece EN_QA.

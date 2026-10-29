@@ -5,6 +5,7 @@ import { type ReservationStayDto } from '@/modules/stay/data/dtos/ReservationSta
  * contract and it intentionally passes through the stay mapper.
  */
 export const currentStayFixture: ReservationStayDto = {
+  confirmationCode: 'HB-2026-004281',
   id: 'stay-2026-004281',
   reservationId: 'HB-2026-004281',
   roomType: {

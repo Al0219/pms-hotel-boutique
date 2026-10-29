@@ -1,5 +1,6 @@
 import { deriveReservationOperationalStatus } from '../model/reservation-operational-status';
 import { DomainMappingError } from '@/lib/errors';
+import { isUtcInstant } from '@/lib/utc-instant';
 import { parseDateTime, parseDay, requiredText } from '@/lib/mapper';
 import type { StaffReservationDto } from '../dtos/staff-reservation.dto';
 import type { ReservationDetailData, ReservationStayDetail } from '../model/reservation-detail';
@@ -22,7 +23,7 @@ function projectDetail(dto: StaffReservationDto): ReservationDetailData {
   if (!dto || !['PENDING', 'CONFIRMED', 'CANCELLED'].includes(dto.status) || !Array.isArray(dto.stays)) invalid();
   const ids = new Set<string>();
   const stays: ReservationStayDetail[] = dto.stays.map(s => {
-    if (!s || !s.roomType || !states.has(s.status)) invalid();
+    if (!s || !s.roomType || !states.has(s.status) || !isUtcInstant(s.updatedAt)) invalid();
     const id = uuid(s.stayId);
     if (ids.has(id)) invalid();
     ids.add(id);
@@ -32,7 +33,7 @@ function projectDetail(dto: StaffReservationDto): ReservationDetailData {
     text(s.roomType.code);
     return { id, checkIn, checkOut, nights: Math.round((Date.parse(s.departure) - Date.parse(s.arrival)) / 86400000),
       roomId: s.room === null ? null : uuid(s.room.roomId), roomLabel: s.room === null ? null : text(s.room.code),
-      roomType: text(s.roomType.name), travelState: s.status };
+      roomType: text(s.roomType.name), travelState: s.status, updatedAt: s.updatedAt };
   });
   const guest = dto.responsibleGuest;
   return {

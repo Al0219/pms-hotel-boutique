@@ -4,6 +4,9 @@ import com.pms.hotelboutique.backend.modules.reservations.domain.GuestProfile;
 import com.pms.hotelboutique.backend.modules.reservations.domain.Reservation;
 import com.pms.hotelboutique.backend.modules.reservations.domain.ReservationGuest;
 import com.pms.hotelboutique.backend.modules.reservations.domain.ReservationStay;
+import com.pms.hotelboutique.backend.modules.reservations.domain.ReservationAuditEvent;
+import com.pms.hotelboutique.backend.modules.operations.application.HousekeepingService;
+import com.pms.hotelboutique.backend.modules.operations.application.HousekeepingException;
 import com.pms.hotelboutique.backend.modules.reservations.infrastructure.persistence.GuestProfileRepository;
 import com.pms.hotelboutique.backend.modules.reservations.infrastructure.persistence.ReservationGuestRepository;
 import com.pms.hotelboutique.backend.modules.reservations.infrastructure.persistence.ReservationRepository;
@@ -25,14 +28,22 @@ public class ReservationStayServiceImpl implements ReservationStayService {
     private final ReservationGuestRepository occupants;
     private final ReservationRepository reservations;
     private final GuestProfileRepository profiles;
+    private final com.pms.hotelboutique.backend.modules.operations.application.RoomReadinessService readiness;
+    private final HousekeepingService housekeeping;
+    private final AuditService audit;
 
     public ReservationStayServiceImpl(ReservationStayRepository stays,
             ReservationGuestRepository occupants, ReservationRepository reservations,
-            GuestProfileRepository profiles) {
+            GuestProfileRepository profiles,
+            com.pms.hotelboutique.backend.modules.operations.application.RoomReadinessService readiness,
+            HousekeepingService housekeeping, AuditService audit) {
         this.stays = stays;
         this.occupants = occupants;
         this.reservations = reservations;
         this.profiles = profiles;
+        this.readiness = readiness;
+        this.housekeeping = housekeeping;
+        this.audit = audit;
     }
 
     @Override
@@ -70,12 +81,66 @@ public class ReservationStayServiceImpl implements ReservationStayService {
 
     @Override
     public ReservationStayView checkIn(UUID stayId) {
-        return transition(stayId, "check in", (stay, now) -> stay.checkIn(now));
+        return arrive(stayId, null, null);
+    }
+
+    @Override
+    public ReservationStayView checkInAsStaff(UUID stayId, UUID actorId, UUID operationId) {
+        requireStaffContext(actorId, operationId);
+        return arrive(stayId, actorId, operationId);
+    }
+
+    private ReservationStayView arrive(UUID stayId, UUID actorId, UUID operationId) {
+        if (stayId == null) throw new ReservationStayException("stay id is required");
+        var stay = stays.lockById(stayId).orElseThrow(() -> new ReservationStayException("reservation stay not found"));
+        try {
+            readiness.requireInspected(stay.getPropertyId(), stay.getRoomId());
+            stay.checkIn(Instant.now());
+        } catch (com.pms.hotelboutique.backend.modules.operations.application.HousekeepingException
+                | IllegalStateException | IllegalArgumentException error) {
+            throw new ReservationStayException("cannot check in: " + error.getMessage(), error);
+        }
+        if (actorId != null) recordTravel(stay, "STAY_CHECKED_IN", "RESERVED", "IN_HOUSE", actorId, operationId);
+        return view(stay);
     }
 
     @Override
     public ReservationStayView checkOut(UUID stayId) {
-        return transition(stayId, "check out", (stay, now) -> stay.checkOut(now));
+        return depart(stayId, null, stayId);
+    }
+
+    @Override
+    public ReservationStayView checkOutAsStaff(UUID stayId, UUID actorId, UUID operationId) {
+        requireStaffContext(actorId, operationId);
+        return depart(stayId, actorId, operationId);
+    }
+
+    private ReservationStayView depart(UUID stayId, UUID actorId, UUID correlationId) {
+        if (stayId == null) throw new ReservationStayException("stay id is required");
+        var stay = stays.lockById(stayId).orElseThrow(() -> new ReservationStayException("reservation stay not found"));
+        try {
+            stay.checkOut(Instant.now());
+            if (stay.getRoomId() != null) {
+                if (actorId == null) housekeeping.markDirtyAfterCheckout(stay.getPropertyId(), stay.getRoomId(), stayId);
+                else housekeeping.markDirtyAfterCheckout(stay.getPropertyId(), stay.getRoomId(), stayId, actorId, correlationId);
+            }
+        } catch (HousekeepingException | IllegalStateException | IllegalArgumentException error) {
+            throw new ReservationStayException("cannot check out: " + error.getMessage(), error);
+        }
+        recordTravel(stay, "STAY_CHECKED_OUT", "IN_HOUSE", "CHECKED_OUT", actorId, correlationId);
+        return view(stay);
+    }
+
+    private static void requireStaffContext(UUID actorId, UUID operationId) {
+        if (actorId == null || operationId == null) throw new ReservationStayException("Staff context is required");
+    }
+
+    private void recordTravel(ReservationStay stay, String action, String before, String after,
+            UUID actorId, UUID correlationId) {
+        audit.record(new AuditService.RecordAuditCommand(actorId == null ? ReservationAuditEvent.ActorType.SYSTEM
+                : ReservationAuditEvent.ActorType.STAFF, actorId, action, "RESERVATION_STAY", stay.getId(),
+                stay.getPropertyId(), "{\"status\":\"" + before + "\"}", "{\"status\":\"" + after + "\"}",
+                after.equals("CHECKED_OUT") ? "Salida del huésped" : "Entrada del huésped", correlationId));
     }
 
     @Override

@@ -1,0 +1,128 @@
+.page { max-width: 1280px; margin: 0 auto; color: var(--color-text-primary); min-width: 0; }
+.header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-4); }
+.header h1 { margin: 0; }
+.group { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); overflow-wrap: anywhere; }
+.group small { color: var(--color-text-secondary); }
+.grid table { table-layout: fixed; }
+.grid th:nth-child(1) { width: 40%; }
+.grid th:nth-child(2) { width: 27%; }
+.grid th:nth-child(3) { width: 33%; }
+.grid td { overflow-wrap: anywhere; }
+.page .grid table tbody td { height: auto; padding: var(--space-3); }
+.mobileLabel { display: none; }
+.update { min-height: 1.25rem; margin: 0 0 var(--space-1); color: var(--color-text-secondary); font-size: var(--font-size-caption); }
+.notice { padding: var(--space-4); background: var(--color-surface-card); border: 1px solid var(--color-border-default); border-radius: var(--radius-md); }
+.page .expandedRow td { background: var(--color-surface-subtle); }
+.expanded { display: grid; gap: var(--space-2); font-size: var(--font-size-caption); }
+.expanded dl { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-6); margin: 0; }
+.expanded dt, .expanded small { color: var(--color-text-secondary); }
+.expanded dd { margin: var(--space-1) 0 0; }
+.expanded ul { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); padding-left: var(--space-4); margin: var(--space-2) 0; }
+.page :is(a, button, input, select):focus-visible { outline: 3px solid var(--color-brand-accent); outline-offset: 3px; }
+@media (max-width: 700px) {
+  .page .grid > div[role="region"] { border-radius: 0; border-inline: 0; box-shadow: none; }
+  .grid table, .grid tbody { display: block; width: 100%; }
+  .grid thead { position: absolute; clip-path: inset(50%); width: 1px; height: 1px; overflow: hidden; }
+  .grid tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding: var(--space-2); border-bottom: 1px solid var(--color-border-default); }
+  .page .grid table tbody td { display: block; height: auto; border: 0; padding: var(--space-2); }
+  .grid tbody td:first-child { grid-column: 1 / -1; }
+  .page .grid tr.expandedRow { padding-top: 0; background: var(--color-surface-subtle); }
+  .mobileLabel { display: block; font-size: var(--font-size-caption); color: var(--color-text-secondary); }
+  .expanded dl { gap: var(--space-2) var(--space-4); }
+}
+
+/* Same official body family as Staff controls; avoid browser-default bolder. */
+.page { font-family: var(--font-family-body); }
+.page strong, .header h1 { font-family: inherit; font-weight: var(--font-weight-semibold); }
+.expandableRow { cursor: pointer; }
+.expandableRow:focus-within td { background: var(--color-surface-subtle); }
+.expandControl { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; border: 0; padding: var(--space-2); background: transparent; color: var(--color-text-brand); font: inherit; cursor: pointer; border-radius: var(--radius-sm); }
+.expandControl:disabled { cursor: progress; }
+.chevron, .chevronOpen { transition: transform 140ms ease-out; }
+.chevronOpen { transform: rotate(180deg); }
+.page .grid tr[hidden] { display: none; }
+.expanded { animation: reveal 140ms ease-out; }
+@keyframes reveal { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .chevron, .chevronOpen { transition: none; } .expanded { animation: none; } }
+
+.userCell { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-2); min-width: 0; }
+.userCell > .group { flex: 1; min-width: 0; }
+.userCell > .expandControl { flex: none; }
+
+.inlineEditor { width: 100%; min-width: 0; margin-top: var(--space-2); font-size: var(--font-size-caption); cursor: auto; }
+.inlineEditor form { display: grid; gap: var(--space-2); min-width: 0; }
+.inlineEditor :is(input:not([type="checkbox"]), select) { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; }
+.inlineEditor select { padding: var(--space-2); background: var(--color-surface-card); border: 1px solid var(--color-border-default); border-radius: var(--radius-sm); color: inherit; }
+.inlineEditor fieldset { min-width: 0; margin: 0; padding: var(--space-2); border: 1px solid var(--color-border-default); border-radius: var(--radius-sm); max-height: 15rem; overflow-y: auto; }
+.propertyOption { display: flex; align-items: center; gap: var(--space-2); min-height: 44px; overflow-wrap: anywhere; }
+.propertyOption input { flex: none; }
+.inlineEditor p { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 700px) { .grid tbody tr:has(.inlineEditor) { grid-template-columns: minmax(0, 1fr); } }
+
+.editableValue { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); max-width: 100%; min-height: 32px; padding: 0; border: 0; border-radius: var(--radius-sm); background: transparent; color: inherit; font: inherit; text-align: start; overflow-wrap: anywhere; cursor: text; }
+.editableValue:disabled { cursor: default; }
+.editableValue:not(:disabled):hover { background: var(--color-surface-subtle); text-decoration: underline dotted; text-underline-offset: 3px; }
+.editableValue[data-staff-edit-trigger="role"], .editableValue[data-staff-edit-trigger="properties"] { cursor: pointer; }
+@media (pointer: coarse) { .editableValue { min-height: 44px; } }
+
+.editableContent { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); min-width: 0; }
+
+.accessState { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); width: 100%; min-width: 0; }
+.statusActions { min-width: 0; max-width: 100%; }
+.statusTrigger { display: inline-flex; align-items: center; justify-content: center; width: 36px; min-height: 36px; padding: 0; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-text-secondary); font: inherit; font-size: 1.25rem; cursor: pointer; }
+.statusTrigger:not(:disabled):hover { background: var(--color-surface-subtle); }
+.statusTrigger:disabled { cursor: default; }
+.statusPending { display: flex; flex-wrap: wrap; gap: var(--space-2); padding-block: var(--space-1); min-width: 0; }
+.statusPending p { width: 100%; margin: 0; font-size: var(--font-size-caption); overflow-wrap: anywhere; }
+.swipeRow { touch-action: pan-y pinch-zoom; }
+@media (pointer: coarse) { .statusTrigger { min-height: 44px; width: 44px; } }
+
+/* Transient ownership after a horizontal drag; normal text remains selectable. */
+.swipeRow[data-staff-dragging="true"], .swipeRow[data-staff-dragging="true"] * { user-select: none !important; cursor: grabbing !important; }
+
+/* Local grid presentation retains the table's three semantic cells. Each opaque
+   foreground moves by the same pixel offset; the backdrop never moves with it. */
+.grid table:has(.swipePresentationRow), .grid table:has(.swipePresentationRow) thead,
+.grid table:has(.swipePresentationRow) tbody { display: block; width: 100%; }
+.grid table:has(.swipePresentationRow) thead tr,
+.grid tbody tr.swipePresentationRow { display: grid; grid-template-columns: minmax(0, 40fr) minmax(0, 27fr) minmax(0, 33fr); }
+.grid table:has(.swipePresentationRow) th { width: auto; box-sizing: border-box; }
+.grid tbody tr.swipePresentationRow { position: relative; isolation: isolate; overflow: hidden; padding: 0; border-bottom: 1px solid var(--color-border-default); }
+.page .grid table tbody tr.swipePresentationRow > td { padding: 0; border: 0; min-width: 0; position: static; background: transparent; }
+.swipeCell { position: relative; z-index: 1; min-width: 0; height: 100%; box-sizing: border-box; padding: var(--space-3); background: var(--color-surface-card); transform: translateX(var(--staff-swipe-x, 0px)); transition: transform 160ms ease-out; }
+.swipePresentationRow:hover .swipeCell, .swipePresentationRow:focus-within .swipeCell { background: var(--color-surface-subtle); }
+.swipePresentationRow[data-staff-dragging="true"] .swipeCell { transition: none; }
+.swipeBackdrop { position: absolute; z-index: 0; inset: 0 0 0 auto; width: min(240px, 55%); visibility: hidden; transition: visibility 0s linear 160ms; }
+.swipePresentationRow[data-staff-swipe-side="status"] .swipeBackdrop:not(.swipeRecoveryBackdrop), .swipePresentationRow[data-staff-swipe-side="recovery"] .swipeRecoveryBackdrop { visibility: visible; transition-delay: 0s; }
+.statusChoices { display: flex; width: 100%; height: 100%; }
+.statusChoices > button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-2); flex: 1 1 0; min-width: 0; border: 0; border-radius: 0; padding: var(--space-2); font: inherit; font-weight: var(--font-weight-semibold); cursor: pointer; overflow-wrap: anywhere; }
+.statusChoices > button > svg { flex: none; pointer-events: none; }
+.suspendAction { background: var(--color-system-warning-soft); color: var(--color-system-warning); }
+.disableAction { background: var(--color-system-error-soft); color: var(--color-system-error); }
+.page .grid .expandedRow { display: block; }
+.page .grid .expandedRow > td { display: block; width: 100%; box-sizing: border-box; }
+@media (max-width: 700px) {
+  .grid table:has(.swipePresentationRow) thead { width: 1px; }
+  .grid tbody tr.swipePresentationRow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .swipeCell { padding: var(--space-2); }
+  .swipeBackdrop { width: min(240px, 70%); }
+  .statusChoices > button { padding-inline: var(--space-1); font-size: var(--font-size-caption); white-space: nowrap; }
+  .grid tbody tr.swipePresentationRow:has(.inlineEditor) { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) { .swipeCell, .swipeBackdrop { transition: none; } }
+
+.createForm { display: grid; gap: 1rem; }
+.createForm > label { display: grid; gap: .35rem; }
+.createForm input:not([type="checkbox"]), .createForm select { width: 100%; min-width: 0; font: inherit; padding: .5rem; border: 1px solid var(--color-border-default); border-radius: .375rem; background: var(--color-surface-card); color: inherit; }
+.createForm fieldset { min-width: 0; border: 0; padding: 0; }
+.createForm p { margin: 0; }
+
+.onboardingTrigger { border: 0; background: transparent; color: var(--color-text-brand); font: inherit; font-size: var(--font-size-caption); text-align: start; padding: var(--space-1); border-radius: var(--radius-sm); cursor: pointer; }
+.onboardingTrigger:focus-visible { outline: 2px solid var(--color-text-brand); outline-offset: 2px; }
+.onboardingTrigger:disabled { cursor: default; opacity: .6; }
+.invitationPage { max-width: 32rem; margin: var(--space-6) auto; padding: var(--space-3); color: var(--color-text-primary); }
+
+.swipeRecoveryBackdrop { inset: 0 auto 0 0; }
+.recoveryAction { background: var(--color-system-success-soft); color: var(--color-system-success); }
+.recoveryState { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: var(--space-2); box-sizing: border-box; text-align: center; background: var(--color-surface-subtle); font-size: var(--font-size-caption); }
+@media (max-width: 700px) { .statusChoices > .recoveryAction { white-space: normal; } }

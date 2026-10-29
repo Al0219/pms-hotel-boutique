@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { backendStaffRequest, staffAccessCookie } from '@/lib/bff/staff-auth';
+import { isUtcInstant } from '@/lib/utc-instant';
 
 const uuidPattern = /^[a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12}$/i;
 const headers = { 'cache-control': 'private, no-store' };
@@ -25,8 +26,8 @@ function project(value: unknown, propertyId: string, reservationId?: string) {
     responsibleGuest: guest === null ? null : { profileId: uuid(guest.profileId), firstName: text(guest.firstName), lastName: text(guest.lastName) },
     stays: r.stays.map(value => {
       const s = object(value), t = object(s.roomType), room = s.room === null ? null : object(s.room);
-      if (!['RESERVED', 'IN_HOUSE', 'CHECKED_OUT', 'CANCELLED', 'NO_SHOW'].includes(text(s.status))) throw new Error('INVALID_UPSTREAM');
-      return { stayId: uuid(s.stayId), arrival: text(s.arrival), departure: text(s.departure), status: s.status,
+      if (!['RESERVED', 'IN_HOUSE', 'CHECKED_OUT', 'CANCELLED', 'NO_SHOW'].includes(text(s.status)) || !isUtcInstant(s.updatedAt)) throw new Error('INVALID_UPSTREAM');
+      return { stayId: uuid(s.stayId), arrival: text(s.arrival), departure: text(s.departure), status: s.status, updatedAt: s.updatedAt,
         roomType: { roomTypeId: uuid(t.roomTypeId), code: text(t.code), name: text(t.name) },
         room: room === null ? null : { roomId: uuid(room.roomId), code: text(room.code) } };
     }) };

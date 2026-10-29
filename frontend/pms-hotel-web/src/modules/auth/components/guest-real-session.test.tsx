@@ -161,6 +161,7 @@ describe("Guest session through the real BFF", () => {
     expect(client.getQueriesData({ queryKey: ["guest"] })).toHaveLength(0);
     expect(client.getQueryData(["guest-session"])).toBeNull();
     expect(client.getQueryData(["staff", "profile"])).toEqual({ name: "Staff" });
+    expect(navigation.replace).toHaveBeenLastCalledWith('/acceso?returnTo=%2Fcuenta');
   });
 
   it.each(["account", "access"] as const)("keeps account/cache on logout failure and allows retry on %s", async page => {

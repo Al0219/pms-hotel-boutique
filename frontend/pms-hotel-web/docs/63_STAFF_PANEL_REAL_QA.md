@@ -1,5 +1,70 @@
 # Panel Staff con datos reales
 
+## Rediseño del resumen de recepción — 2026-10-27
+
+Incremento autorizado por José después de confirmar los checks del PR financiero.
+Rama `feature/staff-dashboard-overview`. Estado **EN_QA**; el cierre anterior
+corresponde a la integración original, no a este nuevo diseño.
+
+Alcance: mejorar `/dashboard` para una PROPERTY concreta con el lenguaje visual
+existente (crema, verde oliva, títulos Serif y tokens semánticos). Reutiliza las
+tres lecturas BFF ya confirmadas, sus mappers y claves por sesión/propiedad;
+sin endpoints, permisos, dependencias, migraciones ni cambios Backend nuevos.
+Las filas IMP-WEB-0013 / IMP-WEB-0906 se revisaron: el incremento visual solicitado
+no completa el dashboard consolidado ALL_PROPERTIES de IMP-WEB-0906 ni edita XLSX.
+
+- Encabezado con nombre del hotel, acceso a Reservas y actualización explícita.
+- Tres totales originales: reservas padre, N estadías e inventario físico.
+  Representan todos los registros de la propiedad, incluidos históricos.
+- Distribución de reservas por estado operativo derivado por el módulo Reservas;
+  no se infiere ocupación física ni se cuentan las stays como reservas padre.
+- Inventario agrupado por identidad de RoomType, con cantidades y barras
+  proporcionales; no equivale a ATS ni a habitaciones libres o limpias.
+- Cinco últimas reservas en el orden contractual createdAt DESC / ID ASC de la
+  API49: referencia, huésped, fechas, noches, habitaciones, estado y enlaces al
+  detalle. Campos ausentes se muestran explícitamente, sin datos de relleno.
+- Accesos a Reservas/Habitaciones/Calendario, responsive y foco visible.
+- Carga, cambio de propiedad/sesión, refresco y errores ocultan todo el resumen
+  anterior. Vacíos confirmados muestran cero y mensajes útiles. Reintento y
+  Actualizar datos consultan ambas fuentes. Guest/Staff y guards conservados.
+
+No se agregan ingresos, ADR/RevPAR, porcentajes de ocupación ni saldos agregados:
+las fuentes actuales del panel no confirman esas métricas. No hay escrituras
+de reservas, inventario ni movimientos financieros desde esta pantalla.
+
+Aceptación automatizada: 47 tests / 3 archivos PASS (dashboard real, regresión
+Guest/Staff y composición de propiedad), `npm run typecheck` y `npm run lint`
+PASS. Se agregan casos de N stays/estados padre, listado limitado con datos
+ausentes y refresco explícito sin datos antiguos. No se amplían timeouts ni se
+excluyen tests del workflow. `npm run build` en imagen Node24 PASS; validación
+de tipos separada porque el build existente omite ese chequeo.
+
+Revisión móvil: se reforzó la comprobación comparando scrollWidth con clientWidth
+y viewport390. Detectó un encabezado accesible absoluto que escapaba del scroll
+de la tabla; se contiene con position:relative en ese contenedor. Se conserva
+el texto para lectores de pantalla y el scroll horizontal propio de la tabla,
+sin ocultar el desbordamiento global del documento.
+
+Chrome real sobre Docker3001: 14 comprobaciones PASS con Recepción. Totales
+contrastados con GET reales de reservas/habitaciones, estados e inventario,
+cinco filas recientes, refresco, enlace al detalle, escritorio/móvil sin
+desbordamiento del documento y logout a Inicio. Sin excepciones JS, errores500
+ni pagos registrados. Capturas revisadas; logs/reportes fuera de Git en
+`%TEMP%/pms-staff-dashboard-qa`. Se actualizó solo Web; los contenedores Backend y
+PostgreSQL, su volumen y la configuración runtime se conservaron. No se atribuye
+CI remoto nuevo ni QA manual del owner para este incremento.
+José autorizó publicar este incremento mediante commit y push; se conserva
+EN_QA hasta completar la aceptación manual y los checks correspondientes.
+
+QA manual pendiente del nuevo diseño: abrir `/dashboard` en3001 con Staff,
+comparar totales y estados con Reservas, abrir un detalle, volver y actualizar;
+revisar escritorio/móvil, cambio de propiedad si existe y logout hacia Inicio.
+Después, retomar el QA financiero anterior: abono → deuda aún bloquea checkout →
+pago total → salida habilitada según lifecycle → habitación sucia → limpieza e
+inspección. Mantener el pago público simulado según la decisión docente.
+
+## Integración original — evidencia histórica
+
 Estado: **COMPLETADA**, 2026-10-08; QA manual **PASS** confirmado por Alan.
 Incremento autorizado por Alan; rama `feature/staff-dashboard-real`.
 Sin commit/push/merge; sin edición del XLSX ni cierre de tareas Backend.

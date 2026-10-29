@@ -21,11 +21,11 @@ const accessInformation = {
 } as const;
 
 /** Shared presentation; login always delegates to BD1's existing BFF. */
-export function GuestAccessPage({ returnTo, googleError, pendingRequestId }: { returnTo?: string; googleError?: boolean; pendingRequestId?:string } = {}) {
+export function GuestAccessPage({ returnTo, googleError, pendingRequestId, afterStaffActivation = false }: { returnTo?: string; googleError?: boolean; pendingRequestId?:string; afterStaffActivation?:boolean } = {}) {
   const { status, account } = useGuestSession();
   const login = useUnifiedLogin(returnTo, googleError);
   const router = useRouter();
-  const [mode, setMode] = useState<AuthMode>(pendingRequestId?'register':'login');
+  const [mode, setMode] = useState<AuthMode>(!afterStaffActivation && pendingRequestId?'register':'login');
   const [registrationBusy,setRegistrationBusy]=useState(false);
   const [restorePending,setRestorePending]=useState(pendingRequestId);
   const [notice, setNotice] = useState<string>();
@@ -34,19 +34,19 @@ export function GuestAccessPage({ returnTo, googleError, pendingRequestId }: { r
   const loginEmail = useRef<HTMLInputElement>(null);
   const focusLogin = useRef(false);
   useEffect(()=>{if(mode==='login' && focusLogin.current){focusLogin.current=false;loginEmail.current?.focus();}},[mode]);
-  useStaffAccessRedirect(mode==='login' && !registrationBusy && status === 'signed-out' && !account && !login.busy && !login.redirecting);
+  const destination = guestAccessReturn(returnTo) ?? (returnTo === undefined ? readGuestCheckoutReturn() : undefined);
+  useStaffAccessRedirect(!afterStaffActivation && !destination && mode==='login' && !registrationBusy && status === 'signed-out' && !account && !login.busy && !login.redirecting);
   const redirected = useRef(false);
-  const destination = guestAccessReturn(returnTo);
   useEffect(() => {
-    if (!account || redirected.current || login.busy || login.redirecting || registrationBusy) return;
+    if (afterStaffActivation || !account || redirected.current || login.busy || login.redirecting || registrationBusy) return;
     redirected.current = true;
     const target = destination ?? (returnTo === undefined ? readGuestCheckoutReturn() : undefined) ?? '/cuenta';
     clearGuestCheckoutReturn(); router.replace(target);
-  }, [account, destination, returnTo, router, login.busy, login.redirecting, registrationBusy]);
+  }, [account, destination, returnTo, router, login.busy, login.redirecting, registrationBusy, afterStaffActivation]);
   if (status === 'checking' || status === 'error') return <GuestSessionCheck />;
-  if (account || login.redirecting) return <p role="status">Acceso correcto. Redirigiendo…</p>;
-  const publicDestination = destination === '/mis-reservas' || destination === '/cuenta/reservas/vincular' ? '/habitaciones' : destination ?? '/';
-  const reservationsAccess = destination === '/mis-reservas' || destination === '/cuenta/reservas/vincular';
+  if ((!afterStaffActivation && account) || login.redirecting) return <p role="status">Acceso correcto. Redirigiendo…</p>;
+  const publicDestination = destination?.startsWith('/cuenta') || destination === '/mis-reservas' ? '/habitaciones' : destination ?? '/';
+  const reservationsAccess = destination?.startsWith('/cuenta') || destination === '/mis-reservas';
   function changeMode(next: AuthMode) {
     if (login.busy || registrationBusy || next === mode) return;
     setRestorePending(undefined);
@@ -74,7 +74,7 @@ export function GuestAccessPage({ returnTo, googleError, pendingRequestId }: { r
           <div className={styles.socialOptions}>
             <a className={buttonClassName({variant:'outline',disabled:login.busy || registrationBusy,className:`${styles.action} ${styles.google}`})} href="/api/auth/guest/google" aria-disabled={login.busy || registrationBusy || undefined} onClick={event => {
               if (login.busy || registrationBusy) { event.preventDefault(); return; }
-              rememberGuestCheckoutReturn(returnTo);
+              rememberGuestCheckoutReturn(destination);
             }}>
               <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
                 <path fill="#4285F4" d="M21.8 12.2c0-.7-.1-1.4-.2-2.1H12v4h5.5a4.7 4.7 0 0 1-2 3.1v2.6h3.3c1.9-1.8 3-4.4 3-7.6Z" />

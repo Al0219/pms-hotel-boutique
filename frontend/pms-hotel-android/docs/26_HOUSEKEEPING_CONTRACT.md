@@ -1,5 +1,12 @@
 # 26 — Housekeeping / Limpieza
 
+Ampliación real autorizada (contrato Backend59 / guía42): las cinco franjas de
+housekeepingQaTimeSlots, incluidas12:00–13:00, están habilitadas en real con
+validación de zona de propiedad/estancia/30min/checkout. FULL_CLEANING sigue único
+tipo real. No catálogo definitivo; las descripciones mock históricas de abajo
+no sustituyen este contrato. Acciones PASS manual; nuevas franjas EN_QA manual.
+
+
 **Tarea:** IMP-AND-0110 — MOB-21. **Estado final:** COMPLETADA.
 
 ## Autoridad y alcance
@@ -20,7 +27,7 @@ interface HousekeepingRequest {
 }
 ```
 
-`housekeepingQaTimeSlots` contiene provisionalmente `09:00–10:00`, `10:00–11:00`, `11:00–12:00` y `14:00–15:00`; `housekeepingQaCleaningTypes` contiene `FULL_CLEANING` y `LIGHT_CLEANING`, con `10:00–11:00` y `FULL_CLEANING` como defaults. Los valores son frontend/mock y no un contrato Backend. `TOWELS_AND_AMENITIES` fue retirado del flujo visible de Limpieza: los artículos pertenecen a Amenidades (`IMP-AND-0113`).
+`housekeepingQaTimeSlots` contiene provisionalmente `09:00–10:00`, `10:00–11:00`, `11:00–12:00`, `12:00–13:00` y `14:00–15:00`; `housekeepingQaCleaningTypes` contiene `FULL_CLEANING` y `LIGHT_CLEANING`, con `10:00–11:00` y `FULL_CLEANING` como defaults. Los valores son frontend/mock y no un contrato Backend. `TOWELS_AND_AMENITIES` fue retirado del flujo visible de Limpieza: los artículos pertenecen a Amenidades (`IMP-AND-0113`).
 
 `ReservationStay` se reutiliza exclusivamente para resolver y presentar la estadía actual, incluida la habitación asignada o `Habitación por asignar`. La identidad y el scope de un futuro request Backend todavía no están definidos: el mock frontend no fija esa decisión. Esta reconstrucción no envía IDs de Reservation, Stay ni Room.
 
@@ -54,3 +61,15 @@ La programación session-only incorpora `serviceDate` local (`YYYY-MM-DD`) más 
 ## UX regression IMP-AND-0113
 
 La confirmación exitosa de Limpieza registra o actualiza la solicitud de sesión y navega a Cuenta con el aviso de una sola vez. Los errores conservan el formulario y permiten reintento. La regresión UX incluida en `IMP-AND-0113` fue validada con QA manual y revisión WEB-3 PASS; no altera el estado COMPLETADA de este contrato.
+
+## Integración Backend real posterior (2026-10-26)
+
+El contrato anterior conserva la evidencia histórica frontend/mock. La solicitud
+del usuario autorizó una integración separada, ahora COMPLETADA / PASS manual
+funcional, documentada en
+[41_HOUSEKEEPING_REAL_MVP_QA.md](41_HOUSEKEEPING_REAL_MVP_QA.md) y el contrato
+Backend58. En real solo se admiten los defaults MVP10:00–11:00/FULL_CLEANING,
+con contexto autorizado y programación persistida; no se ratifican las opciones
+QA adicionales. Mis servicios lee Backend y no simula cambios locales.
+
+La mejora UX posterior Staff de tarjeta/modal permanece PASS técnico / EN_QA visual.

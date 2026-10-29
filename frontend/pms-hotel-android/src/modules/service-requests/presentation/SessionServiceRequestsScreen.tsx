@@ -1,3 +1,6 @@
+import { ServiceRequestDisclosureGroup } from '@/modules/service-requests/presentation/ServiceRequestDisclosure';
+import {GuestServiceRequestsList} from './GuestServiceRequestsList';
+import { environment } from '@/config/environment';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
@@ -15,7 +18,7 @@ import { deriveRemoteState } from '@/state/remoteState';
 
 function returnToServices() { router.dismissTo('/services'); }
 
-/** Canonical complete list for the current in-memory Guest session. */
+/** Existing list; real Housekeeping is read independently from Backend. */
 export function SessionServiceRequestsScreen({ nowMs, stayService }: { nowMs?: () => number; stayService?: StayService }) {
   const appClock = useAppClock();
   const getNowMs = nowMs ?? appClock.nowMs;
@@ -29,7 +32,8 @@ export function SessionServiceRequestsScreen({ nowMs, stayService }: { nowMs?: (
   const readOnly = lifecycle === 'CHECKOUT_DUE' || lifecycle === 'CHECKED_OUT';
   const { editRequestId, returnTo } = useLocalSearchParams<{ editRequestId?: string; returnTo?: string }>();
   const [filter, setFilter] = useState<ServiceRequestFilter>('ACTIVE');
-  const filteredRequests = filterServiceRequests(requests, filter);
+  const displayedRequests=environment.useMockApi?requests:requests.filter(item=>item.kind!=='HOUSEKEEPING'&&item.kind!=='ROOM_SERVICE'&&item.kind!=='AMENITIES');
+  const filteredRequests = filterServiceRequests(displayedRequests, filter);
   const editingRequest = !readOnly && typeof editRequestId === 'string' ? requests.find((request) => request.sessionRequestId === editRequestId && request.status !== 'COMPLETED') : undefined;
   const supportsInlineEdit = Boolean(editingRequest && editingRequest.kind === 'HOTEL_ASSIGNED');
   const [title, setTitle] = useState('');
@@ -67,11 +71,12 @@ export function SessionServiceRequestsScreen({ nowMs, stayService }: { nowMs?: (
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterList} testID="session-service-request-filters">
         {serviceRequestFilters.map((option) => <Pressable accessibilityRole="radio" accessibilityState={{ selected: filter === option.value }} key={option.value} onPress={() => setFilter(option.value)} style={[styles.filterChip, filter === option.value && styles.filterChipSelected]} testID={`session-service-request-filter-${option.value}`}><Text style={styles.filterLabel}>{option.label}</Text></Pressable>)}
       </ScrollView>
-      {filteredRequests.length === 0 ? <Text style={styles.empty}>{serviceRequestFilters.find((option) => option.value === filter)?.emptyText}</Text> : filteredRequests.map((request) => <SessionServiceRequestCard key={request.sessionRequestId} nowMs={getNowMs()} onComplete={(item) => { if (lifecycle === 'ACTIVE') completeSessionRequest(item); }} onRemove={(sessionRequestId) => lifecycle === 'ACTIVE' ? removeRequest(sessionRequestId) : false} onEdit={(item) => {
+      {!environment.useMockApi ? <GuestServiceRequestsList filter={filter} additionalCount={displayedRequests.length} additionalFilteredCount={filteredRequests.length}/> : null}
+      <ServiceRequestDisclosureGroup scope={filter}>{filteredRequests.length === 0 ? environment.useMockApi ? <Text style={styles.empty}>{serviceRequestFilters.find((option) => option.value === filter)?.emptyText}</Text> : null : filteredRequests.map((request) => <SessionServiceRequestCard key={request.sessionRequestId} nowMs={getNowMs()} onComplete={(item) => { if (lifecycle === 'ACTIVE') completeSessionRequest(item); }} onRemove={(sessionRequestId) => lifecycle === 'ACTIVE' ? removeRequest(sessionRequestId) : false} onEdit={(item) => {
         if (lifecycle !== 'ACTIVE') return;
         const target = sessionServiceRequestEditPath(item);
         router.push({ pathname: target, params: { editRequestId: item.sessionRequestId, editMode: item.kind, returnTo: 'requests' } });
-      }} readOnly={readOnly} request={request} requests={requests} />)}
+      }} readOnly={readOnly} request={request} requests={requests} />)}</ServiceRequestDisclosureGroup>
     </ScrollView>
     <Modal animationType="slide" onRequestClose={closeEditor} transparent visible={!readOnly && supportsInlineEdit}>
       <View style={styles.screen}>

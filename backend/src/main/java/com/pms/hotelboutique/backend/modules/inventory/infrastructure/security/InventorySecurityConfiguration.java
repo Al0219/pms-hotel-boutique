@@ -29,7 +29,8 @@ public class InventorySecurityConfiguration {
                         "/api/v1/reports/on-books/daily", "/api/v1/reports/on-books/daily/export",
                         "/api/v1/reports/arrivals-departures/daily", "/api/v1/reports/housekeeping/current",
                         "/api/v1/reports/maintenance/current",
-                        "/api/v1/reservations", "/api/v1/reservations/*", "/api/v1/reservations/*/stays/*/room-assignment")
+                        "/api/v1/reservations", "/api/v1/reservations/*", "/api/v1/reservations/*/stays/*/room-assignment",
+                        "/api/v1/reservations/*/stays/*/check-in", "/api/v1/reservations/*/stays/*/check-out")
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(errors -> errors

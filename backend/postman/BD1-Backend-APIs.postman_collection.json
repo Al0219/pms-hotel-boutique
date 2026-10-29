@@ -134,6 +134,26 @@
       "key": "authContext",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "staffAdminUserId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "staffAdminExpectedVersion",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "staffAdminWorkEmail",
+      "value": "qa.changed@example.test",
+      "type": "string"
+    },
+    {
+      "key": "staffAdminRoleCode",
+      "value": "AUDITOR",
+      "type": "string"
     }
   ],
   "item": [
@@ -1526,6 +1546,298 @@
             "url": "{{baseUrl}}/api/v1/guest-auth/registrations/resend",
             "description": "AUTH-GUEST-REG-HISTORY-01. Private BFF transport. Sensitive inputs are supplied locally; never save tokens or OTP in shared evidence."
           }
+        }
+      ]
+    },
+    {
+      "name": "Staff — administración de usuarios (solo lectura)",
+      "description": "Fase 2A, contrato 51 y QA 52. Backend interno; sesión Staff existente. 401 Guest/expirada, 403 permiso/scope, 404 objetivo invisible, 400 filtros/cursor, 503 indisponible. No guardar/exportar tokens reales. Cursor 15min ligado a sesión/contexto y proceso Backend. BFF pendiente.",
+      "item": [
+        {
+          "name": "GET catálogo fijo Staff",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/staff-admin/roles",
+            "description": "STAFF_MANAGE; cinco roles fijos consultables, sin edición."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('No store', () => pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store'));",
+                  "pm.test('Sin credenciales', () => { const raw = pm.response.text(); ['passwordHash','refreshToken','accessToken'].forEach(field => pm.expect(raw).not.to.include(JSON.stringify(field))); });",
+                  "if (pm.response.code === 200) pm.test('Cinco roles fijos', () => pm.expect(pm.response.json().items.map(item => item.code)).to.eql(['SUPER_ADMIN','GERENCIA','RECEPCION','OPERACIONES','AUDITOR']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET usuarios Staff — PROPERTY",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/staff-admin/users?scope=PROPERTY&propertyId={{propertyId}}&limit=50",
+            "description": "propertyId autorizado. Filtros opcionales status/roleCode/username y cursor del resultado. No inferir visibilidad por solapamiento."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('No store', () => pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store'));",
+                  "pm.test('Sin credenciales', () => { const raw = pm.response.text(); ['passwordHash','refreshToken','accessToken'].forEach(field => pm.expect(raw).not.to.include(JSON.stringify(field))); });",
+                  "if (pm.response.code === 200) pm.test('Página scoped', () => { const page = pm.response.json(); pm.expect(page).to.have.all.keys('organizationId','scope','items','limit','nextCursor'); pm.expect(page.scope.kind).to.eql('PROPERTY'); pm.expect(page.items.length).to.be.at.most(50); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET usuario Staff — detalle",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/staff-admin/users/{{staffAdminUserId}}?scope=ALL_PROPERTIES",
+            "description": "Configurar ID objetivo visible; 404 genérico si ajeno/inexistente. Sin asignaciones solo SUPER_ADMIN ALL."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('No store', () => pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store'));",
+                  "pm.test('Sin credenciales', () => { const raw = pm.response.text(); ['passwordHash','refreshToken','accessToken'].forEach(field => pm.expect(raw).not.to.include(JSON.stringify(field))); });",
+                  "if (pm.response.code === 200) pm.test('Detalle administrativo', () => { const body = pm.response.json(); pm.expect(body.item.id).to.eql(pm.variables.get('staffAdminUserId')); pm.expect(body.item.organizationId).to.eql(body.organizationId); pm.expect(body.item).to.have.all.keys('id','username','workEmail','status','roleCode','membershipStatus','organizationId','propertyIds','createdAt','updatedAt','version'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Staff — administración de usuarios (mutaciones 3B-1)",
+      "description": "Comandos Backend internos. No BFF de mutaciones. Configurar ID objetivo y expectedVersion desde GET; ejecutar DISABLED al final. Ningún script actualiza/reintenta automáticamente la versión.",
+      "item": [
+        {
+          "name": "PATCH correo Staff",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workEmail\": \"{{staffAdminWorkEmail}}\",\n  \"expectedVersion\": {{staffAdminExpectedVersion}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/staff-admin/users/{{staffAdminUserId}}?scope=ALL_PROPERTIES",
+            "description": "Solo base QA aislada. Leer versión vigente antes de enviar; no auto-retry. El objetivo no puede ser el actor; membership reemplaza el conjunto completo. DISABLED es terminal, ACTIVE no está implementado."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('No-store', () => pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store'));",
+                  "if (pm.response.code === 200) pm.test('Acuse mínimo', () => { const b=pm.response.json(); pm.expect(b).to.have.all.keys('organizationId','staffUserId','version','changed'); pm.expect(b.staffUserId).to.eql(pm.variables.get('staffAdminUserId')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT rol y propiedades Staff",
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roleCode\": \"{{staffAdminRoleCode}}\",\n  \"propertyIds\": [\n    \"{{propertyId}}\"\n  ],\n  \"expectedVersion\": {{staffAdminExpectedVersion}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/staff-admin/users/{{staffAdminUserId}}/membership?scope=ALL_PROPERTIES",
+            "description": "Solo base QA aislada. Leer versión vigente antes de enviar; no auto-retry. El objetivo no puede ser el actor; membership reemplaza el conjunto completo. DISABLED es terminal, ACTIVE no está implementado."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('No-store', () => pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store'));",
+                  "if (pm.response.code === 200) pm.test('Acuse mínimo', () => { const b=pm.response.json(); pm.expect(b).to.have.all.keys('organizationId','staffUserId','version','changed'); pm.expect(b.staffUserId).to.eql(pm.variables.get('staffAdminUserId')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH suspensión Staff",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SUSPENDED\",\n  \"expectedVersion\": {{staffAdminExpectedVersion}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/staff-admin/users/{{staffAdminUserId}}/status?scope=ALL_PROPERTIES",
+            "description": "Solo base QA aislada. Leer versión vigente antes de enviar; no auto-retry. El objetivo no puede ser el actor; membership reemplaza el conjunto completo. DISABLED es terminal, ACTIVE no está implementado."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('No-store', () => pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store'));",
+                  "if (pm.response.code === 200) pm.test('Acuse mínimo', () => { const b=pm.response.json(); pm.expect(b).to.have.all.keys('organizationId','staffUserId','version','changed'); pm.expect(b.staffUserId).to.eql(pm.variables.get('staffAdminUserId')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH baja lógica Staff — terminal",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"DISABLED\",\n  \"expectedVersion\": {{staffAdminExpectedVersion}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/staff-admin/users/{{staffAdminUserId}}/status?scope=ALL_PROPERTIES",
+            "description": "Solo base QA aislada. Leer versión vigente antes de enviar; no auto-retry. El objetivo no puede ser el actor; membership reemplaza el conjunto completo. DISABLED es terminal, ACTIVE no está implementado."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('No-store', () => pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store'));",
+                  "if (pm.response.code === 200) pm.test('Acuse mínimo', () => { const b=pm.response.json(); pm.expect(b).to.have.all.keys('organizationId','staffUserId','version','changed'); pm.expect(b.staffUserId).to.eql(pm.variables.get('staffAdminUserId')); });"
+                ]
+              }
+            }
+          ]
         }
       ]
     }

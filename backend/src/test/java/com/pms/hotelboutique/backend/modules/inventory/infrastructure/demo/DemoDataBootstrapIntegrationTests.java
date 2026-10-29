@@ -59,6 +59,20 @@ class DemoDataBootstrapIntegrationTests {
         assertEquals(1,jdbc.queryForObject("SELECT count(*) FROM membership_properties mp JOIN staff_users s ON s.id=mp.staff_user_id WHERE s.work_email=? AND mp.property_id=?",Integer.class,DemoDataBootstrap.STAFF_EMAIL,property));
         assertEquals(0,jdbc.queryForObject("SELECT count(*) FROM guest_identities i JOIN guest_accounts a ON a.id=i.guest_account_id WHERE a.email=?",Integer.class,DemoDataBootstrap.GUEST_EMAIL));
     }
+    @Test void repeatedInitializationPreservesAdministrativeChangesAndInactiveAssignmentHistory() {
+        populate();
+        UUID staff=jdbc.queryForObject("select id from staff_users where username='pms_demo_reception'",UUID.class);
+        jdbc.update("update staff_users set work_email='admin-changed@hotel.example',role_code='AUDITOR',status='DISABLED',version=3 where id=?",staff);
+        jdbc.update("update organization_memberships set role_code='AUDITOR',status='INACTIVE' where staff_user_id=?",staff);
+        jdbc.update("update membership_properties set status='INACTIVE' where staff_user_id=?",staff);
+        var before=jdbc.queryForMap("select work_email,role_code,status,version,password_hash from staff_users where id=?",staff);
+        populate();populate();
+        assertTrue(before.equals(jdbc.queryForMap("select work_email,role_code,status,version,password_hash from staff_users where id=?",staff)),"Existing Staff identity and credential must remain intact");
+        assertEquals("INACTIVE",jdbc.queryForObject("select status from organization_memberships where staff_user_id=?",String.class,staff));
+        assertEquals(0,jdbc.queryForObject("select count(*) from membership_properties where staff_user_id=? and status='ACTIVE'",Integer.class,staff));
+        assertEquals(1,jdbc.queryForObject("select count(*) from membership_properties where staff_user_id=? and status='INACTIVE'",Integer.class,staff));
+    }
+
     @Test void conflictingPropertyIsReportedAndNeverOverwritten() {
         populate(); jdbc.update("UPDATE properties SET currency='USD' WHERE id=?", property);
         assertThrows(IllegalStateException.class, this::populate);

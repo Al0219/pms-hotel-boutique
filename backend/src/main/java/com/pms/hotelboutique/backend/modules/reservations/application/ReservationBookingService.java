@@ -13,4 +13,8 @@ import jakarta.validation.Valid;
 public interface ReservationBookingService {
 
     BookingView createBooking(@Valid CreateBookingCommand command);
+
+    /** Internal call after Staff authorization; preserves the authenticated audit actor. */
+    BookingView createBookingAsStaff(@Valid CreateBookingCommand command, java.util.UUID actorId,
+            java.util.UUID correlationId);
 }

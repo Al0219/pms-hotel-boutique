@@ -7,6 +7,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 /**
@@ -25,6 +26,8 @@ public class ServiceRequest {
         CONCIERGE,
         VALET,
         HOUSEKEEPING,
+        ROOM_SERVICE,
+        AMENITIES,
         MAINTENANCE,
         OTHER
     }
@@ -96,6 +99,29 @@ public class ServiceRequest {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    @Column(name = "service_date")
+    private LocalDate serviceDate;
+    @Column(name = "time_slot", length = 32)
+    private String timeSlot;
+    @Column(name = "cleaning_type", length = 32)
+    private String cleaningType;
+    @Column(name = "guest_request_key", length = 100)
+    private String guestRequestKey;
+
+    public void scheduleHousekeeping(LocalDate date, String slot, String type, String requestKey) {
+        if (category != Category.HOUSEKEEPING || date == null || slot == null || type == null || requestKey == null) {
+            throw new IllegalArgumentException("structured housekeeping schedule required");
+        }
+        this.serviceDate = date;
+        this.timeSlot = slot;
+        this.cleaningType = type;
+        this.guestRequestKey = requestKey;
+    }
+    public LocalDate getServiceDate() { return serviceDate; }
+    public String getTimeSlot() { return timeSlot; }
+    public String getCleaningType() { return cleaningType; }
+    public String getGuestRequestKey() { return guestRequestKey; }
 
     protected ServiceRequest() {
     }

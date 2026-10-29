@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { EntityListFooter } from './entity-list-surface';
 import styles from './entity-workspace.module.css';
 
@@ -13,6 +13,19 @@ interface PaginationState {
   total: number;
   from: number;
   to: number;
+  setPage: (page: number) => void;
+  setPageSize: (size: number) => void;
+}
+
+/** Server owns pagination. Only visited pages have usable cursors; total is unknown. */
+interface CursorPaginationState {
+  mode: 'cursor';
+  page: number;
+  pageSize: number;
+  from: number;
+  to: number;
+  hasNext: boolean;
+  busy: boolean;
   setPage: (page: number) => void;
   setPageSize: (size: number) => void;
 }
@@ -48,11 +61,15 @@ function pageNumbers(current: number, total: number): Array<number | 'ellipsis'>
   return pages;
 }
 
-export function EntityPagination({ pagination, label, noun }: {
-  pagination: PaginationState; label: string; noun: string;
+export function EntityPagination({ pagination, label, noun, summary }: {
+  pagination: PaginationState | CursorPaginationState; label: string; noun: string; summary?: ReactNode;
 }) {
-  const { page, pageSize, pageCount, from, to, total, setPage, setPageSize } = pagination;
-  return <EntityListFooter navigationLabel={label} live="polite" summary={`${from}–${to} de ${total} ${noun}`} actions={
+  const { page, pageSize, from, to, setPage, setPageSize } = pagination;
+  const cursor = 'mode' in pagination && pagination.mode === 'cursor' ? pagination : undefined;
+  const pageCount = 'pageCount' in pagination ? pagination.pageCount : page;
+  const busy = cursor?.busy ?? false;
+  const resultSummary = 'total' in pagination ? `${from}–${to} de ${pagination.total} ${noun}` : `${from}–${to} ${noun}`;
+  return <EntityListFooter navigationLabel={label} live="polite" summary={summary ?? resultSummary} actions={
     <div className={styles.paginationControls}>
       <label className={styles.pageSizeField}>Filas por página
         <select value={pageSize} onChange={event => setPageSize(Number(event.target.value))}>
@@ -60,12 +77,12 @@ export function EntityPagination({ pagination, label, noun }: {
         </select>
       </label>
       <div className={styles.pager}>
-        <button type="button" className={styles.pageButton} aria-label="Página anterior" disabled={page === 1} onClick={() => setPage(page - 1)}>‹</button>
+        <button type="button" className={styles.pageButton} aria-label="Página anterior" disabled={page === 1 || busy} onClick={() => setPage(page - 1)}>‹</button>
         {pageNumbers(page, pageCount).map((entry, index) => entry === 'ellipsis'
           ? <span key={`ellipsis-${index}`} className={styles.pageEllipsis} aria-hidden="true">…</span>
           : <button key={entry} type="button" className={`${styles.pageButton} ${entry === page ? styles.pageButtonActive : ''}`}
-            aria-label={`Página ${entry}`} aria-current={entry === page ? 'page' : undefined} onClick={() => setPage(entry)}>{entry}</button>)}
-        <button type="button" className={styles.pageButton} aria-label="Página siguiente" disabled={page === pageCount} onClick={() => setPage(page + 1)}>›</button>
+            disabled={busy} aria-label={`Página ${entry}`} aria-current={entry === page ? 'page' : undefined} onClick={() => setPage(entry)}>{entry}</button>)}
+        <button type="button" className={styles.pageButton} aria-label="Página siguiente" disabled={busy || (cursor ? !cursor.hasNext : page === pageCount)} onClick={() => setPage(page + 1)}>›</button>
       </div>
     </div>
   } />;

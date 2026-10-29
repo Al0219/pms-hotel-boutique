@@ -35,8 +35,19 @@ class PublicBookingReceiptSchemaUpgradeTests {
                 }
                 migrate(connection, schema, "classpath:db/changelog/db.changelog-master.yaml");
                 Map<String, String> after = manifest(connection, schema);
-                assertEquals(before.size() + 4, after.size());
+                // Upgrade must exactly match the fresh current schema, including additive modules and checksums.
+                assertEquals(manifest(connection, "public"), after);
+                assertTrue(after.keySet().stream().anyMatch(key -> key.startsWith("003-public-reservation-lookup-014\n")));
+                assertTrue(after.keySet().stream().anyMatch(key -> key.startsWith("005-operations-004\n")));
+                assertTrue(after.keySet().stream().anyMatch(key -> key.startsWith("005-operations-005\n")));
+                assertTrue(after.keySet().stream().anyMatch(key -> key.startsWith("005-operations-006\n")));
+                assertTrue(after.keySet().stream().anyMatch(key -> key.startsWith("003-staff-auth-012\n")));
+                assertTrue(after.keySet().stream().anyMatch(key -> key.startsWith("003-guest-account-evidence-013\n")));
                 before.forEach((key, checksum) -> assertEquals(checksum, after.get(key), key));
+                try (var row = sql.executeQuery("SELECT count(*) FROM " + schema + ".public_reservation_access")) {
+                    assertTrue(row.next());
+                    assertEquals(0, row.getInt(1));
+                }
                 assertTrue(after.keySet().stream().anyMatch(key -> key.startsWith("004-reservations-008\n")));
                 try (var row = sql.executeQuery("SELECT confirmation_code,status,currency FROM " + schema + ".reservations WHERE id='" + reservation + "'")) {
                     assertTrue(row.next());

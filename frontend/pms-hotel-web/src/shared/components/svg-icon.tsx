@@ -1,12 +1,17 @@
 import type { CSSProperties } from 'react';
 
 export function SvgIcon({ name, className, style }: {
-  name: 'dashboard' | 'reservations' | 'room' | 'logout' | 'calendar' | 'guests' | 'account' | 'arrow' | 'chevron' | 'location' | 'phone' | 'mail' | 'facebook' | 'x' | 'instagram' | 'cart' | 'check';
+  name: 'home' | 'cleaning' | 'dining' | 'gift' | 'reports' | 'dashboard' | 'reservations' | 'room' | 'logout' | 'calendar' | 'guests' | 'account' | 'arrow' | 'chevron' | 'location' | 'phone' | 'mail' | 'facebook' | 'x' | 'instagram' | 'cart' | 'check';
   className?: string;
   style?: CSSProperties;
 }) {
   return <svg className={className} style={style} width="20" height="20" viewBox="0 0 24 24"
     fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {name === 'home' && <><path d="m3 10 9-7 9 7v11h-6v-7H9v7H3Z"/></>}
+    {name === 'cleaning' && <><path d="m14 3-4 10m-5-1 9 3-2 7-10-3Z"/><path d="m6 15-2 5m5-4-2 5m4-3-1 4"/></>}
+    {name === 'dining' && <><path d="M5 3v7m3-7v7m3-7v7M5 7h6m-3 3v11m12 0V3c-4 2-4 8 0 9"/></>}
+    {name === 'gift' && <><rect x="3" y="8" width="18" height="5" rx="1"/><path d="M5 13v8h14v-8M12 8v13"/><path d="M12 8C3 8 5 1 9 3c2 1 3 5 3 5Zm0 0c9 0 7-7 3-5-2 1-3 5-3 5Z"/></>}
+    {name === 'reports' && <><path d="M3 3v18h18M7 17v-4m5 4V8m5 9V4"/></>}
     {name === 'dashboard' && <><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></>}
     {name === 'reservations' && <><rect x="5" y="3" width="14" height="18" rx="2" /><path d="M9 7h6M9 11h6m-6 5 2 2 4-4" /></>}
     {name === 'room' && <><path d="M3 18V6m18 12v-7H3m0 4h18M3 18v3m18-3v3" /><path d="M7 11V7h6v4" /></>}

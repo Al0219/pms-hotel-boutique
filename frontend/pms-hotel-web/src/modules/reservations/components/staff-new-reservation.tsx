@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useRef, useState, type FormEvent } from 'react';
+import { getPublicEnvironment } from '@/lib/env';
+import { StaffNewReservationReal } from './staff-new-reservation-real';
 import { useStaffReservationCreate } from '../hooks/use-staff-reservation-create';
 import { staffCreateErrors, stayNights, canChooseStaffOption, type StaffStaySearch, type StaffBookingGuest, type StaffCreateField } from '../model/staff-reservation-create';
 import styles from './staff-new-reservation.module.css';
@@ -24,6 +26,11 @@ function money(minor: number, currency = 'GTQ') {
 }
 
 export function StaffNewReservation({ propertyId, propertyName, timezone, sessionId, canCreate }: StaffNewReservationProps) {
+  const props = { propertyId, propertyName, timezone, sessionId, canCreate };
+  return getPublicEnvironment().useMockApi ? <StaffNewReservationPreview {...props} /> : <StaffNewReservationReal {...props} />;
+}
+
+function StaffNewReservationPreview({ propertyId, propertyName, timezone, sessionId, canCreate }: StaffNewReservationProps) {
   const today = hotelDay(timezone);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [search, setSearch] = useState<StaffStaySearch>(() => ({ checkIn: today, checkOut: nextDay(today), adults: 2, children: 0, rooms: 1 }));

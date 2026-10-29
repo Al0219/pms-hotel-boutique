@@ -63,6 +63,7 @@ export const accountStayHubStyles = StyleSheet.create({
     fontSize: tokens.typography.size.bodyMedium,
   },
   reference: {
+    maxWidth: '100%',
     alignSelf: 'flex-start',
     backgroundColor: tokens.color.brandSoft,
     borderRadius: tokens.radius.chip,
@@ -70,6 +71,7 @@ export const accountStayHubStyles = StyleSheet.create({
     paddingVertical: tokens.space.xs,
   },
   referenceText: {
+    flexShrink: 1,
     color: tokens.color.white,
     fontFamily: tokens.typography.family,
     fontSize: tokens.typography.size.bodyMedium,

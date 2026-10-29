@@ -11,6 +11,7 @@ const sessionFixture: StaffSession = {
     timezone: 'America/Guatemala', currency: 'GTQ', active: true }],
 };
 vi.mock('@/modules/properties', () => ({ usePropertyScope: mocks.scope }));
+vi.mock('@/modules/housekeeping', () => ({ useStaffHousekeepingRooms: () => ({ isSuccess: false, isError: false, isFetching: false, refetch: vi.fn() }) }));
 vi.mock('@/modules/auth', () => ({ useStaffSession: mocks.session }));
 vi.mock('@/modules/reservations', () => ({ useStaffReservationStays: mocks.stays, CalendarGantt: (props: unknown) => { mocks.calendar(props); return <p>Calendario del hotel</p>; }, ReservationCenter: (props: unknown) => { mocks.center(props); return <p>Reservas del hotel</p>; }, ReservationDetail: (props: unknown) => { mocks.detail(props); return <p>Detalle de reserva</p>; } }));
 vi.mock('@/modules/rooms', () => ({ RoomBoard: (props: { viewControls?: ReactNode }) => { mocks.board(props); return <>{props.viewControls}<p>Tablero del hotel</p></>; }, RoomCatalogAdmin: (props: unknown) => { mocks.catalog(props); return <p>Catálogo del hotel</p>; } }));
@@ -22,6 +23,16 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe('Staff property composition', () => {
+  it('offers real folio access only to an identified Staff actor with the existing finance permission', () => {
+    const view = render(<StaffReservationsWorkspace reservationId="R1" />);
+    expect(mocks.detail).toHaveBeenLastCalledWith(expect.objectContaining({ folioAccess: undefined }));
+    mocks.session.mockReturnValue({ ...sessionFixture, staffUserId: 'actor-real', permissions: ['FOLIO_PAYMENT_OPERATE'] });
+    view.rerender(<StaffReservationsWorkspace reservationId="R1" />);
+    expect(mocks.detail).toHaveBeenLastCalledWith(expect.objectContaining({ folioAccess: { actorId: 'actor-real', sessionId: 'staff-1' } }));
+    mocks.session.mockReturnValue({ ...sessionFixture, permissions: ['FOLIO_PAYMENT_OPERATE'] });
+    view.rerender(<StaffReservationsWorkspace reservationId="R1" />);
+    expect(mocks.detail).toHaveBeenLastCalledWith(expect.objectContaining({ folioAccess: undefined }));
+  });
   it.each([null, { kind: 'ALL_PROPERTIES', propertyIds: ['GT-HB-01', 'GT-HB-03'] }])('requires one explicit authorized property', scope => {
     mocks.scope.mockReturnValue({ ready: true, scope });
     render(<StaffReservationsWorkspace />);
@@ -54,6 +65,12 @@ describe('Staff property composition', () => {
     expect(mocks.center).toHaveBeenCalledWith(expect.objectContaining({ endpoint: '/api/staff/reservations', canCreate: false }));
     view.rerender(<StaffReservationsWorkspace reservationId="real-reservation" />);
     expect(mocks.detail).toHaveBeenCalledWith(expect.objectContaining({ endpoint: '/api/staff/reservations', canManage: false, reservationId: 'real-reservation' }));
+  });
+  it.each(['RECEPCION', 'SUPER_ADMIN'])('enables creation for %s through RESERVATION_MANAGE', roleId => {
+    vi.stubEnv('NEXT_PUBLIC_USE_MOCK_API', 'false');
+    mocks.session.mockReturnValue({ ...sessionFixture, roleId, permissions: ['RESERVATION_MANAGE'] });
+    render(<StaffReservationsWorkspace />);
+    expect(mocks.center).toHaveBeenCalledWith(expect.objectContaining({ propertyId: 'GT-HB-01', canCreate: true }));
   });
 });
 

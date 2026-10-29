@@ -6,6 +6,7 @@
 .overline { color: #6b7c62; font-size: 10px; letter-spacing: .16em; font-weight: 600; }
 .subtitle { color: #68736b; font-size: 14px; line-height: 1.8; margin: 12px 0 0; }
 .headerActions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.creationActions { display: flex; justify-content: flex-end; margin-bottom: 20px; }
 .primaryAction, .secondaryAction, .retryButton { align-items: center; border-radius: 12px; display: inline-flex; font: inherit; font-size: 12px; font-weight: 500; justify-content: center; line-height: 1.5; min-height: 44px; padding: 10px 16px; text-decoration: none; }
 .primaryAction { background: #5a6b5d; border: 1px solid #5a6b5d; color: white; }
 .primaryAction:disabled { cursor: not-allowed; opacity: .6; }

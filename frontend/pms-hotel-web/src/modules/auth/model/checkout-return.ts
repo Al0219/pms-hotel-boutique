@@ -8,6 +8,7 @@ export function checkoutReturn(value?: string): string | undefined {
 }
 
 export function guestAccessReturn(value?: string): string | undefined {
-  if (value === '/mis-reservas' || value === '/cuenta/reservas/vincular') return value;
+  if (value && ['/cuenta', '/mis-reservas', '/cuenta/reservas', '/cuenta/historial', '/cuenta/reservas/vincular'].includes(value)) return value;
+  if (value && /^\/cuenta\/reservas\/[a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12}$/i.test(value)) return value;
   return checkoutReturn(value);
 }

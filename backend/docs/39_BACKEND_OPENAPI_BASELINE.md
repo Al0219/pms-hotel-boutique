@@ -1,5 +1,70 @@
 # 39 — Baseline OpenAPI/Swagger Backend
 
+Ampliación62 EN_QA: lookup200 incluye overview y accommodations requeridos, montos
+originales opcionales y código/timezone por stay. Esquemas separados; GuestStay
+compartido no cambia. Paridad93/75/124/16 PASS, OpenAPI25 y consulta9 PASS.
+Sin operaciones nuevas ni exclusiones; expansión de respuesta confirmada por usuario.
+
+## Consulta por correo + código (2026-10-28) — EN_QA
+
+Contrato62 sustituye seis operaciones OTP/listado/grant aún no publicadas por
+una operación POST /api/v1/public/reservation-lookup/search, audiencia internal-bff,
+sin JWT ni security scheme propio. Ambas credenciales obligatorias en JSON cerrado,
+200 de UNA reserva con N stays/detalles, errores400/404/429/503 y private/no-store.
+No cambia autorización Guest/Staff ni expone historial por correo. Proyección
+limitada; OpenAPI requiere paridad completa con mappings, sin exclusiones nuevas.
+Paridad generada: 93 operaciones/75 paths/122 schemas/16 tags; OpenAPI25 PASS.
+Validación focal Backend56 PASS (consulta, OpenAPI y upgrade/idempotencia).
+Los conteos98/80/125/16 y1170 tests del flujo anterior son históricos; la suite
+completa no se repite como parte de este ajuste. Integración visible3001:21 PASS;
+QA manual del usuario pendiente.
+
+## Android Housekeeping real MVP (2026-10-26) — COMPLETADA / PASS funcional
+
+Contrato58 agrega POST/GET Guest de housekeeping-requests por reserva/estancia y
+GET Staff de service-requests/housekeeping por propiedad. Bearer Guest propio,
+Bearer Staff con SERVICE_REQUEST_INTAKE u OPERATIONS_MANAGE y scope existente;
+JSON estricto, programación estructurada, Idempotency-Key y private/no-store.
+Solo defaults MVP, sin modificar estados físicos HK ni agregar exclusiones.
+Documento generado y paridad con mappings: **71 operaciones,55 paths,92 schemas,
+15 tags**. OpenApiContractIntegrationTests23 PASS más contrato/HTTP Guest11 PASS.
+El esquema documenta notas nullable/máximo500, room nullable en Staff, errores,
+respuestas201/200 de replay y audiencia guest-bff-or-native/staff. PASS manual
+funcional confirmado por usuario; UX Staff PASS técnico / EN_QA visual; ver [contrato58](58_ANDROID_HOUSEKEEPING_REAL_MVP.md).
+
+## Alta de reservas Staff — contrato55 (2026-10-23)
+
+Dos operaciones nuevas: GET `/api/v1/reservations/creation-options` y POST
+`/api/v1/reservations`. Audiencia staff y bearerAuth vigentes, RESERVATION_MANAGE
+y PROPERTY explícita; DTOs StaffReservationCreationGuest/Request/Option/Quote/
+Receipt. Admisión transaccional, alojamiento pendiente sin PAYMENT, recibo local
+idempotente201 (nuevo/replay), errores400/401/403/404/409/500 y private,no-store.
+Sin capacidad inventada, exclusiones nuevas ni cambios a los GET existentes.
+Pruebas estructurales y paridad mappings en OpenApiContractIntegrationTests;
+evidencia del incremento en AlanHandoff y contrato55.
+
+## Revisión de asignación por limpieza (2026-10-23)
+
+Contratos50/52: candidata DIRTY visible con selectable=false y reason no vacío;
+PUT409 si la limpieza actual es DIRTY después del lock Room. OpenAPI describe
+esta condición en GET/PUT y esquema Candidate, sin nuevas rutas ni campos.
+Validación del incremento en AlanHandoff.
+
+## Evolución Staff lifecycle (2026-10-22)
+
+[Contrato54](54_STAFF_STAY_LIFECYCLE_CONTRACT.md) agrega POST
+`/api/v1/reservations/{reservationId}/stays/{stayId}/check-in` y `/check-out`, con
+PROPERTY explícito, Bearer Staff/RESERVATION_MANAGE e Idempotency-Key. Request
+StaffStayLifecycleRequest, respuesta StaffStayLifecycleResult, errores ProblemDetail
+con code seguro para409. GET Staff agrega updatedAt por stay, sin datos financieros.
+OpenApiContractIntegrationTests valida estos contratos y la paridad completa con
+mappings; no se agregan exclusiones. Documento generado real:53 operaciones,
+42 paths,63 schemas y13 tags. OpenAPI17 PASS y verify completo946 PASS, sin
+failures/errors/skipped, BUILD SUCCESS/JAR. Primer full detectó content-type */*
+en el nuevo200; se corrigieron anotaciones a application/json y problem+json,
+conservando la prueba. Evidencia y límites en AlanHandoff; integración BFF/UI y
+QA manual aprobado en [Web66](../../frontend/pms-hotel-web/docs/66_STAFF_STAY_LIFECYCLE_QA.md).
+
 **Incremento:** BE-005-OPENAPI-01. **Fecha:** 2026-10-05.
 **Rama/base:** `chore/backend-openapi-contract-baseline`, HEAD `8cb2811`;
 árbol limpio al iniciar. Mantenimiento autorizado por el usuario; estado EN_QA
@@ -64,6 +129,28 @@ parámetros y security; Servlet real conserva 406 sin error redispatch y rechaza
 HEAD/POST sin generar archivos. Backend `verify` final: **883 pruebas PASS**,
 cero failures/errors/skipped. [Guía y evidencia QA](REPORTING_ON_BOOKS_CSV_QA.md).
 El estado de implementación permanece EN_QA hasta confirmación manual del usuario.
+## Evolución Staff Admin comandos — Backend3B-1 (2026-10-22)
+
+PATCH /staff-admin/users/{id}, PUT /{id}/membership y PATCH /{id}/status bajo
+/api/v1; audiencia internal-bff, STAFF_MANAGE y scope explícito. DTO estrictos,
+acuse mínimo y errores propios; entrada status solo SUSPENDED/DISABLED. Sin
+creación/reactivación/credenciales. GET conserva DTO y solo actualiza Allow del
+detalle para incluir PATCH. [QA54](54_STAFF_ADMIN_MUTATIONS_QA.md).
+Paridad generada/mappings PASS: **52 operaciones,40 paths,68 schemas,15 tags**,
+sin exclusiones nuevas. Backend verify915 PASS; EN_QA hasta confirmación manual.
+No se publica contrato BFF de escritura ni se cierra el baseline global.
+
+## Evolución Staff Admin lectura — Fase 2A (2026-10-22)
+
+Tres GET adicionales /api/v1/staff-admin/roles, /users y /users/{id}, protegidos
+por Bearer Staff/STAFF_MANAGE, audiencia internal-bff y scope explícito para
+usuarios. [Contrato 51](51_STAFF_ADMIN_READ_CONTRACT_PROPOSAL.md),
+[QA 52](52_STAFF_ADMIN_READ_QA.md). Sin contratos BFF/UI implementados ni mutaciones.
+Documento generado contrastado con mappings: 49 operaciones, 38 paths, 63 schemas,
+14 tags. Siete schemas administrativos propios, enums y límites, cursor nullable,
+errores sanitizados y private/no-store; ninguna exclusión de mappings nueva.
+La excepción a la aserción de parámetros del principal es solo username/roleCode
+como filtros de GET users; la organización y actor siguen siendo server-side.
 
 ## Evolución AUTH-UNIFIED-01 (2026-10-06)
 
@@ -422,3 +509,91 @@ física PASS confirmado por Alan el 2026-10-08. Se conserva la evidencia de Open
 anterior; en este cierre documental no se regeneró ni modificó el contrato.
 Estados operativos, availability pública y default Demo son correcciones Web y no
 añaden operaciones, schemas ni enums Backend al baseline.
+
+## Incremento Housekeeping Staff — 2026-10-21
+
+Corrección solicitada 2026-10-22: StaffHousekeepingRoom agrega `cleaningReason`,
+string/null requerido, derivado de auditoría existente para DIRTY. Null si no hay
+motivo vigente; mismo scope/permisos, sin endpoint ni historial nuevo. Cobertura
+OpenApiContractIntegrationTests y StaffHousekeepingIntegrationTests.
+
+Ampliación [contrato52](52_ROOM_READINESS_CONTRACT.md): GET list/detail admite
+OPERATIONS_MANAGE o RESERVATION_MANAGE; escrituras solo OPERATIONS_MANAGE.
+StaffRoomAssignmentCandidate agrega housekeeping_status nullable con enum que
+incluye JSON null, ready_for_check_in y warning. No nuevas operaciones HTTP:
+el bloqueo de entrega se aplica al servicio checkIn interno existente.
+
+Contrato [51](51_STAFF_HOUSEKEEPING_CONTRACT.md) aprobado. Añade cinco operaciones
+del controller StaffHousekeepingController: GET colección/detalle, POST tracking,
+PUT status y PUT dnd bajo `/api/v1/properties/{propertyId}/housekeeping/rooms`.
+Audiencia staff y bearerAuth, OPERATIONS_MANAGE y PROPERTY revalidados; parámetros
+UUID, cuerpos JSON cerrados y errores400/401/403/404/409 según operación.
+Schemas StaffHousekeepingBoard/StaffHousekeepingRoom y requests específicos;
+estado/DND/fecha nulos en habitaciones sin seguimiento. El enum nullable de
+status incluye JSON null, no solo type:null. UTC y token exacto de concurrencia;
+respuestas private,no-store. Ninguna exclusión nueva. Cobertura por pruebas
+estructurales globales y StaffHousekeepingIntegrationTests; evidencia/estado
+final se registran en AlanHandoff y la guía Web64.
+
+## Extensión Guest Android nativo — 2026-10-25, EN_QA
+
+Autorizada explícitamente por Alan: [contrato56](56_ANDROID_GUEST_MVP_CONTRACT_QA.md).
+Guest sessions/me/refresh/logout/account summary admiten BFF Web o Android
+nativo seguro; Google y registro siguen BFF-only, browser sin tokens. Refresh
+nativo en X-Guest-Refresh-Token sin cookie/Origin, servicio/rotación existentes.
+Dos GET propios account/reservations y /{reservationId}/stays/{stayId}, siempre
+GuestPrincipal y vínculos persistidos/property coherente. Sin tablas/migraciones
+ni cambios Staff. OpenAPI y sus pruebas incluyen audiencia guest-bff-or-native,
+Bearer Guest y alternativas de refresh; sin exclusiones nuevas.
+
+## Corrección posterior — reservas Guest, EN_QA (2026-10-25)
+
+[Contrato57](57_GUEST_BOOKING_LINK_RECOVERY.md) reutiliza las lecturas existentes,
+agrega POST account/reservations/reconcile y reservationStatus al listado.
+Solo GuestPrincipal, correo verificado persistido y CONFIRMED; sin transferencia.
+Migración aditiva013 habilita procedencia ACCOUNT desde email_verified_at para
+cuentas anteriores sin prueba; no inventa OTP/Google ni crea tablas. Transacción
+independiente, auditoría/locks/ON CONFLICT existentes. Web confirma primero y
+recupera después; Web/Android reconcilian antes de listar. La confirmación/pago
+nunca se repite o revierte por fallo de vínculo. Amplía el alcance inicial del
+MVP56; no modifica migraciones aplicadas ni cierra QA previos. OpenAPI con paridad.
+
+## Referencia de reserva en detalle Guest — 2026-10-26
+
+GuestStay agrega confirmationCode string requerido, persistido desde Reservation,
+en el GET existente; IDs/seguridad/propiedad conservados. Prueba focal sobre
+/v3/api-docs comprueba required y paridad mappings; sin nuevas operaciones.
+Recorrido real Web/Android con PASS manual confirmado por usuario. Ajuste visual
+Android EN_QA pendiente de confirmación; no atribuye nueva ejecución manual.
+
+## Housekeeping real actions — 2026-10-26, EN_QA
+
+[Contrato59](59_HOUSEKEEPING_REAL_ACTIONS_MVP.md): PUT Guest solicitud propia y
+POST cancelación, PUT Staff status con OPERATIONS_MANAGE y propiedad autorizada.
+CAS updatedAt, cutoff Guest25min, ciclos limitados, errores/auth/headers documentados.
+Respuesta Guest agrega updatedAt/modifiableUntil y listado Staff updatedAt.
+OpenAPI generado: **74 operaciones /58 paths /96 schemas /15 tags**; paridad
+con mappings PASS y sin exclusiones nuevas. No tablas ni migraciones nuevas.
+
+Ampliación de programación del mismo contrato59: cinco valores permitidos en
+timeSlot de create/edit; GuestStay.timezone requerido desde propiedad autorizada.
+Conteos74/58/96/15 conservados; paridad mappings y campos requeridos verificados.
+
+## Room Service real MVP — EN_QA
+
+[Contrato60](60_ROOM_SERVICE_REAL_MVP.md): cinco operaciones Guest propias para
+catálogo/pedidos/edición/cancelación y dos Staff por propiedad para lectura/ciclo
+OPEN→IN_PROGRESS→DONE. Audiencias, auth/permisos, cuerpos cerrados y errores
+documentados; cantidades enteras1–5 y precios/totales snapshot en GTQ del servidor.
+OpenAPI generado81 operaciones/64paths/104schemas/15tags, paridad mappings PASS.
+Migración aditiva005-operations-005, sin exclusiones nuevas ni datos mock reales.
+
+## Amenidades real MVP — COMPLETADA / PASS manual confirmado
+
+[Contrato61](61_AMENITIES_REAL_MVP.md): cinco operaciones Guest propias y dos Staff
+por propiedad. Catálogo persistido de cinco artículos, líneas/cantidades sin
+campos financieros; cuerpos cerrados, permisos INTAKE/OPS existentes, CAS,
+idempotencia, cutoff y checkout normal. OpenAPI generado88 operaciones/70paths/
+112schemas/15tags; paridad mappings comprobada, audiencias Guest nativa/Staff
+y sin exclusiones nuevas. Migración aditiva005-operations-006. QA manual del
+núcleo confirmado por el usuario. Ajuste visual posterior sin cambios de API.

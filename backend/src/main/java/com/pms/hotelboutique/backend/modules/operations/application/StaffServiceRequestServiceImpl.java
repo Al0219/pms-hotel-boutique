@@ -7,6 +7,11 @@ import com.pms.hotelboutique.backend.modules.securityauth.application.StaffAuthS
 import com.pms.hotelboutique.backend.modules.securityauth.application.StaffAuthenticationException;
 import com.pms.hotelboutique.backend.modules.securityauth.application.StaffAuthorizationService;
 import com.pms.hotelboutique.backend.modules.securityauth.application.StaffPrincipal;
+import com.pms.hotelboutique.backend.modules.operations.domain.ServiceRequest;
+import jakarta.persistence.EntityManager;
+import java.time.Instant;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -26,16 +31,18 @@ public class StaffServiceRequestServiceImpl implements StaffServiceRequestServic
     private final ServiceRequestService requests;
     private final ServiceRequestRepository repository;
     private final JdbcClient jdbc;
+    private final EntityManager entities;
 
     public StaffServiceRequestServiceImpl(StaffAuthService sessions,
             StaffAuthorizationService authorization, PropertyScopeResolver scopes,
-            ServiceRequestService requests, ServiceRequestRepository repository, JdbcClient jdbc) {
+            ServiceRequestService requests, ServiceRequestRepository repository, JdbcClient jdbc, EntityManager entities) {
         this.sessions = sessions;
         this.authorization = authorization;
         this.scopes = scopes;
         this.requests = requests;
         this.repository = repository;
         this.jdbc = jdbc;
+        this.entities = entities;
     }
 
     @Override
@@ -73,13 +80,57 @@ public class StaffServiceRequestServiceImpl implements StaffServiceRequestServic
                 .map(ServiceRequestService.ServiceRequestView::from).toList();
     }
 
-    private Access access(StaffPrincipal principal, UUID propertyId) {
+    @Override
+    @Transactional(readOnly = true)
+    public List<HousekeepingRequestView> listHousekeeping(StaffPrincipal principal, UUID propertyId) {
+        access(principal, propertyId);
+        return jdbc.sql("""
+            SELECT sr.id,sr.property_id,r.confirmation_code,room.code room_code,sr.service_date,
+                   sr.time_slot,sr.cleaning_type,sr.detail,sr.status,sr.updated_at
+            FROM service_requests sr
+            JOIN reservations r ON r.id=sr.reservation_id AND r.property_id=sr.property_id
+            JOIN reservation_stays s ON s.id=sr.stay_id AND s.reservation_id=r.id AND s.property_id=sr.property_id
+            LEFT JOIN rooms room ON room.id=sr.room_id AND room.property_id=sr.property_id
+            WHERE sr.property_id=:property AND sr.category='HOUSEKEEPING' AND sr.service_date IS NOT NULL
+            ORDER BY sr.created_at DESC,sr.id
+            """).param("property", propertyId).query((rs, row) -> new HousekeepingRequestView(
+                rs.getObject("id", UUID.class), rs.getObject("property_id", UUID.class), rs.getString("confirmation_code"),
+                rs.getString("room_code"), rs.getObject("service_date", java.time.LocalDate.class),
+                rs.getString("time_slot"), rs.getString("cleaning_type"), rs.getString("detail"),
+                ServiceRequest.Status.valueOf(rs.getString("status")), rs.getTimestamp("updated_at").toInstant())).list();
+    }
+
+    @Override
+    public TransitionResult transitionHousekeeping(StaffPrincipal principal, UUID propertyId, UUID requestId,
+            Instant expectedUpdatedAt, ServiceRequest.Status targetStatus) {
+        var access = access(principal, propertyId, true);
+        var request = repository.findByIdAndPropertyIdAndCategory(requestId, propertyId,
+            ServiceRequest.Category.HOUSEKEEPING)
+            .filter(row -> row.getServiceDate() != null)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Request unavailable"));
+        var status = request.getStatus();
+        var inProgress = ServiceRequest.Status.IN_PROGRESS;
+        var done = ServiceRequest.Status.DONE;
+        if (targetStatus != inProgress && targetStatus != done) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid target status");
+        if (status == targetStatus) return new TransitionResult(requestId, propertyId, status, request.getUpdatedAt());
+        if (expectedUpdatedAt == null || !expectedUpdatedAt.equals(request.getUpdatedAt())
+                || !(targetStatus == inProgress && status == ServiceRequest.Status.OPEN
+                    || targetStatus == done && status == inProgress))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Request changed; refresh before retrying");
+        if (targetStatus == inProgress) requests.startProgress(requestId, access.actorId());
+        else requests.complete(requestId, access.actorId());
+        repository.flush(); entities.refresh(request);
+        return new TransitionResult(requestId, propertyId, request.getStatus(), request.getUpdatedAt());
+    }
+
+    private Access access(StaffPrincipal principal, UUID propertyId) { return access(principal, propertyId, false); }
+    private Access access(StaffPrincipal principal, UUID propertyId, boolean manage) {
         if (principal == null) {
             throw new StaffAuthenticationException();
         }
         var active = sessions.getActivePrincipal(principal);
         var snapshot = authorization.resolve(active.staffUserId());
-        if (!snapshot.hasPermission(INTAKE) && !snapshot.hasPermission(OPERATIONS)) {
+        if (manage ? !snapshot.hasPermission(OPERATIONS) : !snapshot.hasPermission(INTAKE) && !snapshot.hasPermission(OPERATIONS)) {
             throw new AccessDeniedException("Staff cannot access service requests");
         }
         return new Access(active.staffUserId(), scopes.resolveProperty(snapshot, propertyId));
