@@ -1,3 +1,63 @@
+## 2026-10-29 — Integración de origin/main: conflictos resueltos, validación local PASS
+
+Integrado ba70022 en feature/staff-reservation-detail por autorización de José.
+Conflictos documentales de AlanPlan/AlanHandoff resueltos conservando íntegros
+los historiales de Reservas y Valet. OpenAPI combinado revisado semánticamente.
+Backend:164 pruebas seleccionadas/11 clases PASS y verify/JAR PASS, Java21/PG17
+aislado; Web67 seleccionadas/8 archivos PASS, TypeScript y ESLint PASS. No se
+atribuye una nueva ejecución de las suites globales a esta integración.
+Sin modificaciones propias a Android, código/migraciones de Valet o al entorno
+Docker3001. staff-admin.test.tsx previo conservado byte a byte, fuera del merge.
+Evidencia fuera de Git: %TEMP%/pms-staff-reservation-merge-qa. Main intacto.
+Siguiente: publicación autorizada de la resolución y revisión/checks del PR.
+
+## 2026-10-29 — Corrección captura pública → detalle Staff — COMPLETADA
+
+Contrato65 implementado en feature/staff-reservation-detail: teléfono, país ISO,
+documento y solicitudes del checkout se guardan en perfil/reserva y se consultan
+con scope Staff. Huella V1 preservada y V2 para campos nuevos; perfiles anteriores
+sin sobreescritura, recibos sin PII. Migración aditiva de país; lectura del perfil
+personal con columnas explícitas para evitar colisión de country, contrato intacto.
+Backend ./mvnw -B verify Java21/PG17 aislado:1241 PASS,0 failures/errors/skipped.
+Web114 relevantes/11 archivos PASS, lint/typecheck y ambos builds PASS.
+Chrome real3001:35 PASS desde formulario público hasta Recepción/Super Admin,
+escritorio/móvil, datos completos, máscara y logout401; sin JS/API5xx.
+Reserva ficticia NNU6E7QMZH; DB17→18 reservas,17→18 stays,18→19 perfiles,
+32→34 movimientos simulados,36→37 migraciones. Todos los registros/checksums
+anteriores intactos. Compose habitual saludable; PostgreSQL conservado.
+Evidencia: %TEMP%/pms-public-booking-details-qa. Se conserva intacto el cambio
+anterior staff-admin.test.tsx fuera del commit. QA manual PASS confirmado por José;
+commit/push autorizados para publicar este incremento. Siguiente: revisión/checks del PR.
+
+## 2026-10-29 — Detalle ampliado de reservas Staff — EN_QA
+
+Contrato64/IMP-WEB-0302 implementado en feature/staff-reservation-detail, base
+b33236e. Detalle readonly con contacto del responsable, documento enmascarado,
+ocupantes explícitos por stay, notas/UTC y presentación Web plegable/galería.
+Listado mínimo conservado; scope en SQL, BFF allowlist y caché por sesión.
+Asignación/ciclo/Folio mantienen sus reglas y permisos. Sin migraciones,
+dependencias, secretos ni escrituras nuevas. Backend verify Java21/PG17 completo:
+1231 PASS,0 failures/errors/skipped. Web82 pruebas relevantes PASS, lint/typecheck
+y builds PASS; sin atribuir una corrida Web global/CI nueva al incremento.
+Chrome real3001:46 PASS con Recepción/Super Admin, escritorio/móvil/teclado,
+sin JS/API5xx ni escrituras de negocio. DB16 reservas/16 stays/30 movimientos/
+17 perfiles/36 migraciones y hashes de datos idénticos. Entorno3001 actualizado,
+PostgreSQL intacto. Evidencia fuera de Git: %TEMP%/pms-staff-reservation-detail-qa.
+La corrección anterior staff-admin.test.tsx se conserva intacta y separada del
+alcance. Sin commit/push/merge. Siguiente: QA manual PASS de José.
+
+## 2026-10-28 — Detalle ampliado de reservas Staff — EN_PROGRESO
+
+José autoriza ampliar IMP-WEB-0302/contrato49 con datos registrados y tarjetas
+plegables; owner José, coordinación Alan/Juan. Rama feature/staff-reservation-detail,
+base b33236e, contrato64. Dependencias49/50/54/61 implementadas; mismo permiso y
+scope, ampliación readonly solo en detalle. Contacto con documento enmascarado,
+ocupantes explícitos por stay, notas y catálogo visual actual; sin alterar altas,
+finanzas, inventario ni GuestAccount. Archivos: proyección/repositorios/controlador,
+BFF/DTO/mapper/UI, pruebas y documentación. Se conserva intacta la corrección
+previa no publicada de staff-admin.test.tsx. Siguiente: implementación y QA.
+Sin commit/push/merge; no editar migraciones ni secretos.
+
 ## 2026-10-29 — Valet DoD PASS, reconciliación b33236e verificada
 
 Pendientes V2-01–V2-15 cerrados mediante evidencia concreta en QA45, manteniendo

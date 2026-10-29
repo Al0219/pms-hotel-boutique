@@ -12,6 +12,13 @@ const receivedAt = '2026-10-08T12:00:00Z';
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); setAuthToken(null); });
 
 describe('Public booking adapter', () => {
+  it('sends the recorded guest contact and special requests through the explicit allowlist only', async () => {
+    const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json(publicBookingResponse, { status: 201 }));
+    const bookingGuest = { ...request.bookingGuest, phone: '+50255551234', country: 'GT', documentNumber: 'DOC-123456' };
+    await createPublicBookingDTO({ ...request, bookingGuest: { ...bookingGuest, password: 'not-forwarded' }, notes: 'Llegada tardía' } as typeof request, new AbortController().signal);
+    expect(JSON.parse(String(fetch.mock.calls[0][1]?.body))).toEqual({ ...publicBookingRequest, bookingGuest, notes: 'Llegada tardía' });
+    expect(new Headers(fetch.mock.calls[0][1]?.headers).has('Authorization')).toBe(false);
+  });
   it('uses same-origin with exact J6 fields despite configured API URL and Staff token', async () => {
     vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'https://other.example'); setAuthToken('staff-token');
     const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json(publicBookingResponse, { status: 201 }));

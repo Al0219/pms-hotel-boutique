@@ -1,5 +1,13 @@
 # STAFF-RESERVATIONS-READ-01 — Lectura Staff de reservas persistidas
 
+Ampliación posterior autorizada por José el2026-10-28, validada técnicamente
+el2026-10-29 y EN_QA manual: [contrato64](64_STAFF_RESERVATION_DETAILS_CONTRACT.md).
+Solo GET detalle añade `details` opcional con contacto del responsable (documento
+enmascarado), ocupantes explícitos por stay, notas y updatedAt. El listado
+conserva la proyección mínima original. Las exclusiones de contacto/notas de la
+entrega original descrita abajo quedan ampliadas únicamente para el detalle
+conforme a64; no se añaden datos financieros ni permisos/scope nuevos.
+
 Ampliación Backend autorizada en [contrato54](54_STAFF_STAY_LIFECYCLE_CONTRACT.md):
 GET listado/detalle agrega `updatedAt` UTC por stay para control de concurrencia.
 El timestamp debe preservarse con toda su precisión. La allowlist BFF proyecta

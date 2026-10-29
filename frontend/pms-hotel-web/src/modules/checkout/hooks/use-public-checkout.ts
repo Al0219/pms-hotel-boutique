@@ -8,7 +8,7 @@ import { HttpNetworkError } from '@/lib/http/errors';
 import { useResetPublicBooking, resolveSelection, type BookingSearchCriteria } from '@/modules/booking';
 import { confirmPublicBooking } from '@/modules/reservations';
 import { accommodationQuote } from '../domain/accommodation-quote';
-import { validateGuest } from '../domain/guest-details';
+import { internationalPhone, validateGuest } from '../domain/guest-details';
 import { quoteFingerprint } from '../domain/payment-estimate';
 import { CheckoutAttemptError } from '../domain/booking-failure';
 import type { PublicBookingAttempt } from '../domain/public-booking-attempt';
@@ -54,7 +54,12 @@ export function usePublicCheckout(review: BookingReview | null, criteria: Partia
         const request = {
           propertyId: refreshed.data.propertyId, arrival: criteria.checkIn!, departure: criteria.checkOut!, currency: 'GTQ' as const,
           clientTotalMinor: quote.totalMinor, stays: items.map(({ roomTypeId, ratePlanId, quantity }) => ({ roomTypeId, ratePlanId, quantity })),
-          bookingGuest: { firstName: draft.guest.firstName.trim(), lastName: draft.guest.lastName.trim(), email: draft.guest.email.trim() },
+          bookingGuest: {
+            firstName: draft.guest.firstName.trim(), lastName: draft.guest.lastName.trim(), email: draft.guest.email.trim(),
+            phone: internationalPhone(draft.guest)!, country: draft.guest.country,
+            ...(draft.guest.document.trim() && { documentNumber: draft.guest.document.trim() }),
+          },
+          ...(draft.guest.specialRequests.trim() && { notes: draft.guest.specialRequests.trim() }),
           paymentMode: 'SIMULATED_CARD' as const,
         };
         operation = { scope: review.scope, selectionKey: review.selectionKey, criteria: { ...criteria }, request: { ...request, idempotencyKey: draft.attemptKey(JSON.stringify(request)) }, roomNames: Object.fromEntries(items.map(item => [item.roomTypeId, item.room!.name])) };

@@ -2,6 +2,7 @@ package com.pms.hotelboutique.backend.modules.reservations.application;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.UUID;
 
@@ -21,5 +22,11 @@ public record CreateGuestProfileCommand(
         @Size(max = 32) String phone,
         @Size(max = 16) String documentType,
         @Size(max = 64) String documentNumber,
-        @Size(max = 8) String preferredLanguage) {
+        @Size(max = 8) String preferredLanguage,
+        @Pattern(regexp = "^[A-Z]{2}$") String country) {
+    public CreateGuestProfileCommand(UUID guestAccountId, UUID propertyId, String firstName, String lastName,
+            String email, String phone, String documentType, String documentNumber, String preferredLanguage) {
+        this(guestAccountId, propertyId, firstName, lastName, email, phone, documentType, documentNumber,
+                preferredLanguage, null);
+    }
 }

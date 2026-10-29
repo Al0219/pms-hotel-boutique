@@ -9,3 +9,13 @@ export function staffReservationFixture(): StaffReservationDto {
     stays: [{ stayId: '44444444-4444-4444-4444-444444444444', updatedAt: '2026-10-22T18:00:00.123456Z', arrival: '2026-11-01', departure: '2026-11-03', status: 'RESERVED',
       roomType: { roomTypeId: '55555555-5555-5555-5555-555555555555', code: 'DELUXE', name: 'Deluxe' }, room: null }] };
 }
+
+export function staffReservationDetailsFixture(): StaffReservationDto {
+  const dto = staffReservationFixture();
+  dto.stays[0].roomType.code = 'DLX';
+  dto.details = { updatedAt: '2026-10-28T20:00:00.123456Z', notes: 'Llegada tardía registrada.',
+    contact: { profileId: dto.responsibleGuest!.profileId, email: 'responsible@example.test', phone: '+502 5555 5555',
+      documentType: 'DPI', documentNumberMasked: '•••• 0123', preferredLanguage: 'es', country: 'GT' },
+    stays: [{ stayId: dto.stays[0].stayId, occupants: [{ profileId: '66666666-6666-6666-6666-666666666666', fullName: 'Actual Occupant', primary: true }] }] };
+  return dto;
+}

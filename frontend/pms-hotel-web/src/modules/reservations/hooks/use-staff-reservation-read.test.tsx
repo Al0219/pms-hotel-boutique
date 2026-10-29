@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { staffReservationFixture } from '../staff-reservation.fixture';
+import { staffReservationDetailsFixture, staffReservationFixture } from '../staff-reservation.fixture';
 import { useReservationCenter } from './use-reservation-center';
 import { useReservationDetail } from './use-reservation-detail';
 
@@ -17,6 +17,23 @@ beforeEach(() => { Object.values(mocks).forEach(fn => fn.mockReset()); });
 afterEach(cleanup);
 
 describe('real Staff read hooks', () => {
+  it('does not expose the previous Staff session contact while a different session loads the same reservation', async () => {
+    const current = staffReservationDetailsFixture();
+    let release!: (value: typeof current) => void;
+    mocks.detail.mockResolvedValueOnce(current).mockImplementationOnce(() => new Promise(resolve => { release = resolve; }));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const provider = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    const hook = renderHook(({ sessionId }) => useReservationDetail(dto.propertyId, endpoint, dto.reservationId, sessionId),
+      { wrapper: provider, initialProps: { sessionId: 'first-staff' } });
+    await waitFor(() => expect(hook.result.current.isSuccess).toBe(true));
+    expect(hook.result.current.data?.information?.contact?.email).toBe('responsible@example.test');
+    hook.rerender({ sessionId: 'second-staff' });
+    expect(hook.result.current.data).toBeUndefined();
+    await waitFor(() => expect(mocks.detail).toHaveBeenCalledTimes(2));
+    release(current);
+    await waitFor(() => expect(hook.result.current.isSuccess).toBe(true));
+    hook.unmount(); client.clear();
+  });
   it('uses real adapters and maps PostgreSQL DTOs with nullable finance', async () => {
     mocks.list.mockResolvedValue([dto]); mocks.detail.mockResolvedValue(dto);
     const list = renderHook(() => useReservationCenter(dto.propertyId, endpoint), { wrapper });

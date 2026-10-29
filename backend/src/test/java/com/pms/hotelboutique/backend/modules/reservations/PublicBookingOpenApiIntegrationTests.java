@@ -60,7 +60,9 @@ class PublicBookingOpenApiIntegrationTests {
         var doc = document();
         var request = schema(doc, "PublicBookingRequest");
         var expected = Set.of("propertyId", "arrival", "departure", "currency", "clientTotalMinor", "stays", "bookingGuest", "paymentMode");
-        assertEquals(expected, fields(request.path("properties")));
+        var allFields = new HashSet<>(expected);
+        allFields.add("notes");
+        assertEquals(allFields, fields(request.path("properties")));
         assertEquals(expected, values(request.path("required")));
         assertTrue(request.has("additionalProperties"));
         assertFalse(request.path("additionalProperties").asBoolean());
@@ -83,7 +85,14 @@ class PublicBookingOpenApiIntegrationTests {
             assertEquals(1, quantity.path("minimum").asInt());
         }
         var guest = schema(doc, "PublicBookingGuestRequest");
-        assertEquals(Set.of("firstName", "lastName", "email"), fields(guest.path("properties")));
+        assertEquals(Set.of("firstName", "lastName", "email", "phone", "country", "documentNumber"), fields(guest.path("properties")));
+        assertEquals(Set.of("firstName", "lastName", "email"), values(guest.path("required")));
+        assertEquals(250, properties.path("notes").path("maxLength").asInt());
+        assertEquals("^[A-Z]{2}$", guest.path("properties").path("country").path("pattern").asText());
+        assertEquals(Set.of("string", "null"), values(properties.path("notes").path("type")));
+        for (String field : List.of("phone", "country", "documentNumber")) {
+            assertEquals(Set.of("string", "null"), values(guest.path("properties").path(field).path("type")));
+        }
         assertFalse(guest.path("additionalProperties").asBoolean());
         assertEquals(80, guest.path("properties").path("firstName").path("maxLength").asInt());
         assertEquals(80, guest.path("properties").path("lastName").path("maxLength").asInt());

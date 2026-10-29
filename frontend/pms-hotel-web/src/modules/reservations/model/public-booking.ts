@@ -9,7 +9,8 @@ export interface PublicBookingRequest {
   currency: 'GTQ';
   clientTotalMinor: number;
   stays: { roomTypeId: string; ratePlanId: string; quantity: number }[];
-  bookingGuest: { firstName: string; lastName: string; email: string };
+  bookingGuest: { firstName: string; lastName: string; email: string; phone?: string; country?: string; documentNumber?: string };
+  notes?: string;
   paymentMode: 'SIMULATED_CARD';
 }
 

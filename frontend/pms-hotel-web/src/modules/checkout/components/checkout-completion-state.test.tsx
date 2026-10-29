@@ -24,7 +24,8 @@ describe('Checkout confirmation state', () => {
     act(() => result.current.draft.reviewQuote('selection', 'quote'));
     act(() => result.current.draft.setPayment('quote', { mode: 'partial', preset: 'half', customAmount: '' }));
     const key = result.current.draft.attemptKey('original-payload');
-    const operation = { scope, selectionKey: 'selection', criteria, request: { ...publicBookingRequest, idempotencyKey: key }, roomNames: { [publicBookingRequest.stays[0].roomTypeId]: 'Deluxe real' } };
+    const operation = { scope, selectionKey: 'selection', criteria, request: { ...publicBookingRequest, idempotencyKey: key,
+      bookingGuest: { ...publicBookingRequest.bookingGuest, phone: '+50255555555', country: 'GT', documentNumber: 'QA-DOC' }, notes: 'Private note' }, roomNames: { [publicBookingRequest.stays[0].roomTypeId]: 'Deluxe real' } };
     act(() => { result.current.draft.beginPublicAttempt(operation); });
     const settle = result.current.draft.settlePublicAttempt;
     const accepted: boolean[] = [];

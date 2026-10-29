@@ -67,7 +67,8 @@ public class GuestPersonalProfileService {
     }
     private GuestPersonalProfile read(GuestPrincipal own) {
         var profile=jdbc.sql("""
-            SELECT p.*,m.country,m.bed_type,m.room_vibe,m.floor_preference,m.version
+            SELECT p.id,p.first_name,p.last_name,p.phone,p.preferred_language,p.updated_at,
+                   m.country,m.bed_type,m.room_vibe,m.floor_preference,m.version
             FROM guest_personal_profiles m JOIN guest_profiles p ON p.id=m.profile_id AND p.guest_account_id=m.guest_account_id
             WHERE m.guest_account_id=:account AND p.property_id IS NULL AND p.status='ACTIVE'
             """).param("account",own.guestAccountId()).query((rs,n)->new GuestPersonalProfile.Details(rs.getObject("id",UUID.class),rs.getString("first_name"),rs.getString("last_name"),rs.getString("phone"),rs.getString("country"),rs.getString("preferred_language"),rs.getString("bed_type"),rs.getString("room_vibe"),rs.getString("floor_preference"),rs.getLong("version"),rs.getTimestamp("updated_at").toInstant())).optional().orElse(null);
