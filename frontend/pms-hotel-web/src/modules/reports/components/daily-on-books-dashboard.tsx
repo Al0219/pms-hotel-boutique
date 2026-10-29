@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import type { PropertyScope } from "@/modules/properties";
 
 import { useDailyOnBooks } from "../hooks/use-daily-on-books";
+import { useDailyOnBooksExport } from "../hooks/use-daily-on-books-export";
 import styles from "./reports-dashboard.module.css";
 
 interface Props {
@@ -31,6 +32,8 @@ export function DailyOnBooksDashboard({ sessionId, scope, propertyNames, onBack 
   const [applied, setApplied] = useState<AppliedRange | null>(null);
   const [validationError, setValidationError] = useState(false);
   const report = useDailyOnBooks(sessionId, scope, applied?.from ?? null, applied?.to ?? null);
+  const csv = useDailyOnBooksExport(sessionId, scope);
+  const canExport = applied && !validationError && from === applied.from && to === applied.to && report.isSuccess && csv.status !== "pending";
   const scopeLabel = scope.kind === "PROPERTY"
     ? `${propertyNames[scope.propertyIds[0]] ?? scope.propertyIds[0]} (${scope.propertyIds[0]})`
     : "Todas tus propiedades autorizadas";
@@ -56,10 +59,17 @@ export function DailyOnBooksDashboard({ sessionId, scope, propertyNames, onBack 
     </header>
     {onBack && <button className={styles.backButton} type="button" onClick={onBack}>← Reportes</button>}
     <form className={styles.toolbar} onSubmit={submit}>
-      <label><span>Desde (noche local)</span><input type="date" value={from} onChange={event => setFrom(event.target.value)} required /></label>
-      <label><span>Hasta (noche local)</span><input type="date" value={to} onChange={event => setTo(event.target.value)} required /></label>
-      <button type="submit">Consultar reporte</button>
+      <label><span>Desde (noche local)</span><input type="date" value={from} onChange={event => setFrom(event.target.value)} disabled={csv.status === "pending"} required /></label>
+      <label><span>Hasta (noche local)</span><input type="date" value={to} onChange={event => setTo(event.target.value)} disabled={csv.status === "pending"} required /></label>
+      <button type="submit" disabled={csv.status === "pending"}>Consultar reporte</button>
+      <button type="button" disabled={!canExport} onClick={() => { if (canExport) void csv.download(applied.from, applied.to); }}>
+        {csv.status === "pending" ? "Generando CSV…" : "Exportar CSV"}
+      </button>
     </form>
+    <p>El CSV consulta el estado actual del rango aplicado; puede diferir de una consulta anterior.</p>
+    {csv.status === "pending" && <p role="status">Preparando el archivo…</p>}
+    {csv.status === "success" && <p role="status">Archivo preparado para descargar.</p>}
+    {csv.status === "error" && <p role="alert">No se pudo generar el CSV. Revisa tu sesión y vuelve a pulsar Exportar CSV para generar un archivo nuevo.</p>}
     {validationError && <p role="alert">Selecciona un rango válido de hasta 366 noches.</p>}
     {!applied && !validationError && <p>Selecciona las fechas para consultar el reporte.</p>}
     {applied && <p>Período consultado: {applied.from} a {applied.to}.</p>}

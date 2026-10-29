@@ -3896,6 +3896,173 @@ segura no sustituye scope/permiso en el servicio y predicados SQL en repositorio
 - **Siguiente:** publicación solo con autorización independiente; sin
   commit/push/merge.
 
+#### Plan de preparación de contratos Reporting (2026-10-21)
+
+- **Alcance solicitado:** plan documental para comenzar los contratos pendientes;
+  no activa otra implementación Backend ni aprueba reglas nuevas.
+- **Secuencia propuesta:** CSV de on-books primero, por reutilizar métrica y
+  límites C7 aprobados; llegadas/salidas y operaciones por contratos propios.
+  Preparar C7-D03 con owner financiero a acordar entre Alan/Juan; ocupación
+  histórica, ADR/RevPAR y pickup avanzan según sus fuentes específicas.
+- **Entrega:** [plan de contratos e integración](../../docs/PLAN_INTEGRACION_REPORTES.md)
+  con responsables, decisiones, primer paquete CSV, DoR/DoD y matriz QA.
+- **Siguiente:** preparar el borrador CSV y registrar sus decisiones de
+  transporte/formato/auditoría para aprobación antes de implementar.
+
+#### BE-010A-CSV-01 — Contrato de exportación on-books diario
+
+- **Estado:** COMPLETADA; el usuario aprobó todo el contrato el 2026-10-21.
+  Implementación autorizada en BE-010B-CSV-01.
+- **Autorización/DoR de preparación:** el usuario solicita empezar a trabajar
+  tras el plan de Reportes; C7-D09 y on-books HTTP aprobados disponibles.
+- **Owner:** Alan / BD1; colaboración Juan / BD3 y WEB-3/WEB-2/WEB-4 según
+  fuente, consumo, acceso y disponibilidad. Sin reasignar pendientes BD2.
+- **Rama/base:** `codex/reporting-on-books-csv-contract`, `67ef77d`.
+- **Entrega:** [propuesta CSV](REPORTING_ON_BOOKS_CSV_CONTRACT_PROPOSAL.md):
+  rutas confirmadas, filtros/scope/permisos existentes, 11 columnas y formato,
+  errores, audit por property, reintentos, BFF binario y matriz QA.
+- **Aceptación/DoD documental:** capacidades y fuentes enlazadas, aprobación
+  separada de propuesta, ejemplo sintético coherente, enlaces/diff validados.
+  Paquete y taxonomía audit aprobados por el usuario.
+- **Siguiente:** implementar únicamente BE-010B-CSV-01.
+
+#### BE-010B-CSV-01 — Exportación vertical on-books diario
+
+- **Estado:** EN_QA; Backend/Web e integración HTTP técnica PASS. QA manual
+  del usuario pendiente; contrato aprobado el 2026-10-21.
+- **Owner:** Alan / BD1 + WEB-3; colaboración Juan / BD3, WEB-2 y WEB-4.
+- **Rama/base:** `codex/reporting-on-books-csv`, base `67ef77d`; cambios previos
+  conservados. Contrato BE-010A-CSV-01 APPROVED.
+- **Alcance/archivos:** inventory service/CSV/controller/security, audit por
+  property, OpenAPI/Postman; BFF Staff binario, DTO/mapper/hook/UI y tests Web.
+- **Aceptación/DoD:** matriz del contrato CSV, verify Backend y gate Web,
+  integración Docker/scope/audit y QA manual confirmado por usuario.
+- **Evidencia:** verify Backend 883 PASS; Web check 306 archivos/1881 pruebas,
+  lint/typecheck/build PASS con VITEST_MAX_WORKERS=4; Docker sin mocks y smoke
+  RECEPCIÓN/GERENCIA/scope/audit PASS. Máximo 50 000 filas en 3.742 s / 5 800 146 bytes;
+  exceso 400. OpenAPI vivo/generado y Postman alineados; sin migración ni secreto
+  modificado. [Guía QA y límites](REPORTING_ON_BOOKS_CSV_QA.md).
+- **Siguiente:** usuario ejecuta QA manual CSV y confirma PASS para cierre.
+
+#### BE-010A/B-ARRDEP-01 — Llegadas y salidas pendientes
+
+- **Estado:** contrato APPROVED por delegación explícita del usuario (2026-10-21);
+  implementación EN_QA tras integración y smoke HTTP PASS. QA manual y gate
+  completo pendientes de registro; no es cierre de realizados/histórico.
+- **Owner/revisión:** Alan / BD1 + Juan / BD3, WEB-3; colaboración WEB-2.
+- **Autorización:** usuario delega decisiones de reglas/contratos y autoriza
+  comenzar y avanzar los incrementos del plan de Reportes. No commit/push/merge.
+- **Rama/base:** `codex/reporting-arrivals-departures`, `67ef77d`; cambios CSV
+  y archivos ajenos conservados; CSV permanece EN_QA, sin atribuirle PASS manual.
+- **DoR/contrato:** [ARRDEP aprobado](REPORTING_ARRIVALS_DEPARTURES_CONTRACT.md),
+  C2, C7 y datos ReservationStay verificados. Solo agregados de pendientes por
+  fecha programada/estado actual, sin PII ni inferencia de fechas efectivas.
+- **Entrega:** reservations query/service/API, seguridad exacta, OpenAPI/Postman;
+  BFF/DTO/mapper/domain/hook/UI y tests de IMP-WEB-0908. Compose principal
+  levantado con `docker compose up --build -d`, servicios healthy.
+- **Aceptación/DoD:** matriz del contrato, verify Java21/PostgreSQL17, Web check,
+  Docker real con RECEPCIÓN y ALL autorizado, documentación y QA manual aplicable.
+- **Evidencia:** [guía y matriz QA](REPORTING_ARRIVALS_DEPARTURES_QA.md):
+  27 tests Backend enfocados y 46 Web enfocados PASS; Docker Backend/Web y
+  smoke RECEPCIÓN/GERENCIA, 50 000/50 250, SQL/BFF/OpenAPI/CSV PASS.
+  Web completo: 311 archivos/1936 pruebas PASS, lint/typecheck y build Docker
+  mocks=false PASS. `mvn verify` completo: 895 pruebas, 0 fallos/errores/omitidas,
+  BUILD SUCCESS con Java 21/PostgreSQL 17 aislado. Build local Next PASS en
+  reintento sin carga Maven tras un `EPERM` transitorio en `.next`; no se borró
+  el generado cuya limpieza rechazó la revisión automática por límite de uso.
+  `npm run check` compuesto se detuvo tras ~10 min sin avance de ESLint;
+  sus cuatro componentes tienen PASS individual, sin atribuir PASS al compuesto.
+  En Docker el compuesto pasó lint/typecheck, pero Vitest agotó el tiempo en
+  pruebas Guest previas bajo carga; esa ejecución se detuvo sin PASS compuesto.
+  Otro reintento local sin Maven se detuvo en ESLint tras ~2.5 min sin avance.
+  Smoke visual técnico en Compose principal con RECEPCIÓN: dos días 3/0 y 0/3,
+  rango invertido validado y resultado anterior retirado; QA manual pendiente.
+- **Siguiente:** cerrar gates completos y recibir QA manual PASS del usuario;
+  no marcar COMPLETADA antes. Fuente financiera e histórico mantienen dependencias.
+
+#### BE-010A-HKCUR-01 — Contrato de housekeeping actual
+
+- **Estado:** COMPLETADA documental; APPROVED por delegación del usuario tras
+  verificar Figma; ninguna ruta ni cifra publicada antes de B.
+- **Owner/revisión:** Juan / BD3 para fuente operations, Alan / BD1 para
+  contrato/acceso, WEB-3 consumidor y WEB-2 para sesión/scope.
+- **Dependencias:** `rooms` y `hk_room_states` persistidos, C2 y permiso
+  `OPERATIONS_MANAGE` verificados. Figma directo: centro PRI-24 node `233:1756`
+  lista housekeeping; sección V3 node `1753:13262` no ofrece detalle HK.
+- **Contrato/aceptación:** [fotografía actual HK](REPORTING_HOUSEKEEPING_CURRENT_CONTRACT_PROPOSAL.md)
+  distingue físico, seguido, sin seguimiento, DIRTY/CLEAN/INSPECTED y DND
+  transversal. Una fila/property autorizada, sin fechas ni historia, sin
+  inferir disponibilidad vendible ni actividad. Figma contrastado; no hay
+  marco de detalle HK. Mantenimiento tendrá contrato propio.
+- **DoR/DoD B:** contrato, fuente y centro Figma verificados; abrir implementación
+  Backend/OpenAPI/BFF/Web, probar C2/SQL/errores/vacíos y Docker Staff;
+  confirmar QA manual PASS antes de COMPLETADA. No se modifica XLSX ni
+  migración aplicada. Sin commit/push/merge.
+- **Siguiente:** implementar BE-010B-HKCUR-01 con el transporte aprobado.
+
+#### BE-010B-HKCUR-01 — Consulta HTTP de housekeeping actual
+
+- **Estado:** EN_QA; Backend, OpenAPI, BFF y Web implementados conforme a
+  BE-010A-HKCUR-01. QA manual PASS del usuario confirmado; falta resultado
+  de `mvn verify` integral (repetición interrumpida por Docker Desktop)
+  antes de COMPLETADA.
+- **Owner/revisión:** Juan / BD3 (fuente), Alan / BD1 (HTTP y acceso), WEB-3
+  (Web), WEB-2 (sesión/scope), revisión colaborativa.
+- **DoR:** contrato aprobado bajo delegación, fuente `rooms`/`hk_room_states`,
+  C2 y Figma centro PRI-24 verificados; no hay detalle HK en Figma.
+- **Entrega:** GET `/api/v1/reports/housekeeping/current` y BFF privado,
+  consulta SQL scoped, seguridad/Swagger/Postman, DTO/mapper/hook/UI y pruebas.
+  Sin fecha, dinero, disponibilidad vendible, actividad histórica ni migración.
+- **Evidencia:** [matriz QA](REPORTING_HOUSEKEEPING_CURRENT_QA.md): Backend focal
+  8 PASS, Web focal 58 PASS, lint/typecheck y builds Docker PASS; Compose
+  saludable y smoke RECEPCIÓN 403, filtro 400, anónimo 401. Runtime QA
+  aislado: UI OPERACIONES y GERENCIA/ALL contra datos persistidos, cambio HK
+  tras refresh, tercera property excluida, PASS; enlace Reportes OPERACIONES
+  verificado tras reconstruir Web. Web completo final 1988/1988 PASS.
+  `mvn verify` inicial: 903 ejecutadas, 8 errores por límite de conexiones
+  PostgreSQL QA; la clase afectada pasó 8/8 tras ajustar solo esa instancia.
+  La repetición de `mvn verify` quedó interrumpida por caída del motor Docker;
+  se programa una nueva ejecución sin carga concurrente.
+- **Siguiente:** recoger `mvn verify` integral y cerrar BE-010B-HKCUR-01 si
+  termina PASS.
+
+#### BE-010A-MTCUR-01 — Contrato de mantenimiento actual
+
+- **Estado:** COMPLETADA documental; [contrato](REPORTING_MAINTENANCE_CURRENT_CONTRACT_PROPOSAL.md)
+  APPROVED por delegación del usuario. BE-010B-MTCUR-01 EN_QA; cifras solo
+  desde Backend real y fixtures QA identificadas como sintéticas.
+- **Owner/revisión:** Juan / BD3 (fuente operations), Alan / BD1 (HTTP y
+  acceso), WEB-3 (consumidor), WEB-2 (sesión/scope).
+- **DoR:** `maintenance_orders` y estados/prioridades persistidos verificados;
+  C2 y `OPERATIONS_MANAGE` existentes; Figma centro PRI-24 menciona
+  mantenimiento y la búsqueda global no halló marco de detalle Reportes.
+- **Aceptación/DoD B:** fotografía de órdenes OPEN/IN_PROGRESS, subconjuntos
+  urgente/sin asignar/con room, property scope, Backend/OpenAPI/BFF/Web,
+  pruebas y Docker Staff. Sin inferir historia/SLA desde `updated_at`.
+  QA manual PASS del usuario antes de COMPLETADA; sin migración, secreto,
+  commit, push ni merge.
+- **Siguiente:** validar BE-010B-MTCUR-01 y completar integración Docker/QA.
+
+#### BE-010B-MTCUR-01 — Consulta HTTP de mantenimiento actual
+
+- **Estado:** EN_QA. Backend, BFF y Web desplegados en Compose y runtime QA;
+  QA manual PASS confirmado por el usuario. Pendientes suites integrales.
+- **DoR/owner:** contrato BE-010A-MTCUR-01 aprobado; Juan / BD3 para fuente,
+  Alan / BD1 para acceso/HTTP, WEB-3 para vista, WEB-2 sesión/scope.
+- **Entrega/aceptación:** `GET /api/v1/reports/maintenance/current` y BFF
+  Staff, SQL scoped sobre `maintenance_orders` OPEN/IN_PROGRESS, DTO/mapper/
+  hook/UI, security/OpenAPI/Postman; cero real, ALL autorizado, errores,
+  revocación, prueba Docker y QA manual PASS. Sin historia, SLA ni migración.
+- **Evidencia:** [matriz QA](REPORTING_MAINTENANCE_CURRENT_QA.md): Web focal
+  50/50 y 34/34 PASS (archivos solapados); Backend focal 8/8 PASS en base QA;
+  lint/typecheck y build Docker PASS. OpenAPI vivo 50 operaciones/39 paths/
+  62 schemas/13 tags. UI OPERACIONES mostró 3 órdenes sin resolver y bajó a
+  2 al resolver una fixture; GERENCIA/ALL mostró dos properties autorizadas,
+  una en cero; ajena excluida/403. RECEPCIÓN 403. Usuario confirmó QA manual
+  PASS. Web integral se repite con
+  menor concurrencia tras timeouts de pruebas públicas bajo carga local.
+- **Siguiente:** recoger suites integrales y cerrar si pasan.
+
 ### BE-011 — MFA local Staff
 
 - **Estado:** BE-011A PENDIENTE; BE-011B PENDIENTE.

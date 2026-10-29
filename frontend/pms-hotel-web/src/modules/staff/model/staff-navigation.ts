@@ -14,7 +14,7 @@ export const staffNavigation = [
 export function canonicalStaffRole(roleId: string) { return roleId === 'superadmin' ? 'SUPER_ADMIN' : roleId.toUpperCase(); }
 /** Same effective navigation rules as main; reused for safe denied-route recovery. */
 export function canAccessStaffNavigation(entry: typeof staffNavigation[number], session: StaffSession): boolean {
-  if (entry.href === '/reportes') return session.permissions.includes('COMMERCIAL_MANAGE') || session.permissions.includes('RESERVATION_MANAGE');
+  if (entry.href === '/reportes') return session.permissions.includes('COMMERCIAL_MANAGE') || session.permissions.includes('RESERVATION_MANAGE') || session.permissions.includes('OPERATIONS_MANAGE');
   if (entry.href === '/room-service' || entry.href === '/amenities') return session.permissions.includes('OPERATIONS_MANAGE') || session.permissions.includes('SERVICE_REQUEST_INTAKE');
   if (entry.href === '/housekeeping') return session.permissions.includes('OPERATIONS_MANAGE');
   return (entry.roles as readonly string[]).includes(canonicalStaffRole(session.roleId));

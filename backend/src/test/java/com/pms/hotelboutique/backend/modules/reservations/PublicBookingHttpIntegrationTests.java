@@ -151,7 +151,8 @@ class PublicBookingHttpIntegrationTests {
         assertEquals(originalBody, json.readTree(receipts.find(key).orElseThrow().responseSnapshot()));
         verify(payments, times(1)).pay(new PaymentRequest(130000L, "GTQ"));
         var swagger = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/v3/api-docs"))
-                .timeout(Duration.ofSeconds(20)).GET().build(), HttpResponse.BodyHandlers.ofString());
+                // Cold SpringDoc generation now includes both reporting contracts; this asserts schema, not latency.
+                .timeout(Duration.ofSeconds(60)).GET().build(), HttpResponse.BodyHandlers.ofString());
         assertEquals(200, swagger.statusCode());
         assertEquals("public", json.readTree(swagger.body()).path("paths").path(PATH).path("post").path("x-audience").asText());
     }

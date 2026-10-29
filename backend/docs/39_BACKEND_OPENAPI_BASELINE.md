@@ -70,6 +70,65 @@ QA manual aprobado en [Web66](../../frontend/pms-hotel-web/docs/66_STAFF_STAY_LI
 árbol limpio al iniciar. Mantenimiento autorizado por el usuario; estado EN_QA
 hasta su QA manual PASS. Sin commit/push/merge.
 
+## Evolución BE-010B-MTCUR-01 (2026-10-22)
+
+El [contrato de mantenimiento actual](REPORTING_MAINTENANCE_CURRENT_CONTRACT_PROPOSAL.md)
+añade GET `/api/v1/reports/maintenance/current`, audiencia Staff/Bearer,
+filtro exclusivo `propertyId` o `scope=ALL_PROPERTIES` y permiso
+`OPERATIONS_MANAGE` (ALL además `MULTI_PROPERTY_READ`). El esquema
+`CurrentMaintenanceReport` devuelve `calculatedAt` UTC y filas por property
+con OPEN/IN_PROGRESS y subconjuntos urgentes, sin asignar, con habitación y
+de área común. Sin fechas, historia, SLA ni PII. 400/401/403/503 y
+`Cache-Control: private, no-store`. Prueba Backend focal y OpenAPI vivo PASS:
+**50 operaciones / 39 paths / 62 schemas / 13 tags**; `x-audience=staff`,
+`bearerAuth`, dos parámetros y cinco respuestas verificadas. QA integral y
+manual propios siguen pendientes.
+
+## Evolución BE-010B-HKCUR-01 (2026-10-22)
+
+El [contrato aprobado bajo delegación](REPORTING_HOUSEKEEPING_CURRENT_CONTRACT_PROPOSAL.md)
+añade GET `/api/v1/reports/housekeeping/current`, audiencia Staff/Bearer,
+filtro exclusivo `propertyId` o `scope=ALL_PROPERTIES` y permiso
+`OPERATIONS_MANAGE` (ALL requiere `MULTI_PROPERTY_READ`). Respuesta
+`CurrentHousekeepingReport` con `calculatedAt` UTC y una fila por property
+autorizada: habitaciones físicas, seguidas, sin seguimiento, tres estados HK
+y DND transversal. Sin fechas ni datos financieros; 400/401/403/503 y
+`Cache-Control: private, no-store`. La prueba de integración valida que OpenAPI
+publica el path, query, seguridad, audiencia y esquema. OpenAPI vivo del Compose
+reconstruido: **49 operaciones / 38 paths / 60 schemas / 13 tags**;
+`x-audience=staff`, `bearerAuth`, ambos filtros exclusivos y
+`CurrentHousekeepingReport` verificados. QA manual PASS del usuario registrada
+en la [matriz](REPORTING_HOUSEKEEPING_CURRENT_QA.md); verify integral pendiente
+tras la caída de Docker Desktop.
+
+## Evolución BE-010B-ARRDEP-01 (2026-10-21)
+
+El [contrato ARRDEP aprobado por delegación](REPORTING_ARRIVALS_DEPARTURES_CONTRACT.md)
+añade GET `/api/v1/reports/arrivals-departures/daily`, audiencia Staff/Bearer,
+filtros `from`/`to` y `propertyId` o `scope=ALL_PROPERTIES`, límites 366 días
+y 50 000 filas, permisos y `private, no-store`. Respuesta con fecha UTC de
+cálculo y contadores pendientes por property/día local; errores 400/401/403/503.
+
+Inventario OpenAPI HTTP vivo del Backend QA: **48 operaciones / 37 paths /
+58 schemas / 13 tags**, sin exclusiones; `x-audience=staff` y DTO de fila
+verificados contra el transporte BFF. Los tests estructurales/Servlet ARRDEP
+pasaron. El gate completo y QA manual se registran por separado en la
+[guía QA](REPORTING_ARRIVALS_DEPARTURES_QA.md); el incremento sigue EN_QA.
+
+## Evolución BE-010B-CSV-01 (2026-10-21)
+
+El [contrato CSV aprobado](REPORTING_ON_BOOKS_CSV_CONTRACT_PROPOSAL.md) añade
+GET `/api/v1/reports/on-books/daily/export`, audiencia Staff/Bearer, mismos
+cuatro filtros y permisos del JSON; ALL_PROPERTIES requiere MULTI_PROPERTY_READ.
+200 `text/csv` string/binary, Content-Disposition, no-store y nosniff;
+400/401/403/406/503 documentados. GET JSON y su DTO permanecen compatibles.
+
+Inventario generado y comparado con mappings: **47 operaciones / 36 paths /
+56 schemas / 13 tags**, sin exclusiones. Tests validan contrato CSV, headers,
+parámetros y security; Servlet real conserva 406 sin error redispatch y rechaza
+HEAD/POST sin generar archivos. Backend `verify` final: **883 pruebas PASS**,
+cero failures/errors/skipped. [Guía y evidencia QA](REPORTING_ON_BOOKS_CSV_QA.md).
+El estado de implementación permanece EN_QA hasta confirmación manual del usuario.
 ## Evolución Staff Admin comandos — Backend3B-1 (2026-10-22)
 
 PATCH /staff-admin/users/{id}, PUT /{id}/membership y PATCH /{id}/status bajo

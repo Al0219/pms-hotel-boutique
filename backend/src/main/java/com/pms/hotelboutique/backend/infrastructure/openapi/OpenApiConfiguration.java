@@ -111,7 +111,11 @@ public class OpenApiConfiguration {
             } else if (handler.getBeanType().equals(PublicAvailabilityController.class)) {
                 operation.addExtension("x-audience", "public");
                 operation.setSecurity(List.of());
-            } else if (packageName.contains(".modules.inventory.") || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.reservations.api.StaffFolioController.class)
+            } else if (packageName.contains(".modules.inventory.")
+                    || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.reservations.api.DailyArrivalsDeparturesController.class)
+                    || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.operations.api.CurrentHousekeepingReportController.class)
+                    || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.operations.api.CurrentMaintenanceReportController.class)
+                    || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.reservations.api.StaffFolioController.class)
                     || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.reservations.api.StaffReservationController.class)
                     || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.reservations.api.StaffReservationCreationController.class)
                     || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.operations.api.StaffHousekeepingController.class)

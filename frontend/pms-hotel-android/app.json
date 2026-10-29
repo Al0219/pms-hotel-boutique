@@ -13,6 +13,15 @@
       "expo-sharing",
       "expo-notifications",
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "99e6d1e5-2214-47f4-b116-75c8c0f15f0f"
+      }
+    },
+    "android": {
+      "package": "com.juan_058.pmshotelboutique"
+    }
   }
 }
