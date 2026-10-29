@@ -18,7 +18,8 @@ Related domain internals owned by other modules. This module does not own anothe
 
 ## Dependencies
 
-May consume intentional public APIs from: stays, guests, availability, folio, payments.
+May consume intentional public APIs from: stays, guests, availability, folio, payments,
+booking (the exported room photo carousel for the scoped Staff detail presentation).
 
 ## MUST
 
@@ -59,3 +60,15 @@ The canonical `docs/Backlog_Implementacion_PMS_V1.xlsx` governs WEB-3's future t
 ## Figma / Documentation
 
 Private 01 Reservation Engine. Consult relevant global domain documents, Web architecture, module boundaries, ownership, and domain-specific Web documentation. No Figma Node ID is invented here.
+
+## Authorized Staff detail increment — 2026-10-29
+
+José authorized the IMP-WEB-0302 extension: scoped real contact with masked
+documents, explicit stay occupants, notes/references and progressive disclosure.
+Reuses the existing assignment, lifecycle and permission-gated folio capabilities.
+The room carousel is reference imagery from the current catalogue; no physical
+assignment, capacity or purchased rate is inferred from it.
+
+Contract: [Backend64](../../../../../backend/docs/64_STAFF_RESERVATION_DETAILS_CONTRACT.md).
+Validation/manual checklist: [Web76](../../../docs/76_STAFF_RESERVATION_DETAILS_QA.md).
+Status EN_QA; technical validation passed, owner manual acceptance pending.

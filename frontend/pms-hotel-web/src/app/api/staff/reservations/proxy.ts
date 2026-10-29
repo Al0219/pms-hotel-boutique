@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { backendStaffRequest, staffAccessCookie } from '@/lib/bff/staff-auth';
 import { isUtcInstant } from '@/lib/utc-instant';
+import { projectStaffReservationDetails } from './detail-projection';
 
 const uuidPattern = /^[a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12}$/i;
 const headers = { 'cache-control': 'private, no-store' };
@@ -30,7 +31,9 @@ function project(value: unknown, propertyId: string, reservationId?: string) {
       return { stayId: uuid(s.stayId), arrival: text(s.arrival), departure: text(s.departure), status: s.status, updatedAt: s.updatedAt,
         roomType: { roomTypeId: uuid(t.roomTypeId), code: text(t.code), name: text(t.name) },
         room: room === null ? null : { roomId: uuid(room.roomId), code: text(room.code) } };
-    }) };
+    }),
+    ...(reservationId && r.details !== undefined && r.details !== null ? { details: projectStaffReservationDetails(
+      r.details, guest === null ? null : uuid(guest.profileId), r.stays.map(value => uuid(object(value).stayId))) } : {}) };
 }
 
 export async function proxyStaffReservations(request: NextRequest, reservationId?: string) {

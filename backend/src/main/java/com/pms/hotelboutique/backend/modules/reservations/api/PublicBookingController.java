@@ -35,6 +35,9 @@ public class PublicBookingController {
             extensions = @Extension(properties = @ExtensionProperty(name = "x-audience", value = "public")),
             description = "Requires Idempotency-Key and SIMULATED_CARD; card data and unknown fields are rejected. "
                     + "New bookings require YYYY-MM-DD calendar dates, text without NUL, and the official GTQ total. "
+                    + "Optional phone, ISO alpha-2 country and documentNumber belong to the booking guest; "
+                    + "notes hold special requests (up to 250 characters). These fields are persisted atomically "
+                    + "and included in idempotency checks, never returned in the public receipt. "
                     + "Property must remain ACTIVE from inventory admission through transaction commit. "
                     + "Both creation and replay return 201. Replay returns the original persisted snapshot "
                     + "without another payment, reservation or stay; another payload with the same key is 409.")

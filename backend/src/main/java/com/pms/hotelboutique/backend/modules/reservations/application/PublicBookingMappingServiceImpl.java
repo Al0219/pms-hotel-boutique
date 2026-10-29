@@ -49,7 +49,8 @@ public class PublicBookingMappingServiceImpl implements PublicBookingMappingServ
                 .map(id -> new CreateBookingCommand.BookerBooking(id, null))
                 .orElseGet(() -> new CreateBookingCommand.BookerBooking(null,
                         new CreateGuestProfileCommand(null, request.propertyId(), guest.firstName(),
-                                guest.lastName(), guest.email(), null, null, null, null)));
+                                guest.lastName(), guest.email(), guest.phone(), null, guest.documentNumber(), null,
+                                guest.country())));
         var stays = new ArrayList<CreateBookingCommand.StayBookingCommand>();
         for (var stay : request.stays()) {
             for (int unit = 0; unit < stay.quantity(); unit++) {
@@ -60,6 +61,6 @@ public class PublicBookingMappingServiceImpl implements PublicBookingMappingServ
         // Preserve entry order and duplicates; do not normalize Guest data or
         // invent occupants. The legacy profile writer's trim is separately approved.
         return new CreateBookingCommand(request.propertyId(), booker, request.currency(),
-                "WEB_DIRECTA", null, null, List.copyOf(stays));
+                "WEB_DIRECTA", null, request.notes(), List.copyOf(stays));
     }
 }

@@ -30,3 +30,6 @@ databaseChangeLog:
   - include:
       file: 010-guest-personal-profile.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 011-guest-profile-country.yaml
+      relativeToChangelogFile: true

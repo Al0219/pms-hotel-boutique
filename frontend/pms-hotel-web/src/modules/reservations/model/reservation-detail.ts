@@ -18,6 +18,10 @@ export interface ReservationStayDetail {
   travelState: StayTravelState;
   /** Exact Backend concurrency token; absent for the separate legacy/mock contract. */
   updatedAt?: string;
+  roomTypeId?: string;
+  roomTypeCode?: string;
+  presentation?: { images: string[]; description: string | null };
+  occupants?: Array<{ profileId: string; fullName: string; primary: boolean }>;
 }
 
 export interface ReservationGuestSummary {
@@ -46,6 +50,12 @@ export interface ReservationSource {
 }
 
 export interface ReservationDetailData {
+  /** Present only when the scoped Backend detail provided the expanded contract. */
+  information?: {
+    updatedAt: Date;
+    contact: { profileId: string; email: string | null; phone: string | null; documentType: string | null;
+      documentNumberMasked: string | null; preferredLanguage: string | null; country?: string | null } | null;
+  };
   readOnly?: boolean;
   confirmationCode?: string;
   id: string;

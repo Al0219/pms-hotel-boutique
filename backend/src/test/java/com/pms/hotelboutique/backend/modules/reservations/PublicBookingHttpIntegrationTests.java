@@ -68,9 +68,100 @@ class PublicBookingHttpIntegrationTests {
     @Autowired JdbcTemplate jdbc;
     @Autowired EntityManager entities;
     @Autowired PublicBookingReceiptRepository receipts;
+    @Autowired com.pms.hotelboutique.backend.modules.securityauth.infrastructure.security.StaffJwtService staffJwt;
     @MockitoSpyBean PaymentGatewayPort payments;
     @MockitoSpyBean ReservationService reservations;
     private UUID property, standard;
+
+    @Test
+    void publicContactAndRequestsSurvivePersistenceAndAuthorizedStaffReadWithoutLeakingDocument() throws Exception {
+        var input = enriched("+50255551234", "GT", "TEST-987654321", "Llegada a las 22:00; habitación tranquila.");
+        String key = key();
+        var response = body(send(key, input, 201));
+        UUID id = UUID.fromString(response.path("reservationId").asText());
+        UUID profile = jdbc.queryForObject("SELECT booking_guest_id FROM reservations WHERE id=?", UUID.class, id);
+        var contact = jdbc.queryForMap("SELECT phone,country,document_number,guest_account_id FROM guest_profiles WHERE id=?", profile);
+        assertEquals("+50255551234", contact.get("phone"));
+        assertEquals("GT", contact.get("country"));
+        assertEquals("TEST-987654321", contact.get("document_number"));
+        assertNull(contact.get("guest_account_id"));
+        assertEquals(input.notes(), jdbc.queryForObject("SELECT notes FROM reservations WHERE id=?", String.class, id));
+        String token = staffToken();
+        var read = mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                .get("/api/v1/reservations/" + id).param("propertyId", property.toString()).header("Authorization", token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.details.contact.phone").value("+50255551234"))
+                .andExpect(jsonPath("$.details.contact.country").value("GT"))
+                .andExpect(jsonPath("$.details.contact.documentNumberMasked").value("•••• 4321"))
+                .andExpect(jsonPath("$.details.notes").value(input.notes())).andReturn();
+        assertFalse(read.getResponse().getContentAsString().contains("TEST-987654321"));
+        assertFalse(response.toString().contains("55551234"));
+        assertFalse(receipts.find(key).orElseThrow().responseSnapshot().contains("TEST-987654321"));
+        var before = counts();
+        assertEquals(response, body(send(key, input, 201)));
+        assertEquals(before, counts());
+        for (var changed : List.of(
+                enriched("+50255551235", "GT", "TEST-987654321", input.notes()),
+                enriched("+50255551234", "MX", "TEST-987654321", input.notes()),
+                enriched("+50255551234", "GT", "TEST-987654322", input.notes()),
+                enriched("+50255551234", "GT", "TEST-987654321", "Sin solicitudes"))) {
+            assertError(send(key, changed, 409), "IDEMPOTENCY_KEY_REUSED");
+            assertEquals(before, counts());
+        }
+        verify(payments, times(1)).pay(any());
+    }
+
+    @Test
+    void newPublicContactNeverOverwritesAnEarlierProfileWithTheSameNameAndEmail() throws Exception {
+        UUID previous = UUID.randomUUID();
+        jdbc.update("INSERT INTO guest_profiles(id,property_id,first_name,last_name,email,phone,document_number,status,created_at,updated_at) "
+                + "VALUES (?,?,'Ana','Lopez','ana@example.test','+50255550000','PREVIOUS-1234','ACTIVE',now(),now())", previous, property);
+        var response = body(send(key(), enriched("+50255551234", "GT", "TEST-987654321", "Piso alto"), 201));
+        UUID id = UUID.fromString(response.path("reservationId").asText());
+        assertNotEquals(previous, jdbc.queryForObject("SELECT booking_guest_id FROM reservations WHERE id=?", UUID.class, id));
+        assertEquals("+50255550000", jdbc.queryForObject("SELECT phone FROM guest_profiles WHERE id=?", String.class, previous));
+        assertEquals("PREVIOUS-1234", jdbc.queryForObject("SELECT document_number FROM guest_profiles WHERE id=?", String.class, previous));
+        assertNull(jdbc.queryForObject("SELECT country FROM guest_profiles WHERE id=?", String.class, previous));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"phone,55551234", "phone,+502ABC", "country,ZZ", "country,gt", "documentNumber,ABC/123"})
+    void invalidNewContactIsRejectedBeforePaymentOrWrites(String field, String value) throws Exception {
+        var payload = (ObjectNode) json.valueToTree(request(1));
+        ((ObjectNode) payload.get("bookingGuest")).put(field, value);
+        var before = counts();
+        assertError(raw(key(), json.writeValueAsString(payload), 400), "INVALID_REQUEST");
+        assertEquals(before, counts());
+        verifyNoInteractions(payments);
+    }
+
+    @Test
+    void invalidSpecialRequestsAreRejectedWithoutSavingAPartialBooking() throws Exception {
+        for (String notes : List.of(" ", "A\0B", "x".repeat(251))) {
+            assertNoWrites(key(), enriched("+50255551234", "GT", "TEST-1234", notes), 400, "INVALID_REQUEST");
+        }
+    }
+
+    private PublicBookingRequest enriched(String phone, String country, String document, String notes) {
+        var original = request(1);
+        return new PublicBookingRequest(property, ARRIVAL, DEPARTURE, "GTQ", original.clientTotalMinor(), original.stays(),
+                new PublicBookingRequest.BookingGuest("Ana", "Lopez", "ana@example.test", phone, country, document),
+                original.paymentMode(), notes);
+    }
+
+    private String staffToken() {
+        UUID id = UUID.randomUUID(), session = UUID.randomUUID();
+        jdbc.update("INSERT INTO staff_users(id,username,work_email,password_hash,role_code,status,created_at,updated_at) "
+                + "VALUES (?,?,?,'test-only-unused-hash','RECEPCION','ACTIVE',now(),now())", id, id.toString(), id + "@example.test");
+        jdbc.update("INSERT INTO organization_memberships(staff_user_id,organization_id,role_code,status,created_at,updated_at) "
+                + "VALUES (?,?,'RECEPCION','ACTIVE',now(),now())", id, ORGANIZATION);
+        jdbc.update("INSERT INTO membership_properties(staff_user_id,organization_id,property_id,status,created_at,updated_at) "
+                + "VALUES (?,?,?,'ACTIVE',now(),now())", id, ORGANIZATION, property);
+        jdbc.update("INSERT INTO auth_sessions(id,context,staff_user_id,status,expires_at,created_at) "
+                + "VALUES (?,'STAFF',?,'ACTIVE',now()+interval '1 day',now())", session, id);
+        return "Bearer " + staffJwt.issue(new com.pms.hotelboutique.backend.modules.securityauth.application.StaffPrincipal(
+                id, session, id.toString(), "RECEPCION"), java.time.Instant.now());
+    }
 
     @BeforeEach
     void fixtures() {

@@ -15,6 +15,7 @@ import { ReservationNoShow } from "./reservation-no-show";
 import { RoomAssignment } from './room-assignment';
 import { StayLifecycleActions } from './stay-lifecycle-actions';
 import { staffReservationsEndpoint } from '../service/staff-reservation-read.service';
+import { StaffReservationOverview } from './staff-reservation-overview';
 
 import styles from "./reservation-detail.module.css";
 
@@ -138,7 +139,7 @@ interface ReservationDetailProps {
 }
 
 export function ReservationDetail({ propertyId, endpoint, reservationId, sessionId, canManage = false, folioAccess }: Readonly<ReservationDetailProps>) {
-  const { data: detail, error, isLoading, refetch } = useReservationDetail(propertyId, endpoint, reservationId);
+  const { data: detail, error, isLoading, refetch } = useReservationDetail(propertyId, endpoint, reservationId, sessionId);
   const [cancelling, setCancelling] = useState(false);
   const [markingNoShow, setMarkingNoShow] = useState(false);
   const [movingRoom, setMovingRoom] = useState<string | null>(null);
@@ -271,7 +272,9 @@ export function ReservationDetail({ propertyId, endpoint, reservationId, session
         />
       ) : null}
 
-      <div className={styles.grid}>
+      {endpoint === staffReservationsEndpoint ? <StaffReservationOverview key={`${sessionId}:${propertyId}:${reservationId}`} detail={detail}
+        renderStay={stay => <StayBlock stay={stay} singleRoom={singleRoom} lifecycle={lifecycle(stay)}
+          onAssign={canManage && sessionId && assignable ? () => setAssigning(stay.id) : undefined} />} /> : <div className={styles.grid}>
         <section className={styles.card} aria-labelledby="reservation-data-title">
           <h2 id="reservation-data-title">Datos de la reserva</h2>
           <dl className={styles.definitionList}>
@@ -345,9 +348,11 @@ export function ReservationDetail({ propertyId, endpoint, reservationId, session
           <p className={styles.paymentLine}>{paymentLine(detail)}</p>
           <p className={styles.folioHint}>El folio completo se consulta vía el módulo Folio (API pública).</p>
         </section>}
-      </div>
-      {endpoint === staffReservationsEndpoint && folioAccess && <StaffReservationFolioPanel propertyId={propertyId}
-        reservationId={reservationId} actorId={folioAccess.actorId} sessionId={folioAccess.sessionId} />}
+      </div>}
+      {endpoint === staffReservationsEndpoint && folioAccess && <details className={styles.financialDisclosure}>
+        <summary><strong>Folio y pagos</strong><span>Consultar cargos, abonos y saldo <span aria-hidden="true">⌄</span></span></summary>
+        <StaffReservationFolioPanel propertyId={propertyId} reservationId={reservationId} actorId={folioAccess.actorId} sessionId={folioAccess.sessionId} />
+      </details>}
     </div>
   );
 }

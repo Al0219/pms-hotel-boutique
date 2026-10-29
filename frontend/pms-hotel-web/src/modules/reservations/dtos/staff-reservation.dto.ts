@@ -8,6 +8,14 @@ export interface StaffReservationDto {
   sourceReference: string | null;
   currency: string;
   createdAt: string;
+  /** Additive detail-only contract64. Absent from list and older backend versions. */
+  details?: {
+    updatedAt: string;
+    notes: string | null;
+    contact: { profileId: string; email: string | null; phone: string | null; documentType: string | null;
+      documentNumberMasked: string | null; preferredLanguage: string | null; country?: string | null } | null;
+    stays: Array<{ stayId: string; occupants: Array<{ profileId: string; fullName: string; primary: boolean }> }>;
+  };
   responsibleGuest: { profileId: string; firstName: string; lastName: string } | null;
   stays: Array<{
     stayId: string;

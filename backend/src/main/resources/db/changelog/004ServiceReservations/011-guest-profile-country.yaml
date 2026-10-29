@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-011-guest-profile-country
+      author: jose
+      changes:
+        - addColumn:
+            tableName: guest_profiles
+            columns:
+              - column:
+                  name: country
+                  type: VARCHAR(2)
+      rollback:
+        - dropColumn:
+            tableName: guest_profiles
+            columnName: country

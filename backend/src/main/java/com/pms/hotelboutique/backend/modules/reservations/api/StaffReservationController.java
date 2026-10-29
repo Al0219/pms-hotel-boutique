@@ -150,7 +150,8 @@ public class StaffReservationController {
     @GetMapping("/{reservationId}")
     @Operation(operationId = "getStaffReservation", summary = "Read a real reservation and its stays",
             description = "Staff RESERVATION_MANAGE and explicit PROPERTY scope, revalidated live. "
-                    + "Responsible GuestProfile is not an occupant list. No financial or occupancy projection.")
+                    + "Includes detail-only responsible GuestProfile contact (document masked), registered occupants per stay, notes and updatedAt. "
+                    + "Responsible GuestProfile is separate from occupants and GuestAccount. No inferred adult/child counts or financial projection.")
     @ApiResponse(responseCode = "200", description = "Scoped real reservation",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = StaffReservation.class)),
             headers = @Header(name = "Cache-Control", schema = @Schema(type = "string"), description = "private, no-store"))
