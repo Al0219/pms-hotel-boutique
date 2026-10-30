@@ -191,7 +191,7 @@ export function ReservationDetail({ propertyId, endpoint, reservationId, session
   const noShowPending = !detail.readOnly && detail.status === "NO_SHOW_PENDING";
   const lifecycle = (stay: ReservationStayDetail) => endpoint === staffReservationsEndpoint && canManage && sessionId && stay.updatedAt
     ? <StayLifecycleActions key={`${sessionId}:${propertyId}:${reservationId}:${stay.id}`} propertyId={propertyId}
-      reservationId={reservationId} sessionId={sessionId} stay={stay} reservationConfirmed={detail.status === 'CONFIRMED'} /> : undefined;
+      reservationId={reservationId} sessionId={sessionId} stay={stay} reservationConfirmed={detail.status === 'CONFIRMED'} financial={Boolean(folioAccess)} /> : undefined;
 
   return (
     <div className={styles.page}>
@@ -347,7 +347,7 @@ export function ReservationDetail({ propertyId, endpoint, reservationId, session
         </section>}
       </div>
       {endpoint === staffReservationsEndpoint && folioAccess && <StaffReservationFolioPanel propertyId={propertyId}
-        reservationId={reservationId} actorId={folioAccess.actorId} sessionId={folioAccess.sessionId} />}
+        reservationId={reservationId} actorId={folioAccess.actorId} sessionId={folioAccess.sessionId} stayId={singleRoom ? detail.stays[0]?.id : undefined} />}
     </div>
   );
 }
