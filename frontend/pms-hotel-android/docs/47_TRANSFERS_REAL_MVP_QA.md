@@ -178,3 +178,8 @@ completado/fuera de cutoff abre detalle sin acciones; cambiar estancia A→B y a
 Hotel comprueba nombre/habitación/fechas/estado y ausencia de textos eliminados;
 WiFi/contacto/ubicación conservan contenido genérico. Actualizar únicamente Expo
 con el comando HTTP de esta guía; no reconstruir Backend/Web para estos ajustes.
+
+Cierre de integración: main9c7bd4e incorporado en feature sin modificar main.
+Conflictos solo Plan/Handoff, resueltos conservando ambas entradas. Backend57 PASS
+(OpenAPI27, cancelación Staff18, facturación Traslados12), verify/JAR PASS; inventario
+139/114/170/16. PostgreSQL técnico tmpfs; QA manual/base habitual intactos.

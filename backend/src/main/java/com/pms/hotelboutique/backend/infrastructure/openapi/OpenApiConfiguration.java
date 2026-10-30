@@ -106,6 +106,22 @@ public class OpenApiConfiguration {
     }
 
     @Bean
+    OpenApiCustomizer staffCancellationSchemas() {
+        return api -> {
+            var schemas=api.getComponents().getSchemas();
+            for (String name:List.of("StaffCancellationPreview","StaffCancellationResult","StaffCancellationFinance")) {
+                var schema=schemas.get(name);
+                if (schema!=null) schema.setRequired(new java.util.ArrayList<>(schema.getProperties().keySet()));
+            }
+            var preview=schemas.get("StaffCancellationPreview");
+            if (preview!=null) for (var field:java.util.Map.of("financial","StaffCancellationFinance","completed","StaffCancellationResult").entrySet()) {
+                preview.getProperties().put(field.getKey(),new Schema<>().anyOf(List.of(
+                        new Schema<>().$ref("#/components/schemas/"+field.getValue()),new Schema<>().types(Set.of("null")))));
+            }
+        };
+    }
+
+    @Bean
     OperationCustomizer applicationAudience() {
         return (operation, handler) -> {
             String packageName = handler.getBeanType().getPackageName();
@@ -137,6 +153,7 @@ public class OpenApiConfiguration {
                     || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.operations.api.CurrentMaintenanceReportController.class)
                     || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.reservations.api.StaffFolioController.class)
                     || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.reservations.api.StaffReservationController.class)
+                    || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.reservations.api.StaffReservationCancellationController.class)
                     || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.reservations.api.StaffReservationCreationController.class)
                     || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.operations.api.StaffHousekeepingController.class)
                     || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.operations.api.StaffHousekeepingRequestsController.class)

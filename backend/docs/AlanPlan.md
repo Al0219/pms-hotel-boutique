@@ -40,6 +40,50 @@ lint/typecheck, JAR/build Web/export Android y diff-check PASS. Solo PG técnico
 aislado, sin despliegue. No aplicar a BD habitual ni reseed; no commit/push/PR antes
 de PASS manual.
 
+## 2026-10-30 — Cancelación Staff — COMPLETADA
+
+José confirma QA manual PASS y todos los checks del PR PASS. Publicados 7561f0d
+(funcionalidad), c142174 (integración de main) y 11c2e45 (contexto QueryClient de
+la prueba de layout). El último fallo CI era el montaje del test, corregido sin
+eliminar assertions ni cambiar producción. No se atribuye PASS a la suite local
+con timeouts; la aceptación de CI proviene de la confirmación del usuario.
+staff-admin.test.tsx previo intacto y fuera de los commits. Siguiente tarea por
+definir con José; sin ampliar el MVP ni iniciar otro módulo.
+
+## 2026-10-29 — Integración de main en cancelación Staff — validación local PASS
+
+Integrado origin/main bbdcb53 por autorización de José. Conflictos en este archivo
+y AlanHandoff resueltos conservando todas las entradas de ambos equipos. Revisadas
+las combinaciones automáticas de detalle, folio y OpenAPI; sin ajustes funcionales
+adicionales. Backend Java21/PG17 aislado:145 pruebas/8 clases PASS, cero omitidas.
+Web:68 casos/11 archivos PASS por lotes, lint/typecheck/build PASS. Un fallo inicial
+de espera de carga del folio se repitió por separado:6/6 PASS, sin editar pruebas.
+No se atribuye una nueva suite global PASS. QA manual de cancelación ya aprobado;
+pendientes checks del PR. staff-admin.test.tsx previo intacto y fuera del commit.
+Sin despliegue ni cambios en la BD habitual. Evidencia: %TEMP%/pms-staff-cancellation-merge-qa.
+Siguiente: publicar la resolución autorizada y revisar CI.
+
+## 2026-10-29 — Cancelación Staff con penalización — EN_QA
+
+Contrato [66](66_STAFF_RESERVATION_CANCELLATION_MVP_CONTRACT.md) confirmado por
+José: 10% del alojamiento original, HALF_UP, excedente como crédito y faltante
+como deuda. BD2-LC-001 / IMP-WEB-0303; owner José/full stack, revisión colaborativa
+BD1/BD3/WEB-4. Preview y confirmación scoped, motivo, compensación/penalización
+append-only, locks, idempotencia y recuperación del recibo tras perder conexión.
+MVP total antes de entrada, sin refunds, PSP, roles nuevos ni migraciones propias.
+Backend: 31 pruebas nuevas y regresión completa por lotes (149 clases/1,294 tests)
+PASS. Web: 25 nuevas, tipos, lint y build PASS. QA real público/Staff, deuda/crédito,
+SuperAdmin y móvil PASS; historial e inventario previo intactos. Las 2 migraciones
+aplicadas al entorno local ya pertenecían a main. Evidencia: %TEMP%/pms-staff-cancellation-qa.
+Límite de CI: cuatro timeouts Web de pruebas existentes; tres reproducidos con la
+pantalla publicada y asignación fluctuante. Ver contrato66; no se declara suite
+Web global PASS. staff-admin.test.tsx previo se conserva separado y sin cambios.
+QA manual aprobado por José, incluida la etiqueta «Saldo a favor del cliente» y
+el diálogo con contenido desplazable y acciones visibles. Regresión UI de esta
+corrección: 14 tests PASS; navegador: 23 comprobaciones PASS, escritorio/móvil,
+rueda/teclado/táctil. Rama feature/staff-reservation-cancellation desde b11efa7.
+Publicación autorizada; pendiente CI y estabilizar esos tests para el cierre global.
+
 ## 2026-10-29 — Cierre de pendientes Stay Journey: PASS técnico / EN_QA
 
 12/12 PASS manual previos conservados; solo cambios nuevos pendientes del usuario.

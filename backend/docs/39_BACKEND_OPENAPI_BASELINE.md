@@ -673,3 +673,7 @@ Staff listado/transiciones. OpenAPI validado:136 operaciones,111 paths,165 schem
 GET Guest transfer-prices scoped; importes Backend en ruta y estimatedTransfers
 separados del saldo. Paridad27 pruebas PASS:137 operaciones/112 paths/166 schemas/
 16 tags. Seis franjas Housekeeping, incluida18:00–19:00. Sin precio en inputs Guest.
+
+Integración de main9c7bd4e: se preservan cancelación Staff y Traslados. Paridad27
+pruebas PASS:139 operaciones/114 paths/170 schemas/16 tags. Compatibilidad
+financiera comprobada con18 pruebas de cancelación y12 de facturación Traslados.

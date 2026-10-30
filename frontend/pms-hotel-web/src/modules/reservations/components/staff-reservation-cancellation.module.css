@@ -1,0 +1,38 @@
+.trigger { margin-top: 1rem; border: 1px solid #d8b4af; background: #fff; color: #9f3434; border-radius: .75rem; padding: .65rem 1rem; cursor: pointer; font-weight: 600; }
+.trigger:hover { background: #fff1ef; }
+.dialog {
+  display: flex;
+  flex-direction: column;
+  max-width: 42rem;
+  max-height: calc(100vh - 3rem);
+  max-height: calc(100dvh - 3rem);
+  overflow: hidden;
+}
+.dialog > header, .dialog > footer { flex: 0 0 auto; }
+.dialog > div {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+.dialog > footer { margin-top: 1rem; }
+.body { display: grid; gap: 1rem; color: #38433b; line-height: 1.6; overflow-wrap: anywhere; }
+.body p { margin: 0; }
+.body:focus-visible { outline: 2px solid #5a6b5d; outline-offset: -2px; }
+.figures { margin: 0; background: #f5f6f2; padding: 1rem; border-radius: 1rem; display: grid; gap: .65rem; }
+.figures > div { display: flex; justify-content: space-between; gap: 1rem; }
+.figures dd { margin: 0; font-weight: 650; text-align: right; }
+.total { border-top: 1px solid #dce1d7; padding-top: .75rem; color: #2a362b; }
+.notice { padding: 1rem; background: #edf1e8; border-radius: .85rem; font-size: .9rem; }
+.note { color: #677069; font-size: .8rem; }
+.error { color: #ae2828; font-size: .9rem; }
+.label { font-weight: 600; }
+.body textarea { width: 100%; border: 1px solid #b8c2b8; background: white; color: #27352a; padding: .8rem; border-radius: .75rem; resize: vertical; font: inherit; }
+.body textarea:focus { outline: 2px solid #5a6b5d; outline-offset: 2px; }
+.body textarea[aria-invalid='true'] { border-color: #ba3030; }
+.secondary, .danger { padding: .75rem 1rem; border-radius: .75rem; font-weight: 600; cursor: pointer; transition: background .2s; }
+.secondary { background: white; color: #435044; border: 1px solid #cad2c6; }
+.danger { background: #9f3434; color: white; border: 1px solid #9f3434; }
+.danger:hover { background: #852a2a; }
+.secondary:disabled, .danger:disabled { opacity: .5; cursor: not-allowed; }

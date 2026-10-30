@@ -21,6 +21,8 @@ export function StaffShell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, [menuOpen]);
   const pathname = usePathname();
+  const moduleHeadings = nav.some(entry => entry.href === pathname && entry.href !== '/dashboard') || pathname === '/seguridad/usuarios';
+  const moduleTitle = pathname === '/reservas' ? 'Centro de reservas' : pathname === '/staff/habitaciones' ? 'Habitaciones' : null;
   const role = canonicalStaffRole(session.roleId);
   const staffAdmin = pathname === "/seguridad/usuarios" || pathname.startsWith("/seguridad/usuarios/");
   const supportsScope = staffAdmin || pathname === "/dashboard" || pathname === "/multi-property" || pathname.startsWith("/multi-property/disponibilidad/") || pathname === '/reservas' || pathname.startsWith('/reservas/') || pathname === '/calendario' || pathname === '/staff/habitaciones' || pathname === '/reportes' || pathname === '/housekeeping' || pathname === '/room-service' || pathname === '/amenities' || pathname === '/parking-valet';
@@ -50,7 +52,10 @@ export function StaffShell({ children }: { children: React.ReactNode }) {
       </div>
     </aside>
     <div className={styles.mainColumn}>
-      <main className={styles.main}>{children}</main>
+      <main className={`${styles.main} ${moduleHeadings ? styles.moduleHeadings : ''}`}>
+        {moduleTitle && <header className={styles.moduleHeader}><h1>{moduleTitle}</h1></header>}
+        {children}
+      </main>
     </div>
   </div>;
 }
