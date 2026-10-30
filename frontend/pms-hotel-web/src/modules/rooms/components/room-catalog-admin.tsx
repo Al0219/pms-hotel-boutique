@@ -29,7 +29,7 @@ function ProvisionalRoomCatalogAdmin({ propertyId, sessionId, canManage }: { pro
   if (query.fetchStatus === 'paused') return <p role="status">Sin conexión. Esperando para cargar el catálogo.</p>;
   if (query.isPending) return <p role="status">Cargando catálogo de habitaciones…</p>;
   if (query.isError || !query.data) return <section className={styles.page}>
-    <p role="status">Escenario local provisional: cambios en memoria, sin persistencia PostgreSQL.</p><h1>Administrar habitaciones</h1><p role="alert">No pudimos cargar el catálogo de esta propiedad.</p><button onClick={() => void query.refetch()}>Reintentar</button></section>;
+    <p role="status">Escenario local provisional: cambios en memoria, sin persistencia PostgreSQL.</p><h2>Administrar habitaciones</h2><p role="alert">No pudimos cargar el catálogo de esta propiedad.</p><button onClick={() => void query.refetch()}>Reintentar</button></section>;
   const data = query.data;
   const queryText = search.trim().toLocaleLowerCase('es');
   const rows = (tab==='types' ? data.types : data.rooms).filter(item => `${item.code} ${'name' in item ? item.name : data.types.find(type => type.id===item.roomTypeId)?.name}`.toLocaleLowerCase('es').includes(queryText));
@@ -37,7 +37,7 @@ function ProvisionalRoomCatalogAdmin({ propertyId, sessionId, canManage }: { pro
   const mutationError = mutation.error instanceof HttpStatusError && mutation.error.status===409 ? 'Ese código ya existe en esta propiedad. Usa otro código.' : 'No pudimos guardar. Conservamos tus datos para que puedas reintentar.';
   return <section className={styles.page}>
     <p role="status">Escenario local provisional: cambios en memoria, sin persistencia PostgreSQL.</p>
-    <header className={styles.header}><div><p className={styles.overline}>INVENTARIO FÍSICO</p><h1>Administrar habitaciones</h1><p>{data.rooms.length} habitaciones · {data.types.length} tipos en esta propiedad</p></div>
+    <header className={styles.header}><div><p className={styles.overline}>INVENTARIO FÍSICO</p><h2>Administrar habitaciones</h2><p>{data.rooms.length} habitaciones · {data.types.length} tipos en esta propiedad</p></div>
       {allowChanges && <button className={styles.primary} onClick={() => open(tab==='types'?'create-type':'create-room')} disabled={mutation.isPending}>{tab==='types'?'Nuevo tipo':'Nueva habitación'}</button>}
     </header>
     <div className={styles.tabs} role="tablist" aria-label="Catálogo de inventario">{(['rooms','types'] as const).map(value => <button key={value} id={`catalog-tab-${value}`} role="tab" aria-selected={tab===value} aria-controls="catalog-panel" onClick={() => { setTab(value);setSelectedId(undefined);setSearch('');setNotice(''); }}>{value==='rooms'?'Habitaciones físicas':'Tipos de habitación'}</button>)}</div>

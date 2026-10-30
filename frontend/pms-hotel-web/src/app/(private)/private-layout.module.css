@@ -59,6 +59,17 @@
 
 .mainColumn { min-width: 0; }
 .main { min-width: 0; padding: var(--space-4); }
+.main.moduleHeadings h1 {
+  color: #2e3531;
+  font-family: var(--font-family-display);
+  font-size: clamp(32px, 4vw, 44px);
+  font-weight: 400;
+  letter-spacing: normal;
+  line-height: 1.2;
+  margin: 6px 0 10px;
+  overflow-wrap: anywhere;
+}
+.moduleHeader { max-width: 1280px; margin: 0 auto; padding: var(--space-4) var(--space-4) var(--space-5); }
 
 .reportsShell .sidebar { background: var(--color-surface-dark); border-color: var(--color-surface-dark); color: var(--color-text-inverse); }
 .reportsShell .role, .reportsShell .propertyContext, .reportsShell .property p { color: var(--color-brand-soft); }
