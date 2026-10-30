@@ -1,3 +1,13 @@
+## 2026-10-30 — Cancelación Staff — COMPLETADA
+
+José confirma QA manual PASS y todos los checks del PR PASS. Publicados 7561f0d
+(funcionalidad), c142174 (integración de main) y 11c2e45 (contexto QueryClient de
+la prueba de layout). El último fallo CI era el montaje del test, corregido sin
+eliminar assertions ni cambiar producción. No se atribuye PASS a la suite local
+con timeouts; la aceptación de CI proviene de la confirmación del usuario.
+staff-admin.test.tsx previo intacto y fuera de los commits. Siguiente tarea por
+definir con José; sin ampliar el MVP ni iniciar otro módulo.
+
 ## 2026-10-29 — Integración de main en cancelación Staff — validación local PASS
 
 Integrado origin/main bbdcb53 por autorización de José. Conflictos en este archivo
