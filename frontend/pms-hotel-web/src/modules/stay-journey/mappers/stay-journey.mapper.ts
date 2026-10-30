@@ -19,7 +19,7 @@ export function mapJourneySummary(v: unknown, property: string, reservation: str
   if (r.disclaimer !== 'Documento informativo — sin validez fiscal') fail();
   return { stay: { propertyId: id(s.propertyId), reservationId: id(s.reservationId), stayId: id(s.stayId), confirmationCode: text(s.confirmationCode), status: text(s.status), updatedAt: time(s.updatedAt), roomId: s.roomId === null ? null : id(s.roomId), arrival: text(s.arrival), departure: text(s.departure), timezone: text(s.timezone) },
     folioId: id(r.folioId), currency: 'GTQ', balance: money(r.balance), charges: money(r.charges), payments: money(r.payments), adjustments: money(r.adjustments), verifiable: r.verifiable, pendingOrders: count(r.pendingOrders), unpostedOrders: count(r.unpostedOrders), documentId: r.documentId === null ? null : id(r.documentId), disclaimer: r.disclaimer,
-    requests: mapJourneyRequests(r.requests), movements: array(r.movements).map(value => { const m = obj(value); if (!['CHARGE', 'PAYMENT', 'ADJUSTMENT'].includes(String(m.kind))) fail();
+    estimatedTransfers:r.estimatedTransfers==null?[]:array(r.estimatedTransfers).map(value=>{const e=obj(value);return{id:id(e.id),description:text(e.description),amount:money(e.amount)};}),requests: mapJourneyRequests(r.requests), movements: array(r.movements).map(value => { const m = obj(value); if (!['CHARGE', 'PAYMENT', 'ADJUSTMENT'].includes(String(m.kind))) fail();
       return { id: id(m.id), kind: m.kind as JourneySummary['movements'][number]['kind'], description: text(m.description), amount: money(m.amount), createdAt: time(m.createdAt) }; }) };
 }
 export function mapJourneyDocument(v: unknown, property: string, reservation: string, stay: string): JourneyDocument {

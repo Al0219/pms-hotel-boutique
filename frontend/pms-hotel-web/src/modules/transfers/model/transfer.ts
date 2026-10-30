@@ -1,0 +1,12 @@
+export interface TransferPlace {key:string;displayText:string;latitude:number;longitude:number;type:'HOTEL'|'PLACE'}
+export interface TransferOrder {id:string;propertyId:string;reference:string;roomLabel:string|null;notes:string|null;serviceDate:string;deliveryTime:string;status:'OPEN'|'IN_PROGRESS'|'DONE'|'CANCELLED';updatedAt:string;items:{origin:TransferPlace;destination:TransferPlace;passengers:number;totalMinor?:number|null}[]}
+const uuid=/^[a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12}$/i;
+export function projectTransfers(value:unknown,property:string):TransferOrder[]{
+ if(!Array.isArray(value))throw new Error('Invalid transfers');const ids=new Set<string>();
+ return value.map(raw=>{const r=raw as Record<string,unknown>;
+ if(!r||typeof r.id!=='string'||!uuid.test(r.id)||ids.has(r.id)||r.propertyId!==property||typeof r.confirmationCode!=='string'||!(r.notes===null||typeof r.notes==='string'&&r.notes.length<=500)||!(r.roomCode===null||typeof r.roomCode==='string')||typeof r.serviceDate!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(r.serviceDate)||typeof r.deliveryTime!=='string'||!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(r.deliveryTime)||typeof r.status!=='string'||!['OPEN','IN_PROGRESS','DONE','CANCELLED'].includes(r.status)||typeof r.updatedAt!=='string'||!Number.isFinite(Date.parse(r.updatedAt))||!Array.isArray(r.items)||r.items.length!==1)throw new Error('Invalid transfer');
+ const line=r.items[0];const place=(v:unknown):TransferPlace=>{const p=v as TransferPlace;if(!p||typeof p.key!=='string'||!p.key.startsWith('place-')||typeof p.displayText!=='string'||!p.displayText.trim()||!Number.isFinite(p.latitude)||!Number.isFinite(p.longitude)||Math.abs(p.latitude)>90||Math.abs(p.longitude)>180||!['HOTEL','PLACE'].includes(p.type))throw new Error('Invalid place');return{key:p.key,displayText:p.displayText,latitude:p.latitude,longitude:p.longitude,type:p.type};};
+ const origin=place(line.origin),destination=place(line.destination);if(origin.type===destination.type||!Number.isInteger(line.passengers)||line.passengers<1||line.passengers>3)throw new Error('Invalid route');if(line.totalMinor!=null&&(!Number.isSafeInteger(line.totalMinor)||line.totalMinor<=0))throw new Error('Invalid transfer price');ids.add(r.id);
+ return{id:r.id,propertyId:property,reference:r.confirmationCode,roomLabel:r.roomCode,notes:r.notes,serviceDate:r.serviceDate,deliveryTime:r.deliveryTime,status:r.status as TransferOrder['status'],updatedAt:r.updatedAt,items:[{origin,destination,passengers:line.passengers,totalMinor:line.totalMinor??null}]};
+ });
+}
