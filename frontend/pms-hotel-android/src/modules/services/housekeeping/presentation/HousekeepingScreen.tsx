@@ -1,3 +1,5 @@
+import {ActionLabel} from '@/shared/components/ActionLabel';
+import {useServiceCreationGate,ServiceCreationNotice} from '@/modules/checkout/presentation/hooks/useServiceCreationGate';
 import { HttpError, NetworkError } from '@/data/remote/http/HttpError';
 import { canModifyPersistedHousekeeping, type PersistedHousekeepingRequest } from '../domain/PersistedHousekeepingRequest';
 import { useHousekeepingRequests } from './hooks/useHousekeepingRequests';
@@ -39,7 +41,7 @@ function Button({ label, onPress, testID, disabled = false }: {
   return (
     <Pressable accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled}
       onPress={onPress} style={[styles.button, disabled && styles.buttonDisabled]} testID={testID}>
-      <Text style={styles.buttonLabel}>{label}</Text>
+      <ActionLabel label={label} textStyle={styles.buttonLabel}/>
     </Pressable>
   );
 }
@@ -83,6 +85,7 @@ function RealHousekeepingEditor({ requestId, ...props }: HousekeepingScreenProps
   </View><GuestNavigationShell /></View>;
 }
 function HousekeepingForm({ service, stayService, nowMs, initialRequest, reloadRequest }: HousekeepingScreenProps & { initialRequest?: PersistedHousekeepingRequest; reloadRequest?: () => Promise<PersistedHousekeepingRequest | undefined> }) {
+  const serviceGate=useServiceCreationGate();
   const [editing, setEditing] = useState(initialRequest);
   const appClock = useAppClock();
   const getNowMs = nowMs ?? appClock.nowMs;
@@ -163,7 +166,7 @@ function HousekeepingForm({ service, stayService, nowMs, initialRequest, reloadR
   }
 
   function submit() {
-    if (!canEdit || lifecycle !== 'ACTIVE' || stay.kind !== 'success' || submission.isPending || submission.isSuccess || inFlight.current) return;
+    if (serviceGate.blocked&&!editing || !canEdit || lifecycle !== 'ACTIVE' || stay.kind !== 'success' || submission.isPending || submission.isSuccess || inFlight.current) return;
     if (!serviceDateWithinStay || !scheduleAllowed(serviceDate, timeSlot)) {
       setScheduleError(true);
       return;
@@ -245,10 +248,10 @@ function HousekeepingForm({ service, stayService, nowMs, initialRequest, reloadR
               ) : null}
               {editing && submission.isError ? <Button label="Actualizar solicitud" testID="housekeeping-edit-reload" disabled={submission.isPending} onPress={() => { void reloadRequest?.().then(fresh => { if (fresh?.status === 'OPEN') { setEditing(fresh); setServiceDate(fresh.serviceDate); setTimeSlot(fresh.timeSlot as HousekeepingTimeSlot); setCleaningType(fresh.cleaningType as HousekeepingCleaningType); setNotes(fresh.notes ?? ''); submission.reset(); } }); }} /> : null}
               <Button label={submission.isPending ? 'Enviando solicitud...' : editing ? 'Guardar cambios' : submission.isError ? 'Reintentar' : 'Solicitar limpieza'}
-                onPress={submit} disabled={submission.isPending || !timeSlotAllowed} testID="housekeeping-submit" />
+                onPress={submit} disabled={submission.isPending || !timeSlotAllowed || serviceGate.blocked&&!editing} testID="housekeeping-submit" />
             </>
           ) : null}
-        </ScrollView>
+        <ServiceCreationNotice message={serviceGate.message}/></ScrollView>
       </KeyboardAvoidingView>
       <GuestNavigationShell />
       <Modal animationType="slide" onRequestClose={() => setTypePickerVisible(false)} transparent visible={typePickerVisible}>

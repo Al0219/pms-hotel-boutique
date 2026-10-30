@@ -22,3 +22,7 @@ databaseChangeLog:
       file: db/changelog/006ServiceCommercial/db.changelog.yaml
   - include:
       file: db/changelog/005ServiceOperations/006-amenities.yaml
+  - include:
+      file: db/changelog/005ServiceOperations/009-stay-journey.yaml
+  - include:
+      file: db/changelog/005ServiceOperations/010-stay-document-files.yaml

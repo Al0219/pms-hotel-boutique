@@ -31,16 +31,18 @@ public class StaffStayLifecycleService {
     private final RoomReadinessService readiness;
     private final ReservationStayService travel;
     private final EntityManager entities;
+    private final RoomServiceBillingService billing;
+    private final StayJourneyService journey;
 
     public StaffStayLifecycleService(StaffReservationReadService access, LocalOperationService operations,
             FolioTransactionGuard financialGuard, ReservationRepository reservations, ReservationStayRepository stays,
             RoomRepository rooms, PropertyRepository properties, OutOfOrderRepository blocks, FolioRepository folios,
             FolioMovementRepository movements, RoomReadinessService readiness, ReservationStayService travel,
-            EntityManager entities) {
+            EntityManager entities, RoomServiceBillingService billing, StayJourneyService journey) {
         this.access = access; this.operations = operations; this.financialGuard = financialGuard;
         this.reservations = reservations; this.stays = stays; this.rooms = rooms; this.properties = properties;
         this.blocks = blocks; this.folios = folios; this.movements = movements; this.readiness = readiness;
-        this.travel = travel; this.entities = entities;
+        this.travel = travel; this.entities = entities;this.billing=billing;this.journey=journey;
     }
 
     @Transactional
@@ -83,9 +85,12 @@ public class StaffStayLifecycleService {
                 travel.checkInAsStaff(stayId, context.actorId(), context.operationId());
             } else {
                 requireNoDebt(propertyId, reservationId);
+                billing.standardFolio(propertyId,reservationId);
+                billing.requireNoPending(propertyId,reservationId);
                 travel.checkOutAsStaff(stayId, context.actorId(), context.operationId());
             }
             entities.flush();
+            journey.confirmed(propertyId,reservationId,stayId,context.actorId(),context.operationId(),arrival);
             return stayId;
         });
         return new Result(receipt.operationId(), propertyId, reservationId, receipt.resultId(),
@@ -119,7 +124,7 @@ public class StaffStayLifecycleService {
         if (linked.isEmpty()) throw new Conflict("BALANCE_UNVERIFIABLE");
         for (var folio : linked) {
             if (movements.countByFolio_Id(folio.getId()) == 0) throw new Conflict("BALANCE_UNVERIFIABLE");
-            if (movements.sumByFolioId(folio.getId()) > 0) throw new Conflict("OUTSTANDING_BALANCE");
+            if (movements.sumByFolioId(folio.getId()) != 0) throw new Conflict("OUTSTANDING_BALANCE");
         }
     }
 

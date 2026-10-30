@@ -103,13 +103,13 @@ class StaffStayLifecycleIntegrationTests {
         assertEquals("CHECKED_OUT", state()); assertEquals("DIRTY", cleaning());
         assertEquals(true, jdbc.queryForObject("SELECT dnd FROM hk_room_states WHERE room_id=?", Boolean.class, room));
         assertEquals(staff.staffUserId(), jdbc.queryForObject("SELECT updated_by FROM hk_room_states WHERE room_id=?", UUID.class, room));
-        assertEquals(3, events() - before);
-        assertEquals(3, jdbc.queryForObject("SELECT count(*) FROM reservation_audit_events WHERE correlation_id=? AND actor_type='STAFF' AND actor_id=?", Integer.class, operation, staff.staffUserId()));
+        assertEquals(4, events() - before);
+        assertEquals(4, jdbc.queryForObject("SELECT count(*) FROM reservation_audit_events WHERE correlation_id=? AND actor_type='STAFF' AND actor_id=?", Integer.class, operation, staff.staffUserId()));
         assertEquals(originalStay, jdbc.queryForMap("SELECT arrival,departure,room_id FROM reservation_stays WHERE id=?", stay));
         assertEquals(ledger, jdbc.queryForList("SELECT * FROM folio_movements WHERE folio_id=? ORDER BY id", folio));
         assertEquals("OPEN", folios.get(folio).status().name());
         assertEquals(raw, action("check-out", key, request).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
-        assertEquals(before + 3, events());
+        assertEquals(before + 4, events());
         action("check-out", key(), request).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("STALE_STAY"));
     }
 
@@ -120,7 +120,7 @@ class StaffStayLifecycleIntegrationTests {
         assertUnchanged(before);
     }
 
-    @Test void debtInAnotherStayFolioIsNotOffsetByCreditAndCanBeRetriedAfterPostingPayment() throws Exception {
+    @Test void multiStayCreditDoesNotOffsetDebtAndRemainsOutsideZeroBalanceMvp() throws Exception {
         inHouse(); paidFolio(); UUID sibling = UUID.randomUUID(); addStay(sibling, null, "RESERVED");
         var debt = folios.openFolio(new FolioService.OpenFolioCommand(property, Folio.Type.GUEST, "GTQ", reservation, sibling, "Other stay"));
         folios.postCharge(debt.id(), money(2500), staff.staffUserId());
@@ -129,13 +129,15 @@ class StaffStayLifecycleIntegrationTests {
         action("check-out", key, request).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("OUTSTANDING_BALANCE"));
         assertUnchanged(before);
         folios.postPayment(debt.id(), money(2500), staff.staffUserId());
-        action("check-out", key, request).andExpect(status().isOk());
+        action("check-out", key, request).andExpect(status().isConflict());
+        assertEquals("IN_HOUSE",state());
         assertEquals("RESERVED", jdbc.queryForObject("select status from reservation_stays where id=?", String.class, sibling));
     }
 
-    @Test void creditBalanceDoesNotTriggerRefundOrPreventPhysicalDeparture() throws Exception {
+    @Test void creditBalanceRequiresResolutionBeforeZeroBalanceMvpDeparture() throws Exception {
         inHouse(); UUID folio = paidFolio(); folios.postPayment(folio, money(100), staff.staffUserId());
-        action("check-out", key(), body()).andExpect(status().isOk());
+        action("check-out", key(), body()).andExpect(status().isConflict());
+        assertEquals("IN_HOUSE",state());
         assertEquals(-100, folios.balanceOf(folio).minorUnits().value());
     }
 
@@ -254,7 +256,7 @@ class StaffStayLifecycleIntegrationTests {
         try {
             var a = pool.submit(command); var b = pool.submit(command); start.countDown();
             assertEquals(a.get(30, TimeUnit.SECONDS), b.get(30, TimeUnit.SECONDS));
-            assertEquals(3, events() - before); assertEquals(1, receipts());
+            assertEquals(4, events() - before); assertEquals(1, receipts());
         } finally { start.countDown(); pool.shutdownNow(); }
     }
 
@@ -327,7 +329,7 @@ class StaffStayLifecycleIntegrationTests {
         try {
             var first = pool.submit(command); var second = pool.submit(command); start.countDown();
             assertEquals(1, (first.get(30, TimeUnit.SECONDS) ? 1 : 0) + (second.get(30, TimeUnit.SECONDS) ? 1 : 0));
-            assertEquals(before + 3, events()); assertEquals(1, receipts());
+            assertEquals(before + 4, events()); assertEquals(1, receipts());
         } finally { start.countDown(); pool.shutdownNow(); }
     }
 
@@ -342,7 +344,7 @@ class StaffStayLifecycleIntegrationTests {
         inHouse(); paidFolio(); jdbc.update("UPDATE reservation_stays SET room_id=null WHERE id=?", stay);
         int before = events();
         action("check-out", key(), body()).andExpect(status().isOk());
-        assertEquals("CHECKED_OUT", state()); assertEquals("INSPECTED", cleaning()); assertEquals(2, events() - before);
+        assertEquals("CHECKED_OUT", state()); assertEquals("INSPECTED", cleaning()); assertEquals(3, events() - before);
     }
 
     @Test void lateArrivalInsideTheBookedWindowIsAllowed() throws Exception {

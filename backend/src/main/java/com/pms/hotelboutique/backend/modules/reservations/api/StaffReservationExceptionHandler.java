@@ -11,6 +11,12 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 @RestControllerAdvice(assignableTypes = StaffReservationController.class)
 public class StaffReservationExceptionHandler extends ResponseEntityExceptionHandler {
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    org.springframework.http.ResponseEntity<ProblemDetail> journeyConflict(org.springframework.web.server.ResponseStatusException e){
+        var p=ProblemDetail.forStatus(e.getStatusCode());p.setTitle("Stay operation unavailable");
+        if(e.getReason()!=null&&e.getReason().matches("[A-Z_]{1,64}"))p.setProperty("code",e.getReason());
+        return org.springframework.http.ResponseEntity.status(e.getStatusCode()).header("Cache-Control","private, no-store").body(p);
+    }
     @ExceptionHandler(com.pms.hotelboutique.backend.modules.reservations.application.StaffStayLifecycleService.Conflict.class)
     org.springframework.http.ResponseEntity<ProblemDetail> lifecycleConflict(
             com.pms.hotelboutique.backend.modules.reservations.application.StaffStayLifecycleService.Conflict error) {

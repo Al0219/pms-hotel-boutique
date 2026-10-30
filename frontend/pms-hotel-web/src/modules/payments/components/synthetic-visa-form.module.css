@@ -1,0 +1,12 @@
+.form { display: grid; gap: 1rem; }
+.notice { font: inherit; color: var(--color-text-secondary, #646b64); margin: 0; font-size: .875rem; }
+.field { display: grid; gap: .4rem; font-size: .875rem; min-width: 0; }
+.inputWrap { display: flex; align-items: center; gap: .5rem; border: 1px solid var(--color-border-subtle, #e5e7e3); border-radius: .5rem; padding: 0 .75rem; min-height: 44px; }
+.inputWrap:focus-within { outline: 2px solid var(--color-brand, #5a6b5d); outline-offset: 2px; }
+.inputWrap input { border: 0; outline: none; min-width: 0; width: 100%; min-height: 44px; background: transparent; color: inherit; font: inherit; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.error { color: var(--color-danger, #a33832); font-size: .8rem; }
+.confirm { font: inherit; border: 0; border-radius: .5rem; min-height: 44px; padding: .65rem 1rem; color: white; background: var(--color-brand, #5a6b5d); cursor: pointer; }
+.confirm:disabled { opacity: .5; cursor: default; }
+
+.pair .field { grid-template-rows: minmax(2.5em, auto) auto auto; }

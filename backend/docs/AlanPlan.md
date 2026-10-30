@@ -1,3 +1,68 @@
+## 2026-10-29 — Cierre de pendientes Stay Journey: PASS técnico / EN_QA
+
+12/12 PASS manual previos conservados; solo cambios nuevos pendientes del usuario.
+PDF definitivo original Backend010 (bytea/SHA-256/único/inmutable), emisión concurrente
+segura y recuperación Android/Web; gate visual de servicios por estancia, Hotel/menú
+Guest sin Chat, iconos y confirmación compacta completados. Evidencia y comandos
+exclusivos de QA/Expo en [QA46](../../frontend/pms-hotel-android/docs/46_STAY_JOURNEY_MVP_QA.md).
+Contrato [64](64_STAY_JOURNEY_MVP.md). Migración010 verificada solo en bases técnicas:
+no aplicada aún a QA manual ni hotel. Sin reseed, despliegue parcial ni publicación.
+Siguiente: respaldo QA verificado, reconstruir solo Backend/Web y validar los cuatro
+casos manuales nuevos. No repetir los12 ya aceptados. Sin commit/push/PR.
+
+## 2026-10-29 — Stay Journey UX final: EN_QA manual
+
+Ajustes Android/Web implementados y verificados técnicamente; aplicar imágenes al
+QA existente sin seeder ni cambios de datos y repetir recorrido visual/funcional.
+Evidencia/comandos en [QA46](../../frontend/pms-hotel-android/docs/46_STAY_JOURNEY_MVP_QA.md).
+Sin commit/push/PR hasta aceptación manual.
+
+## 2026-10-29 — QA manual Stay Journey en entorno aislado
+
+Entorno Docker independiente activo y reserva del29→30/10 lista para SYSTEM.
+Comandos/datos en [QA46](../../frontend/pms-hotel-android/docs/46_STAY_JOURNEY_MVP_QA.md).
+No alterar la BD habitual ni fechas existentes; continuar siete casos manuales.
+Estado EN_QA; no commit/push/PR.
+
+## 2026-10-29 — Stay Journey sesión2: PASS técnico, EN_QA manual
+
+Android HTTP/pago sintético/documento persistido→PDF terminados. QA integrado TCP
+real y regresión PASS; evidencia y siguiente paso en [Handoff](AlanHandoff.md) y
+[QA46](../../frontend/pms-hotel-android/docs/46_STAY_JOURNEY_MVP_QA.md).
+Pendiente únicamente ejecución/aceptación manual de teléfono/Web/PDF. No desplegar
+sin respaldo restaurado/verificado; no commit/push/PR hasta PASS del usuario.
+
+## 2026-10-29 — Stay Journey MVP: sesión1 Backend/Web implementada, EN_QA
+
+Rama `feature/stay-checkout-payments-mvp`, worktree `/tmp/pms-stay-contract`, base
+`ba70022` (PR180). Usuario autoriza MVP de entrega; decisiones/API/QA y pendientes
+concretos de sesión2 en [64](64_STAY_JOURNEY_MVP.md). No se amplía la auditoría.
+Solicitudes Guest, responsable financiero verificado, pagos sintéticos persistidos,
+Room Service DONE→CHARGE único, bloqueo de pedidos/saldo y snapshot inmutable al
+checkout. Web en detalle de reserva conserva confirmación presencial y pagos61;
+agrega solicitudes, simulador y documento. No se aplicó009 a la BD del hotel.
+
+Pruebas:107 casos Backend distintos acreditados: corrida focal106 PASS/1 error de
+fixture de migración (referencia >16 caracteres); fixture corregida y ese caso
+repetido PASS, verify/JAR BUILD SUCCESS. Incluye dos clientes HTTP autenticados,
+rollback/replay y upgrade/reaplicación con ledger no vacío. OpenAPI27 PASS,
+125 operaciones/103 paths/153 schemas/16 tags. Web69 archivos/431 pruebas PASS,
+lint/typecheck/build PASS. Sin suite completa Backend/Android en esta sesión.
+Última regresión Backend19 PASS tras cubrir dos cierres Room Service concurrentes.
+Web: regresión final de seguridad35 PASS (incluye un caso nuevo de allowlist de
+almacenamiento; no se suma a431 como si fueran todos casos distintos). Build,
+lint y typecheck finales PASS. Avisos no bloqueantes: deprecaciones Java/Mockito
+y dependencias existentes.
+`git diff --check` PASS; migraciones007/008 sin cambios. Evidencia fuera de Git:
+`/tmp/pms-stay-session1/`. No PASS manual, commit, push ni PR.
+
+Siguiente sesión: Android HTTP real (GET journey/state da versión exacta), solicitud
+entrada/salida, pago con key persistida antes de enviar, documento servidor→PDF
+Android, guards y aislamiento de mocks; QA integrado y confirmación manual usuario.
+Mantener EN_QA. Respaldo Git stash con mensaje `safety: stay journey session1 backend web`
+conservado sin eliminar y árbol reaplicado; no es un commit de rama. La migración nueva se valida solo en PG desechable; respaldar y
+verificar antes de desplegar sobre datos existentes.
+
 ## 2026-10-29 — Integración de origin/main: conflictos resueltos, validación local PASS
 
 Integrado ba70022 en feature/staff-reservation-detail por autorización de José.

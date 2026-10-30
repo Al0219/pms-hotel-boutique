@@ -1,0 +1,28 @@
+# main ba70022 baseline before stay journey; no applied changesets modified.
+databaseChangeLog:
+  - include:
+      file: db/changelog/002ServiceManagement/db.changelog.yaml
+  - include:
+      file: db/changelog/003ServiceSecurityAuth/db.changelog.yaml
+  - include:
+      file: db/changelog/002ServiceManagement/002-core-inventory.yaml
+  - include:
+      file: db/changelog/004ServiceReservations/db.changelog.yaml
+  - include:
+      file: db/changelog/005ServiceOperations/001-housekeeping-maintenance.yaml
+  - include:
+      file: db/changelog/005ServiceOperations/002-service-requests.yaml
+  - include:
+      file: db/changelog/005ServiceOperations/003-night-audit.yaml
+  - include:
+      file: db/changelog/005ServiceOperations/004-guest-housekeeping.yaml
+  - include:
+      file: db/changelog/005ServiceOperations/005-room-service.yaml
+  - include:
+      file: db/changelog/006ServiceCommercial/db.changelog.yaml
+  - include:
+      file: db/changelog/005ServiceOperations/006-amenities.yaml
+  - include:
+      file: db/changelog/005ServiceOperations/007-valet.yaml
+  - include:
+      file: db/changelog/005ServiceOperations/008-reusable-valet.yaml

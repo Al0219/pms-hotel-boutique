@@ -13,6 +13,7 @@ import { HousekeepingScreen } from '@/modules/services/housekeeping/presentation
 import { SessionServiceRequestsProvider, useSessionServiceRequests } from '@/modules/service-requests';
 import { SessionServiceRequestsScreen } from '@/modules/service-requests/presentation/SessionServiceRequestsScreen';
 import { currentStayFixture } from '@/modules/stay/data/mocks/currentStayFixture';
+jest.mock('@/modules/checkout/presentation/hooks/useServiceCreationGate',()=>({useServiceCreationGate:()=>({blocked:false,message:''}),ServiceCreationNotice:()=>null}));
 
 jest.mock('@/config/environment', () => ({ environment: { useMockApi: false }, requireApiBaseUrl: () => 'https://pms.example.test' }));
 jest.mock('expo-router', () => ({ ...jest.requireActual('expo-router'), router: { replace: jest.fn(), dismissTo: jest.fn(), push: jest.fn() }, useLocalSearchParams: jest.fn(() => ({})), useFocusEffect: jest.fn(), usePathname: () => '/services/requests' }));

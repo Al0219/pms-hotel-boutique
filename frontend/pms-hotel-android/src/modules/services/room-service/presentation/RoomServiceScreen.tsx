@@ -1,3 +1,5 @@
+import {ActionLabel} from '@/shared/components/ActionLabel';
+import {useServiceCreationGate,ServiceCreationNotice} from '@/modules/checkout/presentation/hooks/useServiceCreationGate';
 import { environment } from '@/config/environment';
 import { useActiveReservationContext } from '@/modules/guest-auth/presentation/ActiveReservationContextProvider';
 import { useGuestAuthSession } from '@/modules/guest-auth/presentation/GuestAuthSessionProvider';
@@ -123,7 +125,7 @@ function Button({
       style={[styles.button, disabled && styles.buttonDisabled]}
       testID={testID}
     >
-      <Text style={styles.buttonLabel}>{label}</Text>
+      <ActionLabel label={label} textStyle={styles.buttonLabel}/>
     </Pressable>
   );
 }
@@ -269,7 +271,7 @@ function CartPanel({
         testID="room-service-notes"
         value={notes}
       />
-    </ServiceCartSheet>
+    <ServiceCreationNotice/></ServiceCartSheet>
   );
 }
 
@@ -481,6 +483,7 @@ function RoomServiceForm({
   stayService,
   nowMs, initialRequest, reloadOrder,
 }: RoomServiceScreenProps & {initialRequest?:PersistedRoomServiceOrder;reloadOrder?:()=>Promise<PersistedRoomServiceOrder|undefined>}) {
+  const serviceGate=useServiceCreationGate();
   const [editing,setEditing]=useState(initialRequest);
   const appClock = useAppClock();
   const getNowMs = nowMs ?? appClock.nowMs;
@@ -666,7 +669,7 @@ function RoomServiceForm({
   const submitOffline =
     submission.isError && submission.error instanceof NetworkError;
   const submitError = submission.isError && !submitOffline;
-  const pending = submission.isPending;
+  const pending = submission.isPending || serviceGate.blocked && !editing;
   const periodsIncompatible =
     menu.kind === "success" &&
     hasIncompatibleRoomServiceCartPeriods(menu.data, cart);
@@ -1047,7 +1050,7 @@ function RoomServiceForm({
               {!selectedCategoryAvailable ? <Text accessibilityLiveRegion="polite" style={styles.emptyCart} testID="room-service-category-unavailable">No disponible para el horario de tu estancia.</Text> : null}{menu.data.items.filter((item) => (item.periods?.includes(roomServiceCategoryPeriod[category]) ?? item.category === category)).filter((item) => !normalizeSearch(search) || normalizeSearch(item.name).includes(normalizeSearch(search))).length === 0 ? <Text style={styles.emptyCart}>No encontramos productos en esta categoría.</Text> : null}
             </>
           ) : null}
-        </ScrollView>
+        <ServiceCreationNotice message={serviceGate.message}/></ScrollView>
       </KeyboardAvoidingView>
       <Modal animationType="slide" onRequestClose={() => setCategoryModalVisible(false)} transparent visible={categoryModalVisible}>
         <Pressable onPress={() => setCategoryModalVisible(false)} style={styles.modalBackdrop} testID="room-service-category-backdrop">

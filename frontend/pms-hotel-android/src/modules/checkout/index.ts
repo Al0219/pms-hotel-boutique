@@ -10,3 +10,6 @@ export { InvoiceScreen } from '@/modules/checkout/presentation/InvoiceScreen';
 
 export { CheckoutSessionProvider, useCheckoutSession, useCheckoutStatus } from '@/modules/checkout/presentation/CheckoutSessionProvider';
 export { buildCheckoutSessionReadModel } from '@/modules/checkout/domain/CheckoutSessionReadModel';
+
+export {RealCheckoutScreen,RealInvoiceScreen,RealJourneyAccountActions} from './presentation/RealStayJourneyScreens';
+export {useServiceCreationGate,ServiceCreationNotice} from './presentation/hooks/useServiceCreationGate';

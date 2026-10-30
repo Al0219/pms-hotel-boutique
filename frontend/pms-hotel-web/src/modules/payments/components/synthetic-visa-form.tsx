@@ -1,0 +1,16 @@
+'use client';
+import {SvgIcon} from '@/shared/components/svg-icon';
+import {useId,useState} from 'react';
+import {visaPaymentErrors,maskVisa,maskExpiry,maskAmount,maskHolder,normaliseHolder,type VisaFields,type VisaErrors} from '../content/synthetic-visa';
+import styles from './synthetic-visa-form.module.css';
+export function SyntheticVisaForm({balance,today,busy,onSubmit,initialAmount,onAmountChange}:{balance:string;today:string;busy:boolean;initialAmount?:string;onAmountChange?:(amount:string)=>void;onSubmit:(input:{amount:string;currency:'GTQ';instrumentToken:string})=>void}){
+ const id=useId(),[fields,setFields]=useState<VisaFields>({number:'',expiry:'',cvv:'',holder:'',amount:initialAmount||balance}),[errors,setErrors]=useState<VisaErrors>({});
+ function change(key:keyof VisaFields,value:string){if(key==='amount')onAmountChange?.(value);const next={...fields,[key]:value};setFields(next);if(errors[key])setErrors({...errors,[key]:visaPaymentErrors(next,balance,today)[key]});}
+ function field(key:keyof VisaFields,label:string,placeholder:string){const error=key==='amount'&&errors.amount?visaPaymentErrors(fields,balance,today).amount:errors[key];return <label className={styles.field}>{label}<span className={styles.inputWrap}>{key==='amount'?<span>Q.</span>:null}<input aria-label={label} autoComplete="off" data-private="true" type={key==='cvv'?'password':'text'} inputMode={key==='holder'?'text':key==='amount'?'decimal':'numeric'} placeholder={placeholder} maxLength={key==='number'?19:key==='expiry'?5:key==='cvv'?3:key==='holder'?40:18} value={fields[key]} disabled={busy} aria-invalid={!!error} aria-describedby={error?id+key:undefined} onBlur={()=>{const next={...fields,holder:normaliseHolder(fields.holder)};setFields(next);setErrors({...errors,[key]:visaPaymentErrors(next,balance,today)[key]});}} onChange={e=>{const value=e.target.value;change(key,key==='number'?maskVisa(value):key==='expiry'?maskExpiry(value,fields.expiry,(e.nativeEvent as InputEvent).inputType?(e.nativeEvent as InputEvent).inputType.startsWith('delete'):undefined):key==='cvv'?value.replace(/\D/g,'').slice(0,3):key==='amount'?maskAmount(value,fields.amount):maskHolder(value));}}/></span>{error?<span id={id+key} role="alert" className={styles.error}>{error}</span>:null}</label>;}
+ return <form className={styles.form} noValidate onSubmit={event=>{event.preventDefault();const next={...fields,holder:normaliseHolder(fields.holder)},invalid=visaPaymentErrors(next,balance,today);setFields(next);setErrors(invalid);if(busy||Object.keys(invalid).length)return;setFields({...next,number:'',expiry:'',cvv:'',holder:''});onSubmit({amount:next.amount,currency:'GTQ',instrumentToken:'demo_visa_approved'});}}>
+  <p className={styles.notice}>Pago de demostración · Solo Visa ficticia</p>
+  {field('number','Número de tarjeta ficticia','4242 4242 4242 4242')}<div className={styles.pair}>{field('expiry','Vencimiento MM/AA','12/26')}{field('cvv','CVV ficticio','123')}</div>
+  {field('holder','Titular de prueba','María López')}{field('amount','Importe GTQ','650.00')}
+  <button className={styles.confirm} type="submit" disabled={busy}><SvgIcon name="check" style={{verticalAlign:'middle',marginInlineEnd:8}}/>Confirmar</button>
+ </form>;
+}

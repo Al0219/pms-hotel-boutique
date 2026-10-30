@@ -26,7 +26,7 @@ function destination(
     pathname === "/account/invoice" ||
     pathname === "/services" ||
     pathname.startsWith("/services/") ||
-    pathname === "/valet";
+    pathname === "/valet" || pathname === "/hotel" || pathname === "/account/promotions";
   if (!requiresContext || hasContext) return null;
   return hasSession ? "/reservations" : "/login";
 }
@@ -60,7 +60,7 @@ export function GuestRouteGuard({ children }: PropsWithChildren) {
   }, [redirect, continuation]);
 
   if (redirect) return null;
-  if (!environment.useMockApi && !['/', '/login', '/reservations', '/account', '/services', '/services/housekeeping', '/services/room-service', '/services/amenities', '/services/requests', '/valet'].includes(pathname)) {
+  if (!environment.useMockApi && !['/', '/login', '/reservations', '/account', '/account/checkout', '/account/invoice', '/services', '/services/housekeeping', '/services/room-service', '/services/amenities', '/services/requests', '/valet', '/hotel', '/account/profile', '/account/rewards', '/account/promotions'].includes(pathname)) {
     return <UniversalState kind="empty" title="Función no disponible" body="Esta función todavía no está disponible. Puedes consultar tus estadías." action={{ label: 'Volver', onPress: () => router.replace(session ? '/reservations' : '/login') }} testID="guest-real-feature-unavailable" />;
   }
   return children;

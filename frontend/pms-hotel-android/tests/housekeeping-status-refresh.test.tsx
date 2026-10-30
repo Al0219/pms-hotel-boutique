@@ -8,6 +8,7 @@ import { nativeGuestClient } from '@/modules/guest-auth/data/http/NativeGuestCli
 import { useHousekeepingRequests } from '@/modules/services/housekeeping/presentation/hooks/useHousekeepingRequests';
 import { HousekeepingRequestsSection } from '@/modules/services/housekeeping/presentation/HousekeepingRequestsSection';
 import type { HousekeepingRequestDto } from '@/modules/services/housekeeping/data/dtos/HousekeepingRequestDto';
+jest.mock('@/modules/checkout/presentation/hooks/useServiceCreationGate',()=>({useServiceCreationGate:()=>({blocked:false,message:''}),ServiceCreationNotice:()=>null}));
 
 const mockFocus = createContext(true);
 let mockSession: { accountId: string } | null = { accountId: 'guest-one' };

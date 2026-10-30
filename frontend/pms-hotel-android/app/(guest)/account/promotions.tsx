@@ -1,5 +1,3 @@
 import { PromotionsScreen } from '@/modules/promotions';
 
-export default function PromotionsRoute() {
-  return <PromotionsScreen />;
-}
+export default function PromotionsScreenRoute() { return <PromotionsScreen demonstration />; }

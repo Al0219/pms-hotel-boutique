@@ -16,10 +16,11 @@ var fields=[number,expiry,code,holder],cards={'4242424242424242':['demo_visa_app
 function emit(type,card){parent.postMessage({type:type,channel:channel,card:card},'*')}
 function resize(){if(channel)parent.postMessage({type:'PMS_DEMO_RESIZE',channel:channel,height:Math.ceil(document.body.getBoundingClientRect().height)+12},'*')}
 function digits(value){return value.replace(/\\D/g,'')}
+function luhn(value){var sum=0,twice=false;for(var i=value.length-1;i>=0;i--){var n=Number(value[i]);if(twice){n*=2;if(n>9)n-=9;}sum+=n;twice=!twice;}return value.length>0&&sum%10===0;}
 function brand(value){return /^4/.test(value)?'Visa':/^5[1-5]/.test(value)?'Mastercard':/^3[47]/.test(value)?'Amex':''}
 function validate(input){
 var cardNumber=digits(number.value),issuer=brand(cardNumber),parts=digits(expiry.value),month=Number(parts.slice(0,2)),year=2000+Number(parts.slice(2)),now=new Date(),message='';
-if(input===number&&!cards[cardNumber])message=cardNumber?'Revisa el número de tarjeta: Visa/Mastercard 16 dígitos o Amex 15.':'Ingresa el número de tarjeta.';
+if(input===number&&(!cards[cardNumber]||!luhn(cardNumber)))message=cardNumber?'Revisa el número de tarjeta: Visa/Mastercard 16 dígitos o Amex 15.':'Ingresa el número de tarjeta.';
 if(input===expiry&&(parts.length!==4||month<1||month>12||year<now.getFullYear()||year===now.getFullYear()&&month<now.getMonth()+1))message='Ingresa una fecha vigente válida (MM / YY).';
 if(input===code&&code.value!==(issuer==='Amex'?'1234':'123'))message=issuer==='Amex'?'Revisa los 4 dígitos del código de seguridad.':'Revisa los 3 dígitos del código de seguridad.';
 if(input===holder&&holder.value.trim().length<3)message='El nombre del titular debe tener al menos 3 caracteres.';

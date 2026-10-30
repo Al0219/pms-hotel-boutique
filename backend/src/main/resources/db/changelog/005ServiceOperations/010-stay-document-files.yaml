@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-stay-document-files-010
+      author: pms
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE stay_document_files (
+                document_id uuid PRIMARY KEY REFERENCES stay_informative_documents(id),
+                pdf bytea NOT NULL CHECK(octet_length(pdf)>0),
+                sha256 varchar(64) NOT NULL,
+                created_at timestamptz NOT NULL DEFAULT now()
+              );
+              CREATE TRIGGER trg_stay_document_file_immutable BEFORE UPDATE OR DELETE ON stay_document_files
+                FOR EACH ROW EXECUTE FUNCTION bd3_reject_folio_movement_mutation();
+      rollback:
+        - sql: DROP TABLE stay_document_files;

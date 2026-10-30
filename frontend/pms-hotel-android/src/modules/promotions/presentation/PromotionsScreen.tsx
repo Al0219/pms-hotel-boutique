@@ -1,3 +1,4 @@
+import { DemoContentNotice } from '@/shared/components/DemoContentNotice';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -12,6 +13,7 @@ import { deriveRemoteState } from '@/state/remoteState';
 import { usePromotions } from './hooks/usePromotions';
 
 export interface PromotionsScreenProps {
+  demonstration?: boolean;
   service?: PromotionsService;
 }
 
@@ -59,7 +61,7 @@ function PromotionDetailsModal({ promotion, onClose }: { promotion: Promotion | 
   );
 }
 
-export function PromotionsScreen({ service }: PromotionsScreenProps) {
+export function PromotionsScreen({ service, demonstration = false }: PromotionsScreenProps) {
   const [selectedPromotion, setSelectedPromotion] = useState<Promotion | null>(null);
   const query = usePromotions(service);
   const remoteState = deriveRemoteState(query, () => false);
@@ -73,6 +75,7 @@ export function PromotionsScreen({ service }: PromotionsScreenProps) {
     <View style={styles.screen} testID="promotions-screen">
       <GuestChildHeader backAccessibilityLabel="Volver a mi cuenta" backTestID="promotions-back" onBack={backToAccount} title="Promociones" />
       <ScrollView contentContainerStyle={styles.content}>
+        {demonstration ? <DemoContentNotice detail="Ofertas de ejemplo, sin descuentos aplicables ni reservas disponibles." /> : null}
         {remoteState.kind === 'loading' ? (
           <View style={styles.loading} testID="promotions-loading">
             <Text accessibilityRole="header" style={styles.heading}>Cargando Promociones</Text>

@@ -156,6 +156,7 @@ class RoomServiceRealIntegrationTests {
         mvc.perform(cancel(late)).andExpect(status().isConflict());mvc.perform(edit(late,editBody(late,"Too late"))).andExpect(status().isConflict());
     }
     @Test void staffLifecycleHasPermissionsScopeAuditAndNoGuestCompletion() throws Exception {
+        jdbc.update("INSERT INTO folios(id,property_id,type,status,reservation_id,currency,created_at,updated_at) VALUES (?,?,'GUEST','OPEN',?,'GTQ',now(),now())",UUID.randomUUID(),PROPERTY,reservation);
         var row=open();var intake=operator("RECEPCION");var ops=operator("OPERACIONES");
         mvc.perform(get(staffRoute()).header("Authorization",token(intake))).andExpect(status().isOk()).andExpect(jsonPath("$[0].totalMinor").value(17000));
         mvc.perform(transition(intake,row,"IN_PROGRESS")).andExpect(status().isForbidden());mvc.perform(transition(ops,row,"DONE")).andExpect(status().isConflict());

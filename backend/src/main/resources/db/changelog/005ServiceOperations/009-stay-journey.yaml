@@ -1,0 +1,43 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-stay-journey-009
+      author: pms
+      changes:
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE TABLE stay_journey_requests (
+                id uuid PRIMARY KEY, property_id uuid NOT NULL REFERENCES properties(id),
+                reservation_id uuid NOT NULL REFERENCES reservations(id), stay_id uuid NOT NULL REFERENCES reservation_stays(id),
+                guest_account_id uuid NOT NULL REFERENCES guest_accounts(id), kind varchar(16) NOT NULL CHECK(kind IN ('CHECK_IN','CHECK_OUT')),
+                status varchar(16) NOT NULL CHECK(status IN ('OPEN','DONE')), request_key varchar(100) NOT NULL, expected_stay_updated_at timestamptz NOT NULL,
+                created_at timestamptz NOT NULL DEFAULT now(), completed_at timestamptz,
+                UNIQUE(guest_account_id,request_key)
+              );
+              CREATE UNIQUE INDEX ux_stay_journey_open ON stay_journey_requests(stay_id,kind) WHERE status='OPEN';
+              CREATE TABLE simulated_folio_payments (
+                id uuid PRIMARY KEY, property_id uuid NOT NULL REFERENCES properties(id), reservation_id uuid NOT NULL REFERENCES reservations(id),
+                folio_id uuid NOT NULL REFERENCES folios(id), actor_type varchar(8) NOT NULL CHECK(actor_type IN ('GUEST','STAFF')),
+                actor_id uuid NOT NULL, request_key varchar(100) NOT NULL, payload_hash varchar(64) NOT NULL,
+                result varchar(16) NOT NULL CHECK(result IN ('APPROVED','DECLINED','ERROR')),
+                amount_minor bigint NOT NULL CHECK(amount_minor>0), movement_id uuid UNIQUE REFERENCES folio_movements(id),
+                completed_at timestamptz NOT NULL DEFAULT now(),
+                CHECK((result='APPROVED')=(movement_id IS NOT NULL)), UNIQUE(actor_type,actor_id,request_key)
+              );
+              CREATE TABLE room_service_folio_postings (
+                order_id uuid PRIMARY KEY REFERENCES room_service_orders(id), movement_id uuid NOT NULL UNIQUE REFERENCES folio_movements(id)
+              );
+              CREATE TABLE stay_informative_documents (
+                id uuid PRIMARY KEY, property_id uuid NOT NULL REFERENCES properties(id), reservation_id uuid NOT NULL REFERENCES reservations(id),
+                stay_id uuid NOT NULL UNIQUE REFERENCES reservation_stays(id), operation_id uuid NOT NULL UNIQUE,
+                snapshot jsonb NOT NULL, issued_at timestamptz NOT NULL DEFAULT now()
+              );
+              CREATE TRIGGER trg_simulated_payment_immutable BEFORE UPDATE OR DELETE ON simulated_folio_payments
+                FOR EACH ROW EXECUTE FUNCTION bd3_reject_folio_movement_mutation();
+              CREATE TRIGGER trg_service_posting_immutable BEFORE UPDATE OR DELETE ON room_service_folio_postings
+                FOR EACH ROW EXECUTE FUNCTION bd3_reject_folio_movement_mutation();
+              CREATE TRIGGER trg_informative_document_immutable BEFORE UPDATE OR DELETE ON stay_informative_documents
+                FOR EACH ROW EXECUTE FUNCTION bd3_reject_folio_movement_mutation();
+      rollback:
+        - sql:
+            sql: DROP TABLE stay_informative_documents, room_service_folio_postings, simulated_folio_payments, stay_journey_requests;

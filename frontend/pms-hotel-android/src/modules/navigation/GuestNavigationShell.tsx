@@ -65,7 +65,6 @@ export const guestNavigationDrawerSections: readonly GuestNavigationDrawerSectio
       { icon: guestFeatureIcons.housekeeping, label: 'Limpieza', path: '/services/housekeeping' },
       { icon: guestFeatureIcons.roomService, label: 'Room Service', path: '/services/room-service' },
       { icon: guestFeatureIcons.amenities, label: 'Amenidades', path: '/services/amenities' },
-      { icon: guestFeatureIcons.chat, label: 'Chat', path: '/chat' },
     ],
   },
   {
@@ -148,21 +147,10 @@ export interface GuestNavigationTabsProps {
 /** Router-integrated entry point for future authorized V3 feature routes. */
 export function GuestNavigationShell({ onNavigateAway }: Pick<GuestNavigationTabsProps, 'onNavigateAway'> = {}) {
   const pathname = usePathname();
-  const isRootRoute = isGuestRootRoute(pathname);
 
-  function openChat(): void {
-    router.push('/chat');
-  }
 
   return (
     <>
-      {isRootRoute ? (
-        <Pressable accessibilityLabel="Abrir chat" accessibilityRole="button" onPress={openChat} style={guestNavigationStyles.chatFab} testID="guest-navigation-chat-fab">
-          <View testID="guest-navigation-chat-fab-icon">
-            <SymbolView accessibilityElementsHidden importantForAccessibility="no" name={guestFeatureIcons.chat} size={tokens.layout.controlHeight / 2} style={guestNavigationStyles.chatFabIcon} tintColor={tokens.color.white} />
-          </View>
-        </Pressable>
-      ) : null}
       <GuestNavigationTabs onNavigateAway={onNavigateAway} pathname={pathname} />
     </>
   );

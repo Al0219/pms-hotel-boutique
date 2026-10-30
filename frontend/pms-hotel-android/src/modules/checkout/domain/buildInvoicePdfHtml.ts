@@ -1,4 +1,4 @@
-import { type CheckoutSessionSnapshot } from '@/modules/checkout/presentation/CheckoutSessionProvider';
+import { type InvoiceRenderData } from '@/modules/checkout/domain/InvoiceRenderData';
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character] ?? character);
@@ -8,7 +8,7 @@ function stayDetail(label: string, value: string): string {
   return `<div class="stay-detail"><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`;
 }
 
-function chargeRows(snapshot: CheckoutSessionSnapshot): string {
+function chargeRows(snapshot: InvoiceRenderData): string {
   return snapshot.folio.items.flatMap((item) => {
     const itemRow = `<tr class="charge-group"><td><strong>${escapeHtml(item.label)}</strong>${item.amountNature === 'ESTIMATED' ? '<span class="estimate">Estimado</span>' : ''}</td><td class="quantity">—</td><td class="amount">${escapeHtml(item.priceText)}</td></tr>`;
     const lines = item.lineItems?.map((line) => `<tr class="charge-line"><td>${escapeHtml(line.label)}</td><td class="quantity">${line.quantity === undefined ? '—' : escapeHtml(String(line.quantity))}</td><td class="amount">${escapeHtml(line.priceText)}</td></tr>`) ?? [];
@@ -16,12 +16,13 @@ function chargeRows(snapshot: CheckoutSessionSnapshot): string {
   }).join('');
 }
 
-/** Pure session-document renderer; it deliberately makes no fiscal claim. */
-export function buildInvoicePdfHtml(snapshot: CheckoutSessionSnapshot): string {
+/** Pure renderer for an authorized Backend snapshot or an isolated mock document. */
+export function buildInvoicePdfHtml(snapshot: InvoiceRenderData): string {
   const charges = chargeRows(snapshot);
   const total = snapshot.folio.checkoutTotal?.text ?? snapshot.folio.totalText;
   const departureNote = snapshot.departureNoteText;
-  const generatedAt = snapshot.generatedAt.toLocaleString('es-GT');
+  const generatedAt = snapshot.generatedAtText ?? snapshot.generatedAt.toLocaleString('es-GT');
+  const persisted=snapshot.documentKind==='PERSISTED';
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -79,8 +80,8 @@ export function buildInvoicePdfHtml(snapshot: CheckoutSessionSnapshot): string {
         </div>
       </div>
       <div>
-        <h1 class="document-title">Resumen de estancia</h1>
-        <p class="document-kind">Documento de sesión</p>
+        <h1 class="document-title">${persisted ? 'Documento informativo' : 'Resumen de estancia'}</h1>
+        <p class="document-kind">${persisted ? 'Snapshot persistido' : 'Documento de sesión'}</p>
       </div>
     </header>
 
@@ -92,22 +93,24 @@ export function buildInvoicePdfHtml(snapshot: CheckoutSessionSnapshot): string {
     <section class="section">
       <h2 class="section-heading">Detalles de la estancia</h2>
       <dl class="stay-card">
-        ${stayDetail('Habitación', snapshot.content.roomDisplayText)}
+        ${stayDetail(persisted ? 'Reserva' : 'Habitación', snapshot.content.roomDisplayText)}
         ${stayDetail('Fechas de estancia', snapshot.content.stayDatesText)}
-        ${stayDetail('Salida prevista', snapshot.content.expectedDepartureText)}
+        ${stayDetail(persisted ? 'Estado de salida' : 'Salida prevista', snapshot.content.expectedDepartureText)}
       </dl>
     </section>
 
     <section class="section">
-      <h2 class="section-heading">Detalle de cargos</h2>
+      <h2 class="section-heading">${persisted ? 'Movimientos del folio' : 'Detalle de cargos'}</h2>
       ${charges ? `<table class="charges"><thead><tr><th>Descripción</th><th class="quantity">Cantidad</th><th class="amount">Importe</th></tr></thead><tbody>${charges}</tbody></table>` : '<p class="empty-charges">Sin cargos registrados en esta sesión.</p>'}
-      <div class="total-box"><span class="total-label">Total</span><strong class="total-value">${escapeHtml(total)}</strong></div>
+      ${persisted ? `<p>${escapeHtml(snapshot.folio.totalStayText)}</p><p>${escapeHtml(snapshot.folio.paidGuaranteeText)}</p><p>${escapeHtml(snapshot.folio.pendingBalanceText)}</p>` : ''}
+      <div class="total-box"><span class="total-label">${persisted ? 'Total de cargos' : 'Total'}</span><strong class="total-value">${escapeHtml(total)}</strong></div>
     </section>
 
     ${departureNote ? `<section class="section"><h2 class="section-heading">Notas</h2><p class="note">${escapeHtml(departureNote)}</p></section>` : ''}
 
     <section class="notice">
       <strong>Información importante</strong>
+      ${persisted ? `<strong>${escapeHtml(snapshot.disclaimer ?? 'Documento informativo — sin validez fiscal')}</strong>` : ''}
       Este documento es un resumen de estancia generado por la aplicación.<br />
       No constituye comprobante fiscal FEL ni documento certificado por SAT.
     </section>

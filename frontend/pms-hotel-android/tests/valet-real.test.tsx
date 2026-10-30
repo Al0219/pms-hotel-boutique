@@ -13,6 +13,7 @@ import {ValetRequestsSection} from '@/modules/valet/presentation/ValetRequestsSe
 import {mapPersistedValetRequest,mapPersistedVehicle} from '@/modules/valet/data/mappers/mapPersistedValet';
 import {HttpPersistedValetService} from '@/modules/valet/data/http/HttpPersistedValetService';
 import type {ValetOrderDto,ValetVehicleDto} from '@/modules/valet/data/dtos/PersistedValetDto';
+jest.mock('@/modules/checkout/presentation/hooks/useServiceCreationGate',()=>({useServiceCreationGate:()=>({blocked:false,message:''}),ServiceCreationNotice:()=>null}));
 jest.mock('@/config/environment',()=>({environment:{useMockApi:false},requireApiBaseUrl:()=> 'https://pms.example.test'}));
 jest.mock('expo-router',()=>({...jest.requireActual('expo-router'),router:{push:jest.fn(),replace:jest.fn()},useLocalSearchParams:jest.fn(()=>({})),useFocusEffect:function useTestFocus(callback:EffectCallback){const React=jest.requireActual<typeof import('react')>('react');React.useEffect(callback,[callback]);}}));
 const context={reservationId:'reservation',reservationStayId:'stay'};const propertyId='00000000-0000-4000-8000-000000000001';const vehicleId='00000000-0000-4000-8000-000000000002';

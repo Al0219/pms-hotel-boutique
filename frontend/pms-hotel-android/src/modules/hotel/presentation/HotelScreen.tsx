@@ -1,3 +1,4 @@
+import { DemoContentNotice } from '@/shared/components/DemoContentNotice';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { type ReactNode } from 'react';
 
@@ -7,6 +8,7 @@ import { GuestNavigationShell, GuestRootHeader } from '@/modules/navigation';
 import { tokens } from '@/shared/theme/tokens';
 
 export interface HotelScreenProps {
+  demonstration?: boolean;
   profile?: HotelProfile;
 }
 
@@ -20,11 +22,12 @@ function HotelInfoCard({ children, testID, title }: { children: ReactNode; testI
 }
 
 /** Standalone Hotel presentation over a central, static frontend/mock profile. */
-export function HotelScreen({ profile = getHotelProfile() }: HotelScreenProps) {
+export function HotelScreen({ demonstration = false, profile = getHotelProfile() }: HotelScreenProps) {
   return (
     <View style={styles.screen} testID="hotel-screen">
       <GuestRootHeader title={profile.name} />
       <ScrollView contentContainerStyle={styles.content} style={styles.scroll}>
+        {demonstration ? <DemoContentNotice detail="Información de ejemplo del establecimiento; consulta los datos vigentes con recepción." /> : null}
         <View style={styles.hero} testID="hotel-hero">
           <Text accessibilityLabel={profile.statusLabel} style={styles.statusIndicator} testID="hotel-status-indicator">{profile.statusLabel}</Text>
           <Text style={styles.description}>{profile.description}</Text>

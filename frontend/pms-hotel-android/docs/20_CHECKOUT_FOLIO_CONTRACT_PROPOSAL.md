@@ -1,5 +1,11 @@
 # APPROVED FRONTEND DATA/MOCK CONTRACT — IMP-AND-0203
 
+> Actualización HTTP real (2026-10-29): [Backend64](../../../backend/docs/64_STAY_JOURNEY_MVP.md)
+> y [QA46](46_STAY_JOURNEY_MVP_QA.md) gobiernan el MVP persistente. Los snapshots/
+> finalización frontend descritos abajo pertenecen exclusivamente al modo mock.
+> En HTTP, solo Staff completa la estancia y el PDF usa el snapshot Backend.
+
+
 ## Checkout / Folio / Invoice
 
 **Tarea:** `IMP-AND-0203 — Checkout e invoice`  

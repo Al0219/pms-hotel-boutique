@@ -1,0 +1,24 @@
+.panel { margin-block:var(--space-6); padding:var(--space-6); background:var(--color-surface-card); border:1px solid var(--color-border-default); border-radius:var(--radius-lg); color:var(--color-text-primary); font-family:var(--font-family-body); }
+.panel h2 { font-family:var(--font-family-display); font-size:var(--font-size-h3); margin:0 0 var(--space-4); }
+.panel h3 { font-size:var(--font-size-body-md); margin-block:var(--space-4); }
+.actions { display:flex; flex-wrap:wrap; gap:var(--space-3); align-items:center; margin-block:var(--space-4); }
+.primary, .secondary { font:inherit; min-height:44px; padding:var(--space-3) var(--space-4); border-radius:var(--radius-md); cursor:pointer; }
+.primary { background:var(--pms-color-sage-600); color:var(--color-text-inverse); border:1px solid var(--pms-color-sage-600); }
+.secondary { background:transparent; color:inherit; border:1px solid var(--color-border-default); }
+.primary:disabled, .secondary:disabled { opacity:.6; cursor:not-allowed; }
+.form { display:grid; gap:var(--space-4); }
+.field { display:grid; gap:var(--space-2); }
+.field input { font:inherit; padding:var(--space-3); min-height:44px; border:1px solid var(--color-border-default); border-radius:var(--radius-md); }
+.table { max-width:100%; overflow:auto; }
+.table table { width:100%; border-collapse:collapse; }
+.table th,.table td { text-align:start; padding:var(--space-3); border-bottom:1px solid var(--color-border-default); }
+.notice { padding:var(--space-3); border:1px solid var(--color-border-default); border-radius:var(--radius-md); }
+.error { color:#a31935; }
+@media (max-width:640px) { .panel { padding:var(--space-4); } .actions > button { flex:1 1 100%; } }
+
+.panel :is(button,input):focus-visible { outline:3px solid var(--color-border-strong); outline-offset:3px; }
+
+.paymentDialog { position:relative; }
+.paymentDialog h2 { padding-right:48px; }
+.closePayment { position:absolute; top:12px; right:12px; min-width:44px; min-height:44px; border:0; background:transparent; font:inherit; font-size:24px; cursor:pointer; }
+.closePayment:focus-visible { outline:2px solid var(--pms-color-sage-600); outline-offset:2px; }

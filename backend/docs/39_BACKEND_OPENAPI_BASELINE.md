@@ -650,3 +650,14 @@ Backend focal46 PASS; QA45 acredita escenarios específicos automáticamente.
 Paridad generada PASS (26 tests):114 operaciones/93 paths/144 schemas/16 tags.
 Se mantienen los endpoints de lookup, reportes y perfil personal de main además
 del incremento Valet documentado arriba. ProblemDetail400/404/409 preservado.
+
+## 2026-10-29 — Stay Journey MVP, sesión1 EN_QA
+
+Guest/Staff journey incorpora state, solicitudes, resumen financiero, pagos por
+token sintético y snapshot informativo persistente, más reconciliación Staff de
+Room Service DONE. Guest finanzas requiere responsable verificado; Staff conserva
+RESERVATION_MANAGE/FOLIO_PAYMENT_OPERATE y scope. Contrato mínimo [64](64_STAY_JOURNEY_MVP.md).
+Paridad27 tests PASS:125 operaciones/103 paths/153 schemas/16 tags. No PAN/CVV en
+inputs ni recibos; cuerpos cerrados y errores seguros. Android y QA manual pendientes.
+
+PDF original010: GET/POST document-file Guest y Staff, DTO DocumentFile; paridad generada 129/105/154/16 validada por27 pruebas OpenAPI. Cuerpo de emisión vacío; base64/SHA-256 de bytes persistidos, permisos financieros existentes.
