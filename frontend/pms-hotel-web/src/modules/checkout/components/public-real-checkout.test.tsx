@@ -40,6 +40,7 @@ async function prepare(quantity = 1, multiple = false) {
 }
 function fill() {
   for (const [label, value] of [['Nombre *', ' María José '], ['Apellidos *', "O’Neill-Pérez"], ['Correo electrónico *', ' GUEST@EXAMPLE.COM '], ['Teléfono *', '55555555'], ['Documento de identificación *', ' DOC-1234 ']]) fireEvent.change(screen.getByLabelText(label), { target: { value } });
+  fireEvent.change(screen.getByLabelText('Solicitudes especiales'), { target: { value: ' Llegada a las 22:00; habitación tranquila. ' } });
 }
 async function approve() {
   fireEvent.submit(screen.getByLabelText('Nombre *').closest('form')!);
@@ -122,9 +123,11 @@ describe('Real J6 submit', () => {
     expect(screen.getByRole('button', { name: 'Carrito' })).toHaveTextContent('0');
     expect(sessionStorage.getItem('pms:public-cart:v1:real')).toBeNull();
     expect(removal.mock.calls.filter(([key]) => key === 'pms:public-cart:v1:real')).toHaveLength(1);
-    expect(requests[0].body).toEqual({ ...publicBookingRequest, clientTotalMinor: total, stays: expect.any(Array) });
+    expect(requests[0].body).toEqual({ ...publicBookingRequest, clientTotalMinor: total, stays: expect.any(Array),
+      bookingGuest: { ...publicBookingRequest.bookingGuest, phone: '+50255555555', country: 'GT', documentNumber: 'DOC-1234' },
+      notes: 'Llegada a las 22:00; habitación tranquila.' });
     expect(requests[0].key).toMatch(/^[0-9a-f-]{36}$/);
-    expect(Object.keys(requests[0].body).sort()).toEqual(Object.keys(publicBookingRequest).sort());
+    expect(Object.keys(requests[0].body).sort()).toEqual([...Object.keys(publicBookingRequest), 'notes'].sort());
     view.rerender(<PublicBookingConfirmationPage initialCriteria={criteria} />);
     expect(screen.getByRole('heading', { name: publicBookingResponse.confirmationCode })).toBeInTheDocument();
     for (const stay of response.stays) expect(screen.getByText(`Estadía: ${stay.reservationStayId}`)).toBeInTheDocument();

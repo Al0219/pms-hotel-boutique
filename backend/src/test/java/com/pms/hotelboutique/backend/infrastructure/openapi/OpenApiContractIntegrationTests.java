@@ -648,6 +648,13 @@ class OpenApiContractIntegrationTests {
         assertEquals(Set.of("string", "null"), strings(schemas.path("StaffReservation").path("properties").path("source").path("type")));
         assertEquals("date", schemas.path("StaffStay").path("properties").path("arrival").path("format").asText());
         assertEquals(Set.of("profileId", "firstName", "lastName"), strings(schemas.path("ResponsibleGuestView").path("required")));
+        assertTrue(schemas.path("StaffReservation").path("properties").has("details"));
+        assertEquals(Set.of("updatedAt", "notes", "contact", "stays"), strings(schemas.path("StaffReservationDetails").path("required")));
+        assertEquals("null", schemas.path("StaffReservationDetails").path("properties").path("contact").path("anyOf").get(1).path("type").asText());
+        var contactProperties = schemas.path("StaffReservationContact").path("properties");
+        assertTrue(contactProperties.has("documentNumberMasked"));
+        assertFalse(contactProperties.has("documentNumber"));
+        assertFalse(contactProperties.has("guestAccountId"));
     }
 
     @Test

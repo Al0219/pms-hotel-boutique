@@ -85,7 +85,11 @@ public class OpenApiConfiguration {
             for (String name : List.of("StaffReservation", "StaffStay", "StaffRoomType", "StaffRoom", "ResponsibleGuestView", "StaffRoomAssignmentPreview", "StaffRoomAssignmentCandidate", "StaffRoomAssignmentResult", "StaffStayLifecycleResult",
                     "StaffReservationCreationOption", "StaffReservationCreationQuote", "StaffReservationCreationReceipt")) {
                 var schema = schemas.get(name);
-                if (schema != null) schema.setRequired(new java.util.ArrayList<>(schema.getProperties().keySet()));
+                if (schema != null) {
+                    var required = new java.util.ArrayList<>(schema.getProperties().keySet());
+                    if (name.equals("StaffReservation")) required.remove("details"); // Detail-only additive field, absent from lists.
+                    schema.setRequired(required);
+                }
             }
             for (var field : java.util.Map.of("StaffReservation", "responsibleGuest", "StaffStay", "room").entrySet()) {
                 var schema = schemas.get(field.getKey());
@@ -95,6 +99,9 @@ public class OpenApiConfiguration {
                 schema.getProperties().put(field.getValue(), new Schema<>().description(previous.getDescription()).anyOf(List.of(
                         new Schema<>().$ref("#/components/schemas/" + reference), new Schema<>().types(Set.of("null")))));
             }
+            var details = schemas.get("StaffReservationDetails");
+            if (details != null) details.getProperties().put("contact", new Schema<>().anyOf(List.of(
+                    new Schema<>().$ref("#/components/schemas/StaffReservationContact"), new Schema<>().types(Set.of("null")))));
         };
     }
 

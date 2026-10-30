@@ -32,7 +32,14 @@ public record PublicBookingRequest(
         @NotNull @JsonDeserialize(using = PublicBookingIntegerDeserializers.ClientTotal.class) Long clientTotalMinor,
         @NotNull @Size(min = 1) List<@NotNull @Valid Stay> stays,
         @NotNull @Valid BookingGuest bookingGuest,
-        @NotNull PaymentMode paymentMode) {
+        @NotNull PaymentMode paymentMode,
+        @Schema(types = {"string", "null"}, description = "Optional special requests for this reservation; never payment card data")
+        @Pattern(regexp = PUBLIC_TEXT_PATTERN) @Size(max = 250) String notes) {
+
+    public PublicBookingRequest(UUID propertyId, LocalDate arrival, LocalDate departure, String currency,
+            Long clientTotalMinor, List<Stay> stays, BookingGuest bookingGuest, PaymentMode paymentMode) {
+        this(propertyId, arrival, departure, currency, clientTotalMinor, stays, bookingGuest, paymentMode, null);
+    }
 
     // Match Java's Character.isWhitespace/NotBlank, including Unicode separators
     // but excluding nonbreaking spaces. ECMA-262 syntax also describes the same
@@ -63,7 +70,17 @@ public record PublicBookingRequest(
     @Schema(name = "PublicBookingGuestRequest", additionalProperties = Schema.AdditionalPropertiesValue.FALSE)
     public record BookingGuest(@NotBlank @Pattern(regexp = PUBLIC_TEXT_PATTERN) @Size(min = 1, max = 80) String firstName,
             @NotBlank @Pattern(regexp = PUBLIC_TEXT_PATTERN) @Size(min = 1, max = 80) String lastName,
-            @NotBlank @Pattern(regexp = PUBLIC_TEXT_PATTERN) @Email @Size(min = 1, max = 320) String email) {
+            @NotBlank @Pattern(regexp = PUBLIC_TEXT_PATTERN) @Email @Size(min = 1, max = 320) String email,
+            @Schema(types = {"string", "null"}, description = "International contact number, including country calling code")
+            @Pattern(regexp = "^\\+[1-9][0-9]{7,17}$") @Size(max = 32) String phone,
+            @Schema(types = {"string", "null"}, description = "ISO 3166-1 alpha-2 country/region selected by the guest", example = "GT")
+            @Pattern(regexp = "^[A-Z]{2}$") String country,
+            @Schema(types = {"string", "null"}, description = "Optional guest identification; never returned unmasked by Staff detail")
+            @Pattern(regexp = "^[\\p{L}\\p{N}-]{4,25}$") String documentNumber) {
+
+        public BookingGuest(String firstName, String lastName, String email) {
+            this(firstName, lastName, email, null, null, null);
+        }
         @JsonAnySetter
         public void rejectUnknown(String field, Object value) {
             throw new IllegalArgumentException("Unknown public booking guest field");

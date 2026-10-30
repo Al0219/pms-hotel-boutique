@@ -12,9 +12,10 @@ export function useReservationDetail(
   propertyId: string | undefined,
   endpoint: string | undefined,
   reservationId: string | undefined,
+  sessionId?: string,
 ) {
   return useQuery({
-    queryKey: ["reservations", propertyId, endpoint, reservationId],
+    queryKey: ["reservations", propertyId, endpoint, reservationId, ...(sessionId ? [sessionId] : [])],
     enabled: Boolean(propertyId && endpoint && reservationId),
     queryFn: async ({ signal }) => {
       if (!propertyId || !endpoint || !reservationId) {

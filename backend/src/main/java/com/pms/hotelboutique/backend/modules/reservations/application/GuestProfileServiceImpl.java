@@ -46,6 +46,7 @@ public class GuestProfileServiceImpl implements GuestProfileService {
                 blankToNull(command.email()), blankToNull(command.phone()),
                 blankToNull(command.documentType()), blankToNull(command.documentNumber()),
                 blankToNull(command.preferredLanguage()), now);
+        profile.setCountry(command.country());
         return GuestProfileView.from(profiles.save(profile));
     }
 

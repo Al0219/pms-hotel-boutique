@@ -60,10 +60,12 @@ class StaffReservationReadIntegrationTests {
     }
 
     @Test
-    void readsRealMultiRoomReservationAndResponsibleProfileWithoutOccupancyOrMoney() throws Exception {
+    void readsRealMultiRoomReservationWithDetailOnlyContactAndNoInferredOccupancyOrMoney() throws Exception {
         UUID guest = UUID.randomUUID();
         jdbc.update("INSERT INTO guest_profiles(id,first_name,last_name,email,phone,status,created_at,updated_at) VALUES (?,'Real','Responsible','private@example.test','secret-phone','ACTIVE',now(),now())", guest);
         jdbc.update("UPDATE reservations SET booking_guest_id=? WHERE id=?", guest, reservation);
+        jdbc.update("UPDATE guest_profiles SET document_type='DPI', document_number='1234567890123', preferred_language='es', country='GT' WHERE id=?", guest);
+        jdbc.update("UPDATE reservations SET notes='Llegada tardía registrada' WHERE id=?", reservation);
         insertStay(property, type, reservation, "IN_HOUSE", FIRST, FIRST.plusDays(3));
         var response = mvc.perform(get(ROUTE + "/" + reservation).param("propertyId", property.toString())
                 .header("Authorization", bearer(reception)))
@@ -71,12 +73,52 @@ class StaffReservationReadIntegrationTests {
                 .andExpect(jsonPath("$.reservationId").value(reservation.toString()))
                 .andExpect(jsonPath("$.responsibleGuest.profileId").value(guest.toString()))
                 .andExpect(jsonPath("$.responsibleGuest.firstName").value("Real"))
+                .andExpect(jsonPath("$.details.contact.email").value("private@example.test"))
+                .andExpect(jsonPath("$.details.contact.phone").value("secret-phone"))
+                .andExpect(jsonPath("$.details.contact.documentNumberMasked").value("•••• 0123"))
+                .andExpect(jsonPath("$.details.contact.preferredLanguage").value("es"))
+                .andExpect(jsonPath("$.details.contact.country").value("GT"))
+                .andExpect(jsonPath("$.details.notes").value("Llegada tardía registrada"))
+                .andExpect(jsonPath("$.details.stays.length()").value(2))
+                .andExpect(jsonPath("$.details.stays[0].occupants").isEmpty())
                 .andExpect(jsonPath("$.stays.length()").value(2))
                 .andExpect(jsonPath("$.stays[0].roomType.name").value("Deluxe"))
                 .andExpect(jsonPath("$.stays[0].room").isEmpty())
                 .andExpect(jsonPath("$.stays[0].arrival").value(FIRST.toString())).andReturn();
         String raw = response.getResponse().getContentAsString();
-        for (String absent : new String[]{"secret-phone", "private@example.test", "adults", "children", "occupants", "policy", "paidAmount", "paymentReference"}) assertFalse(raw.contains(absent));
+        for (String absent : new String[]{"1234567890123", "guestAccountId", "adults", "children", "policy", "paidAmount", "paymentReference"}) assertFalse(raw.contains(absent));
+        var list = mvc.perform(get(ROUTE).param("propertyId", property.toString()).header("Authorization", bearer(reception)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].details").doesNotExist()).andReturn().getResponse().getContentAsString();
+        assertFalse(list.contains("private@example.test"));
+        assertFalse(list.contains("secret-phone"));
+        assertFalse(list.contains("Llegada tardía registrada"));
+    }
+
+    @Test
+    void showsOnlyExplicitOccupantsOfEachStayAndMasksShortDocumentsCompletely() throws Exception {
+        UUID guest = UUID.randomUUID(), occupant = UUID.randomUUID();
+        jdbc.update("INSERT INTO guest_profiles(id,property_id,first_name,last_name,document_number,status,created_at,updated_at) VALUES (?,?,'Booker','Only','123','ACTIVE',now(),now())", guest, property);
+        jdbc.update("INSERT INTO guest_profiles(id,property_id,first_name,last_name,status,created_at,updated_at) VALUES (?,?,'Actual','Occupant','ACTIVE',now(),now())", occupant, property);
+        jdbc.update("UPDATE reservations SET booking_guest_id=? WHERE id=?", guest, reservation);
+        jdbc.update("INSERT INTO reservation_guests(id,reservation_stay_id,guest_profile_id,is_primary,created_at) VALUES (?,?,?,true,now())", UUID.randomUUID(), firstStay(), occupant);
+        mvc.perform(get(ROUTE + "/" + reservation).param("propertyId", property.toString()).header("Authorization", bearer(reception)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.details.contact.documentNumberMasked").value("••••"))
+                .andExpect(jsonPath("$.details.contact.email").isEmpty())
+                .andExpect(jsonPath("$.details.stays[0].occupants.length()").value(1))
+                .andExpect(jsonPath("$.details.stays[0].occupants[0].profileId").value(occupant.toString()))
+                .andExpect(jsonPath("$.details.stays[0].occupants[0].fullName").value("Actual Occupant"))
+                .andExpect(jsonPath("$.details.stays[0].occupants[0].primary").value(true));
+    }
+
+    @Test
+    void neverExposesContactOrOccupantsOfProfilesAssignedToAnotherProperty() throws Exception {
+        UUID guest = UUID.randomUUID();
+        jdbc.update("INSERT INTO guest_profiles(id,property_id,first_name,last_name,email,status,created_at,updated_at) VALUES (?,?,'Foreign','Profile','foreign@example.test','ACTIVE',now(),now())", guest, otherProperty);
+        jdbc.update("UPDATE reservations SET booking_guest_id=? WHERE id=?", guest, reservation);
+        jdbc.update("INSERT INTO reservation_guests(id,reservation_stay_id,guest_profile_id,is_primary,created_at) VALUES (?,?,?,true,now())", UUID.randomUUID(), firstStay(), guest);
+        mvc.perform(get(ROUTE + "/" + reservation).param("propertyId", property.toString()).header("Authorization", bearer(reception)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.responsibleGuest").isEmpty()).andExpect(jsonPath("$.details.contact").isEmpty())
+                .andExpect(jsonPath("$.details.stays[0].occupants").isEmpty());
     }
 
     @Test

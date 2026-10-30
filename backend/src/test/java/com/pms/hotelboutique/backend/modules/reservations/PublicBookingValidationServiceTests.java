@@ -61,6 +61,22 @@ class PublicBookingValidationServiceTests {
     }
 
     @Test
+    void optionalContactAndNotesArePartOfTheHashWithoutChangingLegacyReceipts() {
+        var old = valid();
+        String legacy = hash(old);
+        for (var guest : List.of(
+                new BookingGuest("Ana", "Lopez", "ana@example.test", "+50255551234", null, null),
+                new BookingGuest("Ana", "Lopez", "ana@example.test", null, "GT", null),
+                new BookingGuest("Ana", "Lopez", "ana@example.test", null, null, "DOC-1234"))) {
+            var enriched = new PublicBookingRequest(PROPERTY, ARRIVAL, DEPARTURE, "GTQ", old.clientTotalMinor(),
+                    old.stays(), guest, old.paymentMode(), null);
+            assertNotEquals(legacy, hash(enriched));
+        }
+        assertNotEquals(legacy, hash(new PublicBookingRequest(PROPERTY, ARRIVAL, DEPARTURE, "GTQ", old.clientTotalMinor(),
+                old.stays(), GUEST, old.paymentMode(), "Llegada tardía")));
+    }
+
+    @Test
     void keyIsExcludedWithoutNormalizingIt() {
         String expected = hash(valid());
         assertEquals(expected, service.validateAndHash(" Key-123 ", valid()));

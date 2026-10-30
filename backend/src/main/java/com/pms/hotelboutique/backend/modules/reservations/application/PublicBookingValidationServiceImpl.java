@@ -8,6 +8,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Comparator;
 import java.util.HexFormat;
+import java.util.Locale;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import static com.pms.hotelboutique.backend.modules.reservations.application.PublicBookingValidationException.Code.*;
@@ -15,6 +17,7 @@ import static com.pms.hotelboutique.backend.modules.reservations.application.Pub
 @Service
 @Transactional(readOnly = true)
 public class PublicBookingValidationServiceImpl implements PublicBookingValidationService {
+    private static final Set<String> COUNTRIES = Set.of(Locale.getISOCountries());
     private static final Comparator<PublicBookingRequest.Stay> STAY_ORDER = Comparator
             .comparing((PublicBookingRequest.Stay stay) -> stay.roomTypeId().toString())
             .thenComparing(PublicBookingRequest.Stay::ratePlanId)
@@ -45,6 +48,9 @@ public class PublicBookingValidationServiceImpl implements PublicBookingValidati
         }
         var guest = request.bookingGuest();
         if (!validUnicode(guest.firstName()) || !validUnicode(guest.lastName()) || !validUnicode(guest.email())
+                || (guest.documentNumber() != null && !validUnicode(guest.documentNumber()))
+                || (request.notes() != null && !validUnicode(request.notes()))
+                || (guest.country() != null && !COUNTRIES.contains(guest.country()))
                 || request.stays().stream().anyMatch(stay -> !validUnicode(stay.ratePlanId()))) {
             throw new PublicBookingValidationException(INVALID_REQUEST);
         }
@@ -71,7 +77,11 @@ public class PublicBookingValidationServiceImpl implements PublicBookingValidati
     private static String fingerprint(PublicBookingRequest request) {
         try {
             MessageDigest hash = MessageDigest.getInstance("SHA-256");
-            field(hash, "PUBLIC_BOOKING_REQUEST_V1");
+            var guest = request.bookingGuest();
+            boolean enriched = guest.phone() != null || guest.country() != null
+                    || guest.documentNumber() != null || request.notes() != null;
+            // Preserve persisted V1 receipts for clients that send the original payload.
+            field(hash, enriched ? "PUBLIC_BOOKING_REQUEST_V2" : "PUBLIC_BOOKING_REQUEST_V1");
             field(hash, request.propertyId().toString());
             field(hash, request.arrival().toString());
             field(hash, request.departure().toString());
@@ -87,11 +97,22 @@ public class PublicBookingValidationServiceImpl implements PublicBookingValidati
             field(hash, request.bookingGuest().firstName());
             field(hash, request.bookingGuest().lastName());
             field(hash, request.bookingGuest().email());
+            if (enriched) {
+                nullableField(hash, guest.phone());
+                nullableField(hash, guest.country());
+                nullableField(hash, guest.documentNumber());
+                nullableField(hash, request.notes());
+            }
             // The key identifies the receipt. The only valid payment mode is constant.
             return HexFormat.of().formatHex(hash.digest());
         } catch (NoSuchAlgorithmException exception) {
             throw new IllegalStateException("SHA-256 is required", exception);
         }
+    }
+
+    private static void nullableField(MessageDigest hash, String value) {
+        if (value == null) hash.update(ByteBuffer.allocate(Integer.BYTES).putInt(-1).array());
+        else field(hash, value);
     }
 
     private static void field(MessageDigest hash, String value) {

@@ -113,6 +113,68 @@ Mantener EN_QA. Respaldo Git stash con mensaje `safety: stay journey session1 ba
 conservado sin eliminar y árbol reaplicado; no es un commit de rama. La migración nueva se valida solo en PG desechable; respaldar y
 verificar antes de desplegar sobre datos existentes.
 
+## 2026-10-29 — Integración de origin/main: conflictos resueltos, validación local PASS
+
+Integrado ba70022 en feature/staff-reservation-detail por autorización de José.
+Conflictos documentales de AlanPlan/AlanHandoff resueltos conservando íntegros
+los historiales de Reservas y Valet. OpenAPI combinado revisado semánticamente.
+Backend:164 pruebas seleccionadas/11 clases PASS y verify/JAR PASS, Java21/PG17
+aislado; Web67 seleccionadas/8 archivos PASS, TypeScript y ESLint PASS. No se
+atribuye una nueva ejecución de las suites globales a esta integración.
+Sin modificaciones propias a Android, código/migraciones de Valet o al entorno
+Docker3001. staff-admin.test.tsx previo conservado byte a byte, fuera del merge.
+Evidencia fuera de Git: %TEMP%/pms-staff-reservation-merge-qa. Main intacto.
+Siguiente: publicación autorizada de la resolución y revisión/checks del PR.
+
+## 2026-10-29 — Corrección captura pública → detalle Staff — COMPLETADA
+
+Contrato65 implementado en feature/staff-reservation-detail: teléfono, país ISO,
+documento y solicitudes del checkout se guardan en perfil/reserva y se consultan
+con scope Staff. Huella V1 preservada y V2 para campos nuevos; perfiles anteriores
+sin sobreescritura, recibos sin PII. Migración aditiva de país; lectura del perfil
+personal con columnas explícitas para evitar colisión de country, contrato intacto.
+Backend ./mvnw -B verify Java21/PG17 aislado:1241 PASS,0 failures/errors/skipped.
+Web114 relevantes/11 archivos PASS, lint/typecheck y ambos builds PASS.
+Chrome real3001:35 PASS desde formulario público hasta Recepción/Super Admin,
+escritorio/móvil, datos completos, máscara y logout401; sin JS/API5xx.
+Reserva ficticia NNU6E7QMZH; DB17→18 reservas,17→18 stays,18→19 perfiles,
+32→34 movimientos simulados,36→37 migraciones. Todos los registros/checksums
+anteriores intactos. Compose habitual saludable; PostgreSQL conservado.
+Evidencia: %TEMP%/pms-public-booking-details-qa. Se conserva intacto el cambio
+anterior staff-admin.test.tsx fuera del commit. QA manual PASS confirmado por José;
+commit/push autorizados para publicar este incremento. Siguiente: revisión/checks del PR.
+
+## 2026-10-29 — Detalle ampliado de reservas Staff — EN_QA
+
+José/owner; contrato64 e IMP-WEB-0302, rama feature/staff-reservation-detail,
+base b33236e. API/BFF/DTO/mapper/hook/UI de detalle ampliado implementados, sin
+añadir contacto al listado ni exponer GuestAccount/documentos originales.
+Responsable separado de ocupantes; catálogo visual referencial y folio existente
+plegables. Caché por sesión; propiedad/identidad/autorización conservadas.
+Backend ./mvnw -B verify Java21/PG17 completo:1231 PASS,0 failures/errors/skipped.
+Web82 relevantes en10 archivos PASS, lint/typecheck y builds PASS. Suite Web
+global/CI remoto de este incremento no ejecutados. Chrome real3001:46 PASS con
+Recepción/Super Admin,375px/desktop, teclado, galería, datos, folio y logout.
+Sin JS/API5xx ni escrituras de negocio; DB16 reservas/16 stays/30 movimientos/
+17 perfiles/36 migraciones, huellas de datos iguales antes/después.
+Backend/frontend del Compose habitual actualizados y saludables; PostgreSQL
+conservado. Evidencia y capturas fuera de Git: %TEMP%/pms-staff-reservation-detail-qa.
+Se preservó la corrección Web anterior sin mezclarla con este alcance.
+Sin commit/push/merge. Siguiente: QA manual de José; no marcar COMPLETADA antes.
+
+## 2026-10-28 — Detalle ampliado de reservas Staff — EN_PROGRESO
+
+José autoriza consultar la información registrada mediante tarjetas plegables.
+Rama feature/staff-reservation-detail, base b33236e; contrato64 amplía49, misma
+sesión Staff/RESERVATION_MANAGE/PROPERTY explícita. Owner José; Alan/Juan como
+revisores colaborativos. Contacto del responsable con documento enmascarado,
+ocupantes explícitos, notas y seguimiento; catálogo visual solo como referencia.
+Se conserva el listado mínimo y los permisos financieros existentes. Sin cambios
+de altas públicas, reglas de inventario, migraciones o secretos. La corrección
+Web anterior sigue local e intacta, fuera del alcance de este incremento.
+Pruebas y QA manual pendientes. Siguiente: integrar proyección/BFF/UI y validar.
+Sin commit/push/merge.
+
 ## 2026-10-29 — Valet DoD PASS, reconciliación b33236e verificada
 
 Pendientes V2-01–V2-15 cerrados mediante evidencia concreta en QA45, manteniendo

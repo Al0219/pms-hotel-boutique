@@ -1,4 +1,6 @@
 import { deriveReservationOperationalStatus } from '../model/reservation-operational-status';
+import { roomPresentationFor } from '@/modules/availability';
+import { mapStaffReservationInformation } from './staff-reservation-information.mapper';
 import { DomainMappingError } from '@/lib/errors';
 import { isUtcInstant } from '@/lib/utc-instant';
 import { parseDateTime, parseDay, requiredText } from '@/lib/mapper';
@@ -21,6 +23,7 @@ function day(value: string): Date {
 
 function projectDetail(dto: StaffReservationDto): ReservationDetailData {
   if (!dto || !['PENDING', 'CONFIRMED', 'CANCELLED'].includes(dto.status) || !Array.isArray(dto.stays)) invalid();
+  const information = mapStaffReservationInformation(dto);
   const ids = new Set<string>();
   const stays: ReservationStayDetail[] = dto.stays.map(s => {
     if (!s || !s.roomType || !states.has(s.status) || !isUtcInstant(s.updatedAt)) invalid();
@@ -31,7 +34,11 @@ function projectDetail(dto: StaffReservationDto): ReservationDetailData {
     if (checkOut <= checkIn) invalid();
     uuid(s.roomType.roomTypeId);
     text(s.roomType.code);
+    const presentation = roomPresentationFor(s.roomType.code);
     return { id, checkIn, checkOut, nights: Math.round((Date.parse(s.departure) - Date.parse(s.arrival)) / 86400000),
+      roomTypeId: s.roomType.roomTypeId, roomTypeCode: s.roomType.code,
+      presentation: { images: [...(presentation?.images ?? [])], description: presentation?.description ?? null },
+      ...(information ? { occupants: information.stays.find(item => item.stayId === id)!.occupants } : {}),
       roomId: s.room === null ? null : uuid(s.room.roomId), roomLabel: s.room === null ? null : text(s.room.code),
       roomType: text(s.roomType.name), travelState: s.status, updatedAt: s.updatedAt };
   });
@@ -44,7 +51,8 @@ function projectDetail(dto: StaffReservationDto): ReservationDetailData {
     guest: { ...(guest === null ? {} : { profileId: uuid(guest.profileId) }),
       primaryName: guest === null ? null : `${text(guest.firstName)} ${text(guest.lastName)}`,
       adults: null, children: null, phone: null },
-    policyLabel: null, notes: null,
+    ...(information ? { information: { updatedAt: information.updatedAt, contact: information.contact } } : {}),
+    policyLabel: null, notes: information?.notes ?? null,
     finance: { totalAmount: null, paidAmount: null, financeState: null, ratePerNight: null, lines: [] },
   };
 }

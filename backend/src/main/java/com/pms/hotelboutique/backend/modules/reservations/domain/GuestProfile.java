@@ -65,6 +65,9 @@ public class GuestProfile {
     @Column(name = "preferred_language")
     private String preferredLanguage;
 
+    @Column(name = "country", length = 2)
+    private String country;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Status status;
@@ -150,6 +153,15 @@ public class GuestProfile {
     public boolean isActive() {
         return status == Status.ACTIVE;
     }
+
+    public void setCountry(String country) {
+        if (country != null && !country.matches("[A-Z]{2}")) {
+            throw new IllegalArgumentException("country must be an ISO alpha-2 code");
+        }
+        this.country = country;
+    }
+
+    public String getCountry() { return country; }
 
     private static void requireName(String value, String field) {
         if (value == null || value.isBlank()) {
