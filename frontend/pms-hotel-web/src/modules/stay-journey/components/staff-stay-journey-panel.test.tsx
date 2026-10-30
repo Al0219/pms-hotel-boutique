@@ -32,3 +32,5 @@ describe('Staff finance tools within Folio', () => {
   mocks.read.mockImplementation((_c,action)=>Promise.resolve(action==='requests'?[]:{...summary(),unpostedOrders:1}));mount();const button=await screen.findByRole('button',{name:'Contabilizar pedidos entregados'});expect(mocks.reconcile).not.toHaveBeenCalled();expect(screen.queryByRole('button',{name:'Tarjeta de prueba'})).not.toBeInTheDocument();fireEvent.click(button);await waitFor(()=>expect(mocks.reconcile).toHaveBeenCalledTimes(1));
  });
 });
+
+it('shows persisted pending transfer estimates outside the balance',async()=>{mocks.read.mockImplementation((_c,action)=>Promise.resolve(action==='requests'?[]:action==='document'?document():{...summary(),pendingOrders:1,estimatedTransfers:[{id:context.reservationId,description:'Traslado · Hotel a Aeropuerto',amount:'58.00'}]}));mount();expect(await screen.findByLabelText('Traslados estimados')).toHaveTextContent('Traslado · Hotel a Aeropuerto · Q. 58.00');expect(screen.getByLabelText('Traslados estimados')).toHaveTextContent('fuera del saldo');});

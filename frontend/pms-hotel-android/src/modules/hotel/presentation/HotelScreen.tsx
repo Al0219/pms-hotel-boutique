@@ -1,4 +1,10 @@
-import { DemoContentNotice } from '@/shared/components/DemoContentNotice';
+import {useCallback} from 'react';
+import {useFocusEffect} from 'expo-router';
+import {useGuestAuthSession} from '@/modules/guest-auth/presentation/GuestAuthSessionProvider';
+import {useActiveReservationContext} from '@/modules/guest-auth/presentation/ActiveReservationContextProvider';
+import {useLinkedReservations} from '@/modules/guest-auth/presentation/hooks/useLinkedReservations';
+import {useCurrentStay} from '@/modules/stay/presentation/hooks/useCurrentStay';
+import type {ReservationStay} from '@/modules/stay/domain/models/ReservationStay';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { type ReactNode } from 'react';
 
@@ -10,6 +16,10 @@ import { tokens } from '@/shared/theme/tokens';
 export interface HotelScreenProps {
   demonstration?: boolean;
   profile?: HotelProfile;
+  stay?: ReservationStay;
+  hotelName?: string;
+  reference?: string;
+  stayError?: boolean;
 }
 
 function HotelInfoCard({ children, testID, title }: { children: ReactNode; testID: string; title: string }) {
@@ -21,21 +31,37 @@ function HotelInfoCard({ children, testID, title }: { children: ReactNode; testI
   );
 }
 
-/** Standalone Hotel presentation over a central, static frontend/mock profile. */
-export function HotelScreen({ demonstration = false, profile = getHotelProfile() }: HotelScreenProps) {
+/** Selected-stay data comes from existing authenticated boundaries; demo contact is independent. */
+export function ConnectedHotelScreen() {
+  const {session} = useGuestAuthSession();
+  const {activeReservationContext: context} = useActiveReservationContext();
+  const current = useCurrentStay(undefined, session ? context : null);
+  const linked = useLinkedReservations(session?.accountId);
+  const {refetch: refreshStay} = current, {refetch: refreshLinked} = linked;
+  useFocusEffect(useCallback(() => {
+    if (session?.accountId && context) {void refreshStay({cancelRefetch: false}); void refreshLinked({cancelRefetch: false});}
+  }, [session?.accountId, context, refreshStay, refreshLinked]));
+  const reservation = linked.isSuccess && session ? linked.data.find(row => row.reservationId === context?.reservationId && row.reservationStayId === context?.reservationStayId) : undefined;
+  const stay = reservation && current.isSuccess && current.data.id === context?.reservationStayId && current.data.reservationId === context?.reservationId ? current.data : undefined;
+  return <HotelScreen hotelName={reservation?.propertyLabel ?? 'Hotel'} reference={reservation?.reference} stay={stay} stayError={current.isError || linked.isError} />;
+}
+
+export function HotelScreen({ profile = getHotelProfile(), hotelName = profile.name, stay, reference, stayError = false }: HotelScreenProps) {
+  const statusLabels: Record<string,string> = {RESERVED: 'Pendiente de entrada', IN_HOUSE: 'En curso', CHECKED_OUT: 'Finalizada', CANCELLED: 'Cancelada', NO_SHOW: 'No presentada'};
+  const status = stay ? statusLabels[stay.status] ?? stay.status : null;
   return (
     <View style={styles.screen} testID="hotel-screen">
-      <GuestRootHeader title={profile.name} />
+      <GuestRootHeader title={hotelName} />
       <ScrollView contentContainerStyle={styles.content} style={styles.scroll}>
-        {demonstration ? <DemoContentNotice detail="Información de ejemplo del establecimiento; consulta los datos vigentes con recepción." /> : null}
         <View style={styles.hero} testID="hotel-hero">
-          <Text accessibilityLabel={profile.statusLabel} style={styles.statusIndicator} testID="hotel-status-indicator">{profile.statusLabel}</Text>
-          <Text style={styles.description}>{profile.description}</Text>
+          {status ? <Text accessibilityLabel={status} style={styles.statusIndicator} testID="hotel-status-indicator">{status}</Text> : null}
+          {stay ? <Text style={styles.description}>{stay.roomType.name}</Text> : null}
         </View>
         <HotelInfoCard testID="hotel-stay-info" title="Tu estadía">
-          <Text style={styles.body}>{`Check-in · ${profile.checkInTime}`}</Text>
-          <Text style={styles.body}>{`Check-out · ${profile.checkOutTime}`}</Text>
-          <Text style={styles.body}>{`Recepción · ${profile.receptionHours}`}</Text>
+          {stay ? <><Text style={styles.body}>{stay.room ? `Habitación · ${stay.room.number}` : 'Habitación por asignar'}</Text>
+          <Text style={styles.body}>{`Llegada · ${stay.arrival}`}</Text>
+          <Text style={styles.body}>{`Salida · ${stay.departure}`}</Text>
+          {reference || stay.confirmationCode ? <Text style={styles.body}>{`Reserva · ${reference ?? stay.confirmationCode}`}</Text> : null}</> : <Text style={styles.body}>{stayError ? 'No pudimos consultar la estancia.' : '—'}</Text>}
         </HotelInfoCard>
         <HotelInfoCard testID="hotel-wifi" title="Wi‑Fi">
           <Text style={styles.body}>{`Red · ${profile.wifi.ssid}`}</Text>

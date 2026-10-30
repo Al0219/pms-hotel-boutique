@@ -1,0 +1,54 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-transfer-billing-012
+      author: pms
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE transfer_route_prices (
+                property_id uuid NOT NULL REFERENCES properties(id), origin_key varchar(64) NOT NULL,
+                destination_key varchar(64) NOT NULL, total_minor bigint NOT NULL CHECK(total_minor>0),
+                currency varchar(3) NOT NULL CHECK(currency='GTQ'), PRIMARY KEY(property_id,origin_key,destination_key)
+              );
+              ALTER TABLE transfer_requests ADD COLUMN total_minor bigint CHECK(total_minor>0);
+              CREATE TABLE transfer_folio_postings (
+                request_id uuid PRIMARY KEY REFERENCES transfer_requests(id),
+                movement_id uuid NOT NULL UNIQUE REFERENCES folio_movements(id)
+              );
+        - sql:
+            sql: CREATE TRIGGER trg_transfer_posting_immutable BEFORE UPDATE OR DELETE ON transfer_folio_postings FOR EACH ROW EXECUTE FUNCTION bd3_reject_folio_movement_mutation();
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE FUNCTION provision_demo_transfer_prices(target uuid) RETURNS void LANGUAGE sql AS $body$
+                INSERT INTO transfer_route_prices(property_id,origin_key,destination_key,total_minor,currency)
+                SELECT target,CASE WHEN inbound THEN v.place ELSE 'place-hotel' END,
+                  CASE WHEN inbound THEN 'place-hotel' ELSE v.place END,v.price,'GTQ'
+                FROM (VALUES ('place-airport',5800),('place-oakland',4200),('place-centro',7800),('place-cayala',6300)) v(place,price)
+                CROSS JOIN (VALUES (true),(false)) d(inbound)
+                WHERE target='3032709f-a48b-300b-b860-1110bc6f1f13'::uuid
+                ON CONFLICT DO NOTHING;
+              $body$;
+              CREATE FUNCTION provision_new_demo_transfer_prices() RETURNS trigger LANGUAGE plpgsql AS $body$
+              BEGIN PERFORM provision_demo_transfer_prices(NEW.id); RETURN NEW; END; $body$;
+              CREATE TRIGGER demo_transfer_prices AFTER INSERT ON properties FOR EACH ROW EXECUTE FUNCTION provision_new_demo_transfer_prices();
+        - sql:
+            sql: |
+              SELECT provision_demo_transfer_prices(id) FROM properties WHERE id='3032709f-a48b-300b-b860-1110bc6f1f13';
+              UPDATE transfer_requests t SET total_minor=p.total_minor,
+                route_snapshot=jsonb_set(t.route_snapshot,'{totalMinor}',to_jsonb(p.total_minor))
+              FROM service_requests sr, reservation_stays s, transfer_route_prices p
+              WHERE sr.id=t.id AND s.id=sr.stay_id AND p.property_id=sr.property_id
+                AND p.origin_key=t.route_snapshot->'origin'->>'key' AND p.destination_key=t.route_snapshot->'destination'->>'key'
+                AND sr.status IN ('OPEN','IN_PROGRESS') AND s.status IN ('RESERVED','IN_HOUSE')
+                AND NOT EXISTS(SELECT 1 FROM stay_informative_documents d WHERE d.stay_id=s.id);
+              CREATE VIEW billable_service_orders AS
+                SELECT id,stay_id,total_minor,currency,'ROOM_SERVICE'::text category,('Room Service · '||id)::text description FROM room_service_orders
+                UNION ALL
+                SELECT id,stay_id,total_minor,'GTQ','TRANSFER',
+                  'Traslado · '||to_char(service_date,'DD/MM/YYYY')||' '||to_char(delivery_time,'HH24:MI')||' · '||
+                  (route_snapshot->'origin'->>'displayText')||' a '||(route_snapshot->'destination'->>'displayText')
+                FROM transfer_requests WHERE total_minor IS NOT NULL;
+              CREATE VIEW billable_service_postings AS
+                SELECT order_id,movement_id FROM room_service_folio_postings
+                UNION ALL SELECT request_id,movement_id FROM transfer_folio_postings;

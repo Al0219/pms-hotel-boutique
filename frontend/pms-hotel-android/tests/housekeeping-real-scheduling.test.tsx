@@ -17,6 +17,7 @@ const context = { reservationId: 'own', reservationStayId: 'own-stay' };
 const row = { id: 'request', reservationId: 'own', stayId: 'own-stay', serviceDate: '2030-01-02', timeSlot: '09:00–10:00', cleaningType: 'FULL_CLEANING', notes: 'Original', status: 'OPEN', createdAt: '2030-01-01T00:00:00Z', updatedAt: '2030-01-01T00:00:00Z', modifiableUntil: '2030-01-02T14:35:00Z' };
 const at = (time: string) => Date.parse(`2030-01-02T${time}Z`);
 async function setup(now = at('14:45:00'), edit = false, zone = timezone, departure = '2030-01-04') {
+ (nativeGuestClient.request as jest.Mock).mockImplementation(async()=>edit?[row]:[]);
  (useLocalSearchParams as jest.Mock).mockReturnValue(edit ? { editRequestId: row.id } : {});
  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false, gcTime: 0 } } });
  const stayService = { getCurrentStay: async () => ({ ...currentStayFixture, ...context, id: context.reservationStayId, timezone: zone, arrival: '2030-01-01', departure }) };
@@ -35,7 +36,7 @@ it('uses IANA offsets and dates independently of the device calendar, including 
  expect(getFirstAvailableServiceDate(Date.parse('2030-01-03T01:00:00Z'),housekeepingQaTimeSlots,'2030-01-01','2030-01-04',undefined,timezone)).toBe('2030-01-03');
  expect(getNearestServiceTime('2030-01-03',housekeepingQaTimeSlots,at('19:00:00'),'14:00–15:00','2030-01-01','2030-01-04',undefined,timezone)).toBe('14:00–15:00');
 });
-it('shows five real options, preserves default10, disables passed slots and retains FULL_CLEANING only', async () => {
+it('shows six real options, preserves default10, disables passed slots and retains FULL_CLEANING only', async () => {
  const ui=await setup();expect(within(ui.getByTestId('housekeeping-time-selector')).getByText('10:00–11:00')).toBeTruthy();
  await fireEvent.press(ui.getByTestId('housekeeping-time-selector'));
  for(const slot of housekeepingQaTimeSlots) expect(ui.getByTestId(`housekeeping-time-picker-option-${slot}`).props.accessibilityState.disabled).toBe(slot==='09:00–10:00');

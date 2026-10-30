@@ -31,6 +31,7 @@ function Panel({ actorId, sessionId, financial, active = true, paymentOpen = fal
       {journey.file.data && <><button type="button" className={styles.secondary} onClick={()=>pdf(false)}><SvgIcon name="reservations" style={{verticalAlign:'middle',marginInlineEnd:8}}/>Visualizar documento</button><button type="button" className={styles.secondary} onClick={()=>pdf(true)}><SvgIcon name="arrow" style={{verticalAlign:'middle',marginInlineEnd:8}}/>Descargar</button></>}
       {journey.file.isError && <p role="alert">No se pudo recuperar el PDF original.</p>}{fileError&&!journey.file.data&&<p role="alert">{fileError}</p>}
     </div>
+    {(summary?.estimatedTransfers?.length??0)>0&&<div aria-label="Traslados estimados"><p>Traslados pendientes · fuera del saldo</p>{summary?.estimatedTransfers?.map(e=><p key={e.id}>{e.description} · Q. {e.amount}</p>)}</div>}
     {active && journey.summary.isError && <p role="alert">No se pudo verificar el saldo para pagar con tarjeta.</p>}
     {journey.notice && <p role="status">{journey.notice}</p>}{journey.error && !paying && <p role="alert" className={styles.error}>{journey.error}</p>}
     {paying && <Modal className={styles.paymentDialog} title={journey.pending ? 'Recuperar pago pendiente' : 'Tarjeta de prueba'} busy={journey.busy} onClose={() => setPaying(false)}>

@@ -1,0 +1,18 @@
+import {NextRequest} from 'next/server';
+import {beforeEach,expect,it,vi} from 'vitest';
+const backend=vi.hoisted(()=>vi.fn());
+vi.mock('@/lib/bff/staff-auth',()=>({backendStaffRequest:backend,staffAccessCookie:'pms_staff_access'}));
+import {GET} from './route';
+import {PUT} from './[requestId]/status/route';
+const property='22222222-2222-4222-8222-222222222222',id='33333333-3333-4333-8333-333333333333';
+const hotel={key:'place-hotel',displayText:'Hotel',type:'HOTEL',latitude:14.5987,longitude:-90.5138},airport={key:'place-airport',displayText:'Aeropuerto',type:'PLACE',latitude:14.5833,longitude:-90.5275};
+const dto={id,propertyId:property,confirmationCode:'TRANSFERQA',roomCode:'203',notes:null,serviceDate:'2030-01-02',deliveryTime:'09:00',status:'OPEN',updatedAt:'2030-01-01T08:00:00Z',items:[{origin:hotel,destination:airport,passengers:2}]};
+const input={expectedUpdatedAt:dto.updatedAt,targetStatus:'IN_PROGRESS'};
+function req(method='GET',body:unknown=input,cookie='pms_staff_access=synthetic',origin='http://localhost:3001',query=`propertyId=${property}`){return new NextRequest(`http://localhost:3001/api/staff/transfers/requests?${query}`,{method,headers:{cookie,origin,'content-type':'application/json'},...(method==='PUT'?{body:JSON.stringify(body)}:{})});}
+beforeEach(()=>{backend.mockReset();vi.stubEnv('PMS_WEB_PUBLIC_URL','http://localhost:3001');});
+it('projects only authorized property records without account or arbitrary upstream fields',async()=>{backend.mockResolvedValue(Response.json([{...dto,guestAccountId:'sensitive',secret:'hidden'}]));const res=await GET(req());expect(res.status).toBe(200);const rows=await res.json();expect(rows[0]).toMatchObject({reference:'TRANSFERQA',items:dto.items});expect(rows[0]).not.toHaveProperty('guestAccountId');expect(res.headers.get('cache-control')).toBe('private, no-store');});
+it('rejects Guest cookies and invalid/duplicate scope before forwarding',async()=>{expect((await GET(req('GET',input,'pms_guest_access=guest'))).status).toBe(401);expect((await GET(req('GET',input,undefined,undefined,'propertyId=bad'))).status).toBe(400);expect((await GET(req('GET',input,undefined,undefined,`propertyId=${property}&propertyId=${property}`))).status).toBe(400);expect(backend).not.toHaveBeenCalled();});
+it('fails closed for foreign properties and invalid passenger snapshots',async()=>{backend.mockResolvedValueOnce(Response.json([{...dto,propertyId:id}]));expect((await GET(req())).status).toBe(503);backend.mockResolvedValueOnce(Response.json([{...dto,items:[{...dto.items[0],passengers:4}]}]));expect((await GET(req())).status).toBe(503);});
+it('requires trusted Origin and closed transition body',async()=>{const context={params:Promise.resolve({requestId:id})};expect((await PUT(req('PUT',input,undefined,'https://foreign.test'),context)).status).toBe(403);expect((await PUT(req('PUT',{...input,amount:'100'}),context)).status).toBe(400);expect(backend).not.toHaveBeenCalled();});
+it('forwards compare-and-set and checks resulting identity/status',async()=>{backend.mockResolvedValueOnce(Response.json({...dto,status:'IN_PROGRESS'}));const result=await PUT(req('PUT'),{params:Promise.resolve({requestId:id})});expect(result.status).toBe(200);expect(backend.mock.calls[0][0]).toBe(`/api/v1/properties/${property}/service-requests/transfers/${id}/status`);expect(backend.mock.calls[0][1].body).toBe(JSON.stringify(input));});
+it('preserves conflict status for stale mutations',async()=>{backend.mockResolvedValueOnce(new Response(null,{status:409}));expect((await PUT(req('PUT'),{params:Promise.resolve({requestId:id})})).status).toBe(409);});

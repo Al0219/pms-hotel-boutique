@@ -3,6 +3,7 @@ export interface JourneyLine { id: string; kind: 'CHARGE' | 'PAYMENT' | 'ADJUSTM
 export interface JourneySummary {
   stay: { propertyId: string; reservationId: string; stayId: string; confirmationCode: string; status: string; updatedAt: string; roomId: string | null; arrival: string; departure: string; timezone: string };
   folioId: string; currency: 'GTQ'; balance: string; charges: string; payments: string; adjustments: string; verifiable: boolean; pendingOrders: number; unpostedOrders: number;
+  estimatedTransfers?: {id:string;description:string;amount:string}[];
   movements: JourneyLine[]; requests: JourneyRequest[]; documentId: string | null; disclaimer: string;
 }
 export interface JourneyDocument { id: string; issuedAt: string; snapshot: JourneySummary }

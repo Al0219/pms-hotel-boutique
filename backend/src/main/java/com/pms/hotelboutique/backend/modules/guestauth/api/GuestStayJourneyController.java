@@ -41,7 +41,7 @@ public class GuestStayJourneyController {
  @ApiResponse(responseCode="200",description="Immutable payment attempt receipt; APPROVED, DECLINED or ERROR")
  public ResponseEntity<Payment> pay(@Parameter(hidden=true) @AuthenticationPrincipal GuestPrincipal p,@PathVariable UUID reservationId,@PathVariable UUID stayId,@RequestHeader("Idempotency-Key") String key,@RequestBody PaymentInput input){return ok(service.guestPay(p,reservationId,stayId,key,input));}
  @PostMapping(value="/requests",consumes="application/json")
- @Operation(summary="Solicitar entrada o salida sin completar estancia",description="CHECK_IN from property arrival date, confirmed reservation. CHECK_OUT may be requested early and with debt; only Staff completes. One OPEN per stay/kind. Guest financial responsibility required for checkout.")
+ @Operation(summary="Solicitar entrada o salida sin completar estancia",description="CHECK_IN from property arrival date, confirmed reservation. CHECK_OUT may be requested early only with a verifiable zero balance and no pending or unposted billable services; conflicts return409 without mutations. Only Staff completes. One OPEN per stay/kind. Guest financial responsibility required for checkout.")
  @ApiResponse(responseCode="200",description="Persisted request, original identity on replay")
  public ResponseEntity<Request> request(@Parameter(hidden=true) @AuthenticationPrincipal GuestPrincipal p,@PathVariable UUID reservationId,@PathVariable UUID stayId,@RequestHeader("Idempotency-Key") String key,@RequestBody RequestInput input){return ok(service.request(p,reservationId,stayId,key,input));}
  @GetMapping("/document-file")

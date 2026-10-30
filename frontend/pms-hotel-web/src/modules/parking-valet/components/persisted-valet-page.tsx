@@ -1,4 +1,5 @@
 "use client";
+import {TransfersWorkspace} from '@/modules/transfers';
 import {useEffect,useRef,useState} from 'react';
 import {createPortal} from 'react-dom';
 import {useStaffSession} from '@/modules/auth';
@@ -13,8 +14,9 @@ export function PersistedValetPage(){const session=useStaffSession();const {read
  if(!session.permissions.some(p=>['SERVICE_REQUEST_INTAKE','OPERATIONS_MANAGE'].includes(p)))return <p role="alert">Tu sesión no puede consultar Valet.</p>;
  if(!ready)return <p role="status">Preparando la propiedad…</p>;
  if(!scope||scope.kind!=='PROPERTY')return <section className={styles.page} aria-labelledby="valet-title"><header className={styles.header}><div className={styles.heading}><h1 id="valet-title">Parking / Valet</h1><p className={styles.description}>Selecciona un hotel para consultar sus solicitudes.</p></div></header></section>;
- const propertyId=scope.propertyIds[0];return <PersistedValetWorkspace key={`${session.id}:${propertyId}`} propertyId={propertyId} sessionId={session.id} canManage={session.permissions.includes('OPERATIONS_MANAGE')}/>;
+ const propertyId=scope.propertyIds[0];return <ValetTabs key={`${session.id}:${propertyId}`} propertyId={propertyId} sessionId={session.id} canManage={session.permissions.includes('OPERATIONS_MANAGE')}/>;
 }
+function ValetTabs(props:{propertyId:string;sessionId:string;canManage:boolean}){const [tab,setTab]=useState('vehicles');return <><nav aria-label="Parking y traslados" style={{display:'flex',gap:12,marginBottom:16}}><Button variant="outline" aria-pressed={tab==='vehicles'} onClick={()=>setTab('vehicles')}>Vehículos</Button><Button variant="outline" aria-pressed={tab==='transfers'} onClick={()=>setTab('transfers')}>Traslados</Button></nav><div hidden={tab!=='vehicles'}><PersistedValetWorkspace {...props}/></div><div hidden={tab!=='transfers'}><TransfersWorkspace {...props}/></div></>;}
 export function PersistedValetWorkspace({propertyId,sessionId,canManage}:{propertyId:string;sessionId:string;canManage:boolean}){
  const {query,mutation}=usePersistedValet(propertyId,sessionId);const busy=useRef(false);const [notice,setNotice]=useState('');const [requestsOpen,setRequestsOpen]=useState(false);const [vehicleFilters,setVehicleFilters]=useState<VehicleFilters>(initialVehicleFilters);
  const requestFilters=useOperationalRequestFilters();const returnFocus=useRef<HTMLElement|null>(null);const closeRequestsRef=useRef<HTMLButtonElement>(null);

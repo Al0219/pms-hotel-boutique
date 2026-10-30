@@ -4,6 +4,8 @@ import {router} from 'expo-router';
 import {NetworkError} from '@/data/remote/http/HttpError';
 import {GuestServiceRequestsList} from '@/modules/service-requests/presentation/GuestServiceRequestsList';
 import type {ServiceRequestFilter} from '@/modules/service-requests/domain/serviceRequestPresentation';
+jest.mock('@/modules/guest-auth/presentation/GuestAuthSessionProvider',()=>({useGuestAuthSession:()=>({session:{accountId:'guest'}})}));
+jest.mock('@/modules/valet/presentation/hooks/useTransfers',()=>({useTransfers:()=>({data:[],isPending:false,isFetching:false,isError:false,error:null,fetchStatus:'idle',refetch:jest.fn()}),useTransferMutations:()=>({cancel:{isPending:false,isError:false,error:null,reset:jest.fn(),mutate:jest.fn()}})}));
 const mockHousekeeping=jest.fn(),mockRoomService=jest.fn(),mockAmenities=jest.fn(),mockValet=jest.fn();
 jest.mock('@/modules/valet/presentation/hooks/usePersistedValet',()=>({useValetRequests:(...args:unknown[])=>mockValet(...args),useValetMutations:()=>({cancel:{isPending:false,isError:false,error:null,reset:jest.fn(),mutate:jest.fn()}})}));
 jest.mock('@/config/environment',()=>({environment:{useMockApi:false},requireApiBaseUrl:()=> 'https://pms.example.test'}));

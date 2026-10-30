@@ -1,3 +1,45 @@
+## Traslados — cierre DoD PASS
+
+Usuario confirma QA manual final TODO PASS. Conservados resultados previos; ajuste
+final limitado a etiquetas Hotel. Backend105, Web204 y Android87 PASS; cierre Hotel43
+PASS, lint/typecheck/diff-check PASS. Migraciones011/012, API y QA47 documentadas.
+Sin bloqueos locales conocidos. Preparar commits Backend/Android/Web y PR a main;
+no merge ni cambios BD. Entradas EN_QA siguientes son evidencia histórica.
+
+## Corrección checkout y selector — PASS técnico / EN_QA manual
+
+Guest y Staff comparten guard financiero: saldo verificable cero, sin cobrables
+pendientes ni DONE sin posting;409 sin mutar estancia/folio/documento. La solicitud
+con deuda era la regla anterior y queda sustituida por decisión del usuario.
+Android: vigentes por defecto, orden IN_HOUSE/RESERVED por llegada, búsqueda hotel/
+fechas, historial/rango en modal de embudo; selección y scope de cuenta preservados.
+Backend105 PASS (incluye27 OpenAPI), Android59 PASS; verify/JAR, lint/typecheck,
+export HTTP y diff-check PASS. Sin migración nueva ni despliegue; preservar6/6 V1.
+Siguiente: QA manual nuevo según Android47; sin commit/push/PR.
+
+## Traslados V2 — PASS técnico / EN_QA manual
+
+Conservar6/6 PASS manuales V1. Cargos GTQ autoritativos al DONE (posting único),
+estimados fuera del saldo y guard de checkout; limpieza2/día y8h, nueva franja18–19;
+Valet pull-to-refresh. Migración012 aditiva sin retrocobrar históricos/documentados.
+Backend102, Android97 y Web204 PASS; verify/OpenAPI, lint/typecheck/build/export y
+diff-check PASS. Solo PG técnico desechable; QA manual no desplegado ni modificado.
+Siguiente: respaldo/verificación y actualización exclusiva QA siguiendo Android47,
+validar únicamente los nuevos casos. Sin commit/push/PR. Contrato66 actualizado.
+
+## Evidencia V1 (histórica)
+
+## Traslados reales — PASS técnico, EN_QA manual
+
+Rama feature/valet-transfers-real desde origin/main bbdcb53, worktree /tmp/pms-transfers.
+Catálogo mock aprobado solo para Hotel Boutique Demo. TRANSFER persistido separado
+de custodia, reglas/seguridad/concurrencia de servicios y sin cargos; Android reutiliza
+formulario y Web incorpora vista separada. Contrato66 y Android47 contienen API y
+QA/comandos. Backend89 PASS (+38 finales solapados), Web47 y Android93 PASS;
+lint/typecheck, JAR/build Web/export Android y diff-check PASS. Solo PG técnico
+aislado, sin despliegue. No aplicar a BD habitual ni reseed; no commit/push/PR antes
+de PASS manual.
+
 ## 2026-10-30 — Cancelación Staff — COMPLETADA
 
 José confirma QA manual PASS y todos los checks del PR PASS. Publicados 7561f0d

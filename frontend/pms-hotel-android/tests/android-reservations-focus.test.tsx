@@ -8,8 +8,8 @@ jest.mock('@/config/environment', () => ({ environment: { useMockApi: false } })
 jest.mock('expo-router', () => ({ router: { replace: jest.fn() }, useLocalSearchParams: () => ({}), useFocusEffect: jest.fn((callback) => { mockFocusCallback = callback; }) }));
 it('fetches newly linked reservations on return to the existing reservations screen', async () => {
  const listForAccount=jest.fn().mockResolvedValueOnce([]).mockResolvedValue([
-  {reservationId:'r',reservationStayId:'new-stay',reference:'REAL-NEW',arrival:'2036-01-01',departure:'2036-01-03',roomLabel:null},
-  {reservationId:'r',reservationStayId:'second-stay',reference:'REAL-NEW',arrival:'2036-01-01',departure:'2036-01-03',roomLabel:null},
+  {statusLabel:'RESERVED',reservationId:'r',reservationStayId:'new-stay',reference:'REAL-NEW',arrival:'2036-01-01',departure:'2036-01-03',roomLabel:null},
+  {statusLabel:'RESERVED',reservationId:'r',reservationStayId:'second-stay',reference:'REAL-NEW',arrival:'2036-01-01',departure:'2036-01-03',roomLabel:null},
  ]);
  const client=new QueryClient({defaultOptions:{queries:{retry:false,gcTime:Infinity}}});
  const view=await render(<QueryClientProvider client={client}><GuestAuthSessionProvider initialSession={{accountId:'same-account'}}><ActiveReservationContextProvider><LinkedReservationsScreen service={{listForAccount}} /></ActiveReservationContextProvider></GuestAuthSessionProvider></QueryClientProvider>);

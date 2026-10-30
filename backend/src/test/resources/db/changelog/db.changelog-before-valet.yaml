@@ -26,3 +26,7 @@ databaseChangeLog:
       file: db/changelog/005ServiceOperations/009-stay-journey.yaml
   - include:
       file: db/changelog/005ServiceOperations/010-stay-document-files.yaml
+  - include:
+      file: db/changelog/005ServiceOperations/011-transfers.yaml
+  - include:
+      file: db/changelog/005ServiceOperations/012-transfer-billing.yaml

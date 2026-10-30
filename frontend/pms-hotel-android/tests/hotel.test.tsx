@@ -37,21 +37,15 @@ function GuestTestLayout() {
 }
 
 describe('Hotel — IMP-AND-0114', () => {
-  it('renders the central hotel profile without stay, request, mutation, or remote-state dependencies', async () => {
+  it('preserves Hotel cards with compact example contact data and without implementation notices', async () => {
     const ui = await render(<SessionServiceRequestsProvider><RequestProbe /><HotelScreen /></SessionServiceRequestsProvider>);
-
     expect(ui.getByText(hotelProfileFixture.name)).toBeTruthy();
-    expect(ui.getByTestId('hotel-status-indicator')).toHaveTextContent('Información en configuración');
-    expect(ui.getByText(hotelProfileFixture.description)).toBeTruthy();
-    expect(ui.getByText('Check-in · No disponible')).toBeTruthy();
-    expect(ui.getByText('Check-out · 12:00')).toBeTruthy();
-    expect(ui.getByText('Recepción · No disponible')).toBeTruthy();
-    expect(ui.getByText('Red · No disponible')).toBeTruthy();
-    expect(ui.getByText('Contraseña · No disponible')).toBeTruthy();
-    expect(ui.getAllByText('No disponible')).toHaveLength(2);
-    expect(ui.getByText('Ubicación no disponible')).toBeTruthy();
-    expect(ui.queryByText('Servicios disponibles')).toBeNull();
-    expect(ui.queryByRole('button', { name: 'Ver servicios' })).toBeNull();
+    for (const id of ['hotel-stay-info','hotel-wifi','hotel-contact','hotel-location']) expect(ui.getByTestId(id)).toBeTruthy();
+    expect(ui.getByText('Red · Hotel_Demo')).toBeTruthy();expect(ui.getByText('Contraseña · DemoWifi2026')).toBeTruthy();
+    expect(ui.getByText('recepcion@example.test')).toBeTruthy();expect(ui.getByText('Calle Ejemplo 123, Ciudad de Guatemala')).toBeTruthy();
+    expect(ui.queryByText(/Vista de demostración|Información en configuración|Consulta al equipo/)).toBeNull();
+    for (const id of ['hotel-wifi','hotel-contact','hotel-location']) expect(within(ui.getByTestId(id)).queryByRole('header', {name: /Ejemplo/})).toBeNull();
+    expect(ui.getByText('Wi‑Fi')).toBeTruthy();expect(ui.getByText('Contacto')).toBeTruthy();expect(ui.getByText('Ubicación')).toBeTruthy();
     expect(ui.getByTestId('hotel-requests')).toHaveTextContent('[]');
   });
 
@@ -78,7 +72,7 @@ describe('Hotel — IMP-AND-0114', () => {
     expect(require('fs').readFileSync('src/modules/account/presentation/AccountStayHubScreen.tsx', 'utf8')).toContain('<GuestRootHeader title="Inicio" />');
     expect(require('fs').readFileSync('src/modules/services/presentation/ServicesScreen.tsx', 'utf8')).toContain('<GuestRootHeader title="Servicios" />');
     expect(require('fs').readFileSync('src/modules/valet/presentation/ValetScreen.tsx', 'utf8')).toContain('<GuestRootHeader title="Valet" />');
-    expect(require('fs').readFileSync('src/modules/hotel/presentation/HotelScreen.tsx', 'utf8')).toContain('<GuestRootHeader title={profile.name} />');
+    expect(require('fs').readFileSync('src/modules/hotel/presentation/HotelScreen.tsx', 'utf8')).toContain('<GuestRootHeader title={hotelName} />');
   });
 
   it('uses the child header only in focused secondary service screens', () => {

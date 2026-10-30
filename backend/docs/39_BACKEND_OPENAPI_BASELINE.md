@@ -661,3 +661,19 @@ Paridad27 tests PASS:125 operaciones/103 paths/153 schemas/16 tags. No PAN/CVV e
 inputs ni recibos; cuerpos cerrados y errores seguros. Android y QA manual pendientes.
 
 PDF original010: GET/POST document-file Guest y Staff, DTO DocumentFile; paridad generada 129/105/154/16 validada por27 pruebas OpenAPI. Cuerpo de emisión vacío; base64/SHA-256 de bytes persistidos, permisos financieros existentes.
+
+## Traslados reales (feature/valet-transfers-real)
+
+Siete operaciones scoped nuevas: Guest catálogo/solicitudes/edición/cancelación y
+Staff listado/transiciones. OpenAPI validado:136 operaciones,111 paths,165 schemas,
+16 tags. Sin precios/cargos en DTOs de Traslados; Guest/Staff separados y no-store.
+
+## Traslados V2 — precios y estimados
+
+GET Guest transfer-prices scoped; importes Backend en ruta y estimatedTransfers
+separados del saldo. Paridad27 pruebas PASS:137 operaciones/112 paths/166 schemas/
+16 tags. Seis franjas Housekeeping, incluida18:00–19:00. Sin precio en inputs Guest.
+
+Integración de main9c7bd4e: se preservan cancelación Staff y Traslados. Paridad27
+pruebas PASS:139 operaciones/114 paths/170 schemas/16 tags. Compatibilidad
+financiera comprobada con18 pruebas de cancelación y12 de facturación Traslados.

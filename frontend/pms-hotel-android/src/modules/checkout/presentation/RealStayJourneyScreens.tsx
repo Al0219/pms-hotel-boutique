@@ -21,12 +21,13 @@ function FinancialSummary({value,provisional=false}:{value:JourneySummary;provis
  <Text style={s.heading}>{provisional?'Resumen provisional':'Folio de la reserva'}</Text>
  <View style={s.ticketRow}><Text style={s.ticketType}>TIPO</Text><Text style={s.ticketLabel}>CARGO</Text><Text style={s.ticketPrice}>PRECIO</Text></View>
  {value.movements.map(line=>{const item=ticketLine(line);return <View style={s.ticketRow} key={line.id}><Text style={s.ticketType}>{item.type}</Text><Text style={s.ticketLabel}>{item.label}</Text><Text style={s.ticketPrice}>{item.price}</Text></View>;})}
+ {(value.estimatedTransfers?.length??0)>0?<View testID="transfer-estimates"><Text style={s.body}>Traslados estimados · fuera del saldo</Text>{value.estimatedTransfers?.map(e=><View key={e.id} style={s.totalRow}><Text style={s.ticketLabel}>{e.description}</Text><Text style={s.body}>{ticketMoney(e.amount)}</Text></View>)}</View>:null}
  <View style={s.totalRow}><Text style={s.body}>Total de cargos</Text><Text style={s.body}>{ticketMoney(value.charges)}</Text></View>
  <View style={s.totalRow}><Text style={s.body}>Pagos acumulados</Text><Text style={s.body}>{ticketMoney(value.payments)}</Text></View>
  {value.adjustments!=='0.00'?<View style={s.totalRow}><Text style={s.body}>Ajustes</Text><Text style={s.body}>{ticketMoney(value.adjustments)}</Text></View>:null}
  <View style={s.totalRow}><Text style={s.heading}>Saldo restante</Text><Text style={s.heading}>{ticketMoney(value.balance)}</Text></View>
  {!value.verifiable?<Text style={s.error}>Saldo no verificable.</Text>:null}
- {value.pendingOrders>0?<Text style={s.error}>Room Service pendiente: {value.pendingOrders}.</Text>:null}
+ {value.pendingOrders>0?<Text style={s.error}>Servicios cobrables pendientes: {value.pendingOrders}.</Text>:null}
  {value.unpostedOrders>0?<Text style={s.error}>Pedidos entregados pendientes de contabilizar.</Text>:null}
  </View>;}
 export function RealJourneyAccountActions(){const scope=useJourneyScope();return scope.enabled?<AccountActions key={scope.identity}/>:null;}
@@ -53,6 +54,7 @@ function CheckoutWorkspace(){
  async function pullRefresh(){setRefreshing(true);try{await journey.refresh();}finally{setRefreshing(false);}}
  const out=state?.stay.status==='CHECKED_OUT',open=state?.requests.some(r=>r.kind==='CHECK_OUT'&&r.status==='OPEN');
  const due=summary?minor(summary.balance):null;
+ const checkoutBlocked=!summary?.verifiable||due===null||due!==0n||summary.pendingOrders>0||summary.unpostedOrders>0;
  const canPay=summary?.verifiable&&summary.unpostedOrders===0&&due!==null&&due>0n&&['RESERVED','IN_HOUSE'].includes(state?.stay.status??'');
  async function request(){if(await journey.request('CHECK_OUT'))setConfirming(false);}
  return <View style={s.screen} testID="real-checkout-screen"><GuestChildHeader title="Check-out y gastos" backAccessibilityLabel="Volver a inicio" onBack={()=>router.dismissTo('/account')}/>
@@ -62,7 +64,8 @@ function CheckoutWorkspace(){
     {journey.summary.isLoading?<Text style={s.body}>Consultando folio real…</Text>:journey.summary.isError?<Text style={s.error}>{errorText(journey.summary.error)}</Text>:summary?<FinancialSummary value={summary}/>:null}
     {canPay&&!journey.pendingPayment?<Button disabled={!journey.ready||journey.busy||journey.summary.isFetching} onPress={()=>setPaying(true)} testID="journey-open-payment">Abonar o pagar saldo</Button>:null}
     {journey.pendingPayment?<Button disabled={!journey.ready||journey.busy} onPress={()=>setPaying(true)} testID="journey-recover-payment">Recuperar pago pendiente</Button>:null}
-    {journey.pendingRequest?<Button disabled={!journey.ready||journey.busy} onPress={()=>void journey.request()} testID="journey-recover-request">Recuperar solicitud pendiente</Button>:state?.stay.status==='IN_HOUSE'?<Button disabled={open||journey.busy||!journey.ready||!summary} onPress={()=>setConfirming(true)} testID="journey-request-checkout">Solicitar check-out</Button>:null}
+    {!open&&summary?.verifiable&&due!==null&&due!==0n?<Text style={s.error}>Liquida el saldo antes de solicitar la salida.</Text>:null}
+    {journey.pendingRequest?<Button disabled={!journey.ready||journey.busy} onPress={()=>void journey.request()} testID="journey-recover-request">Recuperar solicitud pendiente</Button>:state?.stay.status==='IN_HOUSE'?<Button disabled={open||journey.busy||!journey.ready||!journey.summary.isSuccess||checkoutBlocked} onPress={()=>setConfirming(true)} testID="journey-request-checkout">Solicitar check-out</Button>:null}
     {out?<Button onPress={()=>router.push('/account/invoice')} testID="journey-open-document">Ver documento informativo</Button>:null}
    </>}
    {journey.message?<Text accessibilityLiveRegion="polite" style={s.body}>{journey.message}</Text>:null}{journey.error&&!paying?<Text accessibilityLiveRegion="polite" style={s.error}>{journey.error}</Text>:null}

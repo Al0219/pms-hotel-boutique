@@ -85,8 +85,7 @@ public class StaffStayLifecycleService {
                 travel.checkInAsStaff(stayId, context.actorId(), context.operationId());
             } else {
                 requireNoDebt(propertyId, reservationId);
-                billing.standardFolio(propertyId,reservationId);
-                billing.requireNoPending(propertyId,reservationId);
+                billing.requireCheckoutReady(propertyId,reservationId);
                 travel.checkOutAsStaff(stayId, context.actorId(), context.operationId());
             }
             entities.flush();

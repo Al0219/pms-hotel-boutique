@@ -12,7 +12,7 @@ export function projectGuestCleaningRequests(value: unknown, propertyId: string)
       || typeof r.confirmationCode !== 'string' || !r.confirmationCode.trim()
       || !(r.roomCode === null || typeof r.roomCode === 'string' && r.roomCode.trim())
       || typeof r.serviceDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(r.serviceDate) || !Number.isFinite(Date.parse(r.serviceDate))
-      || typeof r.timeSlot !== 'string' || !['09:00–10:00', '10:00–11:00', '11:00–12:00', '12:00–13:00', '14:00–15:00'].includes(r.timeSlot ?? '') || r.cleaningType !== 'FULL_CLEANING'
+      || typeof r.timeSlot !== 'string' || !['09:00–10:00', '10:00–11:00', '11:00–12:00', '12:00–13:00', '14:00–15:00', '18:00–19:00'].includes(r.timeSlot ?? '') || r.cleaningType !== 'FULL_CLEANING'
       || !(r.notes === null || typeof r.notes === 'string' && r.notes.length <= 500)
       || typeof r.updatedAt !== 'string' || !Number.isFinite(Date.parse(r.updatedAt))
       || !r.status || !['OPEN', 'IN_PROGRESS', 'DONE', 'CANCELLED'].includes(r.status)) throw new DomainMappingError('INVALID_GUEST_CLEANING_REQUEST');

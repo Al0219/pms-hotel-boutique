@@ -9,7 +9,7 @@ class HousekeepingSlotScheduleTests {
  private GuestServiceContext.Context context(LocalDate checkout,String zone) {
   return new GuestServiceContext.Context(UUID.randomUUID(),null,null,date.minusDays(1),checkout,"IN_HOUSE","CONFIRMED",zone);
  }
- @Test void allFiveSlotsResolveTheirActualStartInPropertyTimezone() {
+ @Test void allConfiguredSlotsResolveTheirActualStartInPropertyTimezone() {
   var c=context(date.plusDays(2),"America/Guatemala");
   for(String slot:GuestHousekeepingService.MVP_SLOTS) {
    assertDoesNotThrow(()->GuestHousekeepingService.validateSchedule(c,date,slot,Instant.parse("2030-01-02T14:00:00Z"),1800));
@@ -26,7 +26,7 @@ class HousekeepingSlotScheduleTests {
  @Test void checkoutChecksActualEndOnlyOnDeparture() {
   for(String slot:GuestHousekeepingService.MVP_SLOTS) {
    var c=context(date,"America/Guatemala");
-   if (slot.startsWith("12:")||slot.startsWith("14:")) assertThrows(ResponseStatusException.class,()->GuestHousekeepingService.validateSchedule(c,date,slot,Instant.parse("2030-01-02T13:00:00Z"),1800));
+   if (java.util.Set.of("12:00–13:00","14:00–15:00","18:00–19:00").contains(slot)) assertThrows(ResponseStatusException.class,()->GuestHousekeepingService.validateSchedule(c,date,slot,Instant.parse("2030-01-02T13:00:00Z"),1800));
    else assertDoesNotThrow(()->GuestHousekeepingService.validateSchedule(c,date,slot,Instant.parse("2030-01-02T13:00:00Z"),1800));
   }
  }

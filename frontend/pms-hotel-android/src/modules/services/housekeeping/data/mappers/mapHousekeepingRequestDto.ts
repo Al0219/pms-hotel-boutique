@@ -7,7 +7,7 @@ export function mapHousekeepingRequestDto(dto: HousekeepingRequestDto, context: 
   if (!dto || typeof dto.id !== 'string' || !dto.id.trim()
     || dto.reservationId !== context.reservationId || dto.stayId !== context.reservationStayId
     || !/^\d{4}-\d{2}-\d{2}$/.test(dto.serviceDate) || !Number.isFinite(Date.parse(dto.serviceDate))
-    || !['09:00–10:00', '10:00–11:00', '11:00–12:00', '12:00–13:00', '14:00–15:00'].includes(dto.timeSlot) || dto.cleaningType !== 'FULL_CLEANING'
+    || !['09:00–10:00', '10:00–11:00', '11:00–12:00', '12:00–13:00', '14:00–15:00', '18:00–19:00'].includes(dto.timeSlot) || dto.cleaningType !== 'FULL_CLEANING'
     || !(dto.notes === null || typeof dto.notes === 'string' && dto.notes.length <= 500)
     || !['OPEN', 'IN_PROGRESS', 'DONE', 'CANCELLED'].includes(dto.status)
     || typeof dto.updatedAt !== 'string' || !Number.isFinite(Date.parse(dto.updatedAt))

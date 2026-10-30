@@ -29,3 +29,9 @@ databaseChangeLog:
   - include:
       file: 010-stay-document-files.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 011-transfers.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 012-transfer-billing.yaml
+      relativeToChangelogFile: true

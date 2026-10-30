@@ -40,7 +40,10 @@ public class StayJourneyService {
     @io.swagger.v3.oas.annotations.media.Schema(name="StayJourneyDocument")
     public record Document(UUID id,Instant issuedAt,Summary snapshot){}
     @io.swagger.v3.oas.annotations.media.Schema(name="StayJourneySummary")
-    public record Summary(Stay stay,UUID folioId,String currency,String balance,String charges,String payments,String adjustments,boolean verifiable,int pendingOrders,int unpostedOrders,List<Line> movements,List<Request> requests,UUID documentId,String disclaimer){}
+    public record Estimate(UUID id,String description,String amount){}
+    public record Summary(Stay stay,UUID folioId,String currency,String balance,String charges,String payments,String adjustments,boolean verifiable,int pendingOrders,int unpostedOrders,List<Line> movements,List<Request> requests,UUID documentId,String disclaimer,List<Estimate> estimatedTransfers){
+        public Summary(Stay stay,UUID folioId,String currency,String balance,String charges,String payments,String adjustments,boolean verifiable,int pendingOrders,int unpostedOrders,List<Line> movements,List<Request> requests,UUID documentId,String disclaimer){this(stay,folioId,currency,balance,charges,payments,adjustments,verifiable,pendingOrders,unpostedOrders,movements,requests,documentId,disclaimer,List.of());}
+    }
     @io.swagger.v3.oas.annotations.media.Schema(additionalProperties=io.swagger.v3.oas.annotations.media.Schema.AdditionalPropertiesValue.FALSE)
     public record PaymentInput(String amount,String currency,String instrumentToken){
         @com.fasterxml.jackson.annotation.JsonAnySetter public void reject(String k,Object v){throw new IllegalArgumentException("Unknown payment field");}
@@ -97,7 +100,10 @@ public class StayJourneyService {
             LocalDate today=LocalDate.now(ZoneId.of(current.timezone));
             if(!current.status.equals("RESERVED")||today.isBefore(current.arrival)||!today.isBefore(current.departure)
                 ||!jdbc.sql("SELECT status='CONFIRMED' FROM reservations WHERE id=:r").param("r",r).query(Boolean.class).single())throw conflict("CHECK_IN_UNAVAILABLE");
-        }else if(!current.status.equals("IN_HOUSE"))throw conflict("CHECK_OUT_UNAVAILABLE");
+        }else {
+            if(!current.status.equals("IN_HOUSE"))throw conflict("CHECK_OUT_UNAVAILABLE");
+            billing.requireCheckoutReady(current.propertyId,r);
+        }
         UUID id=UUID.randomUUID();jdbc.sql("INSERT INTO stay_journey_requests(id,property_id,reservation_id,stay_id,guest_account_id,kind,status,request_key,expected_stay_updated_at) VALUES(:id,:p,:r,:s,:a,:kind,'OPEN',:key,:expected)")
             .param("id",id).param("p",current.propertyId).param("r",r).param("s",s).param("a",a.guestAccountId()).param("kind",input.kind).param("key",key).param("expected",java.sql.Timestamp.from(input.expectedUpdatedAt)).update();
         event(ActorType.GUEST,a.guestAccountId(),current,"STAY_"+input.kind+"_REQUESTED",id,id);
@@ -115,10 +121,10 @@ public class StayJourneyService {
         for(var line:lines){long value=new BigDecimal(line.amount).movePointRight(2).longValueExact();balance=Math.addExact(balance,value);
             switch(line.kind){case "CHARGE" -> charges=Math.addExact(charges,value);case "PAYMENT" -> payments=Math.addExact(payments,Math.negateExact(value));default -> adjustments=Math.addExact(adjustments,value);}
         }
-        int pending=jdbc.sql("SELECT count(*) FROM service_requests sr JOIN room_service_orders o ON o.id=sr.id WHERE sr.property_id=:p AND sr.reservation_id=:r AND o.total_minor>0 AND sr.status IN ('OPEN','IN_PROGRESS')").param("p",s.propertyId).param("r",s.reservationId).query(Integer.class).single();
-        int unposted=jdbc.sql("SELECT count(*) FROM service_requests sr JOIN room_service_orders o ON o.id=sr.id LEFT JOIN room_service_folio_postings b ON b.order_id=o.id WHERE sr.property_id=:p AND sr.reservation_id=:r AND sr.status='DONE' AND b.order_id IS NULL AND o.total_minor>0").param("p",s.propertyId).param("r",s.reservationId).query(Integer.class).single();
+        int pending=jdbc.sql("SELECT count(*) FROM service_requests sr JOIN billable_service_orders o ON o.id=sr.id WHERE sr.property_id=:p AND sr.reservation_id=:r AND o.total_minor>0 AND sr.status IN ('OPEN','IN_PROGRESS')").param("p",s.propertyId).param("r",s.reservationId).query(Integer.class).single();
+        int unposted=jdbc.sql("SELECT count(*) FROM service_requests sr JOIN billable_service_orders o ON o.id=sr.id LEFT JOIN billable_service_postings b ON b.order_id=o.id WHERE sr.property_id=:p AND sr.reservation_id=:r AND sr.status='DONE' AND b.order_id IS NULL AND o.total_minor>0").param("p",s.propertyId).param("r",s.reservationId).query(Integer.class).single();
         var doc=jdbc.sql("SELECT id FROM stay_informative_documents WHERE stay_id=:s AND property_id=:p").param("s",s.stayId).param("p",s.propertyId).query(UUID.class).optional().orElse(null);
-        return new Summary(s,folio,"GTQ",money(balance),money(charges),money(payments),money(adjustments),!lines.isEmpty(),pending,unposted,lines,requests(s),doc,DISCLAIMER);
+        return new Summary(s,folio,"GTQ",money(balance),money(charges),money(payments),money(adjustments),!lines.isEmpty(),pending,unposted,lines,requests(s),doc,DISCLAIMER,jdbc.sql("SELECT sr.id,o.description,o.total_minor FROM service_requests sr JOIN billable_service_orders o ON o.id=sr.id WHERE sr.property_id=:p AND sr.reservation_id=:r AND sr.stay_id=:s AND o.category='TRANSFER' AND o.total_minor>0 AND sr.status IN ('OPEN','IN_PROGRESS') ORDER BY sr.created_at,sr.id").param("p",s.propertyId).param("r",s.reservationId).param("s",s.stayId).query((rs,n)->new Estimate(rs.getObject("id",UUID.class),rs.getString("description"),money(rs.getLong("total_minor")))).list());
     }
     public Payment guestPay(GuestPrincipal p,UUID r,UUID s,String key,PaymentInput input){var a=guest(p);return pay(guestStay(a,r,s,true),ActorType.GUEST,a.guestAccountId(),key,input);}
     public Payment staffPay(StaffPrincipal p,UUID property,UUID r,UUID s,String key,PaymentInput input){var actor=staff(p,property,"FOLIO_PAYMENT_OPERATE");return pay(stay(r,s,property),ActorType.STAFF,actor,key,input);}

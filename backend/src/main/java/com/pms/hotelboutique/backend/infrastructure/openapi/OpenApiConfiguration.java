@@ -137,6 +137,7 @@ public class OpenApiConfiguration {
                         || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.guestauth.api.GuestSavedValetController.class)
                         || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.guestauth.api.GuestValetController.class)
                         || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.guestauth.api.GuestAmenitiesController.class)
+                        || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.guestauth.api.GuestTransferController.class)
                         || (handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.guestauth.api.GuestAuthController.class)
                             && !Set.of("start", "exchange").contains(handler.getMethod().getName())))) {
                     operation.addExtension("x-audience", "guest-bff-or-native");
@@ -160,6 +161,7 @@ public class OpenApiConfiguration {
                     || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.reservations.api.StaffStayJourneyController.class)
                     || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.operations.api.StaffValetController.class)
                     || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.operations.api.StaffValetVehicleController.class)
+                    || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.operations.api.StaffTransferController.class)
                     || handler.getBeanType().equals(com.pms.hotelboutique.backend.modules.operations.api.StaffAmenitiesController.class)) {
                 operation.addExtension("x-audience", "staff");
             }
