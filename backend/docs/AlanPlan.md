@@ -1,3 +1,24 @@
+## 2026-10-29 — Cancelación Staff con penalización — EN_QA
+
+Contrato [66](66_STAFF_RESERVATION_CANCELLATION_MVP_CONTRACT.md) confirmado por
+José: 10% del alojamiento original, HALF_UP, excedente como crédito y faltante
+como deuda. BD2-LC-001 / IMP-WEB-0303; owner José/full stack, revisión colaborativa
+BD1/BD3/WEB-4. Preview y confirmación scoped, motivo, compensación/penalización
+append-only, locks, idempotencia y recuperación del recibo tras perder conexión.
+MVP total antes de entrada, sin refunds, PSP, roles nuevos ni migraciones propias.
+Backend: 31 pruebas nuevas y regresión completa por lotes (149 clases/1,294 tests)
+PASS. Web: 25 nuevas, tipos, lint y build PASS. QA real público/Staff, deuda/crédito,
+SuperAdmin y móvil PASS; historial e inventario previo intactos. Las 2 migraciones
+aplicadas al entorno local ya pertenecían a main. Evidencia: %TEMP%/pms-staff-cancellation-qa.
+Límite de CI: cuatro timeouts Web de pruebas existentes; tres reproducidos con la
+pantalla publicada y asignación fluctuante. Ver contrato66; no se declara suite
+Web global PASS. staff-admin.test.tsx previo se conserva separado y sin cambios.
+QA manual aprobado por José, incluida la etiqueta «Saldo a favor del cliente» y
+el diálogo con contenido desplazable y acciones visibles. Regresión UI de esta
+corrección: 14 tests PASS; navegador: 23 comprobaciones PASS, escritorio/móvil,
+rueda/teclado/táctil. Rama feature/staff-reservation-cancellation desde b11efa7.
+Publicación autorizada; pendiente CI y estabilizar esos tests para el cierre global.
+
 ## 2026-10-29 — Integración de origin/main: conflictos resueltos, validación local PASS
 
 Integrado ba70022 en feature/staff-reservation-detail por autorización de José.

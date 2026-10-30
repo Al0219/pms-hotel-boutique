@@ -67,7 +67,7 @@ function Ledger({ folioId, ...props }: Props & { folioId: string }) {
     {detail.isPending && <p role="status">Consultando saldo…</p>}
     {detail.isError && <div><p role="alert" className={styles.error}>{readError(detail.error)}</p><button className={styles.secondary} onClick={() => void detail.refetch()}>Reintentar saldo</button></div>}
     {data && <>
-      <div className={styles.balance}><div><span>{data.movementCount === 0 ? 'Saldo sin verificar' : debt ? 'Saldo pendiente' : ledgerMinor(data.balance) < 0n ? 'Saldo a favor' : 'Sin saldo pendiente'}</span>
+      <div className={styles.balance}><div><span>{data.movementCount === 0 ? 'Saldo sin verificar' : debt ? 'Saldo pendiente' : ledgerMinor(data.balance) < 0n ? (data.folio.type === 'GUEST' ? 'Saldo a favor del cliente' : 'Saldo a favor') : 'Sin saldo pendiente'}</span>
         <strong>{data.movementCount === 0 ? 'No verificable' : formatLedgerMoney(data.balance)}</strong></div>
         <span className={styles.tag}>{data.folio.type === 'GUEST' ? 'Cuenta de huésped' : data.folio.type === 'MASTER' ? 'Cuenta maestra' : 'Cuenta de empresa'}</span></div>
       {data.movementCount === 0 && <p className={styles.warning}>No hay movimientos. Un folio vacío no acredita que la reserva esté pagada.</p>}

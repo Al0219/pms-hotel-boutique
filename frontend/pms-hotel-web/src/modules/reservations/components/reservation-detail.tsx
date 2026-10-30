@@ -16,6 +16,7 @@ import { RoomAssignment } from './room-assignment';
 import { StayLifecycleActions } from './stay-lifecycle-actions';
 import { staffReservationsEndpoint } from '../service/staff-reservation-read.service';
 import { StaffReservationOverview } from './staff-reservation-overview';
+import { StaffReservationCancellation } from './staff-reservation-cancellation';
 
 import styles from "./reservation-detail.module.css";
 
@@ -214,6 +215,9 @@ export function ReservationDetail({ propertyId, endpoint, reservationId, session
               Cancelar reserva
             </button>
           ) : null}
+          {endpoint === staffReservationsEndpoint && canManage && folioAccess && sessionId
+            && <StaffReservationCancellation key={`${sessionId}:${propertyId}:${reservationId}`}
+              propertyId={propertyId} reservationId={reservationId} sessionId={sessionId} cancelled={detail.status === 'CANCELLED'} />}
           {noShowPending ? (
             <button
               className={styles.cancelAction}
