@@ -1,3 +1,11 @@
+## Regla vigente — check-out Guest/Staff (iteración Traslados)
+
+Decisión explícita del usuario: solicitud Guest anticipada solo con saldo verificable
+cero y sin servicios cobrables OPEN/IN_PROGRESS ni DONE sin contabilizar. Mismo guard
+financiero y lock que Staff;409 sin cambiar estancia/folio/documento. Replay de una
+operación ya confirmada conserva su recibo. Sustituye la anterior solicitud con deuda;
+PASS manuales anteriores permanecen como evidencia histórica. Cambios nuevos EN_QA.
+
 ## Cierre final — PASS manual confirmado
 
 El usuario confirma PASS manual completo del MVP: check-in/out, pagos, PDF original,
@@ -17,7 +25,8 @@ en `/tmp/pms-stay-audit/AUDIT_AND_CONTRACT_PROPOSAL.md`; no se amplía esa audit
 - Reutiliza lifecycle54. Guest solicita CHECK_IN desde arrival según timezone de
   propiedad; Staff confirma con los botones existentes o realiza entrada presencial.
   Solicitar no cambia la estancia. No exige Room lista para solicitar; sí para entrar.
-- CHECK_OUT admite solicitud anticipada durante IN_HOUSE y con deuda. Staff solo
+- CHECK_OUT admite solicitud anticipada durante IN_HOUSE con saldo cero y sin
+  servicios cobrables sin resolver. Staff solo
   confirma con contabilidad verificable y **saldo exactamente cero**. Se preservan
   Room INSPECTED al entrar, DIRTY al salir, CAS, permisos, locks y auditoría.
 - Finanzas MVP: una estancia, un folio GUEST, GTQ, sin grupo empresarial. Casos no
@@ -158,7 +167,7 @@ QA, evidencia y comandos seguros de arranque/Expo en
    fecha local y confirmar Staff con Room INSPECTED; también entrada presencial.
 2. Fecha futura/room no lista: petición futura rechazada; Staff no entrega habitación
    bloqueada/sucia. Guest no completa entrada/salida por llamadas Staff.
-3. Pedir salida antes de departure con deuda: OPEN persistida, stay IN_HOUSE.
+3. Pedir salida antes de departure con deuda:409, sin solicitud nueva; stay IN_HOUSE.
 4. Room Service OPEN/IP cobrable bloquea; DONE crea un cargo del total guardado,
    repetir no duplica. Catálogo editado no cambia cargo. Cancelado/estimado/no cobrable
    no agrega deuda. DONE histórico requiere acción explícita de contabilización.

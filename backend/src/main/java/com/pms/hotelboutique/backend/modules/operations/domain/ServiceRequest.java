@@ -28,6 +28,7 @@ public class ServiceRequest {
         HOUSEKEEPING,
         ROOM_SERVICE,
         AMENITIES,
+        TRANSFER,
         MAINTENANCE,
         OTHER
     }

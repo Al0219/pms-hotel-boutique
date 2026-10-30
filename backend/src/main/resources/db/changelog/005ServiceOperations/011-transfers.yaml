@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-transfers-011
+      author: pms
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE service_requests DROP CONSTRAINT ck_sr_category;
+              ALTER TABLE service_requests ADD CONSTRAINT ck_sr_category CHECK(category IN ('CONCIERGE','VALET','HOUSEKEEPING','ROOM_SERVICE','AMENITIES','TRANSFER','MAINTENANCE','OTHER'));
+              CREATE TABLE transfer_requests (
+                id uuid PRIMARY KEY, stay_id uuid NOT NULL REFERENCES reservation_stays(id),
+                guest_account_id uuid NOT NULL REFERENCES guest_accounts(id),
+                request_key varchar(100) NOT NULL, initial_payload_hash varchar(64) NOT NULL,
+                current_payload_hash varchar(64) NOT NULL, service_date date NOT NULL,
+                delivery_time time NOT NULL, route_snapshot jsonb NOT NULL CHECK(jsonb_exists_all(route_snapshot,ARRAY['origin','destination','passengers']) AND (route_snapshot->>'passengers')::int BETWEEN 1 AND 3),
+                UNIQUE(stay_id,guest_account_id,request_key),
+                FOREIGN KEY(id,stay_id) REFERENCES service_requests(id,stay_id)
+              );

@@ -18,12 +18,14 @@ import org.springframework.validation.annotation.Validated;
 @Transactional
 public class ServiceRequestServiceImpl implements ServiceRequestService {
 
+    private final HousekeepingSchedulePolicy housekeepingPolicy;
     private final ServiceRequestRepository requests;
     private final AuditService audit;
     private final com.pms.hotelboutique.backend.modules.reservations.application.RoomServiceBillingService billing;
     private final jakarta.persistence.EntityManager entities;
 
-    public ServiceRequestServiceImpl(ServiceRequestRepository requests, AuditService audit, com.pms.hotelboutique.backend.modules.reservations.application.RoomServiceBillingService billing, jakarta.persistence.EntityManager entities) {
+    public ServiceRequestServiceImpl(ServiceRequestRepository requests, AuditService audit, com.pms.hotelboutique.backend.modules.reservations.application.RoomServiceBillingService billing, jakarta.persistence.EntityManager entities, HousekeepingSchedulePolicy housekeepingPolicy) {
+        this.housekeepingPolicy=housekeepingPolicy;
         this.requests = requests;
         this.audit = audit; this.billing=billing;this.entities=entities;
     }
@@ -36,6 +38,7 @@ public class ServiceRequestServiceImpl implements ServiceRequestService {
             var pending=((Number)entities.createNativeQuery("SELECT count(*) FROM stay_journey_requests WHERE stay_id=?1 AND kind='CHECK_OUT' AND status='OPEN'").setParameter(1,command.stayId()).getSingleResult()).longValue();
             if(pending>0||"CHECKED_OUT".equals(rows.get(0)))throw new ServiceIntakeClosed();
         }
+        if(command.category()==ServiceRequest.Category.HOUSEKEEPING)housekeepingPolicy.validate(command.propertyId(),command.stayId(),command.dueAt(),null);
         Instant now = Instant.now();
         ServiceRequest request = new ServiceRequest(UUID.randomUUID(), command.propertyId(),
                 command.category(), command.subject(), now);
@@ -118,6 +121,7 @@ public class ServiceRequestServiceImpl implements ServiceRequestService {
     private ServiceRequestView transition(UUID requestId, String action, UUID actorId,
             RequestTransition transition) {
         ServiceRequest request = existing(requestId);
+        if(action.equals("REQUEST_REOPENED")&&request.getCategory()==ServiceRequest.Category.HOUSEKEEPING){housekeepingPolicy.validate(request.getPropertyId(),request.getStayId(),request.getDueAt(),requestId);entities.refresh(request);}
         boolean persistedOrder=billing.beforeTransition(requestId,action);
         if(persistedOrder){
             entities.refresh(request);

@@ -59,7 +59,7 @@ class StayJourneyMvpIntegrationTests {
  @Test void guestRequestsStaffConfirmsAndPaymentsProduceRecoverableImmutableDocument()throws Exception{
   request("CHECK_IN",UUID.randomUUID().toString());assertEquals("RESERVED",jdbc.queryForObject("SELECT status FROM reservation_stays WHERE id=?",String.class,stay));
   mvc.perform(travel("check-in",UUID.randomUUID().toString())).andExpect(status().isOk());
-  request("CHECK_OUT",UUID.randomUUID().toString()); // Early request with debt is allowed; Staff remains authoritative.
+  mvc.perform(post(path()+"/requests").header("Authorization",bearer(guest)).header("Idempotency-Key",UUID.randomUUID().toString()).contentType("application/json").content(json.writeValueAsString(Map.of("kind","CHECK_OUT","expectedUpdatedAt",version())))).andExpect(status().isConflict());
   mvc.perform(travel("check-out",UUID.randomUUID().toString())).andExpect(status().isConflict());
   for(String t:List.of("demo_card_declined","demo_gateway_error"))mvc.perform(payment(UUID.randomUUID().toString(),"30.00",t)).andExpect(status().isOk()).andExpect(jsonPath("$.movementId").isEmpty());
   assertEquals(10000,balance());String key=UUID.randomUUID().toString();
@@ -67,6 +67,7 @@ class StayJourneyMvpIntegrationTests {
   assertEquals(first,mvc.perform(payment(key,"30.00","demo_visa_approved")).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());assertEquals(7000,balance());
   mvc.perform(travel("check-out",UUID.randomUUID().toString())).andExpect(status().isConflict());
   mvc.perform(payment(UUID.randomUUID().toString(),"70.00","demo_mastercard_approved")).andExpect(status().isOk());
+  request("CHECK_OUT",UUID.randomUUID().toString());
   var checkout=travel("check-out",UUID.randomUUID().toString());mvc.perform(checkout).andExpect(status().isOk());mvc.perform(checkout).andExpect(status().isOk());
   String doc=mvc.perform(get(path()+"/document").header("Authorization",bearer(guest))).andExpect(status().isOk()).andExpect(jsonPath("$.snapshot.disclaimer").value("Documento informativo — sin validez fiscal")).andExpect(jsonPath("$.snapshot.balance").value("0.00")).andExpect(jsonPath("$.snapshot.charges").value("100.00")).andExpect(jsonPath("$.snapshot.payments").value("100.00")).andReturn().getResponse().getContentAsString();
   jdbc.update("UPDATE guest_profiles SET first_name='Changed' WHERE id=?",profile);
@@ -137,25 +138,26 @@ class StayJourneyMvpIntegrationTests {
   mvc.perform(travel("check-out",UUID.randomUUID().toString())).andExpect(status().isConflict());
  }
  @Autowired ServiceRequestService serviceIntake;
- private ServiceRequestService.OpenRequestCommand intake(UUID target,com.pms.hotelboutique.backend.modules.operations.domain.ServiceRequest.Category category){return new ServiceRequestService.OpenRequestCommand(PROPERTY,category,"QA service",null,null,reservation,target,null,profile,null,null);}
+ private ServiceRequestService.OpenRequestCommand intake(UUID target,com.pms.hotelboutique.backend.modules.operations.domain.ServiceRequest.Category category){return new ServiceRequestService.OpenRequestCommand(PROPERTY,category,"QA service",null,null,reservation,target,null,profile,null,category==com.pms.hotelboutique.backend.modules.operations.domain.ServiceRequest.Category.HOUSEKEEPING?Instant.now().plusSeconds(86400):null);}
  @Test void checkoutIntakeIsStayScopedAndExistingRequestsRemainManageable()throws Exception{
   jdbc.update("UPDATE reservation_stays SET status='IN_HOUSE' WHERE id=?",stay);
   var previous=serviceIntake.openRequest(intake(stay,com.pms.hotelboutique.backend.modules.operations.domain.ServiceRequest.Category.HOUSEKEEPING));
-  UUID other=UUID.randomUUID();jdbc.update("INSERT INTO reservation_stays(id,reservation_id,property_id,room_type_id,arrival,departure,status,created_at,updated_at) SELECT ?,reservation_id,property_id,room_type_id,arrival,departure,'IN_HOUSE',now(),now() FROM reservation_stays WHERE id=?",other,stay);
+  mvc.perform(payment(UUID.randomUUID().toString(),"100.00","demo_visa_approved")).andExpect(status().isOk());
   request("CHECK_OUT",UUID.randomUUID().toString());
+  UUID other=UUID.randomUUID();jdbc.update("INSERT INTO reservation_stays(id,reservation_id,property_id,room_type_id,arrival,departure,status,created_at,updated_at) SELECT ?,reservation_id,property_id,room_type_id,arrival,departure,'IN_HOUSE',now(),now() FROM reservation_stays WHERE id=?",other,stay);
   for(var category:List.of(com.pms.hotelboutique.backend.modules.operations.domain.ServiceRequest.Category.ROOM_SERVICE,com.pms.hotelboutique.backend.modules.operations.domain.ServiceRequest.Category.AMENITIES,com.pms.hotelboutique.backend.modules.operations.domain.ServiceRequest.Category.VALET,com.pms.hotelboutique.backend.modules.operations.domain.ServiceRequest.Category.HOUSEKEEPING))assertThrows(ServiceIntakeClosed.class,()->serviceIntake.openRequest(intake(stay,category)));
   assertNotNull(serviceIntake.openRequest(intake(other,com.pms.hotelboutique.backend.modules.operations.domain.ServiceRequest.Category.HOUSEKEEPING)));
   assertNotNull(serviceIntake.startProgress(previous.id(),staff.staffUserId()));
-  assertEquals(10000,balance());
+  assertEquals(0,balance());
  }
  @Test void checkoutAndServiceCreationRaceHasASerialOutcome()throws Exception{
-  jdbc.update("UPDATE reservation_stays SET status='IN_HOUSE' WHERE id=?",stay);String version=version();var gate=new CountDownLatch(1);
+  jdbc.update("UPDATE reservation_stays SET status='IN_HOUSE' WHERE id=?",stay);mvc.perform(payment(UUID.randomUUID().toString(),"100.00","demo_visa_approved")).andExpect(status().isOk());String version=version();var gate=new CountDownLatch(1);
   try(var pool=Executors.newFixedThreadPool(2)){
    var checkout=pool.submit(()->{gate.await();return journey.request(guest,reservation,stay,UUID.randomUUID().toString(),new StayJourneyService.RequestInput("CHECK_OUT",Instant.parse(version)));});
    var service=pool.submit(()->{gate.await();try{serviceIntake.openRequest(intake(stay,com.pms.hotelboutique.backend.modules.operations.domain.ServiceRequest.Category.AMENITIES));return true;}catch(ServiceIntakeClosed e){return false;}});gate.countDown();assertEquals("OPEN",checkout.get(30,TimeUnit.SECONDS).status());service.get(30,TimeUnit.SECONDS);
   }
   assertThrows(ServiceIntakeClosed.class,()->serviceIntake.openRequest(intake(stay,com.pms.hotelboutique.backend.modules.operations.domain.ServiceRequest.Category.VALET)));
-  assertEquals(10000,balance());
+  assertEquals(0,balance());
  }
  @Test void emissionRejectsClientSuppliedContent()throws Exception{mvc.perform(post(path()+"/document-file").header("Authorization",bearer(guest)).contentType("application/json").content("{\"pdfBase64\":\"not-authoritative\"}")).andExpect(status().isBadRequest());}
  @Test void guestIssuesAndStaffRecoversOriginalOverHttp()throws Exception{issueAndRead(true);}
@@ -189,6 +191,7 @@ class StayJourneyMvpIntegrationTests {
  }
  @Test void checkoutRequestRejectsNewServicesWithoutCreatingOrders()throws Exception{
   jdbc.update("UPDATE reservation_stays SET status='IN_HOUSE' WHERE id=?",stay);
+  mvc.perform(payment(UUID.randomUUID().toString(),"100.00","demo_visa_approved")).andExpect(status().isOk());
   request("CHECK_OUT",UUID.randomUUID().toString());
   UUID product=jdbc.queryForObject("SELECT id FROM room_service_products WHERE property_id=? AND code='coffee'",UUID.class,PROPERTY);
   String body=json.writeValueAsString(Map.of("serviceDate",LocalDate.now(ZoneId.of("America/Guatemala")).plusDays(1).toString(),"deliveryTime","09:00","items",List.of(Map.of("productId",product,"quantity",1,"mealPeriod","BEVERAGES")),"notes",""));

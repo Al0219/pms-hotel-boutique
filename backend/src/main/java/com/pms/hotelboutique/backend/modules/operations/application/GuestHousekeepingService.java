@@ -20,8 +20,9 @@ import org.springframework.web.server.ResponseStatusException;
 @Transactional
 public class GuestHousekeepingService {
     public static final String MVP_SLOT = "10:00–11:00";
-    public static final Set<String> MVP_SLOTS = Set.of("09:00–10:00", MVP_SLOT, "11:00–12:00", "12:00–13:00", "14:00–15:00");
+    public static final Set<String> MVP_SLOTS = Set.of("09:00–10:00", MVP_SLOT, "11:00–12:00", "12:00–13:00", "14:00–15:00", "18:00–19:00");
     public static final String MVP_TYPE = "FULL_CLEANING";
+    private final HousekeepingSchedulePolicy schedulePolicy;
     private final GuestAuthService auth;
     private final GuestServiceContext contexts;
     private final ServiceRequestService operations;
@@ -30,7 +31,8 @@ public class GuestHousekeepingService {
     private final EntityManager entities;
 
     public GuestHousekeepingService(GuestAuthService auth, GuestServiceContext contexts,
-            ServiceRequestService operations, ServiceRequestRepository requests, AuditService audit, EntityManager entities) {
+            ServiceRequestService operations, ServiceRequestRepository requests, AuditService audit, EntityManager entities, HousekeepingSchedulePolicy schedulePolicy) {
+        this.schedulePolicy=schedulePolicy;
         this.auth = auth; this.contexts = contexts; this.operations = operations; this.requests = requests; this.audit = audit; this.entities = entities;
     }
 
@@ -117,6 +119,7 @@ public class GuestHousekeepingService {
         if (normalized != null && normalized.length() > 500) throw invalid();
         boolean sameSchedule = date.equals(request.getServiceDate()) && slot.equals(request.getTimeSlot());
         validateSchedule(c, date, slot, now, sameSchedule ? 25 * 60 : 30 * 60);
+        schedulePolicy.validate(c.propertyId(),stayId,serviceInstant(c,date,slot),requestId);
         // Exact PUT retry/no-op: same row, no second audit, including a stale original version.
         if (sameSchedule && type.equals(request.getCleaningType()) && Objects.equals(normalized, request.getDetail()))
             return RequestView.from(request);

@@ -202,13 +202,13 @@ class HousekeepingRealActionsIntegrationTests {
             var op=doc.path("paths").path(endpoint.getKey()).path(endpoint.getValue());assertTrue(op.path("security").get(0).has("guestBearerAuth"));assertTrue(op.path("responses").has("409"));
         }
         var schema=doc.path("components").path("schemas").path("GuestHousekeepingRequest").path("properties");
-        assertTrue(doc.path("components").path("schemas").path("CreateGuestHousekeeping").path("properties").path("timeSlot").path("enum").size()==5);
+        assertTrue(doc.path("components").path("schemas").path("CreateGuestHousekeeping").path("properties").path("timeSlot").path("enum").size()==6);
         assertTrue(schema.has("updatedAt"));assertTrue(schema.has("modifiableUntil"));
         var staff=doc.path("paths").path("/api/v1/properties/{propertyId}/service-requests/housekeeping/{requestId}/status").path("put");
         assertTrue(staff.path("security").get(0).has("bearerAuth"));assertTrue(staff.path("description").asText().contains("OPERATIONS_MANAGE"));assertTrue(staff.path("responses").has("403"));
         assertFalse(doc.path("paths").path(guest).has("delete"));
     }
-    @Test void fiveSlotsPersistAndReprogramWithoutChangingIdentityOrRetrySemantics() throws Exception {
+    @Test void sixSlotsPersistAndReprogramWithoutChangingIdentityOrRetrySemantics() throws Exception {
         for(String slot:com.pms.hotelboutique.backend.modules.operations.application.GuestHousekeepingService.MVP_SLOTS) {
             var payload=new java.util.HashMap<String,Object>(body());payload.put("timeSlot",slot);var key=UUID.randomUUID().toString();
             var row=json.readTree(mvc.perform(create(key,payload)).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
@@ -220,8 +220,10 @@ class HousekeepingRealActionsIntegrationTests {
                 mvc.perform(edit(row,changes)).andExpect(status().isOk()).andExpect(jsonPath("$.id").value(row.path("id").asText())).andExpect(jsonPath("$.timeSlot").value("14:00–15:00"));
                 assertEquals(date.atTime(14,0).atZone(java.time.ZoneId.of("America/Guatemala")).toInstant(),jdbc.queryForObject("SELECT due_at FROM service_requests WHERE id=?",java.sql.Timestamp.class,UUID.fromString(row.path("id").asText())).toInstant());
             }
+            var currentVersion=jdbc.queryForObject("select updated_at from service_requests where id=?",java.sql.Timestamp.class,UUID.fromString(row.path("id").asText())).toInstant();
+            mvc.perform(post(item(row)+"/cancel").header("Authorization",bearer(guest)).contentType("application/json").content(json.writeValueAsString(Map.of("expectedUpdatedAt",currentVersion)))).andExpect(status().isOk());
         }
-        assertEquals(5,jdbc.queryForObject("SELECT count(*) FROM service_requests WHERE stay_id=?",Integer.class,stay));
+        assertEquals(6,jdbc.queryForObject("SELECT count(*) FROM service_requests WHERE stay_id=?",Integer.class,stay));
         mvc.perform(get(detail(reservation,stay)).header("Authorization",bearer(guest))).andExpect(status().isOk()).andExpect(jsonPath("$.timezone").value("America/Guatemala"));
     }
     private String detail(UUID r, UUID s) { return PATH+"/"+r+"/stays/"+s; }
