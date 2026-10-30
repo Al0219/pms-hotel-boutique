@@ -55,6 +55,10 @@ describe('ExpoInvoiceDocumentService', () => {
     startActivityAsync.mockResolvedValue(undefined);
   });
 
+  it('stores original Backend PDF bytes without invoking the PDF renderer',async()=>{
+    const file={documentId:'11111111-1111-4111-8111-111111111111',pdfBase64:printedBase64,sha256:'a'.repeat(64),createdAt:'2030-01-02T00:00:00Z'};
+    const service=new ExpoInvoiceDocumentService();await service.materialize(file);expect(printToFileAsync).not.toHaveBeenCalled();expect(destination.write).toHaveBeenCalledWith(printedBase64,{encoding:'base64'});expect(FileMock).toHaveBeenCalledWith(Paths.cache,`stay-${file.documentId}-${file.sha256}.pdf`);
+  });
   it('materializes Print base64 directly in Paths.cache and returns only the stable cache URI', async () => {
     const result = await new ExpoInvoiceDocumentService().generate(snapshot);
 

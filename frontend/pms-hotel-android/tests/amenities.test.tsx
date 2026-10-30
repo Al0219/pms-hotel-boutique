@@ -25,6 +25,7 @@ import {
 } from "@/modules/services/amenities";
 import { updateAmenitiesQuantity } from "@/modules/services/amenities/presentation/AmenitiesScreen";
 import { findFirstAvailableTime } from "@/shared/time";
+jest.mock('@/modules/checkout/presentation/hooks/useServiceCreationGate',()=>({useServiceCreationGate:()=>({blocked:false,message:''}),ServiceCreationNotice:()=>null}));
 
 function Probe() {
   const { requests } = useSessionServiceRequests();

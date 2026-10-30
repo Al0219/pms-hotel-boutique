@@ -32,6 +32,20 @@ async function changeRoom(ui: Awaited<ReturnType<typeof renderProfile>>, value =
 }
 
 describe('Profile', () => {
+  it('shows the existing demo profile read-only without recording fictitious changes', async () => {
+    const updateAccountProfile = jest.fn();
+    const service = new MockAccountProfileService({ updateAccountProfile });
+    const ui = await render(<QueryClientProvider client={createQueryClient()}><ProfileScreen readOnlyDemo service={service} /></QueryClientProvider>);
+    await waitFor(() => expect(ui.getByTestId('profile-identity')).toBeTruthy());
+    expect(ui.getByTestId('demo-content-notice')).toHaveTextContent(/Perfil y preferencias de ejemplo/);
+    expect(ui.getByTestId('profile-input-roomPreferenceText').props.editable).toBe(false);
+    expect(ui.getByTestId('profile-marketing-sms').props.disabled).toBe(true);
+    expect(ui.getByTestId('profile-save')).toBeDisabled();
+    await fireEvent.press(ui.getByTestId('profile-save'));
+    expect(updateAccountProfile).not.toHaveBeenCalled();
+    expect(ui.queryByTestId('profile-success')).toBeNull();
+  });
+
   afterEach(() => jest.restoreAllMocks());
 
   it('shows loading while the profile query is pending without rendering profile data', async () => {
