@@ -1,3 +1,14 @@
+## PR185 — corrección focalizada de CI
+
+Reproducidos1 fallo Backend y7 Android; corregidas únicamente pruebas: catálogo de
+slots incluye18–19 inválido en departure, fixtures Valet con estado IN_HOUSE y
+espera del folio real antes de comprobar importe/bloqueo. Sin cambios productivos.
+Suite completa verify/JAR:1344 PASS/1345 total; Android:666 PASS/667 total y salida
+normal con detectOpenHandles. Un bridge opcional condicionado por entorno en cada
+runner, preexistente y sin cambios; no se añadieron skip/exclusiones. Lint/typecheck
+Android y diff-check PASS. Preservado PASS manual; sin migraciones ni cambios QA/BD.
+Publicar correcciones en la misma rama y comprobar nuevos checks de PR185.
+
 ## Traslados — cierre DoD PASS
 
 Usuario confirma QA manual final TODO PASS. Conservados resultados previos; ajuste
