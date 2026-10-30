@@ -1,5 +1,10 @@
 # Propuesta BD2 — Folio/Payments y lifecycle de reservas
 
+Actualización 2026-10-29: la cancelación Staff total previa a la entrada con
+penalización del 10% y crédito retenido tiene su contrato confirmado y acotado
+en [66](66_STAFF_RESERVATION_CANCELLATION_MVP_CONTRACT.md). No aprueba las demás
+variantes de cancelación, devoluciones o integraciones propuestas aquí.
+
 **Estado:** SH-D01 local APPROVED en documento 21; restantes propuestas requieren
 revisión/aprobación por entrega antes de código.
 **Fecha/base:** 2026-10-02, main `9eb2380`. **Owner:** José / BD2.

@@ -6,6 +6,11 @@
 
 ## Autoridad y alcance
 
+Actualización 2026-10-29: LC-D01 queda confirmado únicamente para la cancelación
+Staff total previa a la entrada, penalización del 10% y excedente como saldo a
+favor, según el [contrato 66](66_STAFF_RESERVATION_CANCELLATION_MVP_CONTRACT.md).
+Las demás alternativas históricas de esta propuesta siguen sin aprobarse.
+
 El usuario aprobó el nuevo reparto y la secuencia modular en conversación.
 Las reglas de dominio y C1/C2/C3 continúan vigentes. La autorización de esta
 fase permite revisar, proponer y publicar contratos; no aprueba automáticamente
