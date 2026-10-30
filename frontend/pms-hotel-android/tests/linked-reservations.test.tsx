@@ -2,8 +2,9 @@ import {createTestQueryClient} from '../src/test/queryClient';
 import { QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
-import { BackHandler, Platform, Text } from "react-native";
+import { BackHandler, Platform, Pressable, Text } from "react-native";
 
+import {useGuestAuthSession} from "@/modules/guest-auth/presentation/GuestAuthSessionProvider";
 import { NetworkError } from "@/data/remote/http/HttpError";
 import { MockLinkedReservationsService } from "@/modules/guest-auth/data/mocks/MockLinkedReservationsService";
 import { type LinkedReservationsService } from "@/modules/guest-auth/data/services/LinkedReservationsService";
@@ -18,6 +19,7 @@ import {
 jest.mock('expo-router', () => ({ ...jest.requireActual('expo-router'), useFocusEffect: jest.fn() }));
 
 const primary = {
+  statusLabel: "RESERVED",
   reservationId: "HB-2026-004281",
   reservationStayId: "stay-2026-004281",
   reference: "HB-2026-004281",
@@ -26,6 +28,7 @@ const primary = {
   roomLabel: "204",
 };
 const second = {
+  statusLabel: "RESERVED",
   reservationId: "HB-2026-004982",
   reservationStayId: "stay-2026-004982",
   reference: "HB-2026-004982",
@@ -163,4 +166,34 @@ describe("Linked reservations and active context", () => {
     Object.defineProperty(Platform, "OS", { configurable: true, value: original });
     replace.mockRestore();
   });
+});
+
+it('keeps history behind filters and preserves context while searching and clearing',async()=>{
+ const closed={...second,reservationStayId:'closed',statusLabel:'CHECKED_OUT',propertyLabel:'Hotel Histórico'};
+ const active={...primary,statusLabel:'IN_HOUSE',propertyLabel:'Hotel Demo'};
+ const ui=await setup(new MockLinkedReservationsService({scenario:{kind:'success',reservations:[closed,second,active]}}),{reservationId:primary.reservationId,reservationStayId:primary.reservationStayId});
+ await waitFor(()=>expect(ui.getByTestId('linked-reservation-'+primary.reservationStayId)).toBeTruthy());
+ expect(ui.queryByTestId('linked-reservation-closed')).toBeNull();expect(ui.queryByTestId('linked-filter-HISTORY')).toBeNull();
+ await fireEvent.changeText(ui.getByTestId('linked-reservations-search'),'03/10/2026');expect(ui.queryByTestId('linked-reservation-'+primary.reservationStayId)).toBeNull();expect(ui.getByTestId('linked-reservation-'+second.reservationStayId)).toBeTruthy();
+ await fireEvent.changeText(ui.getByTestId('linked-reservations-search'),'');await fireEvent.press(ui.getByTestId('linked-reservations-filters'));await fireEvent.press(ui.getByTestId('linked-filter-HISTORY'));await fireEvent.press(ui.getByText('Listo'));
+ expect(ui.getByTestId('linked-reservation-closed')).toBeTruthy();expect(ui.queryByTestId('linked-reservation-'+primary.reservationStayId)).toBeNull();expect(ui.getByTestId('linked-reservations-filter-active')).toBeTruthy();
+ expect(ui.getByTestId('active-context').children.join('')).toContain(primary.reservationStayId);
+ await fireEvent.press(ui.getByTestId('linked-reservations-filters'));await fireEvent.changeText(ui.getByTestId('linked-filter-from'),'2026-10-01');await fireEvent.press(ui.getByTestId('linked-filters-clear'));await fireEvent.press(ui.getByText('Listo'));
+ expect(ui.queryByTestId('linked-reservation-closed')).toBeNull();expect(ui.getByTestId('linked-reservation-'+primary.reservationStayId)).toBeTruthy();expect(ui.queryByTestId('linked-reservations-filter-active')).toBeNull();
+});
+it('never auto-selects a finished-only account; explicit history selection remains available',async()=>{
+ const replace=jest.spyOn(router,'replace').mockImplementation(()=>undefined as never);
+ const ui=await setup(new MockLinkedReservationsService({scenario:{kind:'success',reservations:[{...primary,statusLabel:'CHECKED_OUT'}]}}));
+ await waitFor(()=>expect(ui.getByTestId('linked-reservations-no-results')).toBeTruthy());expect(replace).not.toHaveBeenCalled();
+ await fireEvent.press(ui.getByTestId('linked-reservations-filters'));await fireEvent.press(ui.getByTestId('linked-filter-HISTORY'));await fireEvent.press(ui.getByText('Listo'));await fireEvent.press(ui.getByTestId('linked-reservation-'+primary.reservationStayId));await fireEvent.press(ui.getByTestId('linked-reservations-continue'));
+ expect(replace).toHaveBeenCalledWith('/account');expect(ui.getByTestId('active-context').children.join('')).toContain(primary.reservationStayId);replace.mockRestore();
+});
+
+function SwitchAccountProbe(){const {beginSession}=useGuestAuthSession();return <Pressable testID="switch-account" onPress={()=>beginSession({accountId:'guest-second'})}><Text>Cambiar cuenta</Text></Pressable>;}
+it('resets local selection and never displays another account list after changing session',async()=>{
+ const listForAccount=jest.fn(async(account:string)=>account==='guest-account-primary'?[primary,second]:[{...primary,reservationStayId:'other-a'},{...second,reservationStayId:'other-b'}]);
+ const client=createTestQueryClient({defaultOptions:{queries:{retry:false}}});
+ const ui=await render(<QueryClientProvider client={client}><GuestAuthSessionProvider initialSession={{accountId:'guest-account-primary'}}><ActiveReservationContextProvider><SwitchAccountProbe/><LinkedReservationsScreen service={{listForAccount}}/></ActiveReservationContextProvider></GuestAuthSessionProvider></QueryClientProvider>);
+ await waitFor(()=>expect(ui.getByTestId('linked-reservation-'+primary.reservationStayId)).toBeTruthy());await fireEvent.press(ui.getByTestId('linked-reservation-'+second.reservationStayId));expect(ui.getByTestId('linked-reservations-continue').props.accessibilityState.disabled).toBe(false);
+ await fireEvent.press(ui.getByTestId('switch-account'));await waitFor(()=>expect(ui.getByTestId('linked-reservation-other-a')).toBeTruthy());expect(ui.queryByTestId('linked-reservation-'+primary.reservationStayId)).toBeNull();expect(ui.queryByTestId('linked-reservation-'+second.reservationStayId)).toBeNull();expect(ui.getByTestId('linked-reservations-continue').props.accessibilityState.disabled).toBe(true);expect(listForAccount).toHaveBeenLastCalledWith('guest-second');await ui.unmount();client.clear();
 });

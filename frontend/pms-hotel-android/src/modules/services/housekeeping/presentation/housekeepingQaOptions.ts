@@ -4,7 +4,7 @@ import {
 } from '@/modules/services/housekeeping/domain/HousekeepingRequest';
 
 /**
- * The five slots are authorized for the real MVP; this is not an administrative hotel catalogue.
+ * The six slots are authorized for the real MVP; this is not an administrative hotel catalogue.
  * Additional cleaning types remain frontend/mock QA examples.
  */
 export const housekeepingQaTimeSlots: readonly HousekeepingTimeSlot[] = [
@@ -13,6 +13,7 @@ export const housekeepingQaTimeSlots: readonly HousekeepingTimeSlot[] = [
   '11:00–12:00',
   '12:00–13:00',
   '14:00–15:00',
+  '18:00–19:00',
 ];
 
 export const housekeepingQaCleaningTypes: readonly {

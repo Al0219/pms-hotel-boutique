@@ -1,3 +1,10 @@
+## Iteración Traslados — cambio de regla posterior al PASS original
+
+Se conservan todos los PASS manuales anteriores. La nueva decisión exige saldo cero
+verificable y servicios cobrables resueltos también para solicitar checkout Guest;
+los casos históricos de solicitud con deuda ya no representan la regla vigente.
+Pruebas/casos nuevos: QA47. Esta iteración permanece EN_QA manual.
+
 ## Cierre final — PASS manual completo confirmado por el usuario
 
 PASS para Check-in/Check-out, solicitudes de servicio, folio/pagos, PDF, navegación

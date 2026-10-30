@@ -66,7 +66,7 @@ export function useRealStayJourney(financial=false,loadDocument=false){
    if(failure instanceof HttpError&&[400,409].includes(failure.status??0)){
     // A definitive business rejection is not a lost response; an already committed replay returns its receipt.
     try{await journeyAttemptStore.clear(storageScope,kind);}catch{setError('No se pudo conservar el resultado. Recupera la misma operación.');return;}ref.current=null;if(kind==='payment')setPendingPayment(null);else setPendingRequest(null);
-    setError('El servidor rechazó la operación. Actualiza y revisa el estado, importe y saldo.');await refresh();
+    setError(attempt.kind==='request'&&attempt.input.kind==='CHECK_OUT'?'No se pudo solicitar la salida. Revisa saldo y servicios pendientes.':'El servidor rechazó la operación. Revisa el estado, importe y saldo.');await refresh();
    }else setError('No pudimos confirmar el resultado. Conservamos la referencia: recupera la misma operación antes de enviar otra.');
   }finally{inFlight.current=false;if(active.current)setBusy(false);}
  }

@@ -1,3 +1,3 @@
-import { HotelScreen } from '@/modules/hotel';
+import { ConnectedHotelScreen } from '@/modules/hotel';
 
-export default function HotelRoute() { return <HotelScreen demonstration />; }
+export default function HotelRoute() { return <ConnectedHotelScreen />; }

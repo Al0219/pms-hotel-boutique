@@ -26,7 +26,7 @@ const defaultReservations: readonly LinkedReservationSummaryDto[] = [
     arrival: "2026-08-28",
     departure: "2026-09-18",
     roomLabel: "204",
-    statusLabel: "Confirmada",
+    statusLabel: "RESERVED",
   },
   {
     reservationId: "HB-2026-004982",
@@ -36,7 +36,7 @@ const defaultReservations: readonly LinkedReservationSummaryDto[] = [
     arrival: "2026-10-03",
     departure: "2026-10-09",
     roomLabel: "118",
-    statusLabel: "Confirmada",
+    statusLabel: "RESERVED",
   },
 ];
 

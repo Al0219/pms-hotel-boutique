@@ -8,7 +8,7 @@ export const hotelProfileFixture: HotelProfile = {
   checkInTime: 'No disponible',
   checkOutTime: '12:00',
   receptionHours: 'No disponible',
-  wifi: { ssid: 'No disponible', password: 'No disponible' },
-  contact: { phone: 'No disponible', email: 'No disponible' },
-  address: 'Ubicación no disponible',
+  wifi: { ssid: 'Hotel_Demo', password: 'DemoWifi2026' },
+  contact: { phone: '+502 5555 0100', email: 'recepcion@example.test' },
+  address: 'Calle Ejemplo 123, Ciudad de Guatemala',
 };

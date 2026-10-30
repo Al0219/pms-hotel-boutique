@@ -1,3 +1,5 @@
+import {housekeepingLimitError} from '../domain/housekeepingLimits';
+import {useHousekeepingScheduleRequests} from './hooks/useHousekeepingScheduleRequests';
 import {ActionLabel} from '@/shared/components/ActionLabel';
 import {useServiceCreationGate,ServiceCreationNotice} from '@/modules/checkout/presentation/hooks/useServiceCreationGate';
 import { HttpError, NetworkError } from '@/data/remote/http/HttpError';
@@ -93,6 +95,7 @@ function HousekeepingForm({ service, stayService, nowMs, initialRequest, reloadR
   const stay = deriveRemoteState(query, () => false);
   const timezone = environment.useMockApi ? undefined : stay.kind === 'success' ? stay.data.timezone ?? '' : '';
   const submission = useSubmitHousekeeping(service, editing);
+  const scheduleHistory=useHousekeepingScheduleRequests(service);
   const { addRequest, requests, updateRequest } = useSessionServiceRequests();
   const schedulingRequests = useMemo(() => environment.useMockApi ? requests : [], [requests]);
   const { isCheckedOut } = useCheckoutStatus();
@@ -151,7 +154,10 @@ function HousekeepingForm({ service, stayService, nowMs, initialRequest, reloadR
   const stayDateWindow = stay.kind === 'success' ? getStayServiceDateWindow(stay.data.arrival, stay.data.departure, getNowMs(), timezone) : null;
   const noAvailability = !editing && stay.kind === 'success' && getFirstAvailableServiceDate(getNowMs(), availableTimeSlots, stay.data.arrival, stay.data.departure, getEffectiveCheckoutAt(stay.data, schedulingRequests, timezone), timezone) === null;
   const canEdit = !editing || canModifyPersistedHousekeeping(editing, getNowMs());
+  const cleaningRows=environment.useMockApi?requests.flatMap(r=>r.details?.type==='HOUSEKEEPING'&&r.details.serviceDate?[{id:r.sessionRequestId,serviceDate:r.details.serviceDate,timeSlot:r.details.timeSlot,status:r.status}]:[]):scheduleHistory.data;
+  const limitError=housekeepingLimitError(cleaningRows,serviceDate,timeSlot,editing?.id??(environment.useMockApi?editRequestId:undefined),timezone);
   function scheduleAllowed(date: string, slot: string) {
+    if(!scheduleHistory.ready||housekeepingLimitError(cleaningRows,date,slot,editing?.id??(environment.useMockApi?editRequestId:undefined),timezone))return false;
     if (editing && date === editing.serviceDate && slot === editing.timeSlot) return canEdit;
     return stay.kind === 'success' && isServiceWithinEffectiveCheckout({ arrival: stay.data.arrival, effectiveCheckoutAtMs: getEffectiveCheckoutAt(stay.data, schedulingRequests, timezone), endTime: slot.split('–')[1] ?? slot, nowMs: getNowMs(), serviceDate: date, startTime: slot, timezone });
   }
@@ -235,7 +241,7 @@ function HousekeepingForm({ service, stayService, nowMs, initialRequest, reloadR
               <Text accessibilityRole="header" style={styles.stateTitle}>Horario</Text>
               <Pressable accessibilityLabel="Seleccionar horario" accessibilityRole="button" accessibilityState={{ disabled: submission.isPending }}
                 disabled={submission.isPending} onPress={() => { setScheduleError(false); setTimePickerVisible(true); }} style={housekeepingStyles.selector} testID="housekeeping-time-selector"><Text style={styles.serviceLabel}>{timeSlot}</Text><View accessible={false} testID={'housekeeping-time-selector-chevron'}><SymbolView accessibilityElementsHidden name={guestFeatureIcons.chevronDown} size={18} tintColor={tokens.color.muted} /></View></Pressable>
-              {noAvailability ? <StateCard title="Sin disponibilidad" body="No hay horarios disponibles durante tu estadía." testID="housekeeping-no-availability" /> : scheduleError || !timeSlotAllowed ? <StateCard title="Horario no disponible" body="Selecciona un horario con al menos 30 minutos de anticipación." testID="housekeeping-schedule-error" /> : null}
+              {noAvailability ? <StateCard title="Sin disponibilidad" body="No hay horarios disponibles durante tu estadía." testID="housekeeping-no-availability" /> : scheduleError || !timeSlotAllowed ? <StateCard title="Horario no disponible" body={limitError??(!scheduleHistory.ready?'Actualiza tus limpiezas antes de solicitar.':'Selecciona un horario con 30 minutos de anticipación.')} testID="housekeeping-schedule-error" /> : null}
               <Text style={styles.serviceLabel}>Notas (opcional)</Text>
               <TextInput accessibilityLabel="Notas (opcional)" maxLength={500} multiline value={notes} onChangeText={setNotes}
                 editable={!submission.isPending} accessibilityState={{ disabled: submission.isPending }}
