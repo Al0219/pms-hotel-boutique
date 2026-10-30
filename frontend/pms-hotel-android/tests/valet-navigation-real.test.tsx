@@ -26,7 +26,7 @@ jest.mock('@/config/environment',()=>({environment:{useMockApi:false},requireApi
 const first={reservationId:'11111111-1111-4111-8111-111111111111',reservationStayId:'22222222-2222-4222-8222-222222222222'};
 const second={reservationId:'33333333-3333-4333-8333-333333333333',reservationStayId:'44444444-4444-4444-8444-444444444444'};
 const property='55555555-5555-4555-8555-555555555555';
-const summary=(c:typeof first)=>({...c,reference:c===first?'FIRST':'SECOND',arrival:'2030-01-01',departure:'2030-01-04',roomLabel:'204'});
+const summary=(c:typeof first)=>({...c,statusLabel:'IN_HOUSE',reference:c===first?'FIRST':'SECOND',arrival:'2030-01-01',departure:'2030-01-04',roomLabel:'204'});
 let client:QueryClient;let request:jest.SpyInstance;
 function Home(){const {activeReservationContext:c}=useActiveReservationContext();return <><Text testID="home-stay">{c?.reservationStayId}</Text><GuestNavigationShell/></>;}
 function Login(){return <LoginScreen service={{login:async()=>({accountId:'guest'})}}/>;}

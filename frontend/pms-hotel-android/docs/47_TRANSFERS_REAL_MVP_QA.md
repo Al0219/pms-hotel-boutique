@@ -183,3 +183,16 @@ Cierre de integración: main9c7bd4e incorporado en feature sin modificar main.
 Conflictos solo Plan/Handoff, resueltos conservando ambas entradas. Backend57 PASS
 (OpenAPI27, cancelación Staff18, facturación Traslados12), verify/JAR PASS; inventario
 139/114/170/16. PostgreSQL técnico tmpfs; QA manual/base habitual intactos.
+
+## PR185 — CI: expectativas y sincronización de pruebas
+
+Reproducción:1 fallo Backend (checkout y slot18–19) y7 Android (6 fixtures sin
+statusLabel y1 assertion del importe antes de cargar folio). Cambios solo tests:
+late slot rechaza en departure, fixtures IN_HOUSE y espera journey-financial-summary.
+Se mantienen finalizadas ocultas, scope, navegación y bloqueo financiero productivos.
+Focalizadas:5 Backend y30 Android PASS. Suites completas:1344 Backend PASS/1345 total
+(verify/JAR),666 Android PASS/667 total (66 suites, salida normal, sin forceExit).
+Un bridge opcional por entorno permanece condicionado en cada runner como antes;
+no se añadieron skip ni exclusiones. Lint/typecheck/diff-check PASS. Evidencia:
+/tmp/transfers-ci-{repro,focused,full}-{backend,android}.log y lint/types Android.
+PASS manual anterior conservado. Sin cambios productivos, migraciones ni bases.
