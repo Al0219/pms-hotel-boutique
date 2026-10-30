@@ -341,7 +341,6 @@ describe("Guest Navigation Shell", () => {
       "Limpieza",
       "Room Service",
       "Amenidades",
-      "Chat",
       "Valet",
       "Hotel",
     ]);

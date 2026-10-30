@@ -106,6 +106,18 @@ public class FolioServiceImpl implements FolioService {
     }
 
     @Override
+    public FolioView.MovementView postPaymentAsGuest(UUID folioId, @Valid MovementAmount payment, UUID guestAccountId) {
+        if (guestAccountId == null || payment.signed().minorUnits().value() <= 0) throw new FolioException("Invalid Guest payment");
+        Folio folio = open(folioId);
+        var movement = movements.save(new FolioMovement(UUID.randomUUID(), folio, FolioMovement.Kind.PAYMENT,
+                payment.negated(), payment.description(), null, null, Instant.now()));
+        audit.record(new AuditService.RecordAuditCommand(ReservationAuditEvent.ActorType.GUEST, guestAccountId,
+                "FOLIO_MOVEMENT_POSTED", "FOLIO_MOVEMENT", movement.getId(), folio.getPropertyId(), null,
+                "{\"kind\":\"PAYMENT\",\"provider\":\"SIMULATED\"}", null, null));
+        return FolioView.MovementView.from(movement);
+    }
+
+    @Override
     public FolioView.MovementView postReversal(UUID folioId, UUID originalMovementId,
             @Valid ReversalReason reason, UUID actorId) {
         Folio folio = writable(folioId);

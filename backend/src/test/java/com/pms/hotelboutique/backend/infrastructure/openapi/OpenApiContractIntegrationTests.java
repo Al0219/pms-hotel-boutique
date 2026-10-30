@@ -34,6 +34,17 @@ class OpenApiContractIntegrationTests {
     @Autowired ObjectMapper json;
     @Autowired @Qualifier("requestMappingHandlerMapping") RequestMappingHandlerMapping mappings;
 
+    @Test void stayJourneyDocumentsScopedSyntheticPaymentsAndPersistedDocuments()throws Exception{
+        var d=document();String g="/api/v1/guest-auth/account/reservations/{reservationId}/stays/{stayId}/journey";
+        for(String route:List.of("/state","/summary","/requests","/document"))assertTrue(operation(d,g+route,"get").path("security").get(0).has("guestBearerAuth"));
+        var payment=operation(d,g+"/payments","post");assertCodes(payment,"200","400","401","403","404","409");assertTrue(parameter(payment,"Idempotency-Key").path("required").asBoolean());
+        assertTrue(operation(d,"/api/v1/properties/{propertyId}/stay-journey/{reservationId}/{stayId}/payments","post").path("security").get(0).has("bearerAuth"));
+        var schemas=d.path("components").path("schemas");
+        var input=schemas.path("PaymentInput");assertFalse(input.path("additionalProperties").asBoolean(true));
+        for(String forbidden:List.of("pan","cvv","cardNumber","actorId"))assertFalse(input.path("properties").has(forbidden));
+        assertTrue(schemas.path("StayJourneyDocument").path("properties").has("snapshot"));
+    }
+
     @Test void valetDocumentsGuestOwnershipStaffCustodyAndClosedBodies()throws Exception{
         var doc=document();String guest="/api/v1/guest-auth/account/reservations/{reservationId}/stays/{stayId}";
         for(String resource:List.of("/valet-vehicles","/valet-requests")){

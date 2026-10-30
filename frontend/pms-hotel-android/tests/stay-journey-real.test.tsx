@@ -1,0 +1,93 @@
+import {useServiceCreationGate} from '@/modules/checkout/presentation/hooks/useServiceCreationGate';
+import {useImperativeHandle,forwardRef,createRef,type EffectCallback} from 'react';
+import {AppState,View,Text,Pressable} from 'react-native';
+import {QueryClientProvider,type QueryClient} from '@tanstack/react-query';
+import {render,fireEvent,waitFor,act} from '@testing-library/react-native';
+import {createTestQueryClient} from '@/test/queryClient';
+import {GuestAuthSessionProvider,useGuestAuthSession} from '@/modules/guest-auth/presentation/GuestAuthSessionProvider';
+import {ActiveReservationContextProvider,useActiveReservationContext} from '@/modules/guest-auth/presentation/ActiveReservationContextProvider';
+import {nativeGuestClient} from '@/modules/guest-auth/data/http/NativeGuestClient';
+import {RealCheckoutScreen,RealInvoiceScreen,RealJourneyAccountActions} from '@/modules/checkout/presentation/RealStayJourneyScreens';
+import {journeyContext as c,journeyAccount,journeyState,journeySummary,journeyDocument,journeyReceipt,journeyFile} from '@/test/stayJourneyFixture';
+import type {JourneyState,JourneySummary} from '@/modules/checkout/domain/StayJourney';
+import {HttpStayJourneyService} from '@/modules/checkout/data/http/HttpStayJourneyService';
+import * as SecureStore from 'expo-secure-store';
+import {HttpError} from '@/data/remote/http/HttpError';
+jest.mock('@/config/environment',()=>({environment:{useMockApi:false},requireApiBaseUrl:()=> 'https://pms.example.test'}));
+jest.mock('expo-router',()=>({...jest.requireActual('expo-router'),router:{push:jest.fn(),dismissTo:jest.fn()},useFocusEffect:function useTestFocus(cb:EffectCallback){const React=jest.requireActual<typeof import('react')>('react');React.useEffect(cb,[cb]);}}));
+jest.mock('expo-secure-store',()=>({getItemAsync:jest.fn(),setItemAsync:jest.fn(),deleteItemAsync:jest.fn()}));
+const stored=new Map<string,string>();let client:QueryClient,state:JourneyState,summary:JourneySummary,http:jest.SpyInstance;
+const Control=forwardRef(function Control(_,ref){const context=useActiveReservationContext(),auth=useGuestAuthSession();useImperativeHandle(ref,()=>({change:()=>context.setActiveReservationContext({...c,reservationStayId:journeyAccount}),logout:auth.clearSession}));return null;});
+function mount(node:React.ReactNode,ref?:React.Ref<unknown>){return render(<QueryClientProvider client={client}><GuestAuthSessionProvider initialSession={{accountId:journeyAccount}}><ActiveReservationContextProvider initialActiveReservationContext={c}><Control ref={ref}/>{node}</ActiveReservationContextProvider></GuestAuthSessionProvider></QueryClientProvider>);}
+beforeEach(()=>{stored.clear();jest.clearAllMocks();AppState.currentState='active';client=createTestQueryClient({defaultOptions:{queries:{retry:false,gcTime:0},mutations:{gcTime:0}}});state=journeyState();summary=journeySummary();(SecureStore.getItemAsync as jest.Mock).mockImplementation(async k=>stored.get(k)??null);(SecureStore.setItemAsync as jest.Mock).mockImplementation(async(k,v)=>{stored.set(k,v);});(SecureStore.deleteItemAsync as jest.Mock).mockImplementation(async k=>{stored.delete(k);});http=jest.spyOn(nativeGuestClient,'request').mockImplementation(async(path,init)=>{if(path.endsWith('/document-file'))return journeyFile();if(path.endsWith('/state'))return state;if(path.endsWith('/summary'))return summary;if(path.endsWith('/document'))return journeyDocument();if(path.endsWith('/requests')&&init?.method==='POST'){const input=JSON.parse(init.body as string);const row={id:c.reservationId,kind:input.kind,status:'OPEN' as const,createdAt:'2030-01-02T15:00:00Z',completedAt:null};state={...state,requests:[row]};return row;}return journeyReceipt();});});
+afterEach(()=>jest.restoreAllMocks());
+async function fill(ui:Awaited<ReturnType<typeof mount>>){await fireEvent.changeText(ui.getByLabelText('Número de tarjeta ficticia'),'4242424242424242');await fireEvent.changeText(ui.getByLabelText('Vencimiento MM/AA'),'12/35');await fireEvent.changeText(ui.getByLabelText('CVV ficticio'),'123');await fireEvent.changeText(ui.getByLabelText('Titular de prueba'),'Titular QA');await fireEvent.changeText(ui.getByLabelText('Importe GTQ'),'30.00');}
+it('requests check-in on property date and only shows arrival after a persisted Staff confirmation',async()=>{
+ state={...state,stay:{...state.stay,status:'RESERVED'}};const ui=await mount(<RealJourneyAccountActions/>);await waitFor(()=>expect(ui.getByTestId('account-request-checkin').props.accessibilityState.disabled).toBe(false));await fireEvent.press(ui.getByTestId('account-request-checkin'));await fireEvent.press(ui.getByTestId('journey-checkin-confirm-confirm'));await waitFor(()=>expect(ui.getByText('Entrada solicitada · Pendiente de Staff')).toBeTruthy());expect(state.stay.status).toBe('RESERVED');
+ state={...state,stay:{...state.stay,status:'IN_HOUSE'},requests:state.requests.map(r=>({...r,status:'DONE'}))};await act(async()=>{await client.invalidateQueries({queryKey:['guest-stay-journey']});});await waitFor(()=>expect(ui.getByText('Entrada confirmada por Staff.')).toBeTruthy());
+ const write=http.mock.calls.find(([p,init])=>p.endsWith('/requests')&&init?.method==='POST');expect(JSON.parse(write![1].body)).toEqual({kind:'CHECK_IN',expectedUpdatedAt:journeyState().stay.updatedAt});
+});
+it('blocks check-in before property arrival and requests early checkout with debt without local completion',async()=>{
+ state={...state,stay:{...state.stay,status:'RESERVED',arrival:'2030-01-03'}};const first=await mount(<RealJourneyAccountActions/>);await waitFor(()=>expect(first.getByTestId('account-request-checkin').props.accessibilityState.disabled).toBe(true));await first.unmount();client.clear();state=journeyState();
+ const ui=await mount(<RealCheckoutScreen/>);await waitFor(()=>expect(ui.getByTestId('journey-request-checkout').props.accessibilityState.disabled).toBe(false));expect(ui.getAllByText('Q. 100.00')[0]).toBeTruthy();await fireEvent.press(ui.getByTestId('journey-request-checkout'));await fireEvent.press(ui.getByTestId('journey-checkout-confirm-confirm'));await waitFor(()=>expect(ui.getByText('Salida solicitada · Pendiente de Staff')).toBeTruthy());expect(state.stay.status).toBe('IN_HOUSE');expect(ui.queryByText('Salida confirmada por Staff')).toBeNull();
+});
+it('preserves key and allowed payload across lost response, app remount and replay without storing card inputs',async()=>{
+ let attempts=0;http.mockImplementation(async(path,init)=>{if(path.endsWith('/document-file'))return journeyFile();if(path.endsWith('/state'))return state;if(path.endsWith('/summary'))return summary;if(init?.method==='POST'){attempts++;if(attempts===1)throw new Error('network lost');summary={...summary,balance:'70.00',payments:'30.00'};return journeyReceipt();}return null;});
+ const ui=await mount(<RealCheckoutScreen/>);await waitFor(()=>expect(ui.getByTestId('journey-open-payment').props.accessibilityState.disabled).toBe(false));await fireEvent.press(ui.getByTestId('journey-open-payment'));await fill(ui);await fireEvent.press(ui.getByTestId('journey-payment-submit'));await waitFor(()=>expect(ui.getByText(/No pudimos confirmar el resultado/)).toBeTruthy());
+ const saved=[...stored.values()].join('');expect(saved).not.toMatch(/424242|cvv|holder|expiry/);await fireEvent.press(ui.getByLabelText('Cerrar pago'));await act(async()=>{await ui.getByTestId('journey-scroll').props.refreshControl.props.onRefresh();});expect([...stored.values()].join('')).toBe(saved);expect(http.mock.calls.filter(([,init])=>init?.method==='POST')).toHaveLength(1);await ui.unmount();client.clear();client=createTestQueryClient({defaultOptions:{queries:{gcTime:0}}});
+ const again=await mount(<RealCheckoutScreen/>);await waitFor(()=>expect(again.getByTestId('journey-recover-payment')).toBeTruthy());await fireEvent.press(again.getByTestId('journey-recover-payment'));await fireEvent.press(again.getByTestId('journey-retry-payment'));await waitFor(()=>expect(again.getByText('Pago simulado aprobado y registrado.')).toBeTruthy());await waitFor(()=>expect(again.getByText('Q. 70.00')).toBeTruthy());
+ const writes=http.mock.calls.filter(([,i])=>i?.method==='POST');expect(writes).toHaveLength(2);expect(writes[0][1].headers['Idempotency-Key']).toBe(writes[1][1].headers['Idempotency-Key']);expect(JSON.parse(writes[1][1].body)).toEqual({amount:'30.00',currency:'GTQ',instrumentToken:'demo_visa_approved'});expect(stored.size).toBe(0);
+});
+it.each(['DECLINED','ERROR'])('shows confirmed %s without payment or completed stay',async result=>{
+ http.mockImplementation(async(path,init)=>path.endsWith('/state')?state:path.endsWith('/summary')?summary:init?.method==='POST'?{...journeyReceipt(),result,movementId:null}:null);
+ const ui=await mount(<RealCheckoutScreen/>);await waitFor(()=>expect(ui.getByTestId('journey-open-payment').props.accessibilityState.disabled).toBe(false));await fireEvent.press(ui.getByTestId('journey-open-payment'));await fill(ui);await fireEvent.press(ui.getByTestId('journey-payment-submit'));await waitFor(()=>expect(ui.getByText(/No se registró ningún pago/)).toBeTruthy());expect(ui.getAllByText('Q. 100.00')[0]).toBeTruthy();expect(state.stay.status).toBe('IN_HOUSE');
+});
+it('recovers original PDF after remount and materializes the downloaded bytes without regeneration',async()=>{
+ state={...state,stay:{...state.stay,status:'CHECKED_OUT'}};summary={...summary,stay:state.stay,balance:'0.00',payments:'100.00',documentId:journeyDocument().id};
+ const service={generate:jest.fn(),materialize:jest.fn(async()=>({uri:'file:///original.pdf'})),open:jest.fn(async()=>{}),share:jest.fn(async()=>{})};
+ const first=await mount(<RealInvoiceScreen documentService={service}/>);await waitFor(()=>expect(first.getByTestId('journey-open-pdf')).toBeTruthy());expect(first.queryByTestId('journey-generate-pdf')).toBeNull();await first.unmount();client.clear();const ui=await mount(<RealInvoiceScreen documentService={service}/>);await waitFor(()=>expect(ui.getByTestId('journey-open-pdf')).toBeTruthy());await fireEvent.press(ui.getByTestId('journey-open-pdf'));await fireEvent.press(ui.getByTestId('journey-share-pdf'));await waitFor(()=>expect(service.share).toHaveBeenCalledWith('file:///original.pdf'));expect(service.materialize).toHaveBeenCalledWith(journeyFile());expect(service.generate).not.toHaveBeenCalled();expect(ui.queryByText('Actualizar documento')).toBeNull();
+});
+it('explicitly issues a missing original file once and then hides Generar',async()=>{
+ state={...state,stay:{...state.stay,status:'CHECKED_OUT'}};summary=journeyDocument().snapshot;let issued=false;http.mockImplementation(async(path,init)=>{if(path.endsWith('/state'))return state;if(path.endsWith('/document'))return journeyDocument();if(path.endsWith('/summary'))return summary;if(path.endsWith('/document-file')){if(init?.method==='POST'){issued=true;return journeyFile();}if(!issued)throw new HttpError('Not issued',404);return journeyFile();}return null;});
+ const ui=await mount(<RealInvoiceScreen/>);await waitFor(()=>expect(ui.getByText('Generar documento')).toBeTruthy());await fireEvent.press(ui.getByText('Generar documento'));await waitFor(()=>expect(ui.getByText('Visualizar documento')).toBeTruthy());expect(ui.queryByText('Generar documento')).toBeNull();expect(http.mock.calls.filter(([p,i])=>p.endsWith('/document-file')&&i?.method==='POST')).toHaveLength(1);
+});
+it('has no final document or PDF action before Staff confirmation',async()=>{const ui=await mount(<RealInvoiceScreen/>);await waitFor(()=>expect(ui.getByText('Resumen provisional')).toBeTruthy());expect(ui.queryByTestId('journey-generate-pdf')).toBeNull();expect(http.mock.calls.some(([p])=>p.endsWith('/document'))).toBe(false);});
+it('denies financial errors without mock fallback and hides data at logout',async()=>{
+ http.mockImplementation(async path=>{if(path.endsWith('/document-file'))return journeyFile();if(path.endsWith('/state'))return state;throw new HttpError('Denied',404);});const ref=createRef<{logout:()=>void}>();const ui=await mount(<RealCheckoutScreen/>,ref);await waitFor(()=>expect(ui.getByText(/responsable verificado/)).toBeTruthy());expect(ui.queryAllByText('Q. 100.00')[0]??null).toBeNull();await act(async()=>{ref.current!.logout();});await waitFor(()=>expect(ui.getByText('Inicia sesión y selecciona una estancia.')).toBeTruthy());
+});
+it('HTTP boundary allowlists payment fields and never has a Guest completion method',async()=>{const service=new HttpStayJourneyService();const input={amount:'30.00',currency:'GTQ' as const,instrumentToken:'demo_visa_approved',pan:'forbidden',cvv:'forbidden'};await service.pay(c,input,'journey-operation-0001');expect(JSON.parse(http.mock.calls[0][1].body)).toEqual({amount:'30.00',currency:'GTQ',instrumentToken:'demo_visa_approved'});expect(service).not.toHaveProperty('complete');});
+it('discards the previous stay balance and late response when changing stay',async()=>{
+ const ref=createRef<{change:()=>void}>();let release:((value:JourneySummary)=>void)|undefined;
+ http.mockImplementation(async path=>{if(path.includes(journeyAccount+'/journey'))throw new HttpError('Other stay not accessible',404);if(path.endsWith('/document-file'))return journeyFile();if(path.endsWith('/state'))return state;if(path.endsWith('/summary'))return new Promise<JourneySummary>(resolve=>{release=resolve;});return null;});
+ const ui=await mount(<RealCheckoutScreen/>,ref);await waitFor(()=>expect(release).toBeDefined());await act(async()=>{ref.current!.change();});await act(async()=>{release!(summary);});
+ await waitFor(()=>expect(ui.getByText(/responsable verificado/)).toBeTruthy());expect(ui.queryAllByText('Q. 100.00')[0]??null).toBeNull();expect(ui.queryByTestId('journey-open-payment')).toBeNull();expect(http.mock.calls.some(([path])=>path.includes(journeyAccount+'/journey/state'))).toBe(true);
+});
+it('persists before HTTP and rejects double submit while a payment is in flight',async()=>{
+ let release:((value:unknown)=>void)|undefined;
+ http.mockImplementation(async(path,init)=>{if(path.endsWith('/document-file'))return journeyFile();if(path.endsWith('/state'))return state;if(path.endsWith('/summary'))return summary;if(init?.method==='POST')return new Promise(resolve=>{release=resolve;});return null;});
+ const ui=await mount(<RealCheckoutScreen/>);await waitFor(()=>expect(ui.getByTestId('journey-open-payment').props.accessibilityState.disabled).toBe(false));await fireEvent.press(ui.getByTestId('journey-open-payment'));await fill(ui);
+ await fireEvent.press(ui.getByTestId('journey-payment-submit'));await waitFor(()=>expect(release).toBeDefined());expect(stored.size).toBe(1);await fireEvent.press(ui.getByTestId('journey-retry-payment'));expect(http.mock.calls.filter(([,init])=>init?.method==='POST')).toHaveLength(1);
+ await act(async()=>{release!(journeyReceipt());});await waitFor(()=>expect(ui.getByText('Pago simulado aprobado y registrado.')).toBeTruthy());expect(stored.size).toBe(0);
+});
+it('keeps an uncertain payment reference when authentication expires',async()=>{
+ http.mockImplementation(async(path,init)=>path.endsWith('/state')?state:path.endsWith('/summary')?summary:init?.method==='POST'?Promise.reject(new HttpError('Session expired',401)):null);
+ const ui=await mount(<RealCheckoutScreen/>);await waitFor(()=>expect(ui.getByTestId('journey-open-payment').props.accessibilityState.disabled).toBe(false));await fireEvent.press(ui.getByTestId('journey-open-payment'));await fill(ui);await fireEvent.press(ui.getByTestId('journey-payment-submit'));
+ await waitFor(()=>expect(ui.getByText(/No pudimos confirmar el resultado/)).toBeTruthy());expect(stored.size).toBe(1);expect(ui.queryByText('Pago simulado aprobado y registrado.')).toBeNull();
+});
+it('hides checkout until a confirmed check-in and never shows refresh buttons',async()=>{
+ state={...state,stay:{...state.stay,status:'RESERVED'},requests:[{id:c.reservationId,kind:'CHECK_IN',status:'OPEN',createdAt:'2030-01-02T15:00:00Z',completedAt:null}]};
+ const ui=await mount(<RealJourneyAccountActions/>);await waitFor(()=>expect(ui.getByText('Entrada solicitada · Pendiente de Staff')).toBeTruthy());expect(ui.queryByTestId('account-checkout-launcher')).toBeNull();expect(ui.queryByText('Actualizar estancia')).toBeNull();
+ state={...state,stay:{...state.stay,status:'IN_HOUSE'}};await act(async()=>{await client.invalidateQueries({queryKey:['guest-stay-journey']});});await waitFor(()=>expect(ui.getByTestId('account-checkout-launcher')).toBeTruthy());
+});
+it('pulls state and ledger from Backend without resetting the workspace',async()=>{
+ const ui=await mount(<RealCheckoutScreen/>);await waitFor(()=>expect(ui.getByTestId('journey-scroll')).toBeTruthy());await waitFor(()=>expect(ui.getByText('Saldo restante')).toBeTruthy());
+ expect(ui.queryByText('Actualizar gastos y estado')).toBeNull();expect(ui.queryByText('Ver resumen provisional')).toBeNull();expect(ui.queryByText('Revisa tus gastos y solicita la salida')).toBeNull();
+ const before=http.mock.calls.length;summary={...summary,balance:'25.00'};await act(async()=>{await ui.getByTestId('journey-scroll').props.refreshControl.props.onRefresh();});await waitFor(()=>expect(ui.getByText('Q. 25.00')).toBeTruthy());expect(http.mock.calls.length).toBeGreaterThan(before);
+});
+it('blocks creation for checkout pending and confirmed while isolating another selected stay',async()=>{
+ function Gate(){const gate=useServiceCreationGate();return <View><Text>{gate.message}</Text><Pressable testID="gate-create" accessibilityState={{disabled:gate.blocked}} disabled={gate.blocked}><Text>Crear servicio</Text></Pressable><Text>Historial disponible</Text></View>;}
+ state={...state,requests:[{id:c.reservationId,kind:'CHECK_OUT',status:'OPEN',createdAt:'2030-01-02T15:00:00Z',completedAt:null}]};
+ const ref=createRef<{change:()=>void}>();http.mockImplementation(async path=>path.includes(journeyAccount+'/journey/state')?{...state,stay:{...state.stay,stayId:journeyAccount},requests:[]}:state);
+ const ui=await mount(<Gate/>,ref);await waitFor(()=>expect(ui.getByText('Ya solicitaste tu salida. No puedes pedir más servicios.')).toBeTruthy());expect(ui.getByTestId('gate-create').props.accessibilityState.disabled).toBe(true);expect(ui.getByText('Historial disponible')).toBeTruthy();
+ await act(async()=>{ref.current!.change();});await waitFor(()=>expect(ui.getByTestId('gate-create').props.accessibilityState.disabled).toBe(false));state={...state,stay:{...state.stay,status:'CHECKED_OUT'}};await act(async()=>{await client.invalidateQueries({queryKey:['guest-stay-journey']});});await waitFor(()=>expect(ui.getByTestId('gate-create').props.accessibilityState.disabled).toBe(true));
+});

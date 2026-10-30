@@ -43,6 +43,7 @@ export function useReceivedPayment(actorId: string, sessionId: string, propertyI
     await Promise.all([
       client.invalidateQueries({ queryKey: ['staff-folio', sessionId, propertyId, reservationId] }),
       client.invalidateQueries({ queryKey: ['reservations', propertyId] }),
+      client.invalidateQueries({ queryKey: ['staff-stay-journey'] }),
     ]);
   }
   async function submit(payment?: ReceivedPayment) {

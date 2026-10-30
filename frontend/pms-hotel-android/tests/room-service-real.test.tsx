@@ -15,6 +15,7 @@ import {HttpRoomServiceService} from '@/modules/services/room-service/data/http/
 import {mapRoomServiceMenu,mapRoomServiceOrder} from '@/modules/services/room-service/data/mappers/mapRoomServiceDto';
 import type {RoomServiceOrderDto,RoomServiceProductDto} from '@/modules/services/room-service/data/dtos/RoomServiceDto';
 import {currentStayFixture} from '@/modules/stay/data/mocks/currentStayFixture';
+jest.mock('@/modules/checkout/presentation/hooks/useServiceCreationGate',()=>({useServiceCreationGate:()=>({blocked:false,message:''}),ServiceCreationNotice:()=>null}));
 jest.mock('@/config/environment',()=>({environment:{useMockApi:false},requireApiBaseUrl:()=> 'https://pms.example.test'}));
 jest.mock('expo-router',()=>({...jest.requireActual('expo-router'),router:{push:jest.fn(),replace:jest.fn(),dismissTo:jest.fn()},useLocalSearchParams:jest.fn(()=>({})),useFocusEffect:function useTestFocus(callback:EffectCallback){const React=jest.requireActual<typeof import('react')>('react');React.useEffect(callback,[callback]);}}));
 const context={reservationId:'own-reservation',reservationStayId:'own-stay'};

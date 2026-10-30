@@ -1,0 +1,88 @@
+# Standalone manual QA only: never extend compose.yaml or load the normal .env.
+name: pms-stay-manual-qa
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: pms_stay_qa
+      POSTGRES_USER: pms_stay_qa
+      POSTGRES_PASSWORD: StayQaDatabaseOnly2026
+    volumes:
+      - stay-qa-postgres:/var/lib/postgresql/data
+    networks: [qa]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U pms_stay_qa -d pms_stay_qa"]
+      interval: 2s
+      timeout: 3s
+      retries: 40
+  mailpit:
+    image: axllent/mailpit:latest
+    command: [--smtp-tls-cert, /tls/mailpit.crt, --smtp-tls-key, /tls/mailpit.key, --smtp-require-starttls, --smtp-auth-accept-any]
+    volumes:
+      - ${PMS_STAY_QA_ARTIFACTS:-/tmp/pms-stay-manual-qa}/tls:/tls:ro,z
+    ports: ["127.0.0.1:18090:8025"]
+    networks: [qa, edge]
+  backend:
+    image: pms-stay-manual-qa-backend:local
+    build: {context: ./backend}
+    environment:
+      SPRING_PROFILES_ACTIVE: demo
+      PMS_DEMO_DATA_ENABLED: 'true'
+      PMS_DATABASE_URL: jdbc:postgresql://postgres:5432/pms_stay_qa
+      PMS_DATABASE_USERNAME: pms_stay_qa
+      PMS_DATABASE_PASSWORD: StayQaDatabaseOnly2026
+      PMS_JWT_SECRET: c3RheS1xYS1zeW50aGV0aWMtand0LW5vdC1mb3ItcHJvZHVjdGlvbi0yMDI2LTEwLTI5LTAxMjM0NTY3ODk=
+      PMS_RESERVATION_LINK_OTP_HMAC_KEY: c3RheS1xYS1zeW50aGV0aWMtb3RwLW5vdC1mb3ItcHJvZHVjdGlvbi0yMDI2LTEwLTI5LTAxMjM0NTY3ODk=
+      PMS_BOOTSTRAP_ADMIN_USERNAME: stay_qa_admin
+      PMS_BOOTSTRAP_ADMIN_EMAIL: stay.admin@example.test
+      PMS_BOOTSTRAP_ADMIN_PASSWORD: StayQaAdminOnly2026!
+      PMS_EMAIL_PROVIDER: smtp
+      PMS_SMTP_HOST: mailpit
+      PMS_SMTP_PORT: '1025'
+      PMS_SMTP_USERNAME: stayqa
+      PMS_SMTP_APP_PASSWORD: StayQaMailOnly2026
+      PMS_SMTP_FROM: stayqa@example.test
+      JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/qa/tls/truststore.p12 -Djavax.net.ssl.trustStorePassword=StayQaTrustOnly2026
+    volumes:
+      - ${PMS_STAY_QA_ARTIFACTS:-/tmp/pms-stay-manual-qa}/tls:/qa/tls:ro,z
+    ports:
+      - "${PMS_STAY_QA_LAN_IP:?Set the private LAN IP}:18089:8080"
+      - "127.0.0.1:18089:8080"
+    networks: [qa, edge]
+    depends_on:
+      postgres: {condition: service_healthy}
+      mailpit: {condition: service_started}
+    healthcheck:
+      test: [CMD-SHELL, "wget -q -O /dev/null http://localhost:8080/actuator/health || exit 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 60
+      start_period: 30s
+  web:
+    image: pms-stay-manual-qa-web:local
+    build:
+      context: ./frontend/pms-hotel-web
+      args:
+        NEXT_PUBLIC_USE_MOCK_API: 'false'
+        NEXT_PUBLIC_API_BASE_URL: /api
+        NEXT_PUBLIC_PROPERTY_ID: 3032709f-a48b-300b-b860-1110bc6f1f13
+    environment:
+      HOSTNAME: 0.0.0.0
+      PORT: '3000'
+      PMS_BACKEND_INTERNAL_URL: http://backend:8080
+      PMS_WEB_PUBLIC_URL: http://localhost:3302
+    ports: ["127.0.0.1:3302:3000"]
+    networks: [qa, edge]
+    depends_on:
+      backend: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://localhost:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+volumes:
+  stay-qa-postgres: {}
+networks:
+  qa:
+    internal: true
+  edge: {}

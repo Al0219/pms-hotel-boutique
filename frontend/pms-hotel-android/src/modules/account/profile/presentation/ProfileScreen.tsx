@@ -1,3 +1,4 @@
+import { DemoContentNotice } from '@/shared/components/DemoContentNotice';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -24,6 +25,7 @@ import { deriveRemoteState } from '@/state/remoteState';
 import { useAccountProfile, useUpdateAccountProfile } from './hooks/useAccountProfile';
 
 export interface ProfileScreenProps {
+  readOnlyDemo?: boolean;
   service?: AccountProfileService;
 }
 
@@ -58,7 +60,7 @@ function RetryCard({ offline, onRetry, title }: { offline?: boolean; onRetry: ()
   );
 }
 
-export function ProfileScreen({ service }: ProfileScreenProps) {
+export function ProfileScreen({ service, readOnlyDemo = false }: ProfileScreenProps) {
   const query = useAccountProfile(service);
   const mutation = useUpdateAccountProfile(service);
   const state = deriveRemoteState(query, () => false);
@@ -85,7 +87,7 @@ export function ProfileScreen({ service }: ProfileScreenProps) {
   });
 
   const save = () => {
-    if (!active || !dirty || mutation.isPending || submittingRef.current) return;
+    if (readOnlyDemo || !active || !dirty || mutation.isPending || submittingRef.current) return;
 
     submittingRef.current = true;
     mutation.mutate(active, {
@@ -100,13 +102,13 @@ export function ProfileScreen({ service }: ProfileScreenProps) {
   };
 
   const update = (field: keyof Draft['profile'], value: string) => {
-    if (!active) return;
+    if (readOnlyDemo || !active) return;
     setSuccess(false);
     setDraft({ ...active, profile: { ...active.profile, [field]: value } });
   };
 
   const updateMarketingSms = (value: boolean) => {
-    if (!active) return;
+    if (readOnlyDemo || !active) return;
     setSuccess(false);
     setDraft({ ...active, marketingSmsConsent: value ? 'consented' : 'revoked' });
   };
@@ -118,6 +120,7 @@ export function ProfileScreen({ service }: ProfileScreenProps) {
       <GuestChildHeader backAccessibilityLabel="Volver a mi cuenta" backTestID="profile-back" onBack={back} title="Perfil" />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          {readOnlyDemo ? <DemoContentNotice detail="Perfil y preferencias de ejemplo. La edición no está habilitada; tu cuenta autenticada no se modifica." /> : null}
           {state.kind === 'loading' ? (
             <View style={styles.card} testID="profile-loading">
               <Text accessibilityRole="header" style={styles.heading}>Cargando Perfil</Text>
@@ -145,7 +148,7 @@ export function ProfileScreen({ service }: ProfileScreenProps) {
                     <Text style={styles.label}>{label}</Text>
                     <TextInput
                       accessibilityLabel={label}
-                      editable={!mutation.isPending}
+                      editable={!readOnlyDemo && !mutation.isPending}
                       onChangeText={(value) => update(field, value)}
                       style={styles.input}
                       testID={`profile-input-${field}`}
@@ -163,8 +166,8 @@ export function ProfileScreen({ service }: ProfileScreenProps) {
                   <Switch
                     accessibilityLabel="Marketing SMS"
                     accessibilityRole="switch"
-                    accessibilityState={{ checked: active.marketingSmsConsent === 'consented', disabled: mutation.isPending }}
-                    disabled={mutation.isPending}
+                    accessibilityState={{ checked: active.marketingSmsConsent === 'consented', disabled: readOnlyDemo || mutation.isPending }}
+                    disabled={readOnlyDemo || mutation.isPending}
                     onValueChange={updateMarketingSms}
                     testID="profile-marketing-sms"
                     value={active.marketingSmsConsent === 'consented'}
@@ -181,10 +184,10 @@ export function ProfileScreen({ service }: ProfileScreenProps) {
               <Pressable
                 accessibilityLabel="Guardar cambios"
                 accessibilityRole="button"
-                accessibilityState={{ disabled: !dirty || mutation.isPending, busy: mutation.isPending }}
-                disabled={!dirty || mutation.isPending}
+                accessibilityState={{ disabled: readOnlyDemo || !dirty || mutation.isPending, busy: mutation.isPending }}
+                disabled={readOnlyDemo || !dirty || mutation.isPending}
                 onPress={save}
-                style={[styles.button, (!dirty || mutation.isPending) && styles.disabled]}
+                style={[styles.button, (readOnlyDemo || !dirty || mutation.isPending) && styles.disabled]}
                 testID="profile-save"
               >
                 <Text style={styles.buttonText}>{mutation.isPending ? 'Guardando cambios…' : 'Guardar cambios'}</Text>

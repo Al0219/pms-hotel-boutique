@@ -91,3 +91,6 @@ export {
   PaymentRefundModal,
   type PaymentRefundModalProps,
 } from "./components/payment-refund-modal";
+export { SyntheticVisaForm } from './components/synthetic-visa-form';
+
+export { paymentAmountError } from './content/synthetic-visa';

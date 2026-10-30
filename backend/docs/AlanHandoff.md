@@ -1,3 +1,16 @@
+## 2026-10-29 — Integración de main en cancelación Staff — validación local PASS
+
+Integrado origin/main bbdcb53 por autorización de José. Conflictos en este archivo
+y AlanPlan resueltos conservando todas las entradas de ambos equipos. Revisadas
+las combinaciones automáticas de detalle, folio y OpenAPI; sin ajustes funcionales
+adicionales. Backend Java21/PG17 aislado:145 pruebas/8 clases PASS, cero omitidas.
+Web:68 casos/11 archivos PASS por lotes, lint/typecheck/build PASS. Un fallo inicial
+de espera de carga del folio se repitió por separado:6/6 PASS, sin editar pruebas.
+No se atribuye una nueva suite global PASS. QA manual de cancelación ya aprobado;
+pendientes checks del PR. staff-admin.test.tsx previo intacto y fuera del commit.
+Sin despliegue ni cambios en la BD habitual. Evidencia: %TEMP%/pms-staff-cancellation-merge-qa.
+Siguiente: publicar la resolución autorizada y revisar CI.
+
 ## 2026-10-29 — Cancelación Staff con penalización — EN_QA
 
 Contrato [66](66_STAFF_RESERVATION_CANCELLATION_MVP_CONTRACT.md) confirmado por
@@ -18,6 +31,121 @@ el diálogo con contenido desplazable y acciones visibles. Regresión UI de esta
 corrección: 14 tests PASS; navegador: 23 comprobaciones PASS, escritorio/móvil,
 rueda/teclado/táctil. Rama feature/staff-reservation-cancellation desde b11efa7.
 Publicación autorizada; pendiente CI y estabilizar esos tests para el cierre global.
+
+## 2026-10-29 — Stay Journey MVP cerrado: PASS técnico y manual
+
+Usuario confirma PASS manual completo, incluidos pagos, PDF, servicios, navegación,
+Android y Web. DoD completo, sin bloqueos conocidos. QA46 y contrato64 actualizados.
+Preparando commits separados Backend, Android y Web y PR a main; no hacer merge.
+
+## 2026-10-29 — Refinamiento visual PDF y demos Guest: EN_QA
+
+Renderer Backend adapta diseño Expo anterior solo en primera emisión; PDF guardado,
+SHA y endpoints intactos. Hotel/Perfil/Rewards/Promociones restaurados desde vistas
+existentes, demos identificadas, Perfil sin escritura ficticia. Backend19 PASS/verify,
+PDF/A4 revisado; evidencia Android/comandos en QA46 (`visual-*.log`). Sin migraciones
+nuevas ni despliegue; conservar12/12 manuales. Actualizar solo Backend QA y Expo,
+validar documento nuevo/histórico y vistas demo. Sin commit/push/PR.
+
+## 2026-10-29 — Cierre de pendientes Stay Journey: PASS técnico / EN_QA
+
+12/12 PASS manual previos conservados; solo cambios nuevos pendientes del usuario.
+PDF definitivo original Backend010 (bytea/SHA-256/único/inmutable), emisión concurrente
+segura y recuperación Android/Web; gate visual de servicios por estancia, Hotel/menú
+Guest sin Chat, iconos y confirmación compacta completados. Evidencia y comandos
+exclusivos de QA/Expo en [QA46](../../frontend/pms-hotel-android/docs/46_STAY_JOURNEY_MVP_QA.md).
+Contrato [64](64_STAY_JOURNEY_MVP.md). Migración010 verificada solo en bases técnicas:
+no aplicada aún a QA manual ni hotel. Sin reseed, despliegue parcial ni publicación.
+Siguiente: respaldo QA verificado, reconstruir solo Backend/Web y validar los cuatro
+casos manuales nuevos. No repetir los12 ya aceptados. Sin commit/push/PR.
+
+## 2026-10-29 — Ajustes UX finales Stay Journey: PASS técnico / EN_QA
+
+Inicio Android sin acceso Checkout hasta check-in confirmado; pull-to-refresh,
+folio ticket, Visa de prueba únicamente y Confirmar explícito, errores por campo,
+máscaras editables y recuperación idempotente. Room Service usa slot persistido
+mediante proyección de lectura Backend; ningún histórico ni PDF previo modificado.
+Web sin panel redundante: solicitudes en acciones de entrada/salida, gate financiero
+y Efectivo/Tarjeta de prueba dentro de Folio y pagos. Sin bloqueo de entrada por deuda.
+Backend92 PASS/OpenAPI/JAR; Web486 +20 layout posteriores; Android69 +14 finales,
+corridas solapadas. Lint/typecheck/build Web/export Android/diff-check PASS, Jest
+termina sin forceExit. Comandos mínimos de actualización del QA conservando datos
+[QA46](../../frontend/pms-hotel-android/docs/46_STAY_JOURNEY_MVP_QA.md).
+No despliegue sobre QA manual/base habitual en esta iteración; PG técnico desechable
+retirado. Sin nuevas migraciones, commit/push/PR ni cambios en main. EN_QA manual.
+
+## 2026-10-29 — QA final Stay Journey: entorno independiente preparado, EN_QA
+
+Prioridad actual: usar `compose.stay-qa.yaml`/`backend/scripts/stay-qa.sh` y
+`stay-qa-seed.py`, no reconstruir PMS habitual. [QA46](../../frontend/pms-hotel-android/docs/46_STAY_JOURNEY_MVP_QA.md)
+contiene comandos/credenciales sintéticas/casos. Proyecto `pms-stay-manual-qa`, DB
+`pms_stay_qa`, volumen propio; preflight antes de migraciones y009 EXECUTED en QA.
+Backend LAN10.34.49.253:18089, Web localhost:3302 (ventana privada), Mailpit18090
+con AUTH/STARTTLS confiable únicamente QA. No .env ni volumen habitual/examen.
+Reserva manual YNG35F7GN3,29→30 octubre2026,Room201 INSPECTED,RESERVED,Guest
+responsable verificado/vínculo OTP real consumido,folioQ650 de Staff55. Smoke en
+otra reserva EYETRWEHFL PASS hasta documento persistido; no consumir la manual.
+Catálogo demo vacío tras migraciones: fixture exclusivo QA copia productos/precios
+aprobados existentes, sin modificar migraciones ni inventar tarifas. SYSTEM en
+Android, sin reloj global ni cambios SO. Sin cambios funcionales en apps/Backend.
+Persistencia tras reinicio QA PASS: mismo documento,2 reservas y manual aún
+RESERVED/INSPECTED. URL LAN UP y puertos permitidos por firewall existente sin
+modificarlo. Bash/AST Python/preflight negativos/diff-check PASS.
+Mantener EN_QA hasta validación del teléfono/Web/PDF por usuario. Sin publicación.
+
+## 2026-10-29 — Stay Journey sesión2 terminada técnicamente; EN_QA manual
+
+Worktree `/tmp/pms-stay-contract`, rama `feature/stay-checkout-payments-mvp`.
+Conservada sesión1. Android Account/Checkout/Invoice HTTP real, solicitudes/folio,
+abonos/total sintéticos y recuperación idempotente SecureStore; documento servidor
+recuperable→PDF generar/visualizar/compartir. No fallback mock ni finalización Guest.
+Contrato [64](64_STAY_JOURNEY_MVP.md), evidencia/comandos de respaldo verificado,
+reconstrucción y Expo Go/manual [QA46](../../frontend/pms-hotel-android/docs/46_STAY_JOURNEY_MVP_QA.md).
+
+Sesión2: Backend87 PASS +verify/JAR/OpenAPI; bridge TCP real NativeGuestClient,
+PostgreSQL y Next BFF PASS (1 test en cada runner). Android581 PASS/60 suites;
+1 bridge opcional omitido en suite normal, acreditado por ejecución separada.
+Focal15 detectOpenHandles y regresión final55 PASS, salida normal sin forceExit.
+Web96 focales/lint/typecheck/build PASS. Android lint/typecheck/Doctor21/export
+Android PASS. Logs `/tmp/pms-stay-session2/`. Avisos existentes act Valet/Amenidades,
+errores PDF de pruebas negativas, NO_COLOR y Mockito/JDK; no handles reportados.
+
+No PASS de teléfono/visor PDF ni QA manual. Próximo: usuario ejecuta respaldo +
+restore de verificación y reconstrucción de Backend/Web desde QA46; abre Expo HTTP
+real y confirma7 recorridos manuales. Proyecto PMS detenido, volumen PG17 verificado
+solo lectura; instalación `examen_seccion_a` intacta. No se aplicó009 al hotel.
+Sin commit/push/PR ni cambios en main. Mantener EN_QA hasta aceptación explícita.
+
+## 2026-10-29 — Stay Journey MVP: sesión1 Backend/Web implementada, EN_QA
+
+Rama `feature/stay-checkout-payments-mvp`, worktree `/tmp/pms-stay-contract`, base
+`ba70022` (PR180). Usuario autoriza MVP de entrega; decisiones/API/QA y pendientes
+concretos de sesión2 en [64](64_STAY_JOURNEY_MVP.md). No se amplía la auditoría.
+Solicitudes Guest, responsable financiero verificado, pagos sintéticos persistidos,
+Room Service DONE→CHARGE único, bloqueo de pedidos/saldo y snapshot inmutable al
+checkout. Web en detalle de reserva conserva confirmación presencial y pagos61;
+agrega solicitudes, simulador y documento. No se aplicó009 a la BD del hotel.
+
+Pruebas:107 casos Backend distintos acreditados: corrida focal106 PASS/1 error de
+fixture de migración (referencia >16 caracteres); fixture corregida y ese caso
+repetido PASS, verify/JAR BUILD SUCCESS. Incluye dos clientes HTTP autenticados,
+rollback/replay y upgrade/reaplicación con ledger no vacío. OpenAPI27 PASS,
+125 operaciones/103 paths/153 schemas/16 tags. Web69 archivos/431 pruebas PASS,
+lint/typecheck/build PASS. Sin suite completa Backend/Android en esta sesión.
+Última regresión Backend19 PASS tras cubrir dos cierres Room Service concurrentes.
+Web: regresión final de seguridad35 PASS (incluye un caso nuevo de allowlist de
+almacenamiento; no se suma a431 como si fueran todos casos distintos). Build,
+lint y typecheck finales PASS. Avisos no bloqueantes: deprecaciones Java/Mockito
+y dependencias existentes.
+`git diff --check` PASS; migraciones007/008 sin cambios. Evidencia fuera de Git:
+`/tmp/pms-stay-session1/`. No PASS manual, commit, push ni PR.
+
+Siguiente sesión: Android HTTP real (GET journey/state da versión exacta), solicitud
+entrada/salida, pago con key persistida antes de enviar, documento servidor→PDF
+Android, guards y aislamiento de mocks; QA integrado y confirmación manual usuario.
+Mantener EN_QA. Respaldo Git stash con mensaje `safety: stay journey session1 backend web`
+conservado sin eliminar y árbol reaplicado; no es un commit de rama. La migración nueva se valida solo en PG desechable; respaldar y
+verificar antes de desplegar sobre datos existentes.
 
 ## 2026-10-29 — Integración de origin/main: conflictos resueltos, validación local PASS
 

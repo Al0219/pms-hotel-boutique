@@ -30,6 +30,8 @@ public interface FolioService {
 
     FolioView.MovementView postPayment(UUID folioId, @Valid MovementAmount amount, UUID actorId);
 
+    FolioView.MovementView postPaymentAsGuest(UUID folioId, @Valid MovementAmount amount, UUID guestAccountId);
+
     FolioView.MovementView postReversal(UUID folioId, UUID originalMovementId,
             @Valid ReversalReason reason, UUID actorId);
 

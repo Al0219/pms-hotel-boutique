@@ -1,3 +1,7 @@
+import HotelRoute from '../app/(guest)/hotel';
+import ProfileRoute from '../app/(guest)/account/profile';
+import RewardsRoute from '../app/(guest)/account/rewards';
+import PromotionsRoute from '../app/(guest)/account/promotions';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {act,fireEvent,render,waitFor} from '@testing-library/react-native';
 import {renderRouter} from 'expo-router/testing-library';
@@ -31,7 +35,7 @@ function Location(){const pathname=usePathname();const params=useLocalSearchPara
 async function setup({context=first,session=true,url='/valet',single=false}:{context?:typeof first|null;session?:boolean;url?:string;single?:boolean}={}){
  function Root(){return <AppClockProvider initialMode="CUSTOM" initialCustomDate={new Date('2030-01-02T14:00:00Z')}><QueryClientProvider client={client}><GuestAuthSessionProvider initialSession={session?{accountId:'guest'}:null}><ActiveReservationContextProvider initialActiveReservationContext={context}><Location/><GuestRouteGuard><Slot/></GuestRouteGuard></ActiveReservationContextProvider></GuestAuthSessionProvider></QueryClientProvider></AppClockProvider>;}
  function Single(){return <LinkedReservationsScreen service={{listForAccount:async()=>[summary(first)]}}/>;}
- return renderRouter({_layout:Root,login:Login,reservations:single?Single:Selection,'(guest)/_layout':GuestLayout,'(guest)/valet':ValetRoute,'(guest)/account':Home},{initialUrl:url});
+ return renderRouter({_layout:Root,login:Login,reservations:single?Single:Selection,'(guest)/_layout':GuestLayout,'(guest)/valet':ValetRoute,'(guest)/account':Home,'(guest)/hotel':HotelRoute,'(guest)/account/rewards':RewardsRoute,'(guest)/account/promotions':PromotionsRoute,'(guest)/account/profile':ProfileRoute},{initialUrl:url});
 }
 beforeEach(()=>{
  AppState.currentState='active';client=new QueryClient({defaultOptions:{queries:{retry:false,gcTime:0},mutations:{retry:false,gcTime:0}}});
@@ -89,3 +93,5 @@ it('drops an association draft on stay change while retaining account-only saved
  const ui=await setup();await waitFor(()=>expect(ui.getByTestId(`valet-associate-${savedId}`)).toBeTruthy());await fireEvent.press(ui.getByTestId(`valet-associate-${savedId}`));await fireEvent.press(ui.getByRole('radio',{name:'Conmigo'}));expect(ui.getByTestId('valet-confirm-association')).toBeTruthy();
  await act(async()=>router.replace({pathname:'/reservations',params:{returnTo:'/valet'}}));await waitFor(()=>expect(ui.getByTestId('linked-reservations-screen')).toBeTruthy());await fireEvent.press(ui.getByTestId(`linked-reservation-${second.reservationStayId}`));await fireEvent.press(ui.getByTestId('linked-reservations-continue'));await fireEvent.press(ui.getByTestId('linked-reservations-change-confirmation-confirm'));await waitFor(()=>expect(ui.getByText('Honda QA')).toBeTruthy());expect(ui.queryByTestId('valet-confirm-association')).toBeNull();expect(ui.getByTestId(`valet-associate-${savedId}`)).toBeTruthy();expect(request.mock.calls.some(([,init])=>init?.method==='POST')).toBe(false);expect(ui.queryByText('Toyota QA')).toBeNull();
 });
+
+it('Hotel and lightweight Guest routes preserve the selected stay and never expose Chat',async()=>{const ui=await setup({url:'/account'});await waitFor(()=>expect(ui.getByTestId('home-stay')).toHaveTextContent(first.reservationStayId));await fireEvent.press(ui.getByRole('tab',{name:'Hotel'}));await waitFor(()=>expect(ui.getByTestId('hotel-screen')).toBeTruthy());expect(ui.queryByLabelText('Abrir chat')).toBeNull();await fireEvent.press(ui.getByRole('tab',{name:'Inicio'}));await waitFor(()=>expect(ui.getByTestId('home-stay')).toHaveTextContent(first.reservationStayId));for(const [path,content] of [['/account/rewards','rewards-metrics'],['/account/promotions','promotions-items'],['/account/profile','profile-identity']] as const){await act(async()=>router.push(path));await waitFor(()=>expect(ui.getByTestId(content)).toBeTruthy());expect(ui.getByTestId('demo-content-notice')).toBeTruthy();expect(ui.queryByText(/Próximamente/)).toBeNull();await fireEvent.press(ui.getByLabelText('Volver a mi cuenta'));await waitFor(()=>expect(ui.getByTestId('home-stay')).toHaveTextContent(first.reservationStayId));}});

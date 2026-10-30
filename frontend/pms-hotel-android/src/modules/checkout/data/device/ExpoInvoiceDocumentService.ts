@@ -6,7 +6,7 @@ import { Platform } from 'react-native';
 
 import { type InvoiceDocumentResult, type InvoiceDocumentService } from '@/modules/checkout/data/services/InvoiceDocumentService';
 import { buildInvoicePdfHtml } from '@/modules/checkout/domain/buildInvoicePdfHtml';
-import { type CheckoutSessionSnapshot } from '@/modules/checkout/presentation/CheckoutSessionProvider';
+import { type InvoiceRenderData } from '@/modules/checkout/domain/InvoiceRenderData';
 
 const PDF_MIME_TYPE = 'application/pdf';
 const FLAG_GRANT_READ_URI_PERMISSION = 1;
@@ -17,7 +17,7 @@ function serializeInvoiceError(error: unknown) {
     : { errorString: String(error) };
 }
 
-function safePdfFilename(snapshot: CheckoutSessionSnapshot) {
+function safePdfFilename(snapshot: InvoiceRenderData) {
   const reference = snapshot.referenceText.replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64);
   return 'hotel-boutique-' + (reference || 'resumen-estancia') + '.pdf';
 }
@@ -31,7 +31,13 @@ function logPdfError(stage: 'PRINT' | 'WRITE' | 'OPEN' | 'SHARE', error: unknown
 }
 
 export class ExpoInvoiceDocumentService implements InvoiceDocumentService {
-  async generate(snapshot: CheckoutSessionSnapshot): Promise<InvoiceDocumentResult> {
+  async materialize(file:import('../../domain/DocumentFile').DocumentFile):Promise<InvoiceDocumentResult>{
+    const destination=new File(Paths.cache,`stay-${file.documentId}-${file.sha256}.pdf`);
+    if(destination.exists)destination.delete();destination.write(file.pdfBase64,{encoding:'base64'});
+    if(!destination.exists||destination.size<=0)throw new Error('PDF download unavailable');
+    return{uri:destination.uri};
+  }
+  async generate(snapshot: InvoiceRenderData): Promise<InvoiceDocumentResult> {
     let generatedPdfUri: string | null = null;
     try {
       const printed = await Print.printToFileAsync({ base64: true, html: buildInvoicePdfHtml(snapshot) });

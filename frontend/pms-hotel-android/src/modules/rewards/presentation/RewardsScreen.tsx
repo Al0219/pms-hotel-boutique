@@ -1,3 +1,4 @@
+import { DemoContentNotice } from '@/shared/components/DemoContentNotice';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -10,6 +11,7 @@ import { useRewards } from './hooks/useRewards';
 import { getTierPresentation } from './rewardTierPresentation';
 
 export interface RewardsScreenProps {
+  demonstration?: boolean;
   service?: RewardsService;
 }
 
@@ -25,7 +27,7 @@ function StateCard({ body, offline = false, onRetry, testID, title }: { body: st
   );
 }
 
-export function RewardsScreen({ service }: RewardsScreenProps) {
+export function RewardsScreen({ service, demonstration = false }: RewardsScreenProps) {
   const query = useRewards(service);
   const remoteState = deriveRemoteState(query, () => false);
   const backToAccount = () => router.dismissTo('/account');
@@ -35,6 +37,7 @@ export function RewardsScreen({ service }: RewardsScreenProps) {
     <View style={styles.screen} testID="rewards-screen">
       <GuestChildHeader backAccessibilityLabel="Volver a mi cuenta" backTestID="rewards-back" onBack={backToAccount} title="Rewards" />
       <ScrollView contentContainerStyle={styles.content}>
+        {demonstration ? <DemoContentNotice detail="Nivel y beneficios de ejemplo, sin saldo ni beneficios canjeables." /> : null}
         {remoteState.kind === 'loading' ? (
           <View style={styles.loading} testID="rewards-loading">
             <Text accessibilityRole="header" style={styles.heading}>Cargando Rewards</Text>

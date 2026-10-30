@@ -28,3 +28,9 @@ describe('Isolated synthetic card gateway', () => {
     message(frame.contentWindow, card); await waitFor(() => expect(change).toHaveBeenCalledWith(card)); expect(screen.queryByTitle('Formulario de tarjeta')).not.toBeInTheDocument();
   });
 });
+
+it('requires a validated synthetic card before selecting a payment scenario', () => {
+  render(<DemoCardGateway holderName="Titular QA" card={null} onChange={vi.fn()} disabled={false} showTestControls payment />);
+  expect(screen.getByText(/No ingreses una tarjeta real/)).toBeInTheDocument();
+  expect(screen.getByLabelText('Resultado de demostración')).toBeDisabled();
+});

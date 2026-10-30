@@ -28,6 +28,7 @@ import {
   SessionServiceRequestsProvider,
   useSessionServiceRequests,
 } from "@/modules/service-requests";
+jest.mock('@/modules/checkout/presentation/hooks/useServiceCreationGate',()=>({useServiceCreationGate:()=>({blocked:false,message:''}),ServiceCreationNotice:()=>null}));
 
 function RequestProbe() {
   const { requests } = useSessionServiceRequests();

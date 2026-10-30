@@ -24,7 +24,7 @@ class AmenitiesMigrationIntegrationTests {
  @Test void upgradeFromCurrentMainPreservesHistoricalDataChecksumsAndProvisionsAllProperties()throws Exception {
   try(var c=db.getConnection()) {
    String original=c.getSchema(),schema="amenities_upgrade_"+UUID.randomUUID().toString().replace("-","");sql(c,"create schema "+schema);
-   var current=manifest(c);var predecessor=new TreeMap<>(current);predecessor.keySet().removeAll(java.util.Set.of("005-operations-006","005-operations-007","005-operations-008"));
+   var current=manifest(c);var predecessor=new TreeMap<>(current);predecessor.keySet().removeAll(java.util.Set.of("005-operations-006","005-operations-007","005-operations-008","005-stay-journey-009","005-stay-document-files-010"));
    try {
     migrate(c,schema,"classpath:db/changelog/db.changelog-before-amenities.yaml");var before=manifest(c);assertEquals(predecessor,before);
     sql(c,"insert into service_requests(id,property_id,category,subject,priority,status,created_at,updated_at) values ('00000000-0000-4000-8000-000000000001','3dcd0a8e-5c6a-46e7-8d51-7c95d86b232d','HOUSEKEEPING','Historical housekeeping','MEDIUM','DONE',now(),now()),('00000000-0000-4000-8000-000000000002','3dcd0a8e-5c6a-46e7-8d51-7c95d86b232d','ROOM_SERVICE','Historical room service','MEDIUM','OPEN',now(),now())");

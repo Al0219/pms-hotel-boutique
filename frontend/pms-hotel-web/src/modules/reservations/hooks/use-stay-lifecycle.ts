@@ -17,6 +17,8 @@ const messages: Record<string, string> = {
   ROOM_NOT_INSPECTED: 'La habitación debe estar inspeccionada antes de entregar la llave.',
   OUTSTANDING_BALANCE: 'Hay saldo pendiente en un folio de la reserva. Debe resolverse antes de registrar cualquier salida.',
   BALANCE_UNVERIFIABLE: 'No se puede verificar el saldo de todos los folios. Revisa la contabilidad de la reserva antes de registrar la salida.',
+  PENDING_BILLABLE_ORDERS: 'Hay pedidos Room Service pendientes o aún sin contabilizar. Resuélvelos antes de registrar la salida.',
+  UNSUPPORTED_FINANCIAL_SCENARIO: 'Este recorrido requiere una reserva estándar, una estancia y un único folio Guest GTQ.',
   IDEMPOTENCY_KEY_REUSED: 'La referencia de esta operación ya se utilizó con otros datos. Cierra la ventana y revisa la estadía.',
 };
 type Attempt = { action: StayLifecycleAction; expectation: StayLifecycleExpectation; key: string };
@@ -39,6 +41,7 @@ export function useStayLifecycle(scope: StayLifecycleScope, sessionId: string, a
   async function refresh() {
     await Promise.all([
       client.invalidateQueries({ queryKey: ['reservations', scope.propertyId] }),
+      client.invalidateQueries({ queryKey: ['staff-stay-journey'] }),
       client.invalidateQueries({ queryKey: ['reservations', 'staff-stays', sessionId, scope.propertyId] }),
       client.invalidateQueries({ queryKey: ['staff-room-assignment', sessionId, scope.propertyId] }),
       client.invalidateQueries({ queryKey: ['staff-room-occupancy', sessionId, scope.propertyId] }),

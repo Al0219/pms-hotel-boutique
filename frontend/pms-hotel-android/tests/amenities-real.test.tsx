@@ -15,6 +15,7 @@ import {HttpAmenitiesService} from '@/modules/services/amenities/data/http/HttpA
 import {mapAmenitiesCatalog,mapAmenitiesRequest} from '@/modules/services/amenities/data/mappers/mapAmenitiesDto';
 import type {AmenitiesRequestDto,AmenityCatalogDto} from '@/modules/services/amenities/data/dtos/AmenitiesDto';
 import {currentStayFixture} from '@/modules/stay/data/mocks/currentStayFixture';
+jest.mock('@/modules/checkout/presentation/hooks/useServiceCreationGate',()=>({useServiceCreationGate:()=>({blocked:false,message:''}),ServiceCreationNotice:()=>null}));
 jest.mock('@/config/environment',()=>({environment:{useMockApi:false},requireApiBaseUrl:()=> 'https://pms.example.test'}));
 jest.mock('expo-router',()=>({...jest.requireActual('expo-router'),router:{push:jest.fn(),replace:jest.fn(),dismissTo:jest.fn()},useLocalSearchParams:jest.fn(()=>({})),useFocusEffect:function useTestFocus(callback:EffectCallback){const React=jest.requireActual<typeof import('react')>('react');React.useEffect(callback,[callback]);}}));
 const context={reservationId:'own-reservation',reservationStayId:'own-stay'};

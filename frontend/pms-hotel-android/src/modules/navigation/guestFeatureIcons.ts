@@ -5,6 +5,8 @@ export type GuestFeatureIcon = ComponentProps<typeof SymbolView>['name'];
 
 /** Shared presentation iconography for guest features and their launchers. */
 export const guestFeatureIcons = {
+  confirm: {android:'check',ios:'checkmark',web:'check'},
+  payment: {android:'payments',ios:'creditcard',web:'payments'},
   amenities: { android: 'redeem', ios: 'shippingbox.fill', web: 'redeem' },
   chat: { android: 'chat', ios: 'message.fill', web: 'chat' },
   cart: { android: 'shopping_cart', ios: 'cart.fill', web: 'shopping_cart' },

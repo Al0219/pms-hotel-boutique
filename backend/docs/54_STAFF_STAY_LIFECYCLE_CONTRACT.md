@@ -1,5 +1,8 @@
 # Check-in y checkout Staff — contrato Backend y Web
 
+> Incremento MVP autorizado 2026-10-29: [64](64_STAY_JOURNEY_MVP.md) agrega solicitudes Guest y snapshot informativo al checkout; exige saldo exactamente cero y rechaza escenarios financieros fuera del MVP. Mantiene autorización, habitación y acción presencial. EN_QA del incremento nuevo; no altera el PASS histórico.
+
+
 Estado: reglas de negocio y alcance financiero APPROVED por José el 2026-10-22.
 La aclaración del docente conserva pagos públicos simulados y excluye el PSP real
 del alcance académico actual. No quedan decisiones abiertas sobre qué deuda

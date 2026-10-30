@@ -20,14 +20,22 @@ public class ServiceRequestServiceImpl implements ServiceRequestService {
 
     private final ServiceRequestRepository requests;
     private final AuditService audit;
+    private final com.pms.hotelboutique.backend.modules.reservations.application.RoomServiceBillingService billing;
+    private final jakarta.persistence.EntityManager entities;
 
-    public ServiceRequestServiceImpl(ServiceRequestRepository requests, AuditService audit) {
+    public ServiceRequestServiceImpl(ServiceRequestRepository requests, AuditService audit, com.pms.hotelboutique.backend.modules.reservations.application.RoomServiceBillingService billing, jakarta.persistence.EntityManager entities) {
         this.requests = requests;
-        this.audit = audit;
+        this.audit = audit; this.billing=billing;this.entities=entities;
     }
 
     @Override
     public ServiceRequestView openRequest(@Valid OpenRequestCommand command) {
+        if (command.stayId()!=null) {
+            var rows=entities.createNativeQuery("SELECT status FROM reservation_stays WHERE id=?1 AND property_id=?2 FOR UPDATE").setParameter(1,command.stayId()).setParameter(2,command.propertyId()).getResultList();
+            if(rows.isEmpty())throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND,"Stay unavailable");
+            var pending=((Number)entities.createNativeQuery("SELECT count(*) FROM stay_journey_requests WHERE stay_id=?1 AND kind='CHECK_OUT' AND status='OPEN'").setParameter(1,command.stayId()).getSingleResult()).longValue();
+            if(pending>0||"CHECKED_OUT".equals(rows.get(0)))throw new ServiceIntakeClosed();
+        }
         Instant now = Instant.now();
         ServiceRequest request = new ServiceRequest(UUID.randomUUID(), command.propertyId(),
                 command.category(), command.subject(), now);
@@ -110,12 +118,21 @@ public class ServiceRequestServiceImpl implements ServiceRequestService {
     private ServiceRequestView transition(UUID requestId, String action, UUID actorId,
             RequestTransition transition) {
         ServiceRequest request = existing(requestId);
+        boolean persistedOrder=billing.beforeTransition(requestId,action);
+        if(persistedOrder){
+            entities.refresh(request);
+            // A second Staff client can have passed its version check before waiting on the financial lock.
+            if(action.equals("REQUEST_COMPLETED")&&request.getStatus()==ServiceRequest.Status.DONE
+                ||action.equals("REQUEST_STARTED")&&request.getStatus()==ServiceRequest.Status.IN_PROGRESS)
+                return ServiceRequestView.from(request);
+        }
         ServiceRequest.Status before = request.getStatus();
         try {
             transition.apply(request, Instant.now());
         } catch (IllegalStateException | IllegalArgumentException e) {
             throw new ServiceRequestException(e.getMessage(), e);
         }
+        if(action.equals("REQUEST_COMPLETED"))billing.delivered(requestId,actorId);
         record(request, action, "{\"status\":\"" + before + "\"}",
                 "{\"status\":\"" + request.getStatus() + "\"}", actorId);
         return ServiceRequestView.from(request);

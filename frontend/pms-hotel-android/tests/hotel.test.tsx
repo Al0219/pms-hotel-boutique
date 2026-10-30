@@ -68,17 +68,7 @@ describe('Hotel — IMP-AND-0114', () => {
     expect(ui.queryByRole('button', { name: 'Ver servicios' })).toBeNull();
   });
 
-  it('shows the floating Chat action only at roots, renders a real icon, and returns to Hotel with native history', async () => {
-    const ui = await renderRouter({ _layout: GuestTestLayout, hotel: HotelRoute, chat: ShellOnly }, { initialUrl: '/hotel' });
-    await waitFor(() => expect(ui.getByTestId('hotel-screen')).toBeTruthy());
-    expect(ui.getByTestId('guest-navigation-chat-fab-icon')).toBeTruthy();
-    await fireEvent.press(ui.getByLabelText('Abrir chat'));
-    await waitFor(() => expect(ui.getByTestId('hotel-pathname')).toHaveTextContent('/chat'));
-    expect(ui.queryByTestId('guest-navigation-chat-fab')).toBeNull();
-    await act(async () => router.back());
-    await waitFor(() => expect(ui.getByTestId('hotel-pathname')).toHaveTextContent('/hotel'));
-  });
-
+  it('keeps Hotel within Guest navigation and hides Chat',async()=>{const ui=await renderRouter({_layout:GuestTestLayout,hotel:HotelRoute},{initialUrl:'/hotel'});await waitFor(()=>expect(ui.getByTestId('hotel-screen')).toBeTruthy());expect(ui.queryByTestId('guest-navigation-chat-fab')).toBeNull();expect(ui.queryByLabelText('Abrir chat')).toBeNull();});
   it('uses the shared root header for all root titles and a normal aligned row', () => {
     const headerSource = require('fs').readFileSync('src/modules/navigation/GuestRootHeader.tsx', 'utf8');
     const stylesSource = require('fs').readFileSync('src/modules/navigation/guestNavigationStyles.ts', 'utf8');
@@ -109,13 +99,13 @@ describe('Hotel — IMP-AND-0114', () => {
   it('renders menu and Chat only on roots and hides both from service child routes', async () => {
     const ui = await renderRouter({ _layout: GuestTestLayout, account: ShellOnly, services: ShellOnly, valet: ShellOnly, hotel: ShellOnly, 'services/requests': ShellOnly, 'services/amenities': ShellOnly, 'services/room-service': ShellOnly }, { initialUrl: '/account' });
     expect(ui.getByTestId('guest-navigation-menu-button')).toBeTruthy();
-    expect(ui.getByTestId('guest-navigation-chat-fab')).toBeTruthy();
+    expect(ui.queryByTestId('guest-navigation-chat-fab')).toBeNull();
     await act(async () => router.replace('/services'));
     await waitFor(() => expect(ui.getByTestId('guest-navigation-menu-button')).toBeTruthy());
     await act(async () => router.replace('/valet'));
     await waitFor(() => expect(ui.getByTestId('guest-navigation-menu-button')).toBeTruthy());
     await act(async () => router.replace('/hotel'));
-    await waitFor(() => expect(ui.getByTestId('guest-navigation-chat-fab')).toBeTruthy());
+    await waitFor(() => expect(ui.queryByTestId('guest-navigation-chat-fab')).toBeNull());
     for (const pathname of ['/services/requests', '/services/amenities', '/services/room-service']) {
       await act(async () => router.replace(pathname));
       await waitFor(() => expect(ui.queryByTestId('guest-navigation-menu-button')).toBeNull());

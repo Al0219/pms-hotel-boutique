@@ -9,6 +9,7 @@ import { HousekeepingScreen } from '@/modules/services/housekeeping/presentation
 import { housekeepingQaTimeSlots } from '@/modules/services/housekeeping/presentation/housekeepingQaOptions';
 import { currentStayFixture } from '@/modules/stay/data/mocks/currentStayFixture';
 import { propertyDateTimeMs } from '@/shared/time/propertyTime';
+jest.mock('@/modules/checkout/presentation/hooks/useServiceCreationGate',()=>({useServiceCreationGate:()=>({blocked:false,message:''}),ServiceCreationNotice:()=>null}));
 jest.mock('@/config/environment', () => ({ environment: { useMockApi: false } }));
 jest.mock('expo-router', () => ({ ...jest.requireActual('expo-router'), router: { replace: jest.fn(), dismissTo: jest.fn() }, useLocalSearchParams: jest.fn(() => ({})), useFocusEffect: jest.fn() }));
 const timezone = 'America/Guatemala';

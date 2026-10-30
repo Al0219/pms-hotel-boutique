@@ -23,3 +23,9 @@ databaseChangeLog:
   - include:
       file: 008-reusable-valet.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 009-stay-journey.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 010-stay-document-files.yaml
+      relativeToChangelogFile: true

@@ -7,7 +7,7 @@ const uuid = (value: unknown): value is string => typeof value === 'string'
   && /^[a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12}$/i.test(value);
 const conflicts = new Set(['STALE_STAY', 'RESERVATION_NOT_CONFIRMED', 'OUTSIDE_ARRIVAL_DATES',
   'ROOM_NOT_ASSIGNED', 'ROOM_TYPE_MISMATCH', 'ROOM_UNAVAILABLE', 'ROOM_BLOCKED',
-  'ROOM_NOT_INSPECTED', 'OUTSTANDING_BALANCE', 'BALANCE_UNVERIFIABLE', 'IDEMPOTENCY_KEY_REUSED']);
+  'ROOM_NOT_INSPECTED', 'OUTSTANDING_BALANCE', 'BALANCE_UNVERIFIABLE', 'PENDING_BILLABLE_ORDERS', 'UNSUPPORTED_FINANCIAL_SCENARIO', 'IDEMPOTENCY_KEY_REUSED']);
 function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('INVALID_LIFECYCLE');
   return value as Record<string, unknown>;
