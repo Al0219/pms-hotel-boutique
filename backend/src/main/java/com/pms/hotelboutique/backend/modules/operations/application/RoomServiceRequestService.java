@@ -38,11 +38,17 @@ public class RoomServiceRequestService {
     private final StaffAuthorizationService staffAuthorization;
     private final PropertyScopeResolver scopes;
     private final ObjectMapper json;
+    private final com.pms.hotelboutique.backend.modules.reservations.application.RoomServiceBillingService billing;
     public RoomServiceRequestService(GuestAuthService auth,GuestServiceContext contexts,JdbcClient jdbc,ServiceRequestService operations,
             ServiceRequestRepository requests,AuditService audit,EntityManager entities,StaffAuthService staffSessions,
-            StaffAuthorizationService staffAuthorization,PropertyScopeResolver scopes,ObjectMapper json) {
+            StaffAuthorizationService staffAuthorization,PropertyScopeResolver scopes,ObjectMapper json,com.pms.hotelboutique.backend.modules.reservations.application.RoomServiceBillingService billing) {
         this.auth=auth;this.contexts=contexts;this.jdbc=jdbc;this.operations=operations;this.requests=requests;this.audit=audit;
-        this.entities=entities;this.staffSessions=staffSessions;this.staffAuthorization=staffAuthorization;this.scopes=scopes;this.json=json;
+        this.entities=entities;this.staffSessions=staffSessions;this.staffAuthorization=staffAuthorization;this.scopes=scopes;this.json=json;this.billing=billing;
+    }
+    private Context lockedContext(GuestPrincipal guest,UUID reservation,UUID stay){
+        var context=contexts.load(guest.guestAccountId(),reservation,stay,false);
+        billing.lock(context.propertyId(),reservation);
+        return contexts.load(guest.guestAccountId(),reservation,stay,true);
     }
     private GuestPrincipal active(GuestPrincipal p) { if(p==null)throw new GuestAuthenticationException();return auth.getActivePrincipal(p); }
     @Transactional(readOnly=true)
@@ -55,7 +61,7 @@ public class RoomServiceRequestService {
                 Arrays.stream((String[])rs.getArray("periods").getArray()).map(Period::valueOf).toList(),rs.getLong("unit_price_minor"),rs.getString("currency"),rs.getBoolean("available"))).list();
     }
     public Creation create(GuestPrincipal p,UUID reservation,UUID stay,String key,OrderInput input) {
-        var guest=active(p);var c=contexts.load(guest.guestAccountId(),reservation,stay,true);
+        var guest=active(p);var c=lockedContext(guest,reservation,stay);
         if(key==null||!key.matches("[A-Za-z0-9-]{16,100}"))throw invalid();
         var payload=normalize(input);String hash=fingerprint(payload);
         var prior=jdbc.sql("SELECT id,initial_payload_hash FROM room_service_orders WHERE stay_id=:stay AND request_key=:key")
@@ -79,7 +85,7 @@ public class RoomServiceRequestService {
         return ids("sr.property_id=:property AND sr.reservation_id=:reservation AND sr.stay_id=:stay",c.propertyId(),reservation,stay).stream().map(id->read(id,c.propertyId())).toList();
     }
     public Order edit(GuestPrincipal p,UUID reservation,UUID stay,UUID id,EditInput input) {
-        var guest=active(p);var c=contexts.load(guest.guestAccountId(),reservation,stay,true);var row=owned(c,reservation,stay,id);
+        var guest=active(p);var c=lockedContext(guest,reservation,stay);var row=owned(c,reservation,stay,id);
         requireModifiable(c,row,Instant.now());var payload=normalize(input.order());String hash=fingerprint(payload);
         String previous=jdbc.sql("SELECT current_payload_hash FROM room_service_orders WHERE id=:id").param("id",id).query(String.class).single();
         if(hash.equals(previous))return read(id,c.propertyId());
@@ -94,7 +100,7 @@ public class RoomServiceRequestService {
         guestAudit(guest,c,id,"ROOM_SERVICE_EDITED","{\"totalMinor\":"+before.totalMinor()+"}","{\"totalMinor\":"+total+",\"serviceDate\":\""+payload.serviceDate()+"\",\"deliveryTime\":\""+payload.deliveryTime()+"\"}");return read(id,c.propertyId());
     }
     public Order cancel(GuestPrincipal p,UUID reservation,UUID stay,UUID id,Instant expected) {
-        var guest=active(p);var c=contexts.load(guest.guestAccountId(),reservation,stay,true);var row=owned(c,reservation,stay,id);
+        var guest=active(p);var c=lockedContext(guest,reservation,stay);var row=owned(c,reservation,stay,id);
         if(row.getStatus()==Status.CANCELLED)return read(id,c.propertyId());
         requireModifiable(c,row,Instant.now());version(row,expected);row.cancel(nextTimestamp(row));requests.saveAndFlush(row);
         guestAudit(guest,c,id,"ROOM_SERVICE_CANCELLED","{\"status\":\"OPEN\"}","{\"status\":\"CANCELLED\"}");return read(id,c.propertyId());

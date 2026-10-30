@@ -1,5 +1,8 @@
 # Folio mínimo Staff y registro de pagos — contrato del incremento
 
+> Incremento MVP 2026-10-29: [64](64_STAY_JOURNEY_MVP.md) agrega pago simulado separado y documento informativo. Este formulario presencial conserva contrato y comportamiento. Las exclusiones de tarjeta/invoice de esta entrega histórica no describen el incremento nuevo EN_QA.
+
+
 Estado: CONTRATO CONFIRMADO por José el 2026-10-26: «permitamos abono y pago total».
 Solicitud: cerrar el ciclo de reservas tomadas desde recepción; rama
 feature/staff-folio-payments desde main566c7f0. Owner de este incremento: José,

@@ -1,5 +1,8 @@
 # Room Service real MVP — contrato60
 
+> Incremento autorizado 2026-10-29: [64](64_STAY_JOURNEY_MVP.md) contabiliza pedidos DONE por su importe persistido, una sola vez, y bloquea salida con pedidos cobrables pendientes. No cobra al crear/cancelar. Precios y snapshot existentes se conservan; nuevo incremento EN_QA.
+
+
 **COMPLETADA / PASS técnico y manual** para el recorrido Room Service, confirmado
 por el usuario. Rama `feature/android-room-service-real-mvp`, base main8aed2f6
 (PR171), worktree `/tmp/pms-room-service`. IMP-AND-0111 conserva su cierre UI/mock;
