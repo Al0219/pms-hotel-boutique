@@ -20,3 +20,5 @@ export function NightlyPriceRange({ rooms, filters, onChange }: { rooms: Availab
     </div>
   </div>;
 }
+
+// Indicador de rango de tarifas nocturnas
