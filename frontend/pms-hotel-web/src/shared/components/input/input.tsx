@@ -1,3 +1,4 @@
+/** Componente de campo de entrada con soporte accesible. */
 import React, { forwardRef, useId } from 'react';
 import styles from './input.module.css';
 
