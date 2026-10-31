@@ -1,3 +1,6 @@
+/** Strict formatted date string representation (YYYY-MM-DD). */
+export type BookingDateString = string;
+
 export interface BookingSearchCriteria {
   checkIn: string; // YYYY-MM-DD
   checkOut: string; // YYYY-MM-DD
