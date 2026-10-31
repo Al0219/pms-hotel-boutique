@@ -1,3 +1,4 @@
+/** Ícono SVG accesible con atributos semánticos. */
 import type { CSSProperties } from 'react';
 
 export function SvgIcon({ name, className, style }: {
