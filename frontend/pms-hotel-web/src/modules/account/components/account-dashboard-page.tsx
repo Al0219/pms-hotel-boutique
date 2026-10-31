@@ -92,3 +92,5 @@ function RealAccountDashboard({ summary }: { summary: RealAccountSummary }) {
     </div>
   </section>;
 }
+
+// Tablero de perfil y gestión de cuenta del huésped
