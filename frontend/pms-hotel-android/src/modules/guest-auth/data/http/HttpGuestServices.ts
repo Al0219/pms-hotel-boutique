@@ -12,6 +12,9 @@ import { DomainMappingError } from '@/domain/errors/DomainMappingError';
 export class HttpGuestAuthService implements GuestAuthService {
   constructor(private readonly client: NativeGuestClient = nativeGuestClient) {}
   login(request: GuestLoginRequest) { return this.client.login(request); }
+  loginWithTokens(tokens: { accessToken: string; refreshToken?: string; accessTokenExpiresInSeconds?: number }) {
+    return this.client.loginWithTokens(tokens);
+  }
   restore() { return this.client.restore(); }
   logout() { return this.client.logout(); }
 }

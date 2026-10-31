@@ -1,16 +1,40 @@
-/* Public 01 palette approved by José on 2026-10-04; private PMS tokens remain unchanged. */
 .shell {
-  --color-surface-page: #f9f9f6;
-  --color-surface-dark: #2e3531;
-  --color-brand-dark: #2e3531;
-  --color-brand-primary: #5a6b5d;
-  --color-brand-primary-hover: #4d5e50;
-  --color-brand-primary-strong: #4d5e50;
-  --color-brand-soft: #e1e7dd;
-  --color-text-secondary: #657068;
+  --color-surface-page: #FDFCFA;
+  --color-surface-dark: #121815;
+  --color-brand-dark: #121815;
+  --color-brand-primary: #2C3E35;
+  --color-brand-primary-hover: #3A5246;
+  --color-brand-primary-strong: #1E2B25;
+  --color-brand-soft: #D9E2D4;
+  --color-text-secondary: #6B716C;
   background: var(--color-surface-page);
   min-height: 100dvh;
+  transition: background-color 0.25s ease;
 }
+
+:global(html.dark) .shell,
+:global(html[data-theme='dark']) .shell {
+  --color-surface-page: #121815;
+  --color-surface-card: #1A231F;
+  --color-surface-dark: #121815;
+  --color-brand-dark: #FDFCFA;
+  --color-brand-primary: #2C3E35;
+  --color-brand-primary-hover: #3A5246;
+  --color-brand-primary-strong: #1E2B25;
+  --color-text-primary: #FDFCFA;
+  --color-text-secondary: #B8C0BA;
+  --color-border-default: #2C3E35;
+}
+
+:global(html.dark) .header {
+  background: rgba(18, 24, 21, 0.92);
+  border-bottom: 1px solid rgba(44, 62, 53, 0.65);
+}
+
+:global(html.dark) .brand {
+  color: #FDFCFA;
+}
+
 .header { position: sticky; top: 0; z-index: 50; background: color-mix(in srgb, var(--color-surface-page) 92%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid color-mix(in srgb, var(--color-border-default) 65%, transparent); }
 .headerInner, .footerInner { width: min(var(--public-container-max), calc(100% - 2 * var(--public-container-gutter))); margin: auto; }
 .headerInner { display: flex; align-items: center; justify-content: space-between; gap: 32px; min-height: 88px; }

@@ -132,6 +132,22 @@ export class NativeGuestClient {
     return this.session();
   }
 
+  async loginWithTokens(dto: { accessToken: string; refreshToken?: string; accessTokenExpiresInSeconds?: number }): Promise<GuestAuthSession> {
+    const expiresIn = dto.accessTokenExpiresInSeconds && Number.isFinite(dto.accessTokenExpiresInSeconds) && dto.accessTokenExpiresInSeconds > 0
+      ? dto.accessTokenExpiresInSeconds
+      : 900;
+    if (dto.refreshToken) {
+      await this.saveTokens({
+        accessToken: dto.accessToken,
+        refreshToken: dto.refreshToken,
+        accessTokenExpiresInSeconds: expiresIn,
+      });
+    } else {
+      this.accessToken = dto.accessToken;
+    }
+    return this.session();
+  }
+
   async restore(): Promise<GuestAuthSession | null> {
     if (!(await this.store.read())) return null;
     try { await this.refresh(); return await this.session(); }

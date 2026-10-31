@@ -124,7 +124,10 @@ export function PublicSearchForm({
   };
 
   return (
-    <section className={`${styles.card} ${isLanding ? styles.landing : ''}`} aria-labelledby="search-form-title">
+    <section
+      className={`${styles.card} ${isLanding ? `${styles.landing} bg-white/80 dark:bg-stone-900/80 backdrop-blur-md border border-white/40 dark:border-stone-700/50 shadow-2xl rounded-3xl p-6 md:p-8` : ''}`}
+      aria-labelledby="search-form-title"
+    >
       <div className={styles.header}>
         <h2 id="search-form-title" className={isLanding ? styles.srOnly : styles.title}>
           Reserva tu Estancia Exclusiva
@@ -146,6 +149,7 @@ export function PublicSearchForm({
             label={isLanding ? 'Check-in' : 'Fecha de Llegada'}
             isRequired
             value={arrival}
+            className={isLanding ? 'bg-white/90 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-700/40 focus:border-emerald-700 outline-none' : undefined}
             onChange={(e) => {
               setCheckIn(e.target.value);
               if (errors.checkIn) setErrors((prev) => ({ ...prev, checkIn: undefined }));
@@ -163,6 +167,7 @@ export function PublicSearchForm({
             label={isLanding ? 'Check-out' : 'Fecha de Salida'}
             isRequired
             value={departure}
+            className={isLanding ? 'bg-white/90 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-700/40 focus:border-emerald-700 outline-none' : undefined}
             onChange={(e) => {
               setCheckOut(e.target.value);
               if (errors.checkOut) setErrors((prev) => ({ ...prev, checkOut: undefined }));
@@ -174,7 +179,7 @@ export function PublicSearchForm({
 
           {isLanding && <div className={styles.occupancy}>
             <span className={styles.occupancyLabel} id="occupancy-label">Huéspedes</span>
-            <button type="button" ref={occupancyToggle} className={styles.occupancyToggle}
+            <button type="button" ref={occupancyToggle} className={`${styles.occupancyToggle} bg-white/90 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-700/40 focus:border-emerald-700 outline-none`}
               aria-labelledby="occupancy-label occupancy-value" aria-expanded={occupancyOpen}
               aria-controls="occupancy-options" onClick={() => setOccupancyOpen(open => !open)}>
               <BookingIcon name="guests" />
@@ -183,7 +188,7 @@ export function PublicSearchForm({
             </button>
           </div>}
 
-          {isLanding && <Button type="submit" size="lg" isLoading={isBusy} loadingText="Buscando…" className={styles.landingSubmit}>
+          {isLanding && <Button type="submit" size="lg" isLoading={isBusy} loadingText="Buscando…" className={`${styles.landingSubmit} bg-[#2C3E35] hover:bg-[#3A5246] text-white rounded-xl shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all`}>
             Buscar disponibilidad <BookingIcon name="arrow" />
           </Button>}
 

@@ -44,15 +44,86 @@
 
 .listSurface { display: grid; gap: 0; min-width: 0; }
 .resultsFooter { min-height: 44px; align-items: center; display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; padding: 0 4px; margin-top: var(--space-4); }
-.resultsSummary { color: #68736b; font-size: 12px; margin: 0; }
-.scrollHint { display: none; color: #68736b; font-size: 12px; }
+.resultsSummary { color: var(--color-text-secondary, #68736b); font-size: 12px; margin: 0; }
+.scrollHint { display: none; color: var(--color-text-secondary, #68736b); font-size: 12px; }
 @media (max-width: 1100px) { .scrollHint { display: block; } }
 @media (max-width: 600px) { .resultsFooter { align-items: flex-start; flex-direction: column; } }
 
 .listSurface :is(input, select, button, a):focus-visible { outline: 3px solid #6b7c62; outline-offset: 3px; }
 .reference { display: block; font-size: 13px; font-weight: 600; }
-.cellText { color: #354337; font-size: 13px; }
-.cellMuted, .tableRegion .cellMuted { color: #6f7a72; font-size: 12px; line-height: 1.7; margin: 0; }
+.cellText { color: var(--color-text-primary, #354337); font-size: 13px; }
+.cellMuted, .tableRegion .cellMuted { color: var(--color-text-secondary, #6f7a72); font-size: 12px; line-height: 1.7; margin: 0; }
+
+:global(html.dark) .cellText,
+:global(html[data-theme='dark']) .cellText {
+  color: #ffffff;
+}
+
+:global(html.dark) .resultsSummary,
+:global(html.dark) .scrollHint,
+:global(html.dark) .cellMuted,
+:global(html.dark) .tableRegion .cellMuted,
+:global(html[data-theme='dark']) .resultsSummary,
+:global(html[data-theme='dark']) .scrollHint,
+:global(html[data-theme='dark']) .cellMuted,
+:global(html[data-theme='dark']) .tableRegion .cellMuted {
+  color: #d4d4d8;
+}
+
+:global(html.dark) .filters,
+:global(html[data-theme='dark']) .filters {
+  background: #1c1917;
+  border-color: #292524;
+}
+
+:global(html.dark) .field :is(input, select),
+:global(html.dark) .searchField input,
+:global(html.dark) .inlineEditor input,
+:global(html[data-theme='dark']) .field :is(input, select),
+:global(html[data-theme='dark']) .searchField input,
+:global(html[data-theme='dark']) .inlineEditor input {
+  background: #18181b;
+  color: #ffffff;
+  border-color: #3f3f46;
+}
+
+:global(html.dark) .button,
+:global(html.dark) .inlineEditor button,
+:global(html[data-theme='dark']) .button,
+:global(html[data-theme='dark']) .inlineEditor button {
+  background: #1c1917;
+  border-color: #292524;
+  color: #D4AF37;
+}
+
+:global(html.dark) .tableRegion table thead th,
+:global(html[data-theme='dark']) .tableRegion table thead th {
+  background: #18181b;
+  color: #D4AF37;
+  border-bottom: 1px solid #292524;
+}
+
+:global(html.dark) .tableRegion table tbody td,
+:global(html[data-theme='dark']) .tableRegion table tbody td {
+  border-color: #292524;
+  color: #f4f4f5;
+}
+
+:global(html.dark) .tableRegion table tbody tr:hover td,
+:global(html.dark) .tableRegion table tbody tr:focus-within td,
+:global(html[data-theme='dark']) .tableRegion table tbody tr:hover td,
+:global(html[data-theme='dark']) .tableRegion table tbody tr:focus-within td {
+  background: #18181b;
+}
+
+:global(html.dark) .pageSizeField select,
+:global(html.dark) .pageButton,
+:global(html[data-theme='dark']) .pageSizeField select,
+:global(html[data-theme='dark']) .pageButton {
+  background: #18181b;
+  border-color: #292524;
+  color: #D4AF37;
+}
 .paginationControls { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: center; min-width: 0; max-width: 100%; }
 .pageSizeField { display: flex; gap: var(--space-2); align-items: center; color: var(--color-text-secondary); font-size: var(--font-size-caption); }
 .pageSizeField select { height: 44px; min-width: 68px; border: 1px solid var(--color-border-default); border-radius: var(--radius-sm); background: var(--color-surface-card); color: var(--color-text-brand); padding: var(--space-2); font: inherit; }

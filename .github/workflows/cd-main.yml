@@ -1,0 +1,58 @@
+name: CD - Production Deployment
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to Production VPS
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH and Deploy to Remote VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script_stop: true
+          script: |
+            echo "🚀 Iniciando proceso de despliegue continuo en VPS..."
+            cd /root/app/src_project 2>/dev/null || cd /root/app || cd ~/pms-hotel-boutique || cd /var/www/hotel-boutique
+            echo "📂 Directorio de despliegue: $(pwd)"
+
+            echo "📥 Actualizando código desde la rama main..."
+            git checkout main
+            git pull origin main
+
+            echo "🐳 Reconstruyendo y actualizando servicios con Docker Compose..."
+            docker compose up -d --build --remove-orphans
+
+            echo "✅ Contenedores actualizados y en ejecución."
+
+      - name: Verify Live Service Health (HTTP 200 Check)
+        run: |
+          echo "🔍 Comprobando disponibilidad del servicio en https://hotelboutique.moonyrain.online..."
+          sleep 10
+          MAX_ATTEMPTS=15
+          SLEEP_SECONDS=5
+
+          for i in $(seq 1 $MAX_ATTEMPTS); do
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://hotelboutique.moonyrain.online || true)
+            echo "Intento $i/$MAX_ATTEMPTS: Código HTTP recibido: $HTTP_STATUS"
+            if [ "$HTTP_STATUS" -eq 200 ]; then
+              echo "✅ El servicio respondió HTTP 200 exitosamente sin caídas."
+              exit 0
+            fi
+            sleep $SLEEP_SECONDS
+          done
+
+          echo "❌ Error: El servicio no respondió HTTP 200 tras $MAX_ATTEMPTS intentos."
+          exit 1
+

@@ -6,4 +6,5 @@ export interface GuestAuthService {
   restore?(): Promise<GuestAuthSession | null>;
   logout?(): Promise<void>;
   login(request: GuestLoginRequest): Promise<GuestAuthSession>;
+  loginWithTokens?(tokens: { accessToken: string; refreshToken?: string; accessTokenExpiresInSeconds?: number }): Promise<GuestAuthSession>;
 }

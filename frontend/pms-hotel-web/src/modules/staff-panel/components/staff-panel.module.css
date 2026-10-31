@@ -66,6 +66,107 @@
 .page :is(a, button, [tabindex]):focus-visible { outline:3px solid var(--color-brand-primary-strong); outline-offset:4px; }
 .hero :is(a, button):focus-visible { outline-color:var(--color-brand-soft); }
 .srOnly { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; border:0; }
+
+/* Dark mode explicit high contrast styles */
+:global(html.dark) .hero,
+:global(html[data-theme='dark']) .hero {
+  background-color: #1c1917;
+  border: 1px solid #292524;
+}
+
+:global(html.dark) .metrics > div,
+:global(html.dark) .surface,
+:global(html.dark) .card,
+:global(html[data-theme='dark']) .metrics > div,
+:global(html[data-theme='dark']) .surface,
+:global(html[data-theme='dark']) .card {
+  background-color: #1c1917;
+  border-color: #292524;
+  color: #ffffff;
+}
+
+:global(html.dark) .card:hover,
+:global(html[data-theme='dark']) .card:hover {
+  border-color: #D4AF37;
+}
+
+:global(html.dark) .sectionHeading h2,
+:global(html.dark) .card h3,
+:global(html.dark) .metrics dd,
+:global(html[data-theme='dark']) .sectionHeading h2,
+:global(html[data-theme='dark']) .card h3,
+:global(html[data-theme='dark']) .metrics dd {
+  color: #ffffff;
+}
+
+:global(html.dark) .sectionDescription,
+:global(html.dark) .card p,
+:global(html.dark) .metricDescription,
+:global(html.dark) .inventoryNote,
+:global(html.dark) .cellSecondary,
+:global(html[data-theme='dark']) .sectionDescription,
+:global(html[data-theme='dark']) .card p,
+:global(html[data-theme='dark']) .metricDescription,
+:global(html[data-theme='dark']) .inventoryNote,
+:global(html[data-theme='dark']) .cellSecondary {
+  color: #d4d4d8;
+}
+
+:global(html.dark) .table th,
+:global(html[data-theme='dark']) .table th {
+  background-color: #18181b;
+  border-bottom: 1px solid #292524;
+  color: #d4d4d8;
+}
+
+:global(html.dark) .table td,
+:global(html[data-theme='dark']) .table td {
+  border-bottom: 1px solid #292524;
+  color: #f4f4f5;
+}
+
+:global(html.dark) .table tbody tr:hover,
+:global(html[data-theme='dark']) .table tbody tr:hover {
+  background-color: #18181b;
+}
+
+:global(html.dark) .detailLink,
+:global(html[data-theme='dark']) .detailLink {
+  color: #D4AF37;
+  border-color: #292524;
+  background-color: #18181b;
+}
+
+:global(html.dark) .track,
+:global(html[data-theme='dark']) .track {
+  background-color: #18181b;
+}
+
+:global(html.dark) .track > span,
+:global(html[data-theme='dark']) .track > span {
+  background-color: #4ADE80;
+}
+
+:global(html.dark) .inventoryTrack > span,
+:global(html[data-theme='dark']) .inventoryTrack > span {
+  background-color: #D4AF37;
+}
+
+:global(html.dark) .loading,
+:global(html[data-theme='dark']) .loading {
+  background-color: #1c1917;
+  border-color: #292524;
+  color: #d4d4d8;
+}
+
+:global(html.dark) .metricIcon,
+:global(html.dark) .icon,
+:global(html[data-theme='dark']) .metricIcon,
+:global(html[data-theme='dark']) .icon {
+  background-color: #18181b;
+  color: #D4AF37;
+}
+
 @keyframes spin { to { transform:rotate(360deg); } }
 @media(max-width:1100px) { .hero { padding:var(--space-8); gap:var(--space-5); }.overviewGrid { grid-template-columns:1fr; }.cards { grid-template-columns:1fr; }.card { display:grid; grid-template-columns:40px 1fr; column-gap:var(--space-4); }.card .icon { grid-row:1 / 4; }.card p { margin:0; }.card .action { grid-column:2; } }
 @media(max-width:760px) { .page { padding:var(--space-5) var(--space-4) var(--space-8); }.hero { align-items:stretch; flex-direction:column; padding:var(--space-6); }.heroActions { flex-direction:row; flex-wrap:wrap; }.heroActions > * { flex:1 1 160px; }.metrics { grid-template-columns:1fr; gap:var(--space-3); }.metrics > div { display:grid; grid-template-columns:1fr auto; column-gap:var(--space-4); padding:var(--space-5); }.metrics dt { justify-content:flex-start; flex-direction:row-reverse; justify-self:start; }.metrics dd { margin:0; grid-column:2; grid-row:1 / 3; align-self:center; font-size:36px; }.metrics p { grid-column:1; }.surface { padding:var(--space-5); }.sectionHeading h2 { font-size:22px; }.sectionHeading { flex-wrap:wrap; }.barLabel strong span { display:none; }.loading { padding:var(--space-5); } }

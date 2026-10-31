@@ -1,6 +1,8 @@
 import {reservationsDestination} from './guestContinuation';
+import * as Linking from "expo-linking";
 import { router, useLocalSearchParams } from "expo-router";
 import { SymbolView } from "expo-symbols";
+import * as WebBrowser from "expo-web-browser";
 import { useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -12,7 +14,9 @@ import {
   View,
 } from "react-native";
 
+import { environment } from "@/config/environment";
 import { NetworkError } from "@/data/remote/http/HttpError";
+import { nativeGuestClient } from "@/modules/guest-auth/data/http/NativeGuestClient";
 import { type GuestAuthService } from "@/modules/guest-auth/data/services/GuestAuthService";
 import { InvalidGuestCredentialsError } from "@/modules/guest-auth/domain/errors/InvalidGuestCredentialsError";
 import { type GuestAuthSession } from "@/modules/guest-auth/domain/models/GuestAuthSession";
@@ -46,6 +50,30 @@ function validate(request: GuestLoginRequest): FieldErrors {
     errors.email = "Ingresa un correo electrónico válido.";
   if (!request.password) errors.password = "Ingresa tu contraseña.";
   return errors;
+}
+
+function parseAuthUrl(url: string): { queryParams?: Record<string, string | undefined> } {
+  try {
+    const parsed = Linking.parse(url);
+    if (parsed?.queryParams && Object.keys(parsed.queryParams).length > 0) {
+      return parsed as { queryParams: Record<string, string | undefined> };
+    }
+  } catch {
+    // Fallback to manual parsing below
+  }
+  const queryParams: Record<string, string | undefined> = {};
+  const queryIndex = url.indexOf("?");
+  if (queryIndex !== -1) {
+    const search = url.substring(queryIndex + 1);
+    const pairs = search.split("&");
+    for (const pair of pairs) {
+      const [key, value] = pair.split("=");
+      if (key) {
+        queryParams[decodeURIComponent(key)] = value ? decodeURIComponent(value) : undefined;
+      }
+    }
+  }
+  return { queryParams };
 }
 
 function LoginStateCard({
@@ -86,6 +114,9 @@ function LoginStateCard({
   );
 }
 
+// Completa la sesión si la redirección ocurre
+WebBrowser.maybeCompleteAuthSession();
+
 /** Login establishes only the account session; /reservations owns the 0/1/N stay decision. */
 export function LoginScreen({ onAuthenticated, service }: LoginScreenProps) {
   const { clearActiveReservationContext } = useActiveReservationContext();
@@ -98,9 +129,12 @@ export function LoginScreen({ onAuthenticated, service }: LoginScreenProps) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [isGooglePending, setIsGooglePending] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
 
   const request = (): GuestLoginRequest => ({ email: email.trim(), password });
   const isPending = login.isPending;
+  const isAnyPending = isPending || isGooglePending;
   const invalidCredentials =
     login.isError && login.error instanceof InvalidGuestCredentialsError;
   const offline = login.isError && login.error instanceof NetworkError;
@@ -108,6 +142,7 @@ export function LoginScreen({ onAuthenticated, service }: LoginScreenProps) {
 
   function clearRemoteError(): void {
     if (login.isError) login.reset();
+    if (googleError) setGoogleError(null);
   }
 
   function changeEmail(value: string): void {
@@ -138,11 +173,67 @@ export function LoginScreen({ onAuthenticated, service }: LoginScreenProps) {
     else router.replace(reservationsDestination(returnTo));
   }
 
+  const handleGoogleLogin = async () => {
+    if (isAnyPending || inFlight.current) return;
+    setIsGooglePending(true);
+    setGoogleError(null);
+    clearRemoteError();
+
+    try {
+      const redirectUrl = Linking.createURL("oauth-callback");
+      const apiBase =
+        environment.apiBaseUrl || "https://hotelboutique.moonyrain.online";
+      const authUrl = `${apiBase}/api/auth/signin/google?callbackUrl=${encodeURIComponent(redirectUrl)}`;
+
+      const result = await WebBrowser.openAuthSessionAsync(
+        authUrl,
+        redirectUrl,
+      );
+
+      if (result.type === "success" && result.url) {
+        const parsed = parseAuthUrl(result.url);
+        if (parsed.queryParams?.error) {
+          setGoogleError("No pudimos iniciar sesión con Google.");
+          return;
+        }
+        const token = (parsed.queryParams?.token ||
+          parsed.queryParams?.accessToken) as string;
+        const refreshToken = parsed.queryParams?.refreshToken as
+          | string
+          | undefined;
+        const expiresIn = parsed.queryParams?.expiresIn
+          ? Number(parsed.queryParams.expiresIn)
+          : undefined;
+
+        if (token) {
+          const authSession = service?.loginWithTokens
+            ? await service.loginWithTokens({
+                accessToken: token,
+                refreshToken,
+                accessTokenExpiresInSeconds: expiresIn,
+              })
+            : await nativeGuestClient.loginWithTokens({
+                accessToken: token,
+                refreshToken,
+                accessTokenExpiresInSeconds: expiresIn,
+              });
+          onSuccess(authSession);
+        } else {
+          setGoogleError("Respuesta de autenticación incompleta.");
+        }
+      }
+    } catch {
+      setGoogleError("Ocurrió un error al conectar con Google.");
+    } finally {
+      setIsGooglePending(false);
+    }
+  };
+
   function submit(): void {
     const nextRequest = request();
     const errors = validate(nextRequest);
     setFieldErrors(errors);
-    if (Object.keys(errors).length > 0 || isPending || inFlight.current) return;
+    if (Object.keys(errors).length > 0 || isAnyPending || inFlight.current) return;
 
     inFlight.current = true;
     login.submit(nextRequest, {
@@ -181,10 +272,10 @@ export function LoginScreen({ onAuthenticated, service }: LoginScreenProps) {
             <TextInput
               accessibilityHint={fieldErrors.email}
               accessibilityLabel="Correo electrónico"
-              accessibilityState={{ disabled: isPending }}
+              accessibilityState={{ disabled: isAnyPending }}
               autoCapitalize="none"
               autoComplete="email"
-              editable={!isPending}
+              editable={!isAnyPending}
               keyboardType="email-address"
               maxLength={50}
               placeholder="nombre@correo.com"
@@ -221,10 +312,10 @@ export function LoginScreen({ onAuthenticated, service }: LoginScreenProps) {
               <TextInput
                 accessibilityHint={fieldErrors.password}
                 accessibilityLabel="Contraseña"
-                accessibilityState={{ disabled: isPending }}
+                accessibilityState={{ disabled: isAnyPending }}
                 autoCapitalize="none"
                 autoComplete="current-password"
-                editable={!isPending}
+                editable={!isAnyPending}
                 onChangeText={changePassword}
                 onFocus={keepFormReachable}
                 secureTextEntry={!showPassword}
@@ -241,8 +332,8 @@ export function LoginScreen({ onAuthenticated, service }: LoginScreenProps) {
                   showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
                 }
                 accessibilityRole="button"
-                accessibilityState={{ disabled: isPending }}
-                disabled={isPending}
+                accessibilityState={{ disabled: isAnyPending }}
+                disabled={isAnyPending}
                 onPress={() => setShowPassword((visible) => !visible)}
                 style={loginStyles.passwordToggle}
                 testID="guest-login-password-toggle"
@@ -298,11 +389,19 @@ export function LoginScreen({ onAuthenticated, service }: LoginScreenProps) {
               title="Sin conexión"
             />
           ) : null}
+          {googleError ? (
+            <LoginStateCard
+              body={googleError}
+              onRetry={handleGoogleLogin}
+              testID="guest-login-google-error"
+              title="No pudimos iniciar sesión con Google"
+            />
+          ) : null}
           <Pressable
             accessibilityLabel="Iniciar sesión"
             accessibilityRole="button"
-            accessibilityState={{ busy: isPending, disabled: isPending }}
-            disabled={isPending}
+            accessibilityState={{ busy: isPending, disabled: isAnyPending }}
+            disabled={isAnyPending}
             onPress={submit}
             style={[
               loginStyles.button,
@@ -314,15 +413,39 @@ export function LoginScreen({ onAuthenticated, service }: LoginScreenProps) {
               {isPending ? "Iniciando sesión..." : "Iniciar sesión"}
             </Text>
           </Pressable>
+          <View style={loginStyles.dividerContainer}>
+            <View style={loginStyles.dividerLine} />
+            <Text style={loginStyles.dividerText}>o</Text>
+            <View style={loginStyles.dividerLine} />
+          </View>
+          <Pressable
+            accessibilityLabel="Continuar con Google"
+            accessibilityRole="button"
+            accessibilityState={{ busy: isGooglePending, disabled: isAnyPending }}
+            disabled={isAnyPending}
+            onPress={handleGoogleLogin}
+            style={[
+              loginStyles.googleButton,
+              isGooglePending && loginStyles.buttonDisabled,
+            ]}
+            testID="guest-login-google"
+          >
+            <View style={loginStyles.googleIconBadge}>
+              <Text style={loginStyles.googleIconLetter}>G</Text>
+            </View>
+            <Text style={loginStyles.googleButtonLabel}>
+              {isGooglePending ? "Conectando..." : "Continuar con Google"}
+            </Text>
+          </Pressable>
           <Pressable
             accessibilityLabel="Acceder a una estadía"
             accessibilityRole="button"
-            accessibilityState={{ disabled: isPending }}
-            disabled={isPending}
+            accessibilityState={{ disabled: isAnyPending }}
+            disabled={isAnyPending}
             onPress={() => router.push("/access")}
             style={[
               loginStyles.secondaryAction,
-              isPending && loginStyles.secondaryActionDisabled,
+              isAnyPending && loginStyles.secondaryActionDisabled,
             ]}
             testID="guest-login-access"
           >

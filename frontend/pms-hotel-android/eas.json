@@ -1,13 +1,28 @@
 {
+  "cli": {
+    "version": ">= 12.0.0"
+  },
   "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_USE_MOCK_API": "true"
+        "EXPO_PUBLIC_USE_MOCK_API": "false",
+        "EXPO_PUBLIC_API_BASE_URL": "https://hotelboutique.moonyrain.online",
+        "EXPO_PUBLIC_API_URL": "https://hotelboutique.moonyrain.online",
+        "EXPO_PUBLIC_WEB_URL": "https://hotelboutique.moonyrain.online",
+        "EXPO_PUBLIC_ALLOW_LOCAL_HTTP": "false"
       },
       "android": {
         "buildType": "apk"
       }
-    }
+    },
+    "production": {}
+  },
+  "submit": {
+    "production": {}
   }
 }

@@ -37,4 +37,20 @@ describe('Google callback confirmation destination', () => {
     expect(response.headers.get('location')).toBe('http://localhost:3001/acceso?error=google');
     expect(response.cookies.getAll()).toHaveLength(0);
   });
+  it('redirects to native app scheme with tokens when pms_oauth_callback_url cookie is present', async () => {
+    upstream.mockResolvedValue(Response.json({ accessToken: 'synthetic-access', refreshToken: 'synthetic-refresh', accessTokenExpiresInSeconds: 900 }));
+    const req = new NextRequest('http://localhost:3001/api/auth/guest/google/callback?code=synthetic-code&state=synthetic-state', {
+      headers: { cookie: 'pms_oauth_callback_url=hotelboutique://oauth-callback' },
+    });
+    const response = await callback.GET(req);
+    expect(response.headers.get('location')).toBe('hotelboutique://oauth-callback?token=synthetic-access&refreshToken=synthetic-refresh&expiresIn=900');
+  });
+  it('redirects to native app scheme with error when exchange fails and callback cookie is present', async () => {
+    upstream.mockResolvedValue(new Response(null, { status: 401 }));
+    const req = new NextRequest('http://localhost:3001/api/auth/guest/google/callback?code=synthetic-code&state=synthetic-state', {
+      headers: { cookie: 'pms_oauth_callback_url=hotelboutique://oauth-callback' },
+    });
+    const response = await callback.GET(req);
+    expect(response.headers.get('location')).toBe('hotelboutique://oauth-callback?error=google');
+  });
 });

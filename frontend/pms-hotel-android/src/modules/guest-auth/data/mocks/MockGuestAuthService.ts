@@ -13,6 +13,7 @@ type MockGuestAuthScenario =
 export interface MockGuestAuthServiceOptions {
   scenario?: MockGuestAuthScenario;
   login?: (request: GuestLoginRequest) => Promise<GuestAuthSession>;
+  loginWithTokens?: (tokens: { accessToken: string; refreshToken?: string; accessTokenExpiresInSeconds?: number }) => Promise<GuestAuthSession>;
 }
 
 const defaultSession: GuestAuthSession = { accountId: 'guest-account-primary' };
@@ -32,6 +33,17 @@ export class MockGuestAuthService implements GuestAuthService {
     if (request.email.trim().toLocaleLowerCase() !== acceptedMockCredentials.email || request.password !== acceptedMockCredentials.password) {
       throw new InvalidGuestCredentialsError();
     }
+
+    return { ...(scenario.session ?? defaultSession) };
+  }
+
+  public async loginWithTokens(tokens: { accessToken: string; refreshToken?: string; accessTokenExpiresInSeconds?: number }): Promise<GuestAuthSession> {
+    if (this.options.loginWithTokens) return this.options.loginWithTokens(tokens);
+
+    const scenario = this.options.scenario ?? { kind: 'success' as const };
+    if (scenario.kind === 'invalid-credentials') throw new InvalidGuestCredentialsError();
+    if (scenario.kind === 'offline') throw scenario.error ?? new NetworkError();
+    if (scenario.kind === 'error') throw scenario.error ?? new Error('Guest auth mock failed');
 
     return { ...(scenario.session ?? defaultSession) };
   }

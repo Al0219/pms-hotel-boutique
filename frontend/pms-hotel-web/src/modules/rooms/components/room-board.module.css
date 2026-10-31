@@ -78,3 +78,80 @@
 .localActions { font-size: var(--font-size-caption); }
 
 .cellGroup strong { font-weight: var(--font-weight-semibold); }
+
+:global(html.dark) .listPanel,
+:global(html.dark) .detail,
+:global(html[data-theme='dark']) .listPanel,
+:global(html[data-theme='dark']) .detail {
+  background: #1c1917;
+  border-color: #292524;
+  color: #ffffff;
+}
+
+:global(html.dark) .roomButton,
+:global(html[data-theme='dark']) .roomButton {
+  background: #18181b;
+  border-color: #292524;
+  color: #ffffff;
+}
+
+:global(html.dark) .roomButton:hover,
+:global(html.dark) .roomButton[aria-pressed="true"],
+:global(html[data-theme='dark']) .roomButton:hover,
+:global(html[data-theme='dark']) .roomButton[aria-pressed="true"] {
+  background: #242F2A;
+  border-color: #D4AF37;
+}
+
+:global(html.dark) .occupancyCard,
+:global(html[data-theme='dark']) .occupancyCard {
+  background: #18181b;
+  border-color: #292524;
+  color: #f4f4f5;
+}
+
+:global(html.dark) .staySummary,
+:global(html[data-theme='dark']) .staySummary {
+  border-top-color: #292524;
+}
+
+:global(html.dark) .staySummary p,
+:global(html[data-theme='dark']) .staySummary p {
+  color: #d4d4d8;
+}
+
+:global(html.dark) .reservationLink,
+:global(html[data-theme='dark']) .reservationLink {
+  color: #D4AF37;
+}
+
+:global(html.dark) .summaryGrid .reference,
+:global(html.dark) .detailCard,
+:global(html[data-theme='dark']) .summaryGrid .reference,
+:global(html[data-theme='dark']) .detailCard {
+  background: #18181b;
+  color: #ffffff;
+}
+
+:global(html.dark) .reasonInput,
+:global(html[data-theme='dark']) .reasonInput {
+  background: #18181b;
+  color: #ffffff;
+  border-color: #3f3f46;
+}
+
+:global(html.dark) .metrics button,
+:global(html[data-theme='dark']) .metrics button {
+  background: #18181b;
+  border-color: #292524;
+  color: #f4f4f5;
+}
+
+:global(html.dark) .metrics button[aria-pressed="true"],
+:global(html.dark) .metrics button:hover:not(:disabled),
+:global(html[data-theme='dark']) .metrics button[aria-pressed="true"],
+:global(html[data-theme='dark']) .metrics button:hover:not(:disabled) {
+  background: #242F2A;
+  border-color: #D4AF37;
+  color: #ffffff;
+}

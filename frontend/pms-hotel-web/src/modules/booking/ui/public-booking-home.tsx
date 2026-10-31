@@ -43,7 +43,19 @@ function BookingHome({ initialCriteria }: { initialCriteria: Partial<BookingSear
   }
   return <>
     <section className={styles.hero} aria-labelledby="booking-hero-title">
-      <div className={styles.decoration} aria-hidden="true"><span /><span /><span /></div>
+      <Image
+        src="/images/hero-resort-sunset.jpg"
+        alt="Resort de hotel boutique con piscina y cabaña al atardecer"
+        fill
+        priority
+        className="absolute inset-0 w-full h-full object-cover object-center z-0"
+        sizes="100vw"
+      />
+      <div
+        className="absolute inset-0 bg-black/45 z-0"
+        aria-hidden="true"
+        style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.45)', zIndex: 0 }}
+      />
       <div className={styles.heroContent}>
         <p className={styles.eyebrow}>HOSPITALIDAD · CONFORT · EXPERIENCIA</p>
         <h1 id="booking-hero-title">Encuentra una estadía<br className={styles.desktopBreak} /> hecha para ti</h1>
@@ -61,7 +73,7 @@ function BookingHome({ initialCriteria }: { initialCriteria: Partial<BookingSear
       <div className={styles.sectionHeading}><h2 id="featured-title">Habitaciones destacadas</h2>
         <p>Opciones para tu próxima estadía.</p><div className={styles.currencyControl}><PublicCurrencySelector id="home-display-currency" quotedCurrency={mock ? undefined : 'GTQ'} /></div></div>
       {mock ? <div className={styles.roomGrid}>
-        {featuredRooms.map(room => <article className={styles.roomCard} key={room.name} aria-label={room.name}>
+        {featuredRooms.map(room => <article className={`${styles.roomCard} border border-stone-100 dark:border-stone-800 shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-2xl`} key={room.name} aria-label={room.name}>
           <div className={styles.roomImage}><Image src={`/images/rooms/demo/${room.image}.webp`} alt={room.name} fill sizes="(max-width: 760px) 100vw, 33vw" /></div>
           <div className={styles.roomContent}>
             <h3>{room.name}</h3><p className={styles.roomFeatures}>{room.features}</p>

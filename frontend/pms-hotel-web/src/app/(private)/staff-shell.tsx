@@ -6,6 +6,7 @@ import { StaffLogout, useStaffSession } from "@/modules/auth";
 import { staffNavigation as nav, canonicalStaffRole, canAccessStaffNavigation } from "@/modules/staff";
 import { PropertySwitcher } from "@/modules/properties";
 import { SvgIcon } from "@/shared/components/svg-icon";
+import { ThemeToggle } from "@/shared/components/theme-toggle";
 import styles from "./private-layout.module.css";
 
 export function StaffShell({ children }: { children: React.ReactNode }) {
@@ -30,7 +31,10 @@ export function StaffShell({ children }: { children: React.ReactNode }) {
   return <div className={`${styles.shell} ${pathname === "/reportes" ? styles.reportsShell : ""}`}>
     <aside className={styles.sidebar} aria-label="Private shell sidebar">
       <div className={styles.identity}>
-        <p className={styles.brand}>PMS Staff</p>
+        <div className={styles.brandRow}>
+          <p className={styles.brand}>PMS Staff</p>
+          <ThemeToggle />
+        </div>
         <strong className={styles.userName}>{session.userName}</strong>
         <p className={styles.role}>{session.roleName}</p>
       </div>
@@ -52,6 +56,16 @@ export function StaffShell({ children }: { children: React.ReactNode }) {
       </div>
     </aside>
     <div className={styles.mainColumn}>
+      <div className={styles.topUtilityBar} aria-label="Barra de utilidades de Staff">
+        <div className={styles.topUtilityLeft}>
+          <span className={styles.topUtilityScope}>
+            {pathname === '/dashboard' ? 'Panel Principal' : moduleTitle ?? 'Gestión Staff'}
+          </span>
+        </div>
+        <div className={styles.topUtilityRight}>
+          <ThemeToggle />
+        </div>
+      </div>
       <main className={`${styles.main} ${moduleHeadings ? styles.moduleHeadings : ''}`}>
         {moduleTitle && <header className={styles.moduleHeader}><h1>{moduleTitle}</h1></header>}
         {children}

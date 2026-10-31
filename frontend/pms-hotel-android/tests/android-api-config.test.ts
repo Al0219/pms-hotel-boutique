@@ -13,6 +13,14 @@ it('selects real mode explicitly and accepts HTTPS', () => {
   expect(config.environment.useMockApi).toBe(false);
   expect(config.requireApiBaseUrl()).toBe('https://pms.example.test');
 });
+it('accepts official production HTTPS domain', () => {
+  const config = configured('https://hotelboutique.moonyrain.online');
+  expect(config.environment.useMockApi).toBe(false);
+  expect(config.requireApiBaseUrl()).toBe('https://hotelboutique.moonyrain.online');
+});
+it('permits VPS backend HTTP url: http://162.35.114.4', () => {
+  expect(configured('http://162.35.114.4').requireApiBaseUrl()).toBe('http://162.35.114.4');
+});
 it.each(['http://10.0.2.2:18081', 'http://192.168.1.20:18081', 'http://172.20.0.2:18081'])('permits opt-in controlled dev HTTP: %s', (url) => {
   expect(configured(url, true).requireApiBaseUrl()).toBe(url);
 });

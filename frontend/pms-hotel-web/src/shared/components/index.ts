@@ -39,3 +39,10 @@ export { EntityListSurface, EntityListFooter, EntityFilterField, ENTITY_LIST_TAB
 export { EntityPagination, useEntityPagination } from './entity-pagination';
 
 export { OperationalRequestTable, useOperationalRequestFilters } from './operational-request-table';
+export { ThemeToggle } from './theme-toggle';
+export { WhatsAppButton } from './whatsapp-button';
+export { FaqChatbot } from './faq-chatbot';
+export { BoutiqueAssistantWidget } from './boutique-assistant-widget';
+export { FooterAppDownload } from './footer-app-download';
+
+

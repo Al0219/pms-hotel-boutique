@@ -20,8 +20,17 @@ public class GoogleOidcClientImpl implements GoogleOidcClient {
         this.clientId=clientId; this.clientSecret=clientSecret; this.redirectUri=redirectUri; this.restClient=RestClient.create();
     }
     @Override public VerifiedGoogleIdentity exchange(String code,String verifier,String expectedNonce) {
-        if (blank(clientId)||blank(clientSecret)||blank(redirectUri)) throw new IllegalStateException("Google OIDC deployment configuration is required");
-        var form=new LinkedMultiValueMap<String,String>(); form.add("code",code); form.add("client_id",clientId); form.add("client_secret",clientSecret); form.add("redirect_uri",redirectUri); form.add("grant_type","authorization_code"); form.add("code_verifier",verifier);
+        return exchange(code, verifier, expectedNonce, null);
+    }
+    @Override public VerifiedGoogleIdentity exchange(String code,String verifier,String expectedNonce,String redirectUriOverride) {
+        String effectiveRedirectUri = (redirectUriOverride != null && !redirectUriOverride.isBlank() && !redirectUriOverride.contains("localhost") && !redirectUriOverride.contains("127.0.0.1") && !redirectUriOverride.contains("backend:"))
+            ? redirectUriOverride
+            : this.redirectUri;
+        if (effectiveRedirectUri == null || effectiveRedirectUri.isBlank() || effectiveRedirectUri.contains("localhost") || effectiveRedirectUri.contains("127.0.0.1")) {
+            effectiveRedirectUri = "http://162.35.114.4/api/auth/guest/google/callback";
+        }
+        if (blank(clientId)||blank(clientSecret)||blank(effectiveRedirectUri)) throw new IllegalStateException("Google OIDC deployment configuration is required");
+        var form=new LinkedMultiValueMap<String,String>(); form.add("code",code); form.add("client_id",clientId); form.add("client_secret",clientSecret); form.add("redirect_uri",effectiveRedirectUri); form.add("grant_type","authorization_code"); form.add("code_verifier",verifier);
         GoogleTokenResponse token;
         try { token=restClient.post().uri("https://oauth2.googleapis.com/token").contentType(MediaType.APPLICATION_FORM_URLENCODED).body(form).retrieve().body(GoogleTokenResponse.class); }
         catch (RuntimeException ex) { throw new GuestAuthenticationException(); }
