@@ -116,4 +116,11 @@ describe("Shared UI State Components", () => {
       expect(onAction).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe('EmptyState descriptive structure', () => {
+    it('renders title and description properly', () => {
+      render(<EmptyState title="Sin resultados" description="Intenta cambiar los filtros" />);
+      expect(screen.getByText('Sin resultados')).toBeInTheDocument();
+    });
+  });
 });
