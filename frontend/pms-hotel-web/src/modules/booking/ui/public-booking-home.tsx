@@ -58,7 +58,7 @@ function BookingHome({ initialCriteria }: { initialCriteria: Partial<BookingSear
       />
       <div className={styles.heroContent}>
         <p className={styles.eyebrow}>HOSPITALIDAD · CONFORT · EXPERIENCIA</p>
-        <h1 id="booking-hero-title">OFERTAS DE NOVIEMBRE - DÍA DE MUERTOS</h1>
+        <h1 id="booking-hero-title">CONFORT Y COMODIDAD ESTE MES DE NOVIEMBRE</h1>
         <p className={styles.heroDescription}>Consulta disponibilidad, compara habitaciones y reserva de forma simple y segura.</p>
       </div>
     </section>
