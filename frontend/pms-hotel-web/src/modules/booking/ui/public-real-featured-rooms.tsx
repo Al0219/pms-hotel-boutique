@@ -78,18 +78,47 @@ export function PublicRealFeaturedRooms({ criteria, onChoose }: { criteria: Part
   }
   if (!availability.data) return <LoadingState message="Preparando búsqueda…" />;
   if (!availability.data.roomTypes.length) return <EmptyState title="Sin habitaciones disponibles" description="Prueba otras fechas o una cantidad menor de habitaciones." />;
-  return <><div className={styles.roomGrid}>{availability.data.roomTypes.map(room => {
-    const rate = room.ratePlans[0];
-    return <article className={`${styles.roomCard} border border-stone-100 dark:border-stone-800 shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-2xl`} key={room.roomTypeId} aria-label={room.name}>
-      <div className={styles.roomImage}><CatalogueRoomImage room={room} /></div>
-      <div className={styles.roomContent}><h3>{room.name}</h3>{room.description && <p>{room.description}</p>}
-        <p>{room.code} · {room.availableRoomsCount} habitaciones disponibles</p>
-        <div className={styles.roomBottom}><p className={styles.price}><strong>{displayMoney(rate.nightlyRateMinor! / 100, rate.currency, 'GTQ')}</strong><span> / noche</span></p>
-          <Link className={styles.roomLink} href={publicRoomHref(room.roomTypeId, criteria, rate.ratePlanId)} onNavigate={event => {
-            if (onChoose) { event.preventDefault(); void onChoose(publicRoomHref(room.roomTypeId, criteria, rate.ratePlanId)); }
-          }}>Ver habitación</Link></div>
-        <p>Total: {displayMoney(rate.totalMinor! / 100, rate.currency, 'GTQ')}</p>
-      </div>
-    </article>;
-  })}</div></>;
+
+  return (
+    <div className={styles.roomGrid}>
+      {availability.data.roomTypes.map(room => {
+        const rate = room.ratePlans[0];
+        return (
+          <article
+            className={`${styles.roomCard} border border-stone-100 dark:border-stone-800 shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-2xl`}
+            key={room.roomTypeId}
+            aria-label={room.name}
+          >
+            <div className={styles.roomImage}>
+              <CatalogueRoomImage room={room} />
+            </div>
+            <div className={styles.roomContent}>
+              <h3>{room.name}</h3>
+              {room.description && <p>{room.description}</p>}
+              <p>{room.code} · {room.availableRoomsCount} habitaciones disponibles</p>
+              <div className={styles.roomBottom}>
+                <p className={styles.price}>
+                  <strong>{displayMoney(rate.nightlyRateMinor! / 100, rate.currency, 'GTQ')}</strong>
+                  <span> / noche</span>
+                </p>
+                <Link
+                  className={styles.roomLink}
+                  href={publicRoomHref(room.roomTypeId, criteria, rate.ratePlanId)}
+                  onClick={event => {
+                    if (onChoose) {
+                      event.preventDefault();
+                      void onChoose(publicRoomHref(room.roomTypeId, criteria, rate.ratePlanId));
+                    }
+                  }}
+                >
+                  Ver habitación
+                </Link>
+              </div>
+              <p>Total: {displayMoney(rate.totalMinor! / 100, rate.currency, 'GTQ')}</p>
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  );
 }
