@@ -1,3 +1,4 @@
+/** Componente conmutador de tema visual accesible. */
 'use client';
 
 import { useEffect, useSyncExternalStore } from 'react';
