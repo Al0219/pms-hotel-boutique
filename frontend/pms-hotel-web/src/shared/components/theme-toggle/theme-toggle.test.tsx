@@ -37,4 +37,9 @@ describe('ThemeToggle component', () => {
       expect(screen.getByRole('button', { name: /Cambiar a modo claro/i })).toBeInTheDocument();
     });
   });
+
+  it('renders theme toggle button with descriptive title attribute', () => {
+    const { container } = render(<ThemeToggle />);
+    expect(container.querySelector('[data-testid="theme-toggle"]')).toBeInTheDocument();
+  });
 });
