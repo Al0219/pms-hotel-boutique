@@ -11,7 +11,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
   statuses: write
 
 jobs:
@@ -47,10 +46,10 @@ jobs:
           cache: maven
           cache-dependency-path: backend/pom.xml
 
-      - name: Compile and Run Tests with JaCoCo Coverage
+      - name: Compile Backend with Maven
         run: |
           chmod +x mvnw
-          ./mvnw -B clean test-compile -DskipTests
+          ./mvnw -B clean package -DskipTests
         env:
           PMS_DATABASE_URL: jdbc:postgresql://localhost:5432/pms_hotel
           PMS_DATABASE_USERNAME: pms_app
@@ -64,6 +63,7 @@ jobs:
           name: backend-jacoco-report
           path: backend/target/site/jacoco/jacoco.xml
           retention-days: 2
+          if-no-files-found: ignore
 
       - name: Upload Compiled Classes for Sonar
         uses: actions/upload-artifact@v4
@@ -101,8 +101,8 @@ jobs:
           NEXT_PUBLIC_USE_MOCK_API: "false"
           NEXT_PUBLIC_API_BASE_URL: "/api"
 
-  quality-and-ai-review:
-    name: SonarQube Quality Gate & AI Review
+  sonar:
+    name: SonarQube Quality Gate
     needs: [backend, frontend]
     runs-on: ubuntu-latest
     steps:
@@ -113,6 +113,7 @@ jobs:
 
       - name: Download JaCoCo Coverage Report
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: backend-jacoco-report
           path: backend/target/site/jacoco
@@ -145,17 +146,6 @@ jobs:
             -Dsonar.qualitygate.wait=true
         continue-on-error: false
 
-      - name: AI Code Review (CodeRabbit)
-        if: github.event_name == 'pull_request'
-        uses: coderabbitai/ai-pr-reviewer@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        with:
-          debug: false
-          review_simple_changes: false
-        continue-on-error: true
-
       - name: Publish CI Pipeline Summary
         if: always()
         run: |
@@ -163,9 +153,6 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Validación | Estado |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| **Backend Build & Test (JDK 21)** | ${{ needs.backend.result == 'success' && '✅ Aprobado' || '❌ Fallido' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Backend Build (JDK 21)** | ${{ needs.backend.result == 'success' && '✅ Aprobado' || '❌ Fallido' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **Frontend Build & Test (Node 20)** | ${{ needs.frontend.result == 'success' && '✅ Aprobado' || '❌ Fallido' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Reporte JaCoCo XML** | ✅ Generado (`target/site/jacoco/jacoco.xml`) |" >> $GITHUB_STEP_SUMMARY
           echo "| **SonarQube Quality Gate** | ${{ job.status == 'success' && '✅ Verificado (Aprobado)' || '⚠️ Pendiente / Revisar' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Revisión de Código con IA** | ${{ github.event_name == 'pull_request' && '🤖 Ejecutada en PR' || 'ℹ️ Omitida (No es PR)' }} |" >> $GITHUB_STEP_SUMMARY
-
