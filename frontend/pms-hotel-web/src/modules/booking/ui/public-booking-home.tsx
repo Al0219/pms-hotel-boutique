@@ -1,21 +1,25 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import type { BookingSearchCriteria } from '../domain/booking-search-criteria';
-import { PublicSearchForm } from './public-search-form';
+import { getPublicEnvironment } from '@/lib/env';
+import {
+  validateBookingSearchCriteria,
+  type BookingSearchCriteria,
+} from '../domain/booking-search-criteria';
+import { displayMoney } from '../domain/display-currency';
+import { publicResultsHref, publicRoomHref } from '../domain/public-room-navigation';
+import {
+  usePublicBookingSession,
+  usePublicSearchCriteria,
+} from '../components/public-booking-provider';
+import { usePublicSearchChange } from '../hooks/use-public-search-change';
 import { FloatingBookingSearch } from './floating-booking-search';
 import { PublicCurrencySelector } from './public-currency-selector';
-import { usePublicBookingSession, usePublicSearchCriteria } from '../components/public-booking-provider';
-import { displayMoney } from '../domain/display-currency';
-import { publicRoomHref } from '../domain/public-room-navigation';
-import { getPublicEnvironment } from '@/lib/env';
 import { PublicRealFeaturedRooms } from './public-real-featured-rooms';
-import { usePublicSearchChange } from '../hooks/use-public-search-change';
-import { publicResultsHref } from '../domain/public-room-navigation';
-import { validateBookingSearchCriteria } from '../domain/booking-search-criteria';
+import { PublicSearchForm } from './public-search-form';
 import styles from './public-booking-home.module.css';
 
 // Editorial examples supplied in the approved design, not inventory or a rate quote.

@@ -171,7 +171,7 @@ export function FaqChatbot() {
       <button
         type="button"
         onClick={() => setIsOpen(open => !open)}
-        className="relative w-13 h-13 rounded-full bg-[#1E2B25] text-white border border-stone-600 shadow-xl flex items-center justify-center hover:scale-105 transition-all"
+        className="relative w-[3.25rem] h-[3.25rem] rounded-full bg-[#1E2B25] text-white border border-stone-600 shadow-xl flex items-center justify-center transition-transform duration-200 hover:scale-105 active:scale-95"
         style={{
           width: '3.25rem',
           height: '3.25rem',

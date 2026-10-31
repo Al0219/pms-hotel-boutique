@@ -91,6 +91,26 @@ y ejecutar la colección en orden. No requiere configurar .env ni copiar tokens/
 No incluye Web/Android; valores públicos solo para presentación local.
 Pasos y límites: [guía de demostración](backend/docs/22_BACKEND_DEMO.md).
 
+## Despliegue en Servidor VPS (Producción)
+
+El proyecto cuenta con integración y despliegue continuo automatizado mediante GitHub Actions (`.github/workflows/cd-main.yml`), ejecutándose en cada push o merge hacia la rama `main`.
+
+### Comandos de Operación y Monitoreo en Producción
+
+Para consultar el estado de los servicios o inspeccionar registros en vivo en el VPS:
+
+```bash
+# Verificar estado y salud de los contenedores
+docker compose ps
+
+# Monitorear logs en tiempo real (web o backend)
+docker compose logs -f web
+docker compose logs -f backend
+
+# Reinicio controlado de servicios tras actualizaciones
+docker compose down && docker compose up -d --build
+```
+
 ## Estado
 
 - Figma V3 finalizado.
