@@ -19,7 +19,7 @@ export function WhatsAppButton({ phoneNumber, className = '' }: WhatsAppButtonPr
       href={whatsappUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className={`w-13 h-13 rounded-full bg-[#25D366] text-white shadow-xl flex items-center justify-center hover:scale-105 transition-all ${className}`}
+      className={`w-[3.25rem] h-[3.25rem] rounded-full bg-[#25D366] text-white shadow-xl flex items-center justify-center transition-transform duration-200 hover:scale-105 active:scale-95 ${className}`}
       style={{
         width: '3.25rem',
         height: '3.25rem',
