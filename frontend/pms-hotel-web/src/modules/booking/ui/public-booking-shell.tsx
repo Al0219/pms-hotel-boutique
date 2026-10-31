@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useRef, useState, type ReactNode } from 'react';
-import { Button, Modal, ThemeToggle, BoutiqueAssistantWidget } from '@/shared/components';
+import { Button, Modal, ThemeToggle, FooterAppDownload } from '@/shared/components';
 import { useGuestSession } from '@/modules/auth';
 import { publicHotelContent, publicHotelInformation } from '../content/public-hotel-content';
 import { PublicGlobalCart } from './public-global-cart';
@@ -92,6 +92,7 @@ export function PublicBookingShell({ children }: { children: ReactNode }) {
             </div>
           </section>
         </div>
+        <FooterAppDownload />
         <div className={styles.footerBottom}>
           <p>© {publicHotelContent.copyrightYear} {publicHotelContent.name}. Todos los derechos reservados.</p>
           <nav aria-label="Información legal" className={styles.footerLinks}>
@@ -103,7 +104,6 @@ export function PublicBookingShell({ children }: { children: ReactNode }) {
     </footer>
     {information && <div className={styles.modalLayer}><Modal title={information.title} onClose={closeInformation}
       footer={<Button onClick={closeInformation}>Cerrar</Button>}><p>{information.text}</p></Modal></div>}
-    <BoutiqueAssistantWidget />
   </div>;
 }
 

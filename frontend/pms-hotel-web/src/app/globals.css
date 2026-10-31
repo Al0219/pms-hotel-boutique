@@ -18,38 +18,102 @@ body {
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-html.dark body {
-  background: #121815;
-  color: #FDFCFA;
+html.dark body,
+html[data-theme='dark'] body {
+  background: #09090b;
+  color: #ffffff;
 }
 
 /* Tailwind-compatible Utility Classes for Consistently Styled Components */
+.bg-stone-50 { background-color: #fafaf9; }
+.bg-white { background-color: #ffffff; }
+.bg-stone-900 { background-color: #1c1917; }
+.bg-zinc-900 { background-color: #18181b; }
+.bg-zinc-950 { background-color: #09090b; }
+.text-stone-900 { color: #1c1917; }
+.text-zinc-800 { color: #27272a; }
+.text-stone-700 { color: #44403c; }
+.text-stone-500 { color: #78716c; }
+.text-stone-400 { color: #a8a29e; }
+.text-zinc-300 { color: #d4d4d8; }
+.text-zinc-100 { color: #f4f4f5; }
+.border-stone-200 { border-color: #e7e5e4; }
+.border-stone-700 { border-color: #44403c; }
+.border-stone-800 { border-color: #292524; }
+.border-zinc-700 { border-color: #3f3f46; }
+.border-zinc-800 { border-color: #27272a; }
+
+/* Dark mode utility variants */
+html.dark .dark\:bg-stone-900, html[data-theme='dark'] .dark\:bg-stone-900 { background-color: #1c1917; }
+html.dark .dark\:bg-zinc-900, html[data-theme='dark'] .dark\:bg-zinc-900 { background-color: #18181b; }
+html.dark .dark\:bg-zinc-950, html[data-theme='dark'] .dark\:bg-zinc-950 { background-color: #09090b; }
+html.dark .dark\:text-white, html[data-theme='dark'] .dark\:text-white { color: #ffffff; }
+html.dark .dark\:text-zinc-100, html[data-theme='dark'] .dark\:text-zinc-100 { color: #f4f4f5; }
+html.dark .dark\:text-zinc-300, html[data-theme='dark'] .dark\:text-zinc-300 { color: #d4d4d8; }
+html.dark .dark\:text-stone-400, html[data-theme='dark'] .dark\:text-stone-400 { color: #a8a29e; }
+html.dark .dark\:border-stone-800, html[data-theme='dark'] .dark\:border-stone-800 { border-color: #292524; }
+html.dark .dark\:border-zinc-700, html[data-theme='dark'] .dark\:border-zinc-700 { border-color: #3f3f46; }
 .absolute { position: absolute; }
 .relative { position: relative; }
 .fixed { position: fixed; }
 .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
 .w-full { width: 100%; }
 .h-full { height: 100%; }
+.w-6 { width: 1.5rem; }
+.h-6 { height: 1.5rem; }
+.w-7 { width: 1.75rem; }
+.h-7 { height: 1.75rem; }
+.w-8 { width: 2rem; }
+.h-8 { height: 2rem; }
+.w-13 { width: 3.25rem; }
+.h-13 { height: 3.25rem; }
 .object-cover { object-fit: cover; }
 .object-center { object-position: center; }
 .z-0 { z-index: 0; }
 .z-50 { z-index: 50; }
+.z-\[99999\] { z-index: 99999; }
 .bottom-6 { bottom: 1.5rem; }
+.bottom-28 { bottom: 7rem; }
 .right-6 { right: 1.5rem; }
 .flex { display: flex; }
+.flex-col { flex-direction: column; }
 .items-center { align-items: center; }
+.items-end { align-items: flex-end; }
 .justify-center { justify-content: center; }
 .gap-2 { gap: 0.5rem; }
+.gap-3 { gap: 0.75rem; }
 .rounded-full { border-radius: 9999px; }
 .rounded-2xl { border-radius: 1rem; }
-.shadow-xl { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); }
+.shadow-xl { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.15); }
 .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
 .backdrop-blur-md { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 .bg-white\/95 { background-color: rgba(255, 255, 255, 0.95); }
 .bg-black\/45 { background-color: rgba(0, 0, 0, 0.45); }
+.bg-\[\#1E2B25\] { background-color: #1E2B25; }
+.bg-\[\#25D366\] { background-color: #25D366; }
+.text-white { color: #ffffff; }
 .text-stone-900 { color: #1c1917; }
 .border { border-width: 1px; border-style: solid; }
 .border-stone-200 { border-color: #e7e5e4; }
+.border-stone-600 { border-color: #57534e; }
+.fill-white { fill: #ffffff; }
+.fill-none { fill: none; }
+.fill-current { fill: currentColor; }
+.stroke-white { stroke: #ffffff; }
+.stroke-current { stroke: currentColor; }
+.hover\:scale-105:hover { transform: scale(1.05); }
+.transition-all { transition-property: all; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 200ms; }
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
 
 html.dark .bg-white\/95 {
   background-color: rgba(26, 35, 31, 0.95);

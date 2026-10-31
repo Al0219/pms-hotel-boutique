@@ -170,34 +170,90 @@ export function FaqChatbot() {
     <div className={styles.floatingWrapper}>
       <button
         type="button"
-        className={styles.toggleButton}
         onClick={() => setIsOpen(open => !open)}
-        aria-label={isOpen ? 'Cerrar chat de atención' : 'Abrir chat de atención y preguntas frecuentes'}
-        title="Asistente Virtual & FAQ"
+        className="relative w-13 h-13 rounded-full bg-[#1E2B25] text-white border border-stone-600 shadow-xl flex items-center justify-center hover:scale-105 transition-all"
+        style={{
+          width: '3.25rem',
+          height: '3.25rem',
+          borderRadius: '9999px',
+          backgroundColor: '#1E2B25',
+          color: '#ffffff',
+          border: '1px solid #57534e',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.25)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+          cursor: 'pointer',
+        }}
+        aria-label="Preguntas Frecuentes - Abrir chat de atención"
+        title="Preguntas Frecuentes"
         aria-expanded={isOpen}
       >
         {isOpen ? (
-          <span style={{ fontSize: '24px', fontWeight: 'bold' }}>✕</span>
+          <span
+            className="w-6 h-6 flex items-center justify-center text-xl font-bold leading-none text-white"
+            style={{ width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}
+          >
+            ✕
+          </span>
         ) : (
           <svg
-            xmlns="http://www.w3.org/2000/svg"
+            className="w-6 h-6 text-white stroke-white fill-none"
             viewBox="0 0 24 24"
+            width="24"
+            height="24"
             fill="none"
-            stroke="currentColor"
+            stroke="#ffffff"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className={styles.toggleIcon}
+            style={{ width: '24px', height: '24px', stroke: '#ffffff', fill: 'none', color: '#ffffff', display: 'block' }}
             aria-hidden="true"
           >
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            <path
+              d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+              fill="none"
+              stroke="#ffffff"
+              strokeWidth="2"
+            />
           </svg>
         )}
-        {!isOpen && <span className={styles.badge} aria-hidden="true">?</span>}
+        <span
+          className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-black shadow"
+          style={{
+            position: 'absolute',
+            top: '-0.25rem',
+            right: '-0.25rem',
+            width: '1rem',
+            height: '1rem',
+            borderRadius: '9999px',
+            backgroundColor: '#f59e0b',
+            color: '#000000',
+            fontSize: '10px',
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          aria-hidden="true"
+        >
+          ?
+        </span>
       </button>
 
       {isOpen && (
-        <div className={styles.chatWindow} role="dialog" aria-label="Asistente Virtual Hotel Boutique">
+        <div
+          className={`${styles.chatWindow} right-0 w-[90vw] sm:w-80 md:w-96 max-h-[75vh] rounded-2xl shadow-2xl`}
+          style={{
+            position: 'absolute',
+            bottom: 'calc(100% + 12px)',
+            right: 0,
+            zIndex: 60,
+          }}
+          role="dialog"
+          aria-label="Asistente Virtual Hotel Boutique"
+        >
           <header className={styles.header}>
             <div className={styles.headerLeft}>
               <div className={styles.avatar} aria-hidden="true">HB</div>

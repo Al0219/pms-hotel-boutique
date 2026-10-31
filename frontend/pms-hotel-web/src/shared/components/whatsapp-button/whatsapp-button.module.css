@@ -9,8 +9,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
+  width: 44px;
+  height: 44px;
+  padding: 10px;
   border-radius: 9999px;
   background-color: #25D366;
   color: #ffffff;
@@ -20,9 +21,17 @@
   flex-shrink: 0;
 }
 
+@media (min-width: 768px) {
+  .button {
+    width: 56px;
+    height: 56px;
+    padding: 14px;
+  }
+}
+
 .button:hover {
   background-color: #20bd5a;
-  transform: scale(1.1);
+  transform: scale(1.08);
   box-shadow: 0 25px 30px -5px rgba(37, 211, 102, 0.4);
 }
 
@@ -32,9 +41,17 @@
 }
 
 .icon {
-  width: 32px;
-  height: 32px;
+  width: 20px;
+  height: 20px;
   fill: currentColor;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .icon {
+    width: 26px;
+    height: 26px;
+  }
 }
 
 .tooltip {

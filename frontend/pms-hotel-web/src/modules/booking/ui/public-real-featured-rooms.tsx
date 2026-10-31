@@ -38,7 +38,7 @@ export function PublicRealFeaturedRooms({ criteria, onChoose }: { criteria: Part
         </div>
         <div className={styles.roomGrid}>
           {fallbackFeaturedRooms.map(room => (
-            <article className={styles.roomCard} key={room.name} aria-label={room.name}>
+            <article className={`${styles.roomCard} border border-stone-100 dark:border-stone-800 shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-2xl`} key={room.name} aria-label={room.name}>
               <div className={styles.roomImage}>
                 <Image
                   src={`/images/rooms/demo/${room.image}.webp`}
@@ -80,7 +80,7 @@ export function PublicRealFeaturedRooms({ criteria, onChoose }: { criteria: Part
   if (!availability.data.roomTypes.length) return <EmptyState title="Sin habitaciones disponibles" description="Prueba otras fechas o una cantidad menor de habitaciones." />;
   return <><div className={styles.roomGrid}>{availability.data.roomTypes.map(room => {
     const rate = room.ratePlans[0];
-    return <article className={styles.roomCard} key={room.roomTypeId} aria-label={room.name}>
+    return <article className={`${styles.roomCard} border border-stone-100 dark:border-stone-800 shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-2xl`} key={room.roomTypeId} aria-label={room.name}>
       <div className={styles.roomImage}><CatalogueRoomImage room={room} /></div>
       <div className={styles.roomContent}><h3>{room.name}</h3>{room.description && <p>{room.description}</p>}
         <p>{room.code} · {room.availableRoomsCount} habitaciones disponibles</p>

@@ -123,9 +123,10 @@ describe("Guest Login", () => {
     expect(screen.getByTestId("guest-login-password")).toBeTruthy();
     expect(
       screen.queryByText(
-        /Crear cuenta|Registrarse|Olvidé|Google|Apple|Facebook/i,
+        /Crear cuenta|Registrarse|Olvidé|Apple|Facebook/i,
       ),
     ).toBeNull();
+    expect(screen.getByText("Continuar con Google")).toBeTruthy();
     expect(screen.queryByText("Cerrar sesión")).toBeNull();
   });
 
@@ -390,5 +391,35 @@ describe("Guest Login", () => {
     await fireEvent.press(screen.getByTestId("guest-login-access"));
     expect(pushSpy).toHaveBeenCalledWith("/access");
     pushSpy.mockRestore();
+  });
+
+  it("authenticates via Google OAuth and deep linking callback", async () => {
+    const WebBrowser = require("expo-web-browser");
+    const openAuthSessionSpy = jest
+      .spyOn(WebBrowser, "openAuthSessionAsync")
+      .mockResolvedValue({
+        type: "success",
+        url: "hotelboutique://oauth-callback?token=synth-jwt-token&refreshToken=synth-refresh&expiresIn=900",
+      });
+    const onAuthenticated = jest.fn();
+    const loginWithTokens = jest
+      .fn()
+      .mockResolvedValue({ accountId: "guest-google-account-id" });
+    const screen = await renderLogin(
+      { login: jest.fn(), loginWithTokens },
+      { onAuthenticated },
+    );
+    await fireEvent.press(screen.getByTestId("guest-login-google"));
+    await waitFor(() => {
+      expect(loginWithTokens).toHaveBeenCalledWith({
+        accessToken: "synth-jwt-token",
+        refreshToken: "synth-refresh",
+        accessTokenExpiresInSeconds: 900,
+      });
+      expect(onAuthenticated).toHaveBeenCalledWith({
+        accountId: "guest-google-account-id",
+      });
+    });
+    openAuthSessionSpy.mockRestore();
   });
 });

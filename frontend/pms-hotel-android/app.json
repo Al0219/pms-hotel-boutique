@@ -2,6 +2,7 @@
   "expo": {
     "name": "PMS Hotel Boutique",
     "slug": "pms-hotel-boutique",
+    "scheme": "hotelboutique",
     "version": "1.0.0",
     "platforms": [
       "android"
@@ -12,16 +13,20 @@
       "@react-native-community/datetimepicker",
       "expo-sharing",
       "expo-notifications",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-web-browser"
     ],
     "extra": {
       "router": {},
+      "apiBaseUrl": "https://hotelboutique.moonyrain.online",
       "eas": {
-        "projectId": "99e6d1e5-2214-47f4-b116-75c8c0f15f0f"
+        "projectId": "53336d63-af08-4fb0-bb3f-a3da6d6a3283"
       }
     },
     "android": {
-      "package": "com.juan_058.pmshotelboutique"
-    }
+      "package": "com.juan_058.pmshotelboutique",
+      "usesCleartextTraffic": true
+    },
+    "owner": "frankoms"
   }
 }

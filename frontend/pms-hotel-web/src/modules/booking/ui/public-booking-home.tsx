@@ -73,7 +73,7 @@ function BookingHome({ initialCriteria }: { initialCriteria: Partial<BookingSear
       <div className={styles.sectionHeading}><h2 id="featured-title">Habitaciones destacadas</h2>
         <p>Opciones para tu próxima estadía.</p><div className={styles.currencyControl}><PublicCurrencySelector id="home-display-currency" quotedCurrency={mock ? undefined : 'GTQ'} /></div></div>
       {mock ? <div className={styles.roomGrid}>
-        {featuredRooms.map(room => <article className={styles.roomCard} key={room.name} aria-label={room.name}>
+        {featuredRooms.map(room => <article className={`${styles.roomCard} border border-stone-100 dark:border-stone-800 shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-2xl`} key={room.name} aria-label={room.name}>
           <div className={styles.roomImage}><Image src={`/images/rooms/demo/${room.image}.webp`} alt={room.name} fill sizes="(max-width: 760px) 100vw, 33vw" /></div>
           <div className={styles.roomContent}>
             <h3>{room.name}</h3><p className={styles.roomFeatures}>{room.features}</p>

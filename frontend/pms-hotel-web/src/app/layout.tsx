@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import "./globals.css";
 import { Providers } from "./providers";
+import { BoutiqueAssistantWidget } from "@/shared/components";
 
 export const metadata: Metadata = {
   title: "PMS Hotel Boutique",
@@ -21,7 +22,10 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+        </Providers>
+        <BoutiqueAssistantWidget />
       </body>
     </html>
   );

@@ -28,3 +28,57 @@
 .viewBadge { display: inline-block; background: #e3e8e3; padding: 6px 10px; color: #405545; border-radius: 8px; font-size: 11px; }.amenityPills { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; }.amenityPills li { background: white; border: 1px solid #e4e8e2; padding: 6px 8px; border-radius: 8px; font-size: 11px; overflow-wrap: anywhere; }
 .detail .publicPreview { position: static; max-width: 450px; margin-top: 16px; }
 @media(max-width:720px) { .editorDialog { padding: 18px; max-height: calc(100dvh - 48px); }.editorLayout { grid-template-columns: 1fr; }.publicPreview { position: static; }.fieldGrid,.amenityChoices > div { grid-template-columns: 1fr; }.editorDialog .actions { width: 100%; }.editorDialog .actions button { flex: 1; } }
+
+:global(html.dark) .page,
+:global(html[data-theme='dark']) .page {
+  color: #ffffff;
+}
+
+:global(html.dark) .card,
+:global(html[data-theme='dark']) .card {
+  background: #1c1917;
+  border-color: #292524;
+  color: #ffffff;
+}
+
+:global(html.dark) .search input,
+:global(html.dark) .form :is(input, select, textarea),
+:global(html[data-theme='dark']) .search input,
+:global(html[data-theme='dark']) .form :is(input, select, textarea) {
+  background: #18181b;
+  color: #ffffff;
+  border-color: #3f3f46;
+}
+
+:global(html.dark) .page button,
+:global(html.dark) .form button,
+:global(html[data-theme='dark']) .page button,
+:global(html[data-theme='dark']) .form button {
+  background: #18181b;
+  color: #f4f4f5;
+  border-color: #292524;
+}
+
+:global(html.dark) .page button:hover,
+:global(html.dark) .form button:hover,
+:global(html[data-theme='dark']) .page button:hover,
+:global(html[data-theme='dark']) .form button:hover {
+  background: #242F2A;
+  color: #D4AF37;
+}
+
+:global(html.dark) .publicPreview,
+:global(html[data-theme='dark']) .publicPreview {
+  background: #18181b;
+  border-color: #292524;
+  color: #ffffff;
+}
+
+:global(html.dark) .header p,
+:global(html.dark) .note,
+:global(html.dark) .detail p,
+:global(html[data-theme='dark']) .header p,
+:global(html[data-theme='dark']) .note,
+:global(html[data-theme='dark']) .detail p {
+  color: #d4d4d8;
+}

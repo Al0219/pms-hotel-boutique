@@ -43,5 +43,6 @@ export { ThemeToggle } from './theme-toggle';
 export { WhatsAppButton } from './whatsapp-button';
 export { FaqChatbot } from './faq-chatbot';
 export { BoutiqueAssistantWidget } from './boutique-assistant-widget';
+export { FooterAppDownload } from './footer-app-download';
 
 

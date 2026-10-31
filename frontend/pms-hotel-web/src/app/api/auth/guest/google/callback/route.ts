@@ -19,7 +19,19 @@ function redirectToApp(path: string, request?: NextRequest) {
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
   const state = request.nextUrl.searchParams.get("state");
-  if (!code || !state) return redirectToApp("/acceso?error=google", request);
+  const callbackUrl = request.cookies.get("pms_oauth_callback_url")?.value;
+
+  if (!code || !state) {
+    if (callbackUrl && callbackUrl.startsWith("hotelboutique://")) {
+      const errorUrl = new URL(callbackUrl);
+      errorUrl.searchParams.set("error", "google");
+      const res = NextResponse.redirect(errorUrl.toString());
+      res.cookies.delete("pms_oauth_callback_url");
+      return res;
+    }
+    return redirectToApp("/acceso?error=google", request);
+  }
+
   try {
     const host = request.headers.get("x-forwarded-host");
     const proto = request.headers.get("x-forwarded-proto") ?? "http";
@@ -29,13 +41,53 @@ export async function GET(request: NextRequest) {
       headers["X-Forwarded-Proto"] = proto;
     }
     const exchange = await backendGuestRequest("/api/v1/guest-auth/google/exchange", { method: "POST", headers, body: JSON.stringify({ code, state }) });
-    if (!exchange.ok) return redirectToApp("/acceso?error=google", request);
+    if (!exchange.ok) {
+      if (callbackUrl && callbackUrl.startsWith("hotelboutique://")) {
+        const errorUrl = new URL(callbackUrl);
+        errorUrl.searchParams.set("error", "google");
+        const res = NextResponse.redirect(errorUrl.toString());
+        res.cookies.delete("pms_oauth_callback_url");
+        return res;
+      }
+      return redirectToApp("/acceso?error=google", request);
+    }
     const tokens = await exchange.json() as GuestTokens;
-    if (!tokens.accessToken || !tokens.refreshToken || !tokens.accessTokenExpiresInSeconds) return redirectToApp("/acceso?error=google", request);
-    const response = redirectToApp("/acceso", request);
+    if (!tokens.accessToken || !tokens.refreshToken || !tokens.accessTokenExpiresInSeconds) {
+      if (callbackUrl && callbackUrl.startsWith("hotelboutique://")) {
+        const errorUrl = new URL(callbackUrl);
+        errorUrl.searchParams.set("error", "google");
+        const res = NextResponse.redirect(errorUrl.toString());
+        res.cookies.delete("pms_oauth_callback_url");
+        return res;
+      }
+      return redirectToApp("/acceso?error=google", request);
+    }
+
+    if (callbackUrl && callbackUrl.startsWith("hotelboutique://")) {
+      const redirectUrl = new URL(callbackUrl);
+      redirectUrl.searchParams.set("token", tokens.accessToken);
+      redirectUrl.searchParams.set("refreshToken", tokens.refreshToken);
+      redirectUrl.searchParams.set("expiresIn", tokens.accessTokenExpiresInSeconds.toString());
+      const response = NextResponse.redirect(redirectUrl.toString());
+      response.cookies.delete("pms_oauth_callback_url");
+      return response;
+    }
+
+    const target = callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/acceso";
+    const response = redirectToApp(target, request);
+    if (callbackUrl) {
+      response.cookies.delete("pms_oauth_callback_url");
+    }
     applyGuestCookies(response, tokens);
     return response;
   } catch {
+    if (callbackUrl && callbackUrl.startsWith("hotelboutique://")) {
+      const errorUrl = new URL(callbackUrl);
+      errorUrl.searchParams.set("error", "google");
+      const res = NextResponse.redirect(errorUrl.toString());
+      res.cookies.delete("pms_oauth_callback_url");
+      return res;
+    }
     return redirectToApp("/acceso?error=google", request);
   }
 }

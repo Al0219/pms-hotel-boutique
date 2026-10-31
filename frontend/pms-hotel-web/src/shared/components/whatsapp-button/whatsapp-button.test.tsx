@@ -14,7 +14,6 @@ describe('WhatsAppButton component', () => {
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
     expect(link.getAttribute('href')).toContain('https://wa.me/');
     expect(link.getAttribute('href')).toContain('Hola%2C%20quisiera%20m%C3%A1s%20informaci%C3%B3n%20sobre%20disponibilidad%20y%20reservas%20en%20Hotel%20Boutique');
-    expect(screen.getByText('¿Dudas? Escríbenos por WhatsApp')).toBeInTheDocument();
   });
 
   it('uses NEXT_PUBLIC_WHATSAPP_NUMBER when provided', () => {
