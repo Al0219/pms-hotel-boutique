@@ -7,20 +7,34 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 @RestController @RequestMapping("/api/v1/guest-auth") @Tag(name="Guest authentication",description="Guest sessions for Web BFF and native Android. Google/registration remain BFF-only. Never expose tokens to browser JavaScript.") public class GuestAuthController {
  private static final String REFRESH_COOKIE="pms_guest_refresh"; private final GuestAuthService auth; public GuestAuthController(GuestAuthService auth){this.auth=auth;}
+ private String resolveDynamicRedirectUri(HttpServletRequest request) {
+   if (request == null) return null;
+   String host = request.getHeader("X-Forwarded-Host");
+   if (host == null || host.isBlank()) {
+     host = request.getHeader("Host");
+   }
+   if (host == null || host.isBlank()) return null;
+   String proto = request.getHeader("X-Forwarded-Proto");
+   if (proto == null || proto.isBlank()) {
+     proto = request.isSecure() ? "https" : "http";
+   }
+   return proto + "://" + host.trim() + "/api/auth/guest/google/callback";
+ }
  @PostMapping("/google/start")
-    @ApiResponse(responseCode = "200", description = "URL Google con state/nonce/PKCE de servidor; transacción de un uso, 10 minutos.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = GoogleStartResponse.class))) @Operation(summary="Iniciar sesión con Google: iniciar autorización",description="BFF-only; no sesión previa. Requiere configuración OIDC. No autentica todavía al Guest.") public GoogleStartResponse start(){return new GoogleStartResponse(auth.startGoogleAuthorization());}
+    @ApiResponse(responseCode = "200", description = "URL Google con state/nonce/PKCE de servidor; transacción de un uso, 10 minutos.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = GoogleStartResponse.class))) @Operation(summary="Iniciar sesión con Google: iniciar autorización",description="BFF-only; no sesión previa. Requiere configuración OIDC. No autentica todavía al Guest.") public GoogleStartResponse start(HttpServletRequest request){return new GoogleStartResponse(auth.startGoogleAuthorization(resolveDynamicRedirectUri(request)));}
  @PostMapping("/google/exchange")
     @ApiResponse(responseCode = "201", description = "Sesión Guest tras validar Google; tokens solo para BFF.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = GuestAuthResponse.class)))
     @ApiResponse(responseCode = "400", description = "JSON o code/state de entrada inválidos.", content = @Content)
-    @ApiResponse(responseCode = "401", description = "Intercambio, identidad Google o state inválidos.", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class))) @Operation(summary="Iniciar sesión con Google: completar intercambio",description="BFF-only, sin Bearer previo. Valida code/state, PKCE, nonce, firma, audiencia y correo Google verificado.") public ResponseEntity<GuestAuthResponse> exchange(@Valid @io.swagger.v3.oas.annotations.parameters.RequestBody(
+    @ApiResponse(responseCode = "401", description = "Intercambio, identidad Google o state inválidos.", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class))) @Operation(summary="Iniciar sesión con Google: completar intercambio",description="BFF-only, sin Bearer previo. Valida code/state, PKCE, nonce, firma, audiencia y correo Google verificado.") public ResponseEntity<GuestAuthResponse> exchange(HttpServletRequest request, @Valid @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     required = true, content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = GoogleExchangeRequest.class))) @RequestBody GoogleExchangeRequest request){return ResponseEntity.status(HttpStatus.CREATED).body(response(auth.exchangeGoogleAuthorization(request.code(),request.state())));}
+                    schema = @Schema(implementation = GoogleExchangeRequest.class))) @RequestBody GoogleExchangeRequest body){return ResponseEntity.status(HttpStatus.CREATED).body(response(auth.exchangeGoogleAuthorization(body.code(),body.state(),resolveDynamicRedirectUri(request))));}
  @PostMapping("/refresh")
     @SecurityRequirement(name = "guestRefreshCookie")
     @SecurityRequirement(name = "guestNativeRefresh")

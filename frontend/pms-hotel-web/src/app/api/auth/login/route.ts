@@ -7,9 +7,13 @@ import { loginCredentials } from '@/lib/bff/login-credentials';
 const failure = (status: number) => NextResponse.json({ error: status === 503 ? 'Authentication unavailable' : 'Invalid credentials' }, { status, headers: { 'Cache-Control': 'no-store' } });
 export async function POST(request: NextRequest) {
   const origin = request.headers.get('origin');
-  // Next's request origin can contain the container's internal hostname/port.
-  const publicOrigin = new URL(process.env.PMS_WEB_PUBLIC_URL ?? 'http://localhost:3001').origin;
-  if (origin && origin !== publicOrigin) return failure(403);
+  const publicOrigin = new URL(process.env.PMS_WEB_PUBLIC_URL ?? 'http://162.35.114.4').origin;
+  if (origin && origin !== publicOrigin) {
+    const forwardedHost = request.headers.get('x-forwarded-host') ?? request.headers.get('host');
+    const forwardedProto = request.headers.get('x-forwarded-proto') ?? 'http';
+    const requestOrigin = forwardedHost ? `${forwardedProto}://${forwardedHost}` : null;
+    if (!requestOrigin || origin !== requestOrigin) return failure(403);
+  }
   let body: unknown;
   try { body = await request.json(); } catch { return failure(400); }
   if (body && typeof body === "object" && passwordExceedsByteLimit((body as Record<string,unknown>).password)) return failure(401);

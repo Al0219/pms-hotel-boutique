@@ -29,8 +29,39 @@ import org.springframework.beans.factory.annotation.Value; import org.springfram
    Instant now=Instant.now(); account.recordLogin(now);
    return tokens(sessions.save(new GuestAuthSession(UUID.randomUUID(),account,now.plus(refreshTtl),now)),UUID.randomUUID(),now);
  }
- @Override public String startGoogleAuthorization(){ if(blank(clientId)||blank(redirectUri)) throw new IllegalStateException("Google OIDC deployment configuration is required"); Instant now=Instant.now(); String state=randomUrlValue(),nonce=randomUrlValue(),verifier=randomUrlValue(); transactions.save(new GuestOidcTransaction(UUID.randomUUID(),hash(state),nonce,verifier,now.plus(Duration.ofMinutes(10)),now)); String challenge=base64Url(sha256Bytes(verifier)); return UriComponentsBuilder.fromUriString("https://accounts.google.com/o/oauth2/v2/auth").queryParam("client_id",clientId).queryParam("redirect_uri",redirectUri).queryParam("response_type","code").queryParam("scope","openid email").queryParam("state",state).queryParam("nonce",nonce).queryParam("code_challenge",challenge).queryParam("code_challenge_method","S256").build().encode().toUriString(); }
- @Override public GuestTokenPair exchangeGoogleAuthorization(String code,String state){ if(blank(code)||blank(state))throw new GuestAuthenticationException(); Instant now=Instant.now(); GuestOidcTransaction tx=transactions.findByStateHash(hash(state)).orElseThrow(GuestAuthenticationException::new); if(!tx.isUsable(now))throw new GuestAuthenticationException(); VerifiedGoogleIdentity googleIdentity=google.exchange(code,tx.getPkceVerifier(),tx.getNonce()); tx.use(now); GuestAccount account=identities.findByProviderAndProviderSubject("GOOGLE",googleIdentity.subject()).map(GuestIdentity::getGuestAccount).orElseGet(()->createAccount(googleIdentity,now)); if(!account.isActive())throw new GuestAuthenticationException(); account.recordLogin(now); GuestAuthSession session=sessions.save(new GuestAuthSession(UUID.randomUUID(),account,now.plus(refreshTtl),now)); return tokens(session,UUID.randomUUID(),now); }
+ private String resolveEffectiveRedirectUri(String override) {
+   if (override != null && !override.isBlank() && !override.contains("localhost") && !override.contains("127.0.0.1") && !override.contains("backend:")) {
+     return override;
+   }
+   if (this.redirectUri != null && !this.redirectUri.isBlank() && !this.redirectUri.contains("localhost") && !this.redirectUri.contains("127.0.0.1")) {
+     return this.redirectUri;
+   }
+   return "http://162.35.114.4/api/auth/guest/google/callback";
+ }
+ @Override public String startGoogleAuthorization() { return startGoogleAuthorization(null); }
+ @Override public String startGoogleAuthorization(String redirectUriOverride){
+   String effectiveRedirectUri = resolveEffectiveRedirectUri(redirectUriOverride);
+   if(blank(clientId)||blank(effectiveRedirectUri)) throw new IllegalStateException("Google OIDC deployment configuration is required");
+   Instant now=Instant.now(); String state=randomUrlValue(),nonce=randomUrlValue(),verifier=randomUrlValue();
+   transactions.save(new GuestOidcTransaction(UUID.randomUUID(),hash(state),nonce,verifier,now.plus(Duration.ofMinutes(10)),now));
+   String challenge=base64Url(sha256Bytes(verifier));
+   return UriComponentsBuilder.fromUriString("https://accounts.google.com/o/oauth2/v2/auth").queryParam("client_id",clientId).queryParam("redirect_uri",effectiveRedirectUri).queryParam("response_type","code").queryParam("scope","openid email").queryParam("state",state).queryParam("nonce",nonce).queryParam("code_challenge",challenge).queryParam("code_challenge_method","S256").build().encode().toUriString();
+ }
+ @Override public GuestTokenPair exchangeGoogleAuthorization(String code,String state) { return exchangeGoogleAuthorization(code, state, null); }
+ @Override public GuestTokenPair exchangeGoogleAuthorization(String code,String state,String redirectUriOverride){
+   if(blank(code)||blank(state))throw new GuestAuthenticationException();
+   Instant now=Instant.now();
+   GuestOidcTransaction tx=transactions.findByStateHash(hash(state)).orElseThrow(GuestAuthenticationException::new);
+   if(!tx.isUsable(now))throw new GuestAuthenticationException();
+   String effectiveRedirectUri = resolveEffectiveRedirectUri(redirectUriOverride);
+   VerifiedGoogleIdentity googleIdentity=google.exchange(code,tx.getPkceVerifier(),tx.getNonce(),effectiveRedirectUri);
+   tx.use(now);
+   GuestAccount account=identities.findByProviderAndProviderSubject("GOOGLE",googleIdentity.subject()).map(GuestIdentity::getGuestAccount).orElseGet(()->createAccount(googleIdentity,now));
+   if(!account.isActive())throw new GuestAuthenticationException();
+   account.recordLogin(now);
+   GuestAuthSession session=sessions.save(new GuestAuthSession(UUID.randomUUID(),account,now.plus(refreshTtl),now));
+   return tokens(session,UUID.randomUUID(),now);
+ }
  @Override public GuestTokenPair refresh(String raw){if(blank(raw))throw new GuestAuthenticationException(); Instant now=Instant.now(); GuestRefreshToken current=refreshTokens.findByTokenHash(hash(raw)).orElseThrow(GuestAuthenticationException::new); GuestAuthSession session=current.getSession(); if(!current.isActive(now)||!session.isActive(now)||!session.getGuestAccount().isActive()){revoke(session,now);throw new GuestAuthenticationException();} current.revoke(now);return tokens(session,current.getFamilyId(),now);}
  @Override @Transactional(readOnly=true) public GuestPrincipal getActivePrincipal(GuestPrincipal principal){Instant now=Instant.now();GuestAuthSession session=sessions.findById(principal.sessionId()).orElseThrow(GuestAuthenticationException::new);if(!session.isActive(now)||!session.getGuestAccount().isActive()||!session.getGuestAccount().getId().equals(principal.guestAccountId()))throw new GuestAuthenticationException();return new GuestPrincipal(principal.guestAccountId(),principal.sessionId(),session.getGuestAccount().getEmail());}
  @Override public void logout(GuestPrincipal principal){revoke(sessions.findById(principal.sessionId()).orElseThrow(GuestAuthenticationException::new),Instant.now());}
