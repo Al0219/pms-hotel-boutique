@@ -1,3 +1,4 @@
+/** Barra flotante de búsqueda y resumen de reservas. */
 'use client';
 
 import { useEffect, useState, type RefObject } from 'react';
