@@ -61,3 +61,5 @@ function ProvisionalRoomCatalogAdmin({ propertyId, sessionId, canManage }: { pro
     {allowChanges && editor && <RoomCatalogEditor {...editor} data={data} busy={mutation.isPending} error={mutation.isError?mutationError:undefined} onClose={close} onSubmit={change => { if (!allowChanges || mutation.isPending) return; mutation.mutate(change,{onSuccess:()=>{setEditor(undefined);setNotice('Cambios guardados. El catálogo está actualizado.');trigger.current?.focus();}}); }} />}
   </section>;
 }
+
+// Panel administrativo de catálogo de habitaciones
