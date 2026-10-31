@@ -1,3 +1,4 @@
+/** Tarjeta de presentación individual para catálogo de habitaciones. */
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
