@@ -57,4 +57,12 @@ describe('FaqChatbot component', () => {
       'noopener,noreferrer'
     );
   });
+
+  it('renders welcome message and input placeholder correctly in the chat dialog', () => {
+    render(<FaqChatbot />);
+    fireEvent.click(screen.getByRole('button', { name: /Abrir chat de atención/i }));
+
+    expect(screen.getByText(/¡Hola! Bienvenido a Hotel Boutique/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Escribe tu consulta o duda…/i)).toBeInTheDocument();
+  });
 });
