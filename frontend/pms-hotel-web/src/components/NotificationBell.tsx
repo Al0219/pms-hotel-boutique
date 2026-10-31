@@ -102,7 +102,7 @@ export function NotificationBell() {
     <div ref={containerRef} className={styles.container}>
       <button
         type="button"
-        className={styles.bellButton}
+        className={styles.bellButton} title="Notificaciones"
         onClick={toggleDropdown}
         aria-label={`Notificaciones (${unreadCount} no leídas)`}
         aria-expanded={isOpen}
