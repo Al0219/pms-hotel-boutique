@@ -57,3 +57,5 @@ export function StaffPanel({ propertyId, sessionId, propertyName }: {
     </section>
   </section>;
 }
+
+// Panel de control operativo Staff
