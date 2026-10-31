@@ -1,3 +1,4 @@
+/** Pasos del embudo de reserva para orientación al usuario. */
 import Link from 'next/link';
 import { publicGuestDataHref, publicSelectionHref } from '../domain/public-room-navigation';
 import type { BookingSearchCriteria } from '../domain/booking-search-criteria';
