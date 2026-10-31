@@ -1,3 +1,6 @@
+/** Result of converting monetary amounts between supported currencies. */
+export type CurrencyConversionResult = number | null;
+
 import { publicCurrencyReference } from '../content/public-currency-reference';
 
 export type DisplayCurrency = 'USD' | 'GTQ';
