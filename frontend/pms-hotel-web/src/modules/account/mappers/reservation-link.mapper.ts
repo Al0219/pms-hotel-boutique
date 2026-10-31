@@ -1,3 +1,6 @@
+/** Function signature for mapping reservation link challenges. */
+export type ReservationLinkChallengeResult = ReturnType<typeof mapLinkChallenge>;
+
 import { DomainMappingError } from '@/lib/errors/domain-mapping-error';
 import { object, text } from '@/lib/validation';
 import type { ReservationLinkChallengeDTO, ReservationLinkResultDTO } from '../dtos/reservation-link.dto';
