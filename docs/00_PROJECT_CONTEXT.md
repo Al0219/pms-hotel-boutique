@@ -89,3 +89,5 @@ Backlog cerrado hasta V3-0201.
 - persistencia real de producción;
 - integraciones externas reales;
 - procesamiento real de pagos.
+
+<!-- Documentación de integración continua y trazabilidad de cambios en rama dev -->

@@ -1,3 +1,6 @@
+/** URL string representing a resolved public booking navigation target. */
+export type PublicNavigationUrl = string;
+
 import { buildSearchQueryParams, validateBookingSearchCriteria, type BookingSearchCriteria } from './booking-search-criteria';
 
 /** Header navigation uses the Home catalogue and only accepted, valid criteria. */

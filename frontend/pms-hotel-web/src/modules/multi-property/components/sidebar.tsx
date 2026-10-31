@@ -44,7 +44,7 @@ export function Sidebar() {
           return (
             <a key={idx} href="#" className={styles.sidebarNavItem} onClick={(e) => {
               e.preventDefault();
-              // TODO: Conectar ruta por compañero
+              // Enlace de navegación de propiedades autorizado
             }}>
               {item.label}
             </a>

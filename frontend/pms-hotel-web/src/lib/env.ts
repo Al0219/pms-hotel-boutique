@@ -1,3 +1,4 @@
+/** Helper para lectura y validación de variables de entorno públicas en Next.js. */
 export interface PublicEnvironment {
   apiBaseUrl: string | undefined;
   useMockApi: boolean;

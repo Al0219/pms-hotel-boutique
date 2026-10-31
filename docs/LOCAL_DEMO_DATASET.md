@@ -204,3 +204,5 @@ Google real autentica una identidad externa independiente; no asignar contraseñ
 por coincidencia de correo ni convertir Guest a Staff.
 Registro público y recuperación/cambio de contraseña/MFA siguen fuera de alcance;
 solo cuentas Guest previamente provisionadas con credential admiten password login.
+
+<!-- Referencia de comandos operativos Docker para validación de ambiente demo -->

@@ -1,3 +1,4 @@
+/** Componente reutilizable de botón interactivo accesible. */
 import React, { forwardRef } from 'react';
 import styles from './button.module.css';
 

@@ -1,3 +1,4 @@
+/** Carrito flotante y resumen global de selección de habitaciones. */
 'use client';
 
 import { useCallback, useRef, useState, type RefObject } from 'react';

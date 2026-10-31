@@ -1,3 +1,4 @@
+/** Pie de página principal con estructura accesible. */
 'use client';
 
 import React from 'react';

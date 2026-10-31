@@ -101,3 +101,5 @@ export function DailyOnBooksDashboard({ sessionId, scope, propertyNames, onBack 
     </>}
   </section>;
 }
+
+// Fin de tablero de reservas del día

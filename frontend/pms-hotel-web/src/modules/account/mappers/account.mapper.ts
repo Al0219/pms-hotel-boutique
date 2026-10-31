@@ -1,3 +1,6 @@
+/** Function signature for account text validation rules. */
+export type AccountValidationRule = (value: string | undefined | null, code: string) => string;
+
 import { DomainMappingError } from "@/lib/errors/domain-mapping-error";
 
 import type { AccountSummaryDTO, MockAccountSummaryDTO, StayHistoryItemDTO } from "../dtos/account.dto";

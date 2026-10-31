@@ -44,4 +44,9 @@ describe("StatusBadge Component", () => {
     const { container: c3 } = render(<StatusBadge variant="service">HOUSEKEEPING</StatusBadge>);
     expect(c3.querySelector("span")?.className).toContain("variantService");
   });
+
+  it('renders with default tone correctly', () => {
+    render(<StatusBadge text="Confirmada" />);
+    expect(screen.getByText('Confirmada')).toBeInTheDocument();
+  });
 });

@@ -105,3 +105,5 @@ export function Modal({ title, children, footer, busy = false, onClose, initialF
     </div>
   );
 }
+
+// Modal accesible con foco contenido

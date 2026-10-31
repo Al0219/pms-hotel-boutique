@@ -1,3 +1,6 @@
+/** Type alias for resolved pricing calculation output. */
+export type PriceSummaryResult = ReturnType<typeof selectionPriceSummary>;
+
 import { selectionTotals, type resolveSelection } from './room-catalogue';
 
 /** Sum only validated server quotes. Optional fees are never assumed to be zero. */

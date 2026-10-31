@@ -1,3 +1,6 @@
+/** Readonly view of room selection for immutable catalogue processing. */
+export type RoomSelectionSummary = Readonly<RoomSelection>;
+
 import type { AvailableRoomType, RatePlanOption } from "@/modules/availability";
 
 export type CatalogueSort = "recommended" | "price-asc" | "price-desc" | "capacity" | "name";

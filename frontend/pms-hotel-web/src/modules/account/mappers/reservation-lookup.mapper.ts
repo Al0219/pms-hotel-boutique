@@ -1,3 +1,6 @@
+/** Return type of mapped reservation lookup details. */
+export type ReservationLookupMapperResult = ReturnType<typeof mapReservationLookup>;
+
 import { DomainMappingError } from '@/lib/errors/domain-mapping-error';
 import { count, list, text } from '@/lib/validation';
 import { roomPresentationFor } from '@/modules/availability';

@@ -1,3 +1,4 @@
+/** Selector de moneda para presentación de tarifas públicas. */
 'use client';
 
 import { usePublicBookingSession } from '../components/public-booking-provider';

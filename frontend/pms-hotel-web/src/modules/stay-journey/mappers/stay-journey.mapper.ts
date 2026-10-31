@@ -1,3 +1,6 @@
+/** Summary model representing an operational stay journey. */
+export type JourneySummaryResult = ReturnType<typeof mapJourneySummary>;
+
 import { DomainMappingError } from '@/lib/errors';
 import type { JourneyDocument, JourneyRequest, JourneySummary, SimulatedPaymentReceipt } from '../model/stay-journey';
 const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;

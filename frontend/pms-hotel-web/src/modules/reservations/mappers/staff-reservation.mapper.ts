@@ -1,3 +1,6 @@
+/** Validator function for staff reservation identifiers and codes. */
+export type StaffReservationValidatorFn = (value: string) => string;
+
 import { deriveReservationOperationalStatus } from '../model/reservation-operational-status';
 import { roomPresentationFor } from '@/modules/availability';
 import { mapStaffReservationInformation } from './staff-reservation-information.mapper';

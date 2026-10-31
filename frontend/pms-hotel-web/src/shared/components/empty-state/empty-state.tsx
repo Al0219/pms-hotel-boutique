@@ -20,7 +20,7 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div
-      role="region"
+      role="status" aria-live="polite"
       aria-label={title}
       className={`${styles.container} ${className}`.trim()}
     >

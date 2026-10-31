@@ -72,4 +72,9 @@ describe("ConfirmDialog", () => {
     fireEvent.click(screen.getByRole("button", { name: "Confirmar cancelación" }));
     expect(onConfirm).not.toHaveBeenCalled();
   });
+
+  it('renders confirm dialog with accessible labels', () => {
+    render(<ConfirmDialog title="Eliminar registro" body="¿Desea continuar?" confirmLabel="Eliminar" busyLabel="Eliminando..." onConfirm={() => {}} onCancel={() => {}} />);
+    expect(screen.getByText('Eliminar registro')).toBeInTheDocument();
+  });
 });

@@ -1,3 +1,4 @@
+/** Contenedor principal de vistas del proceso de reserva pública. */
 'use client';
 
 import Link from 'next/link';

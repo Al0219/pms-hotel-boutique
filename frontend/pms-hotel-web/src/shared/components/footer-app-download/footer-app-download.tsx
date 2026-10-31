@@ -1,3 +1,4 @@
+/** Enlaces de descarga de aplicación móvil con navegación accesible. */
 'use client';
 
 import React from 'react';

@@ -84,3 +84,5 @@ export function ReportsCatalog({ sessionId, scope, propertyNames, canReadReserva
     </div>
   </section>;
 }
+
+// Fin de catálogo de reportes consolidados

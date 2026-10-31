@@ -9,3 +9,5 @@ export function AccountNavigation(){
   const links=[['/cuenta','Resumen'],['/cuenta/perfil','Mi perfil'],['/cuenta/reservas','Reservas e historial'],['/cuenta/reservas/vincular','Vincular reserva']];
   return <div className={styles.wrap}><nav className={styles.nav} aria-label="Navegación de mi cuenta"><div className={styles.links}>{links.map(([href,label])=><Link key={href} href={href} aria-current={pathname===href || (href==='/cuenta/reservas' && pathname.startsWith('/cuenta/reservas/') && pathname!=='/cuenta/reservas/vincular')?'page':undefined}>{label}</Link>)}</div></nav></div>;
 }
+
+// Navegación de sección de cuenta de huésped

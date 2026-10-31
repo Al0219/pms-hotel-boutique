@@ -1,3 +1,4 @@
+/** Tabla de datos genérica para vistas administrativas. */
 import { Fragment, type ReactNode } from "react";
 
 import styles from "./data-table.module.css";

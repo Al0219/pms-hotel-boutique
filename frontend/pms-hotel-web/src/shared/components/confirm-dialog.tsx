@@ -46,7 +46,7 @@ export function ConfirmDialog({
       initialFocusRef={confirmRef}
       footer={
         <>
-          <button className={styles.secondaryButton} type="button" onClick={onCancel} disabled={busy}>
+          <button className={styles.secondaryButton} type="button" onClick={onCancel} disabled={busy} aria-label="Cancelar operación">
             Volver
           </button>
           <button

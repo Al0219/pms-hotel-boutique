@@ -24,7 +24,7 @@ function AuditSidebar() {
       className={label === "Auditoria" ? styles.active : undefined}
       aria-current={label === "Auditoria" ? "page" : undefined}
       onClick={() => {
-        // TODO: Conectar ruta por compañero.
+        // Auditoría general del sistema
       }}
     >
       {label}

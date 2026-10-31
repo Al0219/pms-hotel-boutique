@@ -46,4 +46,9 @@ describe('Button Component (IMP-WEB-S101)', () => {
     expect(container.firstChild).toHaveClass(/variantSecondary/);
     expect(container.firstChild).toHaveClass(/sizeLg/);
   });
+
+  it('applies custom button type attribute correctly', () => {
+    render(<Button type="submit">Guardar</Button>);
+    expect(screen.getByRole('button', { name: 'Guardar' })).toHaveAttribute('type', 'submit');
+  });
 });

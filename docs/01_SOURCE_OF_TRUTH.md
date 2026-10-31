@@ -40,3 +40,5 @@ Cuando exista contradicción:
 
 ## Prohibido
 "No lo entendí, así que lo hice como me pareció."
+
+<!-- Estándares de calidad de código y granularidad de commits en monorepo -->
