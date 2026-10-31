@@ -46,7 +46,7 @@ export function StatusBadge({
 
   return (
     <span
-      role="status"
+      role="status" aria-live="polite"
       aria-label={ariaLabel}
       className={`${styles.badge} ${variantClass} ${sizeClass} ${className}`.trim()}
       {...rest}
