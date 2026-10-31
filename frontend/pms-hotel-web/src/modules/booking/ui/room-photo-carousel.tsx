@@ -1,3 +1,4 @@
+/** Carrusel de fotografías para presentación de habitaciones. */
 'use client';
 
 import Image from 'next/image';
