@@ -1,3 +1,4 @@
+/** Hook para gestión de paginación accesible de entidades. */
 'use client';
 
 import { useState, type ReactNode } from 'react';
