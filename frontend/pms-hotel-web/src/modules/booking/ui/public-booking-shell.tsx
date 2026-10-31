@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useRef, useState, type ReactNode } from 'react';
-import { Button, Modal } from '@/shared/components';
+import { Button, Modal, ThemeToggle, BoutiqueAssistantWidget } from '@/shared/components';
 import { useGuestSession } from '@/modules/auth';
 import { publicHotelContent, publicHotelInformation } from '../content/public-hotel-content';
 import { PublicGlobalCart } from './public-global-cart';
@@ -39,7 +39,9 @@ export function PublicBookingShell({ children }: { children: ReactNode }) {
           <Link href={catalogueHref}>Habitaciones</Link><Link href="/#amenidades">Amenidades</Link>
           <Link href="/mis-reservas">Mis reservas</Link>
         </nav>
-        <div className={styles.headerActions}><PublicGlobalCart />
+        <div className={styles.headerActions}>
+          <ThemeToggle />
+          <PublicGlobalCart />
           <button ref={menuTrigger} type="button" className={styles.menuToggle}
             aria-label={menuOpen ? 'Cerrar menú' : 'Menú'} aria-expanded={menuOpen} aria-controls="public-navigation" onClick={() => setMenuOpen(open => !open)}>
             <span className={styles.menuLabel}>{menuOpen ? 'Cerrar menú' : 'Menú'}</span><span aria-hidden="true">{menuOpen ? '×' : '☰'}</span>
@@ -101,5 +103,7 @@ export function PublicBookingShell({ children }: { children: ReactNode }) {
     </footer>
     {information && <div className={styles.modalLayer}><Modal title={information.title} onClose={closeInformation}
       footer={<Button onClick={closeInformation}>Cerrar</Button>}><p>{information.text}</p></Modal></div>}
+    <BoutiqueAssistantWidget />
   </div>;
 }
+

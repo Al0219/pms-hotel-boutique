@@ -1,8 +1,13 @@
-.hero { background: var(--color-surface-dark); color: var(--color-text-inverse); position: relative; overflow: hidden; }
-.heroContent { position: relative; width: min(var(--public-container-max), calc(100% - 2 * var(--public-container-gutter))); margin: auto; padding: 64px 0 104px; z-index: 1; }
-.eyebrow { margin: 0 0 20px; font-size: 11px; font-weight: 500; letter-spacing: .18em; color: #d2d9d2; }
-.hero h1 { font-family: var(--font-family-display); font-size: clamp(38px, 4.2vw, 56px); font-weight: 400; letter-spacing: -.025em; line-height: 1.15; max-width: 700px; margin: 0 0 24px; }
-.heroDescription { font-size: 16px; line-height: 1.8; color: #d2d9d2; max-width: 520px; margin: 0; }
+.hero { background: #121815; color: #ffffff; position: relative; overflow: hidden; min-height: 480px; }
+.heroContent { position: relative; width: min(var(--public-container-max), calc(100% - 2 * var(--public-container-gutter))); margin: auto; padding: 72px 0 112px; z-index: 1; }
+.eyebrow { margin: 0 0 20px; font-size: 11px; font-weight: 600; letter-spacing: .2em; color: #E8D8C0; text-shadow: 0 1px 4px rgba(0,0,0,0.6); }
+.hero h1 { font-family: var(--font-family-display); font-size: clamp(38px, 4.2vw, 56px); font-weight: 400; letter-spacing: -.025em; line-height: 1.15; max-width: 700px; margin: 0 0 24px; color: #ffffff; text-shadow: 0 2px 8px rgba(0,0,0,0.6); }
+.heroDescription { font-size: 16px; line-height: 1.8; color: #fdfcfa; max-width: 520px; margin: 0; text-shadow: 0 1px 4px rgba(0,0,0,0.6); }
+.fallbackWrapper { width: 100%; }
+.fallbackNotice { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 14px 20px; margin-top: 24px; margin-bottom: 24px; background: var(--color-surface-subtle, #f5f2eb); border: 1px solid var(--color-border-default, #e2e1dc); border-radius: 12px; }
+.fallbackNotice p { margin: 0; font-size: 13.5px; color: var(--color-text-secondary); line-height: 1.5; }
+.retryChip { background: var(--hotel-primary, #2C3E35); color: #ffffff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 12px; font-weight: 500; cursor: pointer; transition: opacity 0.2s; white-space: nowrap; }
+.retryChip:hover { opacity: 0.9; }
 .decoration { position: absolute; width: 600px; height: 600px; right: -100px; top: -85px; pointer-events: none; }
 .decoration span { position: absolute; width: 440px; height: 440px; border-radius: 50%; background: #d9e2d4; opacity: .055; }
 .decoration span:nth-child(2) { left: 155px; top: 120px; opacity: .07; }

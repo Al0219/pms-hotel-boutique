@@ -1,0 +1,33 @@
+.toggleButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  border: 1px solid var(--color-border-default, #e2e1dc);
+  background: var(--color-surface-card, #ffffff);
+  color: var(--color-text-primary, #121815);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.toggleButton:hover {
+  background: var(--color-surface-subtle, #f5f2eb);
+  color: var(--hotel-gold, #D4AF37);
+  border-color: var(--color-brand-accent, #C5A880);
+  transform: scale(1.05);
+}
+
+.toggleButton:focus-visible {
+  outline: 2px solid var(--hotel-gold, #D4AF37);
+  outline-offset: 2px;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  display: block;
+}

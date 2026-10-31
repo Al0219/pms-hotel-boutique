@@ -124,7 +124,10 @@ export function PublicSearchForm({
   };
 
   return (
-    <section className={`${styles.card} ${isLanding ? styles.landing : ''}`} aria-labelledby="search-form-title">
+    <section
+      className={`${styles.card} ${isLanding ? `${styles.landing} backdrop-blur-md bg-white/95 text-stone-900 border border-stone-200 shadow-xl rounded-2xl` : ''}`}
+      aria-labelledby="search-form-title"
+    >
       <div className={styles.header}>
         <h2 id="search-form-title" className={isLanding ? styles.srOnly : styles.title}>
           Reserva tu Estancia Exclusiva
