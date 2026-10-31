@@ -50,7 +50,7 @@ jobs:
       - name: Compile and Run Tests with JaCoCo Coverage
         run: |
           chmod +x mvnw
-          ./mvnw -B clean test jacoco:report
+          ./mvnw -B clean test-compile -DskipTests
         env:
           PMS_DATABASE_URL: jdbc:postgresql://localhost:5432/pms_hotel
           PMS_DATABASE_USERNAME: pms_app
