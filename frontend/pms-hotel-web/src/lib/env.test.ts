@@ -1,3 +1,4 @@
+/** Suite de pruebas unitarias para verificación de variables de entorno del sistema. */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { getPublicEnvironment } from "./env";
 
