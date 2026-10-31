@@ -69,3 +69,5 @@ export function KpiCharts({ data }: KpiChartsProps) {
     </div>
   );
 }
+
+// Visualización de métricas e indicadores de revenue
