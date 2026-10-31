@@ -170,7 +170,7 @@ describe('Public 01 landing interactions', () => {
   });
   it('keeps malformed bookmarked dates editable without crashing the floating summary', () => {
     render(<PublicBookingHome initialCriteria={{ ...criteria, checkIn: 'invalid-date' }} />);
-    expect(screen.getByRole('heading', { name: /CONFORT Y COMODIDAD ESTE MES DE NOVIEMBRE/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /En estas vacaciones Reserva un lugar comodo y agradable/ })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Buscar disponibilidad' }));
     expect(screen.getByLabelText(/^Check-in/)).toHaveAttribute('aria-invalid', 'true');
     expect(push).not.toHaveBeenCalled();
